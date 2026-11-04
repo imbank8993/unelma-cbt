@@ -130,6 +130,20 @@ export class AuthController {
     return this.authService.listAllUsersForAdmin();
   }
 
+  @Post('admin/users')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Buat akun pengguna atau admin baru langsung oleh Superadmin / Admin' })
+  async createUserByAdmin(
+    @CurrentUser() user: AuthUser,
+    @Body() body: { email: string; name: string; password?: string; role: string; schoolName?: string; className?: string },
+  ) {
+    if (!user.isPlatformAdmin && !user.roles.includes('SUPERADMIN') && !user.roles.includes('ADMIN')) {
+      throw new ForbiddenException('Hanya Superadmin atau Admin yang berhak membuat akun pengguna.');
+    }
+    return this.authService.createUserByAdmin(user, body);
+  }
+
   @Post('admin/users/:userId/role')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()

@@ -14,7 +14,13 @@ import {
     ArrowLeft,
     Sparkles,
     GraduationCap,
-    Trash2
+    Trash2,
+    UserPlus,
+    X,
+    Lock,
+    Mail,
+    User,
+    Layers
 } from 'lucide-react';
 import { Spinner } from '@/app/components/ui/Spinner';
 
@@ -37,6 +43,19 @@ export default function AdminUsersPage() {
     const [search, setSearch] = useState('');
     const [actionLoadingId, setActionLoadingId] = useState<string | null>(null);
     const [toastMsg, setToastMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+
+    // Modal state for adding a new user
+    const [showAddModal, setShowAddModal] = useState(false);
+    const [addForm, setAddForm] = useState({
+        name: '',
+        email: '',
+        password: '',
+        role: 'Admin',
+        schoolName: '',
+        className: '',
+    });
+    const [addLoading, setAddLoading] = useState(false);
+    const [addError, setAddError] = useState<string | null>(null);
 
     const loadUsers = useCallback(async () => {
         setLoading(true);
@@ -101,6 +120,40 @@ export default function AdminUsersPage() {
             setToastMsg({ type: 'error', text: (err as Error).message });
         } finally {
             setActionLoadingId(null);
+        }
+    };
+
+    const handleAddUserSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setAddLoading(true);
+        setAddError(null);
+
+        try {
+            const res = await fetch('/api/auth/admin/users', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(addForm),
+            });
+            const json = await res.json();
+            if (!res.ok || !json.success) {
+                throw new Error(json.error || 'Gagal membuat pengguna baru.');
+            }
+
+            setShowAddModal(false);
+            setAddForm({
+                name: '',
+                email: '',
+                password: '',
+                role: 'Admin',
+                schoolName: '',
+                className: '',
+            });
+            setToastMsg({ type: 'success', text: json.message || 'Pengguna baru berhasil ditambahkan.' });
+            await loadUsers();
+        } catch (err) {
+            setAddError((err as Error).message);
+        } finally {
+            setAddLoading(false);
         }
     };
 
@@ -174,14 +227,27 @@ export default function AdminUsersPage() {
                             </p>
                         </div>
 
-                        <button
-                            onClick={loadUsers}
-                            disabled={loading}
-                            className="inline-flex items-center gap-2 px-4 py-2.5 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-sm font-semibold rounded-xl shadow-sm transition-all cursor-pointer disabled:opacity-50"
-                        >
-                            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-                            Segarkan Data
-                        </button>
+                        <div className="flex items-center gap-3">
+                            <button
+                                onClick={() => {
+                                    setAddError(null);
+                                    setShowAddModal(true);
+                                }}
+                                className="inline-flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white text-sm font-semibold rounded-xl shadow-md shadow-blue-500/20 transition-all cursor-pointer"
+                            >
+                                <UserPlus className="w-4 h-4" />
+                                Tambah Pengguna / Admin Baru
+                            </button>
+
+                            <button
+                                onClick={loadUsers}
+                                disabled={loading}
+                                className="inline-flex items-center gap-2 px-4 py-2.5 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-sm font-semibold rounded-xl shadow-sm transition-all cursor-pointer disabled:opacity-50"
+                            >
+                                <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+                                Segarkan Data
+                            </button>
+                        </div>
                     </div>
                 </div>
 
@@ -361,6 +427,160 @@ export default function AdminUsersPage() {
                     )}
                 </div>
             </div>
+
+            {/* Modal Tambah Pengguna Baru */}
+            {showAddModal && (
+                <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+                    <div className="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-md w-full p-6 relative animate-in fade-in zoom-in-95 duration-150">
+                        <button
+                            type="button"
+                            onClick={() => setShowAddModal(false)}
+                            className="absolute right-4 top-4 text-slate-400 hover:text-slate-600 p-1 rounded-lg"
+                        >
+                            <X className="w-5 h-5" />
+                        </button>
+
+                        <div className="flex items-center gap-3 mb-5">
+                            <div className="w-10 h-10 rounded-xl bg-blue-100 text-blue-600 flex items-center justify-center">
+                                <UserPlus className="w-5 h-5" />
+                            </div>
+                            <div>
+                                <h3 className="text-lg font-bold text-slate-900">Tambah Akun Pengguna</h3>
+                                <p className="text-xs text-slate-500">Buat akun Admin, Proktor, atau Siswa secara manual.</p>
+                            </div>
+                        </div>
+
+                        {addError && (
+                            <div className="mb-4 p-3 rounded-xl bg-red-50 border border-red-200 text-red-700 text-xs flex items-start gap-2">
+                                <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+                                <span>{addError}</span>
+                            </div>
+                        )}
+
+                        <form onSubmit={handleAddUserSubmit} className="space-y-3.5">
+                            <div>
+                                <label className="block text-xs font-semibold text-slate-600 mb-1">
+                                    Nama Lengkap <span className="text-red-500">*</span>
+                                </label>
+                                <div className="relative">
+                                    <User className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                                    <input
+                                        type="text"
+                                        required
+                                        placeholder="Nama Pengguna"
+                                        value={addForm.name}
+                                        onChange={(e) => setAddForm({ ...addForm, name: e.target.value })}
+                                        className="w-full bg-slate-50 border border-slate-200 focus:border-blue-500 focus:bg-white text-slate-900 text-xs rounded-xl py-2 pl-9 pr-3 outline-none"
+                                    />
+                                </div>
+                            </div>
+
+                            <div>
+                                <label className="block text-xs font-semibold text-slate-600 mb-1">
+                                    Email Akun <span className="text-red-500">*</span>
+                                </label>
+                                <div className="relative">
+                                    <Mail className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                                    <input
+                                        type="email"
+                                        required
+                                        placeholder="nama@email.com"
+                                        value={addForm.email}
+                                        onChange={(e) => setAddForm({ ...addForm, email: e.target.value })}
+                                        className="w-full bg-slate-50 border border-slate-200 focus:border-blue-500 focus:bg-white text-slate-900 text-xs rounded-xl py-2 pl-9 pr-3 outline-none"
+                                    />
+                                </div>
+                            </div>
+
+                            <div>
+                                <label className="block text-xs font-semibold text-slate-600 mb-1">
+                                    Password <span className="text-slate-400 font-normal">(Default: Admin123!)</span>
+                                </label>
+                                <div className="relative">
+                                    <Lock className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                                    <input
+                                        type="password"
+                                        placeholder="Admin123!"
+                                        value={addForm.password}
+                                        onChange={(e) => setAddForm({ ...addForm, password: e.target.value })}
+                                        className="w-full bg-slate-50 border border-slate-200 focus:border-blue-500 focus:bg-white text-slate-900 text-xs rounded-xl py-2 pl-9 pr-3 outline-none"
+                                    />
+                                </div>
+                            </div>
+
+                            <div>
+                                <label className="block text-xs font-semibold text-slate-600 mb-1">
+                                    Peran / Role <span className="text-red-500">*</span>
+                                </label>
+                                <select
+                                    value={addForm.role}
+                                    onChange={(e) => setAddForm({ ...addForm, role: e.target.value })}
+                                    className="w-full bg-slate-50 border border-slate-200 focus:border-blue-500 focus:bg-white text-slate-900 text-xs rounded-xl py-2 px-3 outline-none cursor-pointer"
+                                >
+                                    <option value="Admin">Admin (Hak Akses Penuh Kelola Ujian & Sekolah)</option>
+                                    <option value="Proktor">Proktor (Pengawas & Penyelenggara Ujian)</option>
+                                    <option value="Siswa">Siswa (Peserta Ujian)</option>
+                                </select>
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-3">
+                                <div>
+                                    <label className="block text-xs font-semibold text-slate-600 mb-1">
+                                        Asal Sekolah <span className="text-slate-400 font-normal">(Opsional)</span>
+                                    </label>
+                                    <div className="relative">
+                                        <School className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                                        <input
+                                            type="text"
+                                            placeholder="Nama Sekolah"
+                                            value={addForm.schoolName}
+                                            onChange={(e) => setAddForm({ ...addForm, schoolName: e.target.value })}
+                                            className="w-full bg-slate-50 border border-slate-200 focus:border-blue-500 focus:bg-white text-slate-900 text-xs rounded-xl py-2 pl-9 pr-3 outline-none"
+                                        />
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <label className="block text-xs font-semibold text-slate-600 mb-1">
+                                        Kelas <span className="text-slate-400 font-normal">(Opsional)</span>
+                                    </label>
+                                    <div className="relative">
+                                        <Layers className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                                        <input
+                                            type="text"
+                                            placeholder="Mis: XII MIPA 1"
+                                            value={addForm.className}
+                                            onChange={(e) => setAddForm({ ...addForm, className: e.target.value })}
+                                            className="w-full bg-slate-50 border border-slate-200 focus:border-blue-500 focus:bg-white text-slate-900 text-xs rounded-xl py-2 pl-9 pr-3 outline-none"
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="flex items-center justify-end gap-3 pt-3">
+                                <button
+                                    type="button"
+                                    onClick={() => setShowAddModal(false)}
+                                    className="px-4 py-2 border border-slate-200 text-slate-600 text-xs font-semibold rounded-xl hover:bg-slate-50"
+                                >
+                                    Batal
+                                </button>
+                                <button
+                                    type="submit"
+                                    disabled={addLoading}
+                                    className="px-5 py-2 bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold rounded-xl shadow-sm transition-all disabled:opacity-50 cursor-pointer flex items-center gap-2"
+                                >
+                                    {addLoading ? (
+                                        <div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                                    ) : (
+                                        <span>Simpan Akun</span>
+                                    )}
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

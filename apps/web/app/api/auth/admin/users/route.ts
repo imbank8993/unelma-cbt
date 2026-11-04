@@ -1,6 +1,10 @@
-import { proxyGet } from '@/lib/nest-proxy';
+import { proxyGet, proxyJson } from '@/lib/nest-proxy';
 import { NextRequest } from 'next/server';
 
 export async function GET(request: NextRequest) {
     return proxyGet(request, '/auth/admin/users');
+}
+
+export async function POST(request: NextRequest) {
+    return proxyJson(request, '/auth/admin/users', 'POST');
 }

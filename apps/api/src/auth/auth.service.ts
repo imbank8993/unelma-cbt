@@ -681,6 +681,95 @@ export class AuthService {
     return { success: true, message: `Pengguna ${targetUser.email} berhasil dihapus.` };
   }
 
+  async createUserByAdmin(
+    actorUser: AuthUser,
+    dto: { email: string; name: string; password?: string; role: string; schoolName?: string; className?: string },
+  ): Promise<{ success: boolean; message: string; user?: any }> {
+    const validRoles = ['Admin', 'Proktor', 'Siswa'];
+    const matchedRole = validRoles.find((r) => r.toLowerCase() === (dto.role || '').toLowerCase()) || 'Siswa';
+
+    const actorIsSuper = isSuperadminEmail(actorUser.email);
+    if (matchedRole === 'Admin' && !actorIsSuper) {
+      throw new ForbiddenException('Hanya imbank8993@gmail.com yang berhak membuat atau menunjuk Admin baru.');
+    }
+
+    const normalizedEmail = (dto.email || '').trim().toLowerCase();
+    if (!normalizedEmail) {
+      throw new BadRequestException('Email wajib diisi.');
+    }
+
+    const existing = await this.authUsers.findByEmail(normalizedEmail);
+    if (existing) {
+      throw new BadRequestException(`Email '${normalizedEmail}' sudah terdaftar.`);
+    }
+
+    const fullName = (dto.name || '').trim() || normalizedEmail.split('@')[0];
+    const password = dto.password?.trim() || 'Admin123!';
+
+    const authUser = await this.authUsers.createUser({
+      email: normalizedEmail,
+      password,
+      emailConfirm: true,
+      userMetadata: {
+        full_name: fullName,
+        school_name: dto.schoolName?.trim() || null,
+        role: matchedRole,
+      },
+    });
+
+    await this.db.from('cbt_profiles').upsert(
+      {
+        id: authUser.id,
+        full_name: fullName,
+        email: normalizedEmail,
+        school_name: dto.schoolName?.trim() || null,
+        class_name: dto.className?.trim() || null,
+        role: matchedRole,
+      },
+      { onConflict: 'id' },
+    );
+
+    const school = await this.schoolScope.getSchool({ createIfMissing: true });
+    const { data: member } = await this.db
+      .from('cbt_organization_members')
+      .upsert(
+        { organization_id: school.id, user_id: authUser.id },
+        { onConflict: 'organization_id,user_id' },
+      )
+      .select('id')
+      .single();
+
+    if (member) {
+      const { data: roleRow } = await this.db
+        .from('cbt_roles')
+        .select('id')
+        .ilike('name', matchedRole)
+        .single();
+
+      if (roleRow) {
+        await this.db.from('cbt_member_roles').insert({
+          organization_member_id: member.id,
+          role_id: roleRow.id,
+        });
+      }
+    }
+
+    if (matchedRole === 'Admin') {
+      await this.prisma.$executeRawUnsafe(
+        `INSERT INTO public.platform_admins (id, created_at)
+         VALUES ($1::uuid, NOW())
+         ON CONFLICT (id) DO NOTHING;`,
+        authUser.id,
+      );
+    }
+
+    return {
+      success: true,
+      message: `Pengguna ${fullName} (${normalizedEmail}) berhasil dibuat dengan peran ${matchedRole}.`,
+      user: { id: authUser.id, email: normalizedEmail, role: matchedRole },
+    };
+  }
+
   async signup(dto: SignupDto, ipAddress?: string, userAgent?: string): Promise<LoginResponse> {
     const normalizedEmail = (dto.email || '').trim().toLowerCase();
     if (!normalizedEmail || !dto.name || !dto.schoolName) {
