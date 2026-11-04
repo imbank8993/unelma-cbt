@@ -1,7 +1,7 @@
 import { extractRequestToken } from '@/lib/app-jwt';
 import { nestFetchAsUser } from '@/lib/nest-api';
-import { resolvePublicOrigin } from '@/lib/public-origin';
-import { NextRequest,NextResponse } from 'next/server';
+import { requestPublicOrigin, resolvePublicOrigin } from '@/lib/public-origin';
+import { NextRequest, NextResponse } from 'next/server';
 
 /** Call before parsing/uploading in custom routes that bypass proxy(). */
 export function rejectCrossOriginMutation(request: NextRequest, method: string): NextResponse | null {
@@ -10,7 +10,13 @@ export function rejectCrossOriginMutation(request: NextRequest, method: string):
     const origin = request.headers.get('origin');
     if (origin) {
         try {
-            if (new URL(origin).origin === resolvePublicOrigin(request)) return null;
+            const reqOrigin = new URL(origin).origin;
+            const incoming = requestPublicOrigin(request);
+            const publicOrigin = resolvePublicOrigin(request);
+            // Allow if origin matches incoming request host, configured site URL, or nextUrl origin
+            if (reqOrigin === incoming || reqOrigin === publicOrigin || reqOrigin === request.nextUrl.origin) {
+                return null;
+            }
         } catch { /* An invalid Origin is never a same-origin request. */ }
     } else if (request.headers.get('sec-fetch-site') === 'same-origin') {
         return null;

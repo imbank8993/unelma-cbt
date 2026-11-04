@@ -64,8 +64,8 @@ services:
       context: .
       dockerfile: apps/web/Dockerfile
       args:
-        - NEXT_PUBLIC_ACCA_URL=${NEXT_PUBLIC_ACCA_URL:-https://acca.icgowa.sch.id}
-        - NEXT_PUBLIC_SITE_URL=${NEXT_PUBLIC_SITE_URL:-https://acca-cbt.icgowa.sch.id}
+        - NEXT_PUBLIC_ACCA_URL=${NEXT_PUBLIC_ACCA_URL:-https://unelma.id}
+        - NEXT_PUBLIC_SITE_URL=${NEXT_PUBLIC_SITE_URL:-https://unelma.id}
     container_name: unelma-cbt-web
     restart: unless-stopped
     depends_on:

@@ -13,6 +13,16 @@ export function requestPublicOrigin(request: NextRequest): string {
 export function resolvePublicOrigin(request: NextRequest): string {
     const incoming = requestPublicOrigin(request);
     if (process.env.NODE_ENV !== 'production') return incoming;
+
+    // Prefer incoming request host if valid and not localhost/internal
+    try {
+        const inc = new URL(incoming);
+        if (inc.hostname && !['localhost', '127.0.0.1'].includes(inc.hostname)) {
+            inc.protocol = 'https:';
+            return inc.origin;
+        }
+    } catch { /* Fallback to configured */ }
+
     const configured = process.env.NEXT_PUBLIC_SITE_URL?.trim();
     const destination = new URL(configured || incoming);
     if (!['http:', 'https:'].includes(destination.protocol) || destination.username || destination.password) throw new Error('NEXT_PUBLIC_SITE_URL tidak valid.');
