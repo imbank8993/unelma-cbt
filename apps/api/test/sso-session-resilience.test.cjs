@@ -90,11 +90,11 @@ test('SSO landing preserves session on server or network errors, including after
     }
 });
 
-test('SSO landing routes valid students and redirects only confirmed missing sessions', async () => {
+test('SSO landing routes valid students and preserves landing for unauthenticated guests', async () => {
     assert.deepEqual((await home([200])).events, ['/dashboard/siswa']);
-    const missing = await home([401, 401], false, '');
-    assert.deepEqual(missing.events, ['logout']);
-    assert.match(missing.href, /login\?error=cbt-no-session/);
+    const guest = await home([401, 401], false, '');
+    assert.deepEqual(guest.events, []);
+    assert.equal(guest.href, '');
 });
 
 test('unmounted SSO landing cannot redirect or clear session', async () => {
