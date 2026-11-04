@@ -1,6 +1,6 @@
 import { extractRequestToken } from '@/lib/app-jwt';
 import { nestFetchAsUser } from '@/lib/nest-api';
-import { requestPublicOrigin, resolvePublicOrigin } from '@/lib/public-origin';
+import { resolvePublicOrigin } from '@/lib/public-origin';
 import { NextRequest, NextResponse } from 'next/server';
 
 /** Call before parsing/uploading in custom routes that bypass proxy(). */
@@ -10,11 +10,13 @@ export function rejectCrossOriginMutation(request: NextRequest, method: string):
     const origin = request.headers.get('origin');
     if (origin) {
         try {
-            const reqOrigin = new URL(origin).origin;
-            const incoming = requestPublicOrigin(request);
+            const originUrl = new URL(origin);
             const publicOrigin = resolvePublicOrigin(request);
-            // Allow if origin matches incoming request host, configured site URL, or nextUrl origin
-            if (reqOrigin === incoming || reqOrigin === publicOrigin || reqOrigin === request.nextUrl.origin) {
+            if (originUrl.origin === publicOrigin) return null;
+
+            // Also permit if origin matches incoming forwarded host or request host
+            const hostHeader = (request.headers.get('x-forwarded-host') || request.headers.get('host'))?.split(',')[0].trim();
+            if (hostHeader && (originUrl.host === hostHeader || originUrl.hostname === hostHeader)) {
                 return null;
             }
         } catch { /* An invalid Origin is never a same-origin request. */ }
