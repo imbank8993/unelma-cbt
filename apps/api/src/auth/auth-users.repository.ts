@@ -237,6 +237,61 @@ export class AuthUsersRepository {
     }
   }
 
+  async findOrCreateOAuthUser(input: {
+    email: string;
+    name: string;
+    avatarUrl?: string | null;
+    provider?: string;
+  }): Promise<AuthUserRow> {
+    const normalizedEmail = input.email.trim().toLowerCase();
+    const existing = await this.findByEmail(normalizedEmail);
+    if (existing) {
+      return existing;
+    }
+
+    const id = randomUUID();
+    const metadata = {
+      full_name: input.name,
+      avatar_url: input.avatarUrl || null,
+      provider: input.provider || 'google',
+    };
+
+    const rows = await this.prisma.$queryRawUnsafe<AuthUserRow[]>(
+      `INSERT INTO auth.users
+         (id, instance_id, aud, role, email, encrypted_password,
+          email_confirmed_at, raw_app_meta_data, raw_user_meta_data,
+          created_at, updated_at)
+       VALUES
+         ($1::uuid, '00000000-0000-0000-0000-000000000000'::uuid, 'authenticated',
+          'authenticated', $2, '', now(),
+          jsonb_build_object('provider', $3, 'providers', json_build_array($3)),
+          $4::jsonb, now(), now())
+       RETURNING id, email, raw_user_meta_data, email_confirmed_at, last_sign_in_at,
+                 banned_until, created_at`,
+      id,
+      normalizedEmail,
+      input.provider || 'google',
+      JSON.stringify(metadata),
+    );
+
+    try {
+      await this.prisma.$executeRawUnsafe(
+        `INSERT INTO auth.identities
+           (id, provider_id, user_id, identity_data, provider, last_sign_in_at, created_at, updated_at, email)
+         VALUES (gen_random_uuid(), $1::text, $1::uuid, $2::jsonb, $3, now(), now(), now(), $4)
+         ON CONFLICT DO NOTHING`,
+        id,
+        JSON.stringify({ sub: id, email: normalizedEmail, name: input.name, provider: input.provider || 'google' }),
+        input.provider || 'google',
+        normalizedEmail,
+      );
+    } catch (e) {
+      this.logger.warn(`Could not create identity for ${normalizedEmail}: ${(e as Error).message}`);
+    }
+
+    return rows[0];
+  }
+
   async touchLastSignIn(id: string): Promise<void> {
     await this.prisma.$executeRawUnsafe(
       `UPDATE auth.users SET last_sign_in_at = now() WHERE id = $1::uuid`,

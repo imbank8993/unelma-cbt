@@ -1,8 +1,8 @@
-import { ForbiddenException, Injectable, Logger, UnauthorizedException } from '@nestjs/common';
+import { BadRequestException, ForbiddenException, Injectable, Logger, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { jwtVerify } from 'jose';
-import { type AuthUser, type LoginResponse } from '@acca-cbt/shared';
+import { type AuthUser, type LoginResponse, isSuperadminEmail } from '@acca-cbt/shared';
 import { DbService } from '../prisma/prisma-db-adapter';
 import { PrismaService } from '../prisma/prisma.service';
 import { AuthUsersRepository } from './auth-users.repository';
@@ -392,6 +392,210 @@ export class AuthService {
     const organization = Array.isArray(related) ? related[0] : related;
 
     return { profile: profile ?? null, organization: organization ?? null };
+  }
+
+
+  async loginWithGoogle(
+    payload: { email: string; name: string; avatarUrl?: string | null; googleId?: string },
+    ipAddress?: string,
+    userAgent?: string,
+  ): Promise<LoginResponse> {
+    const normalizedEmail = (payload.email || '').trim().toLowerCase();
+    if (!normalizedEmail) {
+      throw new BadRequestException('Email Google tidak valid.');
+    }
+
+    const authUser = await this.authUsers.findOrCreateOAuthUser({
+      email: normalizedEmail,
+      name: payload.name || 'Pengguna Google',
+      avatarUrl: payload.avatarUrl,
+      provider: 'google',
+    });
+
+    if (authUser.banned_until && new Date(authUser.banned_until) > new Date()) {
+      throw new UnauthorizedException('Akun sedang dinonaktifkan.');
+    }
+
+    // Ensure profile in cbt_profiles
+    await this.db.from('cbt_profiles').upsert(
+      {
+        id: authUser.id,
+        full_name: payload.name || 'Pengguna Google',
+        avatar_url: payload.avatarUrl || null,
+        email: normalizedEmail,
+      },
+      { onConflict: 'id' },
+    );
+
+    const school = await this.schoolScope.getSchool({ createIfMissing: true });
+
+    // Ensure organization membership
+    const { data: member } = await this.db
+      .from('cbt_organization_members')
+      .upsert(
+        {
+          user_id: authUser.id,
+          organization_id: school.id,
+          is_active: true,
+        },
+        { onConflict: 'user_id,organization_id' },
+      )
+      .select('id')
+      .maybeSingle();
+
+    const isSuper = isSuperadminEmail(normalizedEmail);
+    if (isSuper) {
+      // Superadmin: ensure platform_admins and Admin role
+      await this.prisma.$executeRawUnsafe(
+        `INSERT INTO public.platform_admins (id, email, created_at)
+         VALUES ($1::uuid, $2, now())
+         ON CONFLICT (id) DO NOTHING`,
+        authUser.id,
+        normalizedEmail,
+      );
+
+      const { data: adminRole } = await this.db.from('cbt_roles').select('id').eq('name', 'Admin').maybeSingle();
+      if (adminRole && member) {
+        await this.db.from('cbt_member_roles').upsert(
+          {
+            organization_member_id: (member as any).id,
+            role_id: (adminRole as any).id,
+          },
+          { onConflict: 'organization_member_id,role_id' },
+        );
+      }
+    } else {
+      // Normal user: if no role yet, assign Siswa role
+      if (member) {
+        const { data: existingRoles } = await this.db
+          .from('cbt_member_roles')
+          .select('id')
+          .eq('organization_member_id', (member as any).id);
+
+        if (!existingRoles || (existingRoles as any[]).length === 0) {
+          const { data: siswaRole } = await this.db.from('cbt_roles').select('id').eq('name', 'Siswa').maybeSingle();
+          if (siswaRole) {
+            await this.db.from('cbt_member_roles').insert({
+              organization_member_id: (member as any).id,
+              role_id: (siswaRole as any).id,
+            });
+          }
+        }
+      }
+    }
+
+    await this.authUsers.touchLastSignIn(authUser.id);
+    void this.loginHistory.record({
+      userId: authUser.id,
+      loginMethod: 'google',
+      ipAddress,
+      userAgent,
+      success: true,
+    });
+
+    return this.issueSession(
+      authUser.id,
+      normalizedEmail,
+      authUser.raw_user_meta_data,
+      payload.name || undefined,
+    );
+  }
+
+  async listAllUsersForAdmin(): Promise<any[]> {
+    const query = `
+      SELECT 
+        u.id, 
+        u.email, 
+        u.created_at, 
+        u.last_sign_in_at,
+        p.full_name, 
+        p.avatar_url,
+        pa.id IS NOT NULL as is_platform_admin,
+        ARRAY_AGG(DISTINCT r.name) FILTER (WHERE r.name IS NOT NULL) as roles
+      FROM auth.users u
+      LEFT JOIN public.cbt_profiles p ON p.id = u.id
+      LEFT JOIN public.platform_admins pa ON pa.id = u.id
+      LEFT JOIN public.cbt_organization_members om ON om.user_id = u.id
+      LEFT JOIN public.cbt_member_roles mr ON mr.organization_member_id = om.id
+      LEFT JOIN public.cbt_roles r ON r.id = mr.role_id
+      WHERE u.deleted_at IS NULL
+      GROUP BY u.id, u.email, u.created_at, u.last_sign_in_at, p.full_name, p.avatar_url, pa.id
+      ORDER BY u.created_at DESC;
+    `;
+    const rows = await this.prisma.$queryRawUnsafe<any[]>(query);
+    return rows.map((r) => ({
+      id: r.id,
+      email: r.email,
+      fullName: r.full_name || r.email,
+      avatarUrl: r.avatar_url,
+      isSuperadmin: isSuperadminEmail(r.email),
+      isPlatformAdmin: Boolean(r.is_platform_admin),
+      roles: r.roles || [],
+      createdAt: r.created_at,
+      lastSignInAt: r.last_sign_in_at,
+    }));
+  }
+
+  async updateUserRoleByAdmin(targetUserId: string, newRole: string): Promise<{ success: boolean; message: string }> {
+    const validRoles = ['Admin', 'Proktor', 'Guru', 'Siswa', 'Pengawas'];
+    const matchedRole = validRoles.find((r) => r.toLowerCase() === (newRole || '').toLowerCase());
+    if (!matchedRole) {
+      throw new BadRequestException(`Role ${newRole} tidak valid. Pilih salah satu dari: ${validRoles.join(', ')}`);
+    }
+
+    const school = await this.schoolScope.getSchool({ createIfMissing: true });
+    const { data: member } = await this.db
+      .from('cbt_organization_members')
+      .upsert(
+        {
+          user_id: targetUserId,
+          organization_id: school.id,
+          is_active: true,
+        },
+        { onConflict: 'user_id,organization_id' },
+      )
+      .select('id')
+      .maybeSingle();
+
+    if (!member) {
+      throw new BadRequestException('Gagal memuat keanggotaan organisasi pengguna.');
+    }
+
+    const { data: roleRow } = await this.db.from('cbt_roles').select('id').ilike('name', matchedRole).maybeSingle();
+    if (!roleRow) {
+      throw new BadRequestException(`Role ${matchedRole} tidak ditemukan di database.`);
+    }
+
+    // Replace roles
+    await this.prisma.$executeRawUnsafe(
+      `DELETE FROM public.cbt_member_roles WHERE organization_member_id = $1::uuid`,
+      (member as any).id,
+    );
+
+    await this.db.from('cbt_member_roles').insert({
+      organization_member_id: (member as any).id,
+      role_id: (roleRow as any).id,
+    });
+
+    const targetUser = await this.authUsers.findById(targetUserId);
+    if (matchedRole === 'Admin') {
+      await this.prisma.$executeRawUnsafe(
+        `INSERT INTO public.platform_admins (id, email, created_at)
+         VALUES ($1::uuid, $2, now())
+         ON CONFLICT (id) DO NOTHING`,
+        targetUserId,
+        targetUser?.email || '',
+      );
+    } else {
+      if (!isSuperadminEmail(targetUser?.email)) {
+        await this.prisma.$executeRawUnsafe(
+          `DELETE FROM public.platform_admins WHERE id = $1::uuid`,
+          targetUserId,
+        );
+      }
+    }
+
+    return { success: true, message: `Peran ${targetUser?.email || 'pengguna'} berhasil diubah menjadi ${matchedRole}.` };
   }
 
 }

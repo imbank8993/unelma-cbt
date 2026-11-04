@@ -93,6 +93,8 @@ export default function Sidebar({
             { icon: 'fa-shield-halved', label: 'Validasi Soal', href: '/dashboard/admin/questions/validations' },
             { icon: 'fa-clipboard-check', label: 'Ujian', href: '/dashboard/admin/exams' },
             { icon: 'fa-chart-line', label: 'Monitoring', href: '/dashboard/admin/monitoring' },
+            { icon: 'fa-user-gear', label: 'Kelola Pengguna', href: '/dashboard/admin/users' },
+            { icon: 'fa-user-gear', label: 'Kelola Pengguna', href: '/dashboard/admin/users' },
             { icon: 'fa-database', label: 'Backup Data', href: '/dashboard/admin/backup' },
         ],
         'Admin': [

@@ -1,4 +1,4 @@
-import { Body, Controller, Get, HttpCode, HttpStatus, Post, Req, UnauthorizedException, UseGuards } from '@nestjs/common';
+import { Body, ForbiddenException, Param, Controller, Get, HttpCode, HttpStatus, Post, Req, UnauthorizedException, UseGuards } from '@nestjs/common';
 import { Request } from 'express';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import type { AuthUser } from '@acca-cbt/shared';
@@ -83,6 +83,45 @@ export class AuthController {
   })
   profile(@CurrentUser() user: AuthUser) {
     return this.authService.getProfileWithOrganization(user);
+  }
+
+
+  @Post('google')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Masuk atau mendaftar dengan akun Google' })
+  async googleLogin(
+    @Body() body: { email: string; name: string; avatarUrl?: string; googleId?: string },
+    @Req() req: Request,
+  ) {
+    const ip = req.ip;
+    const ua = req.headers['user-agent'];
+    return this.authService.loginWithGoogle(body, ip, ua);
+  }
+
+  @Get('admin/users')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Daftar semua pengguna untuk Superadmin / Admin' })
+  async listUsersForAdmin(@CurrentUser() user: AuthUser) {
+    if (!user.isPlatformAdmin && !user.roles.includes('SUPERADMIN') && !user.roles.includes('ADMIN')) {
+      throw new ForbiddenException('Hanya Superadmin atau Admin yang dapat mengakses manajemen pengguna.');
+    }
+    return this.authService.listAllUsersForAdmin();
+  }
+
+  @Post('admin/users/:userId/role')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Ubah atau tunjuk peran pengguna oleh Superadmin' })
+  async updateUserRole(
+    @CurrentUser() user: AuthUser,
+    @Param('userId') targetUserId: string,
+    @Body() body: { role: string },
+  ) {
+    if (!user.isPlatformAdmin && !user.roles.includes('SUPERADMIN') && !user.roles.includes('ADMIN')) {
+      throw new ForbiddenException('Hanya Superadmin atau Admin yang berhak menunjuk peran pengguna.');
+    }
+    return this.authService.updateUserRoleByAdmin(targetUserId, body.role);
   }
 
 }

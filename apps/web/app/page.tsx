@@ -4,6 +4,7 @@ import { clearActiveRoleInStorage,getDashboardPath,lockActiveRole,setActiveRoleI
 import { clearCbtSession,resetAndRetrySso } from '@/lib/session-reset';
 import { clearSessionCache,fetchSessionUser } from '@/lib/session';
 import { clearMemoryCache } from '@/lib/useMemoryState';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect,useState } from 'react';
 
@@ -128,8 +129,7 @@ export default function Home() {
                 isRedirecting = true;
                 await clearCbtSession();
                 if (cancelled) return;
-                const accaUrl = process.env.NEXT_PUBLIC_ACCA_URL || 'https://acca.icgowa.sch.id';
-                window.location.href = `${accaUrl}/login?error=cbt-no-session&v=3&hash=0`;
+                router.replace('/login');
             }, 1500);
         };
         checkSession();
@@ -157,12 +157,7 @@ export default function Home() {
                     >
                         {failure.retryOnly ? 'Coba Lagi' : resetting ? 'Membersihkan…' : 'Bersihkan Sesi & Coba Lagi'}
                     </button>
-                    <a
-                        href={`${accaUrl}/dashboard`}
-                        className="mt-3 block w-full bg-slate-100 hover:bg-slate-200 text-slate-600 font-semibold py-3 rounded-lg transition-all text-sm"
-                    >
-                        Kembali ke acca-app
-                    </a>
+                    <Link href="/login" className="mt-3 block w-full bg-slate-100 hover:bg-slate-200 text-slate-600 font-semibold py-3 rounded-lg transition-all text-sm">Ke Halaman Login</Link>
                 </div>
             </main>
         );

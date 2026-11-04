@@ -36,7 +36,7 @@ export class LoginHistoryService {
      */
     async record(input: {
         userId: string;
-        loginMethod: 'password' | 'sso';
+        loginMethod: 'password' | 'sso' | 'google';
         ipAddress?: string | null;
         userAgent?: string | null;
         success: boolean;
