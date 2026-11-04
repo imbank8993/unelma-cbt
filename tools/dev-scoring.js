@@ -18,7 +18,7 @@ if (!fs.existsSync(py)) {
 // worker yang dapat melayani request. Server stabil menjadi default; hot reload
 // tetap dapat diaktifkan secara eksplisit saat dibutuhkan.
 const reloadArgs = process.env.SCORING_RELOAD === '1' ? ['--reload'] : [];
-const child = spawn(py, ['-m', 'uvicorn', 'app.main:app', ...reloadArgs, '--port', '8000'], {
+const child = spawn(py, ['-m', 'uvicorn', 'app.main:app', ...reloadArgs, '--port', process.env.PORT || '8010'], {
     cwd: scoringDir,
     stdio: 'inherit',
 });

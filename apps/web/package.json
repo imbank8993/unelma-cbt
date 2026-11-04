@@ -5,9 +5,9 @@
   "scripts": {
     "predev": "node scripts/prepare-learning-pdf.cjs",
     "prebuild": "node scripts/prepare-learning-pdf.cjs",
-    "dev": "next dev -p 3008 --webpack",
+    "dev": "next dev -p 3018 --webpack",
     "build": "next build",
-    "start": "next start -p 3008",
+    "start": "next start -p 3018",
     "lint": "eslint"
   },
   "dependencies": {
