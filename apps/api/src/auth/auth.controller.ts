@@ -1,4 +1,4 @@
-import { Body, ForbiddenException, Param, Controller, Get, HttpCode, HttpStatus, Post, Req, UnauthorizedException, UseGuards } from '@nestjs/common';
+import { Body, Delete, ForbiddenException, Param, Controller, Get, HttpCode, HttpStatus, Post, Req, UnauthorizedException, UseGuards } from '@nestjs/common';
 import { Request } from 'express';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import type { AuthUser } from '@acca-cbt/shared';
@@ -122,7 +122,7 @@ export class AuthController {
   @Post('admin/users/:userId/role')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Ubah atau tunjuk peran pengguna oleh Superadmin' })
+  @ApiOperation({ summary: 'Ubah atau tunjuk peran pengguna oleh Superadmin / Admin' })
   async updateUserRole(
     @CurrentUser() user: AuthUser,
     @Param('userId') targetUserId: string,
@@ -131,7 +131,21 @@ export class AuthController {
     if (!user.isPlatformAdmin && !user.roles.includes('SUPERADMIN') && !user.roles.includes('ADMIN')) {
       throw new ForbiddenException('Hanya Superadmin atau Admin yang berhak menunjuk peran pengguna.');
     }
-    return this.authService.updateUserRoleByAdmin(targetUserId, body.role);
+    return this.authService.updateUserRoleByAdmin(user, targetUserId, body.role);
+  }
+
+  @Delete('admin/users/:userId')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Hapus pengguna oleh Superadmin / Admin' })
+  async deleteUser(
+    @CurrentUser() user: AuthUser,
+    @Param('userId') targetUserId: string,
+  ) {
+    if (!user.isPlatformAdmin && !user.roles.includes('SUPERADMIN') && !user.roles.includes('ADMIN')) {
+      throw new ForbiddenException('Hanya Superadmin atau Admin yang berhak menghapus pengguna.');
+    }
+    return this.authService.deleteUserByAdmin(user, targetUserId);
   }
 
 }

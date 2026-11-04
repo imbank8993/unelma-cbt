@@ -1,5 +1,5 @@
 import { SignupDto } from './dto/login.dto';
-import { BadRequestException, ForbiddenException, Injectable, Logger, UnauthorizedException } from '@nestjs/common';
+import { BadRequestException, ForbiddenException, Injectable, Logger, NotFoundException, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { jwtVerify } from 'jose';
@@ -512,7 +512,6 @@ export class AuthService {
         p.full_name, 
         p.avatar_url,
         p.school_name,
-        p.class_name,
         pa.id IS NOT NULL as is_platform_admin,
         ARRAY_AGG(DISTINCT r.name) FILTER (WHERE r.name IS NOT NULL) as roles
       FROM auth.users u
@@ -522,7 +521,7 @@ export class AuthService {
       LEFT JOIN public.cbt_member_roles mr ON mr.organization_member_id = om.id
       LEFT JOIN public.cbt_roles r ON r.id = mr.role_id
       WHERE u.deleted_at IS NULL
-      GROUP BY u.id, u.email, u.created_at, u.last_sign_in_at, p.full_name, p.avatar_url, p.school_name, p.class_name, pa.id
+      GROUP BY u.id, u.email, u.created_at, u.last_sign_in_at, p.full_name, p.avatar_url, p.school_name, pa.id
       ORDER BY u.created_at DESC;
     `;
     const rows = await this.prisma.$queryRawUnsafe<any[]>(query);
@@ -532,7 +531,6 @@ export class AuthService {
       fullName: r.full_name || r.email,
       avatarUrl: r.avatar_url,
       schoolName: r.school_name || null,
-      className: r.class_name || null,
       isSuperadmin: isSuperadminEmail(r.email),
       isPlatformAdmin: Boolean(r.is_platform_admin),
       roles: r.roles || [],
@@ -541,11 +539,47 @@ export class AuthService {
     }));
   }
 
-  async updateUserRoleByAdmin(targetUserId: string, newRole: string): Promise<{ success: boolean; message: string }> {
-    const validRoles = ['Admin', 'Proktor', 'Guru', 'Siswa', 'Pengawas'];
+  async updateUserRoleByAdmin(
+    actorUser: AuthUser,
+    targetUserId: string,
+    newRole: string,
+  ): Promise<{ success: boolean; message: string }> {
+    const validRoles = ['Admin', 'Proktor', 'Siswa'];
     const matchedRole = validRoles.find((r) => r.toLowerCase() === (newRole || '').toLowerCase());
     if (!matchedRole) {
       throw new BadRequestException(`Role ${newRole} tidak valid. Pilih salah satu dari: ${validRoles.join(', ')}`);
+    }
+
+    const targetUser = await this.authUsers.findById(targetUserId);
+    if (!targetUser) {
+      throw new NotFoundException('Pengguna tidak ditemukan.');
+    }
+
+    // Akun utama imbank8993@gmail.com kebal terhadap perubahan peran oleh siapapun
+    if (isSuperadminEmail(targetUser.email)) {
+      throw new ForbiddenException('Peran akun utama imbank8993@gmail.com kebal dan tidak dapat diubah.');
+    }
+
+    // Hanya imbank8993@gmail.com yang berhak menunjuk Admin baru
+    const actorIsSuper = isSuperadminEmail(actorUser.email);
+    if (matchedRole === 'Admin' && !actorIsSuper) {
+      throw new ForbiddenException('Hanya imbank8993@gmail.com yang berhak menunjuk Admin baru.');
+    }
+
+    // Cek apakah target pengguna saat ini berstatus Admin
+    const targetIsAdmin = await this.prisma.$queryRawUnsafe<any[]>(
+      `SELECT 1 FROM public.platform_admins WHERE id = $1::uuid
+       UNION
+       SELECT 1 FROM public.cbt_organization_members om
+       JOIN public.cbt_member_roles mr ON mr.organization_member_id = om.id
+       JOIN public.cbt_roles r ON r.id = mr.role_id
+       WHERE om.user_id = $1::uuid AND lower(r.name) = 'admin'`,
+      targetUserId,
+    );
+
+    // Admin lain tidak berhak menurunkan atau mengubah peran akun yang sudah menjadi Admin
+    if (targetIsAdmin.length > 0 && !actorIsSuper) {
+      throw new ForbiddenException('Hanya imbank8993@gmail.com yang berhak mengubah peran sesama Admin.');
     }
 
     const school = await this.schoolScope.getSchool({ createIfMissing: true });
@@ -582,17 +616,16 @@ export class AuthService {
       role_id: (roleRow as any).id,
     });
 
-    const targetUser = await this.authUsers.findById(targetUserId);
     if (matchedRole === 'Admin') {
       await this.prisma.$executeRawUnsafe(
         `INSERT INTO public.platform_admins (id, email, created_at)
          VALUES ($1::uuid, $2, now())
          ON CONFLICT (id) DO NOTHING`,
         targetUserId,
-        targetUser?.email || '',
+        targetUser.email || '',
       );
     } else {
-      if (!isSuperadminEmail(targetUser?.email)) {
+      if (!isSuperadminEmail(targetUser.email)) {
         await this.prisma.$executeRawUnsafe(
           `DELETE FROM public.platform_admins WHERE id = $1::uuid`,
           targetUserId,
@@ -600,9 +633,49 @@ export class AuthService {
       }
     }
 
-    return { success: true, message: `Peran ${targetUser?.email || 'pengguna'} berhasil diubah menjadi ${matchedRole}.` };
+    return { success: true, message: `Peran ${targetUser.email || 'pengguna'} berhasil diubah menjadi ${matchedRole}.` };
   }
 
+  async deleteUserByAdmin(
+    actorUser: AuthUser,
+    targetUserId: string,
+  ): Promise<{ success: boolean; message: string }> {
+    const targetUser = await this.authUsers.findById(targetUserId);
+    if (!targetUser) {
+      throw new NotFoundException('Pengguna tidak ditemukan.');
+    }
+
+    // Akun utama imbank8993@gmail.com tidak dapat dihapus oleh siapapun
+    if (isSuperadminEmail(targetUser.email)) {
+      throw new ForbiddenException('Akun utama imbank8993@gmail.com kebal dan tidak dapat dihapus.');
+    }
+
+    const actorIsSuper = isSuperadminEmail(actorUser.email);
+
+    // Cek apakah target pengguna adalah Admin
+    const targetIsAdmin = await this.prisma.$queryRawUnsafe<any[]>(
+      `SELECT 1 FROM public.platform_admins WHERE id = $1::uuid
+       UNION
+       SELECT 1 FROM public.cbt_organization_members om
+       JOIN public.cbt_member_roles mr ON mr.organization_member_id = om.id
+       JOIN public.cbt_roles r ON r.id = mr.role_id
+       WHERE om.user_id = $1::uuid AND lower(r.name) = 'admin'`,
+      targetUserId,
+    );
+
+    // Admin lain tidak berhak menghapus akun Admin
+    if (targetIsAdmin.length > 0 && !actorIsSuper) {
+      throw new ForbiddenException('Hanya imbank8993@gmail.com yang berhak menghapus akun Admin.');
+    }
+
+    // Hapus dari auth.users (cascades ke cbt_profiles, platform_admins, cbt_organization_members, cbt_member_roles)
+    await this.prisma.$executeRawUnsafe(
+      `DELETE FROM auth.users WHERE id = $1::uuid`,
+      targetUserId,
+    );
+
+    return { success: true, message: `Pengguna ${targetUser.email} berhasil dihapus.` };
+  }
 
   async signup(dto: SignupDto, ipAddress?: string, userAgent?: string): Promise<LoginResponse> {
     const normalizedEmail = (dto.email || '').trim().toLowerCase();
@@ -618,7 +691,6 @@ export class AuthService {
     const metadata = {
       full_name: dto.name,
       school_name: dto.schoolName,
-      class_name: dto.className || null,
       role: 'Siswa',
     };
 
@@ -639,14 +711,13 @@ export class AuthService {
       });
     }
 
-    // Insert profile with school_name and class_name
+    // Insert profile with school_name
     await this.db.from('cbt_profiles').upsert(
       {
         id: authUser.id,
         full_name: dto.name,
         email: normalizedEmail,
         school_name: dto.schoolName,
-        class_name: dto.className || null,
         avatar_url: dto.avatarUrl || null,
         role: 'Siswa',
       },

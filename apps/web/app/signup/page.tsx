@@ -5,14 +5,13 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { getDashboardPath, type Role } from '@/lib/rbac';
 import { setActiveRoleInStorage, lockActiveRole } from '@/lib/rbac';
-import { UserPlus, Mail, Lock, User, School, Layers, AlertCircle, Sparkles, CheckCircle2 } from 'lucide-react';
+import { UserPlus, Mail, Lock, User, School, AlertCircle, Sparkles, CheckCircle2 } from 'lucide-react';
 
 export default function SignupPage() {
     const router = useRouter();
     const [name, setName] = useState('');
     const [email, setEmail] = useState('');
     const [schoolName, setSchoolName] = useState('');
-    const [className, setClassName] = useState('');
     const [password, setPassword] = useState('');
     const [loading, setLoading] = useState(false);
     const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -49,7 +48,6 @@ export default function SignupPage() {
                     email: targetEmail,
                     name: targetName,
                     schoolName: schoolName.trim(),
-                    className: className.trim() || undefined,
                     password: password || undefined,
                     avatarUrl: `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(targetName)}`,
                 }),
@@ -166,39 +164,21 @@ export default function SignupPage() {
                         </div>
                     </div>
 
-                    {/* Asal Sekolah & Kelas (Grid) */}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        <div>
-                            <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">
-                                Asal Sekolah <span className="text-red-400">*</span>
-                            </label>
-                            <div className="relative">
-                                <School className="w-4 h-4 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
-                                <input
-                                    type="text"
-                                    required
-                                    value={schoolName}
-                                    onChange={(e) => setSchoolName(e.target.value)}
-                                    placeholder="Nama Sekolah / Madrasah"
-                                    className="w-full bg-slate-800/80 border border-slate-700 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 text-white rounded-xl py-2 pl-10 pr-3 text-sm outline-none transition-all placeholder:text-slate-500"
-                                />
-                            </div>
-                        </div>
-
-                        <div>
-                            <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">
-                                Kelas <span className="text-slate-500 text-[10px] font-normal">(Opsional)</span>
-                            </label>
-                            <div className="relative">
-                                <Layers className="w-4 h-4 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
-                                <input
-                                    type="text"
-                                    value={className}
-                                    onChange={(e) => setClassName(e.target.value)}
-                                    placeholder="Contoh: XII MIPA 1"
-                                    className="w-full bg-slate-800/80 border border-slate-700 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 text-white rounded-xl py-2 pl-10 pr-3 text-sm outline-none transition-all placeholder:text-slate-500"
-                                />
-                            </div>
+                    {/* Asal Sekolah */}
+                    <div>
+                        <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">
+                            Asal Sekolah <span className="text-red-400">*</span>
+                        </label>
+                        <div className="relative">
+                            <School className="w-4 h-4 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                            <input
+                                type="text"
+                                required
+                                value={schoolName}
+                                onChange={(e) => setSchoolName(e.target.value)}
+                                placeholder="Nama Sekolah / Madrasah"
+                                className="w-full bg-slate-800/80 border border-slate-700 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 text-white rounded-xl py-2 pl-10 pr-4 text-sm outline-none transition-all placeholder:text-slate-500"
+                            />
                         </div>
                     </div>
 
@@ -259,7 +239,7 @@ export default function SignupPage() {
                             Daftar dengan Akun Google
                         </h3>
                         <p className="text-xs text-slate-400 mb-4">
-                            Masukkan email Google, asal sekolah, dan kelas Anda untuk mendaftar otomatis sebagai Siswa.
+                            Masukkan email Google dan asal sekolah Anda untuk mendaftar otomatis sebagai Siswa.
                         </p>
 
                         <div className="space-y-3">
@@ -296,17 +276,6 @@ export default function SignupPage() {
                                 />
                             </div>
 
-                            <div>
-                                <label className="block text-[11px] text-slate-400 mb-1">Kelas (Opsional):</label>
-                                <input
-                                    type="text"
-                                    value={className}
-                                    onChange={(e) => setClassName(e.target.value)}
-                                    placeholder="Contoh: XII MIPA 1"
-                                    className="w-full bg-slate-800 border border-slate-700 text-white text-xs rounded-xl px-3 py-2 outline-none focus:border-blue-500"
-                                />
-                            </div>
-
                             <button
                                 type="button"
                                 onClick={() => {
@@ -317,7 +286,7 @@ export default function SignupPage() {
                                     setShowGoogleModal(false);
                                     handleSignup(undefined, { email: googleEmail, name: googleName });
                                 }}
-                                className="w-full mt-2 py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-semibold transition-all shadow"
+                                className="w-full mt-2 py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-semibold transition-all shadow cursor-pointer"
                             >
                                 Daftar Sekarang
                             </button>
@@ -325,7 +294,7 @@ export default function SignupPage() {
                             <button
                                 type="button"
                                 onClick={() => setShowGoogleModal(false)}
-                                className="w-full py-2 text-xs text-slate-400 hover:text-white"
+                                className="w-full py-2 text-xs text-slate-400 hover:text-white cursor-pointer"
                             >
                                 Batal
                             </button>

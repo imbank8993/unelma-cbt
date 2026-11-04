@@ -56,11 +56,6 @@ export class SignupDto extends ClientMetaDto {
   @IsNotEmpty({ message: 'Asal sekolah wajib diisi' })
   schoolName!: string;
 
-  @ApiPropertyOptional({ example: 'XII MIPA 1' })
-  @IsOptional()
-  @IsString()
-  className?: string;
-
   @ApiPropertyOptional()
   @IsOptional()
   @IsString()

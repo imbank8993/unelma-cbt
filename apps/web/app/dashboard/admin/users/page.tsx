@@ -6,7 +6,6 @@ import {
     Users, 
     School,
     Shield, 
-    ShieldAlert, 
     UserCheck, 
     Search, 
     RefreshCw, 
@@ -15,7 +14,7 @@ import {
     ArrowLeft,
     Sparkles,
     GraduationCap,
-    BookOpen
+    Trash2
 } from 'lucide-react';
 import { Spinner } from '@/app/components/ui/Spinner';
 
@@ -25,7 +24,6 @@ interface ManagedUser {
     fullName: string;
     avatarUrl: string | null;
     schoolName: string | null;
-    className: string | null;
     isSuperadmin: boolean;
     isPlatformAdmin: boolean;
     roles: string[];
@@ -82,11 +80,36 @@ export default function AdminUsersPage() {
         }
     };
 
+    const handleDeleteUser = async (userId: string, targetEmail: string) => {
+        if (!confirm(`Apakah Anda yakin ingin menghapus akun ${targetEmail}? Seluruh profil dan data akun ini akan dihapus permanen.`)) {
+            return;
+        }
+
+        setActionLoadingId(userId);
+        setToastMsg(null);
+        try {
+            const res = await fetch(`/api/auth/admin/users/${encodeURIComponent(userId)}`, {
+                method: 'DELETE',
+            });
+            const json = await res.json();
+            if (!res.ok || !json.success) {
+                throw new Error(json.error || 'Gagal menghapus pengguna.');
+            }
+            setToastMsg({ type: 'success', text: `Pengguna ${targetEmail} berhasil dihapus.` });
+            await loadUsers();
+        } catch (err) {
+            setToastMsg({ type: 'error', text: (err as Error).message });
+        } finally {
+            setActionLoadingId(null);
+        }
+    };
+
     const filteredUsers = users.filter((u) => {
         const query = search.toLowerCase();
         return (
             (u.email || '').toLowerCase().includes(query) ||
             (u.fullName || '').toLowerCase().includes(query) ||
+            (u.schoolName || '').toLowerCase().includes(query) ||
             u.roles.some((r) => r.toLowerCase().includes(query))
         );
     });
@@ -95,23 +118,35 @@ export default function AdminUsersPage() {
         if (u.isSuperadmin) return 'Superadmin';
         if (u.isPlatformAdmin || u.roles.some(r => r.toUpperCase() === 'ADMIN')) return 'Admin';
         if (u.roles.some(r => r.toUpperCase() === 'PROKTOR')) return 'Proktor';
-        if (u.roles.some(r => r.toUpperCase() === 'GURU')) return 'Guru';
-        if (u.roles.some(r => r.toUpperCase() === 'PENGAWAS')) return 'Pengawas';
         return 'Siswa';
     };
 
     const getRoleBadge = (role: string) => {
         switch (role.toUpperCase()) {
             case 'SUPERADMIN':
-                return <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-purple-500/10 text-purple-600 border border-purple-500/20"><Sparkles className="w-3.5 h-3.5" /> Superadmin</span>;
+                return (
+                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-purple-500/10 text-purple-600 border border-purple-500/20">
+                        <Sparkles className="w-3.5 h-3.5" /> Superadmin
+                    </span>
+                );
             case 'ADMIN':
-                return <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-blue-500/10 text-blue-600 border border-blue-500/20"><Shield className="w-3.5 h-3.5" /> Admin</span>;
+                return (
+                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-blue-500/10 text-blue-600 border border-blue-500/20">
+                        <Shield className="w-3.5 h-3.5" /> Admin
+                    </span>
+                );
             case 'PROKTOR':
-                return <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-amber-500/10 text-amber-600 border border-amber-500/20"><UserCheck className="w-3.5 h-3.5" /> Proktor</span>;
-            case 'GURU':
-                return <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-500/10 text-emerald-600 border border-emerald-500/20"><BookOpen className="w-3.5 h-3.5" /> Guru</span>;
+                return (
+                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-amber-500/10 text-amber-600 border border-amber-500/20">
+                        <UserCheck className="w-3.5 h-3.5" /> Proktor
+                    </span>
+                );
             default:
-                return <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-slate-100 text-slate-600 border border-slate-200"><GraduationCap className="w-3.5 h-3.5" /> Siswa</span>;
+                return (
+                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-slate-100 text-slate-600 border border-slate-200">
+                        <GraduationCap className="w-3.5 h-3.5" /> Siswa
+                    </span>
+                );
         }
     };
 
@@ -135,7 +170,7 @@ export default function AdminUsersPage() {
                                 Manajemen Pengguna & Penunjukan Peran
                             </h1>
                             <p className="text-sm text-slate-500 mt-1">
-                                Superadmin dapat menunjuk akun terdaftar sebagai Admin, Proktor, Guru, atau Siswa.
+                                Kelola hak akses aplikasi: <strong>Admin</strong>, <strong>Proktor</strong>, dan <strong>Siswa</strong>.
                             </p>
                         </div>
 
@@ -187,8 +222,8 @@ export default function AdminUsersPage() {
                         </div>
                     </div>
                     <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
-                        <span className="text-xs uppercase tracking-wider text-emerald-500 font-semibold">Guru & Siswa</span>
-                        <div className="text-2xl font-bold text-emerald-600 mt-1">
+                        <span className="text-xs uppercase tracking-wider text-slate-500 font-semibold">Siswa</span>
+                        <div className="text-2xl font-bold text-slate-700 mt-1">
                             {users.filter(u => !u.isPlatformAdmin && !u.roles.some(r => ['ADMIN', 'PROKTOR'].includes(r.toUpperCase()))).length}
                         </div>
                     </div>
@@ -203,7 +238,7 @@ export default function AdminUsersPage() {
                                 type="text"
                                 value={search}
                                 onChange={(e) => setSearch(e.target.value)}
-                                placeholder="Cari nama, email, atau peran..."
+                                placeholder="Cari nama, email, sekolah..."
                                 className="w-full bg-slate-50 border border-slate-200 focus:border-blue-500 focus:bg-white text-slate-800 rounded-xl py-2 pl-10 pr-4 text-sm outline-none transition-all placeholder:text-slate-400"
                             />
                         </div>
@@ -228,10 +263,10 @@ export default function AdminUsersPage() {
                                 <thead>
                                     <tr className="bg-slate-50/70 border-b border-slate-200 text-xs font-semibold text-slate-500 uppercase tracking-wider">
                                         <th className="py-3.5 px-6">Pengguna</th>
-                                        <th className="py-3.5 px-6">Asal Sekolah & Kelas</th>
+                                        <th className="py-3.5 px-6">Asal Sekolah</th>
                                         <th className="py-3.5 px-6">Peran Saat Ini</th>
                                         <th className="py-3.5 px-6">Terdaftar Pada</th>
-                                        <th className="py-3.5 px-6 text-right">Tunjuk Peran</th>
+                                        <th className="py-3.5 px-6 text-right">Aksi & Peran</th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-slate-100 text-sm">
@@ -272,12 +307,8 @@ export default function AdminUsersPage() {
                                                         <School className="w-4 h-4 text-slate-400 shrink-0" />
                                                         <span>{u.schoolName || '-'}</span>
                                                     </div>
-                                                    {u.className && (
-                                                        <div className="text-xs text-slate-500 mt-0.5 ml-5">
-                                                            Kelas: <span className="font-semibold text-slate-700">{u.className}</span>
-                                                        </div>
-                                                    )}
                                                 </td>
+
                                                 <td className="py-4 px-6">
                                                     {getRoleBadge(primaryRole)}
                                                 </td>
@@ -292,24 +323,32 @@ export default function AdminUsersPage() {
 
                                                 <td className="py-4 px-6 text-right">
                                                     {u.isSuperadmin ? (
-                                                        <span className="text-xs font-semibold text-purple-600 bg-purple-50 px-3 py-1.5 rounded-lg border border-purple-200">
-                                                            Pemilik Utama
+                                                        <span className="text-xs font-semibold text-purple-700 bg-purple-100/80 px-3 py-1.5 rounded-lg border border-purple-200">
+                                                            Pemilik Utama (Kebal)
                                                         </span>
                                                     ) : (
-                                                        <div className="inline-flex items-center gap-2">
+                                                        <div className="inline-flex items-center justify-end gap-2">
                                                             {isActionLoading && <div className="w-4 h-4 border-2 border-blue-600/30 border-t-blue-600 rounded-full animate-spin" />}
                                                             <select
                                                                 disabled={isActionLoading}
-                                                                value={primaryRole}
+                                                                value={primaryRole === 'Superadmin' ? 'Admin' : primaryRole}
                                                                 onChange={(e) => handleRoleChange(u.id, u.email, e.target.value)}
                                                                 className="bg-white border border-slate-300 hover:border-blue-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 text-slate-700 font-medium text-xs rounded-xl px-3 py-1.5 outline-none transition-all cursor-pointer shadow-sm"
                                                             >
                                                                 <option value="Admin">Admin</option>
                                                                 <option value="Proktor">Proktor</option>
-                                                                <option value="Guru">Guru</option>
-                                                                <option value="Pengawas">Pengawas</option>
                                                                 <option value="Siswa">Siswa</option>
                                                             </select>
+
+                                                            <button
+                                                                type="button"
+                                                                disabled={isActionLoading}
+                                                                onClick={() => handleDeleteUser(u.id, u.email)}
+                                                                title={`Hapus pengguna ${u.email}`}
+                                                                className="p-1.5 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 border border-transparent hover:border-red-200 transition-all cursor-pointer disabled:opacity-40"
+                                                            >
+                                                                <Trash2 className="w-4 h-4" />
+                                                            </button>
                                                         </div>
                                                     )}
                                                 </td>
