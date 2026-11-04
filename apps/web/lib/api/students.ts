@@ -205,6 +205,8 @@ export interface StudentExam {
     title: string;
     exam_type: string;
     duration_minutes: number;
+    is_paid?: boolean;
+    token_price?: number;
     metadata?: {
         is_safe_mode?: boolean;
         max_violations?: number | null;

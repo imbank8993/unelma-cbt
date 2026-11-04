@@ -99,6 +99,8 @@ interface ExamFormData {
     pasSchoolYear: string;
     pasStartDate: string;
     pasEndDate: string;
+    isPaid: boolean;
+    tokenPrice: number;
 }
 
 const DEFAULT_FORM_DATA: ExamFormData = {
@@ -123,6 +125,8 @@ const DEFAULT_FORM_DATA: ExamFormData = {
     classAssignments: {},
     scoringTypes: ['classical'],
     isForever: false,
+    isPaid: false,
+    tokenPrice: 1,
     isPublic: false,
     documentUrl: '',
     videoUrl: '',
@@ -242,6 +246,8 @@ export const CreateExamModal: React.FC<CreateExamModalProps> = ({
                 pasSchoolYear: '',
                 pasStartDate: todayDate,
                 pasEndDate: todayDate,
+                isPaid: Boolean((exam as any)?.is_paid),
+                tokenPrice: Number((exam as any)?.token_price) || 1,
             };
             setFormData(initFormData);
 
@@ -545,6 +551,8 @@ export const CreateExamModal: React.FC<CreateExamModalProps> = ({
                 allowFileUpload: formData.examType === 'assignment' ? formData.allowFileUpload : undefined,
                 allowedFileTypes: formData.examType === 'assignment' && formData.allowFileUpload ? formData.allowedFileTypes : undefined,
                 requireBank: formData.examType === 'assignment' ? formData.requireBank : true,
+                isPaid: formData.isPaid,
+                tokenPrice: formData.isPaid ? formData.tokenPrice : 0,
             };
 
             let targetExamId = exam?.id;
@@ -1334,6 +1342,45 @@ export const CreateExamModal: React.FC<CreateExamModalProps> = ({
                                     </label>
                             </fieldset>
                         )}
+                        </div>
+
+                        {/* Pengaturan Akses Berbayar / Token */}
+                        <div className="border-t border-slate-100 pt-4">
+                            <label className="flex items-center gap-2 cursor-pointer">
+                                <input
+                                    type="checkbox"
+                                    checked={formData.isPaid}
+                                    onChange={(e) => setFormData((prev) => ({ ...prev, isPaid: e.target.checked }))}
+                                    className="w-4 h-4 rounded border-slate-300 text-amber-500 focus:ring-amber-500/20"
+                                />
+                                <span className="text-xs font-semibold text-slate-700 flex items-center gap-1.5">
+                                    Akses Berbayar (Memerlukan Token Siswa)
+                                </span>
+                            </label>
+                            {formData.isPaid && (
+                                <div className="mt-3 ml-6 flex flex-wrap items-center gap-3">
+                                    <label className="text-xs text-slate-600 font-medium">
+                                        Biaya Pembukaan:
+                                    </label>
+                                    <div className="flex items-center gap-1.5">
+                                        <input
+                                            type="number"
+                                            min={1}
+                                            max={999}
+                                            value={formData.tokenPrice}
+                                            onChange={(e) => setFormData((prev) => ({
+                                                ...prev,
+                                                tokenPrice: Math.max(1, Number(e.target.value) || 1),
+                                            }))}
+                                            className="w-20 rounded-md border border-slate-200 bg-white px-2 py-1 text-center font-bold text-amber-600 text-sm focus:border-amber-400 focus:outline-none"
+                                        />
+                                        <span className="text-xs font-bold text-amber-600">Token</span>
+                                    </div>
+                                    <span className="text-[11px] text-slate-400">
+                                        (Otomatis dipotong dari saldo siswa saat membuka ujian)
+                                    </span>
+                                </div>
+                            )}
                         </div>
                     </div>
                         </>

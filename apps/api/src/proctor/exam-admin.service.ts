@@ -252,6 +252,8 @@ export class ExamAdminService {
                 status: 'draft',
                 created_by: user.id,
                 scoring_type: dto.scoringType || 'classical',
+                is_paid: dto.isPaid ?? false,
+                token_price: dto.tokenPrice ?? 0,
                 metadata: this.buildMetadata(examType, dto, {}),
             },
         });
@@ -346,6 +348,8 @@ export class ExamAdminService {
                     randomize_options: dto.randomizeOptions ?? true,
                     show_results: dto.showResults ?? false,
                     scoring_type: dto.scoringType || 'classical',
+                is_paid: dto.isPaid ?? false,
+                token_price: dto.tokenPrice ?? 0,
                     // Selalu ditulis, termasuk saat kosong: mengosongkan jadwal
                     // adalah perubahan yang sah, dan melewatkannya membuat jadwal
                     // lama tertinggal.

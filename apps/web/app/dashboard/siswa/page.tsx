@@ -26,10 +26,12 @@ FileText,
 Ghost,
 Timer,
 TrendingUp,
-Zap
+Zap,
+Coins
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useCallback,useEffect,useRef,useState } from 'react';
+import { getUserTokenBalance } from '@/lib/api/tokens';
 
 export default function SiswaDashboard() {
     const { timeZone, error: timeZoneError } = useSchoolTimeZone();
@@ -39,6 +41,7 @@ export default function SiswaDashboard() {
     const [loadError, setLoadError] = useState('');
     const [now, setNow] = useState(NaN);
     const [announcements, setAnnouncements] = useState<Announcement[]>([]);
+    const [tokenBalance, setTokenBalance] = useState<number>(0);
     const router = useRouter();
     const inFlight = useRef(false);
     const clock = useRef<{ time: number; tick: number } | null>(null);
@@ -62,13 +65,17 @@ export default function SiswaDashboard() {
             setExams(response.exams);
             setLoadError('');
 
-            const [resultResponse, announcementResponse] = await Promise.allSettled([
+            const [resultResponse, announcementResponse, tokenResponse] = await Promise.allSettled([
                 getStudentResultsAction(),
                 getSetting<Announcement | Announcement[]>('announcement_config'),
+                getUserTokenBalance(),
             ]);
             if (resultResponse.status === 'fulfilled') setResults(resultResponse.value);
             if (announcementResponse.status === 'fulfilled') {
                 setAnnouncements(pickAnnouncements(announcementResponse.value, 'show_siswa'));
+            }
+            if (tokenResponse.status === 'fulfilled' && tokenResponse.value.success) {
+                setTokenBalance(tokenResponse.value.tokenBalance);
             }
         } catch (error) {
             clock.current = null;
@@ -223,7 +230,7 @@ export default function SiswaDashboard() {
             )}
 
             {/* ── Stats Grid ── */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <StudentScoreAverages results={results} />
 
                 {/* Ujian Selesai */}
@@ -238,6 +245,26 @@ export default function SiswaDashboard() {
                             <p className="text-2xl font-black text-slate-800 leading-none font-mono">{completedExamsCount}</p>
                         </div>
                     </div>
+                </div>
+
+                {/* Saldo Token */}
+                <div className="bg-white border border-slate-100 rounded-2xl p-5 hover:shadow-xl hover:shadow-amber-500/10 transition-all duration-300 relative overflow-hidden flex items-center justify-between gap-4">
+                    <div className="absolute left-0 top-0 h-full w-1.5 bg-amber-500" />
+                    <div className="flex items-center gap-3.5">
+                        <div className="w-10 h-10 rounded-xl bg-amber-50 flex items-center justify-center text-amber-600 border border-amber-100/50">
+                            <Coins size={18} />
+                        </div>
+                        <div className="text-left">
+                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none mb-1.5">Saldo Token Anda</p>
+                            <p className="text-2xl font-black text-amber-600 leading-none font-mono">{tokenBalance} <span className="text-xs font-semibold text-slate-400 font-sans">Token</span></p>
+                        </div>
+                    </div>
+                    <button
+                        onClick={() => router.push('/dashboard/siswa/tokens')}
+                        className="px-3 py-1.5 bg-amber-500 hover:bg-amber-600 text-white text-[10px] font-bold rounded-xl transition-all shadow-sm active:scale-95 shrink-0"
+                    >
+                        Top Up
+                    </button>
                 </div>
             </div>
 

@@ -575,6 +575,8 @@ export interface ExamInput {
     allowFileUpload?: boolean;
     allowedFileTypes?: string[];
     requireBank?: boolean;
+    isPaid?: boolean;
+    tokenPrice?: number;
 }
 
 export function createExamAction(

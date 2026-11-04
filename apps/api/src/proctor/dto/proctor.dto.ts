@@ -170,6 +170,17 @@ class ExamFieldsDto {
     @IsOptional()
     @IsBoolean()
     requireBank?: boolean;
+
+    @ApiPropertyOptional({ default: false })
+    @IsOptional()
+    @IsBoolean()
+    isPaid?: boolean;
+
+    @ApiPropertyOptional({ default: 0 })
+    @IsOptional()
+    @IsInt()
+    @Min(0)
+    tokenPrice?: number;
 }
 
 export class CreateExamDto extends ExamFieldsDto {

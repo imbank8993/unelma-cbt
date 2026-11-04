@@ -11,7 +11,7 @@ export type DashboardRole = 'Siswa' | 'Proktor' | 'Guru' | 'Pengawas' | 'Admin' 
  * `platform_admins.is_superadmin` column.
  */
 export const SUPERADMIN_EMAILS: readonly string[] = [
-    'imbank8993@gmail.com',
+    'unelma.edu@gmail.com',
 ];
 
 export const ACTIVE_ROLE_STORAGE_KEY = 'acca_active_role_v2';

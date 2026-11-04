@@ -5,7 +5,6 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import LandingHeader from '@/app/components/landing/LandingHeader';
 import LandingHero from '@/app/components/landing/LandingHero';
-import LandingBankSoal from '@/app/components/landing/LandingBankSoal';
 import LandingTokenPackages from '@/app/components/landing/LandingTokenPackages';
 import LandingServices from '@/app/components/landing/LandingServices';
 import LandingPosts from '@/app/components/landing/LandingPosts';
@@ -173,10 +172,7 @@ export default function Home() {
             {/* 2. Hero Section */}
             <LandingHero currentUser={currentUser} />
 
-            {/* 3. Bank Soal Section */}
-            <LandingBankSoal />
-
-            {/* 4. Paket Token CBT */}
+            {/* 3. Paket Token CBT */}
             <LandingTokenPackages />
 
             {/* 5. Layanan Unggulan */}

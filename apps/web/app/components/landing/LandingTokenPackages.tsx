@@ -1,159 +1,223 @@
 "use client";
 
-import React from 'react';
-import { Ticket, Check, Sparkles, ArrowRight, ShieldCheck, Zap } from 'lucide-react';
-
-interface PackageItem {
-    id: string;
-    name: string;
-    tokens: number;
-    price: string;
-    badge?: string;
-    isPopular?: boolean;
-    description: string;
-    features: string[];
-}
-
-const PACKAGES: PackageItem[] = [
-    {
-        id: 'starter',
-        name: 'Paket Starter',
-        tokens: 100,
-        price: 'Rp 250.000',
-        description: 'Ideal untuk tryout kelas, ujian harian bertahap, atau evaluasi uji coba perdana.',
-        features: [
-            '100 Token Peserta Ujian',
-            'Akses Semua Jenis Butir Soal',
-            'Deteksi Kecurangan Standar',
-            'Analisis Nilai & Ekspor Excel',
-            'Masa Aktif 1 Semester'
-        ]
-    },
-    {
-        id: 'sekolah',
-        name: 'Paket Sekolah Unggulan',
-        tokens: 500,
-        price: 'Rp 950.000',
-        badge: 'Paling Populer',
-        isPopular: true,
-        description: 'Pilihan paling efisien untuk pelaksanaan PAS/PAT serentak satu jenjang madrasah.',
-        features: [
-            '500 Token Peserta Ujian',
-            'Dukungan Mode Proktor & Pengawas',
-            'Sinkronisasi Realtime Anti-Kecurangan',
-            'Bank Soal Terintegrasi',
-            'Ekspor Analisis Butir Soal IRT',
-            'Prioritas Bantuan Teknis'
-        ]
-    },
-    {
-        id: 'lembaga',
-        name: 'Paket Institusi / Yayasan',
-        tokens: 1500,
-        price: 'Rp 2.450.000',
-        badge: 'Kapasitas Besar',
-        description: 'Didesain untuk gabungan madrasah, KKM, atau yayasan pendidikan skala besar.',
-        features: [
-            '1.500+ Token Peserta Ujian',
-            'Manajemen Multi-Kelas & Jadwal Paralel',
-            'Kapasitas Server Dedicated Anti-Lag',
-            'Audit Keamanan Lengkap & Log Ujian',
-            'Dukungan Penuh Tim Ahli Unelma'
-        ]
-    }
-];
+import React, { useEffect, useState } from 'react';
+import Script from 'next/script';
+import { Ticket, Check, Sparkles, ArrowRight, ShieldCheck, Coins, Zap } from 'lucide-react';
+import { getPublicTokenPackages, createPayment, type TokenPackage } from '@/lib/api/tokens';
 
 export default function LandingTokenPackages() {
+    const [packages, setPackages] = useState<TokenPackage[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [purchasingId, setPurchasingId] = useState<string | null>(null);
+    const [feedback, setFeedback] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+
+    useEffect(() => {
+        let mounted = true;
+        getPublicTokenPackages().then((res) => {
+            if (!mounted) return;
+            if (res.success && res.packages && res.packages.length > 0) {
+                setPackages(res.packages);
+            } else {
+                // Fallback default starter packages
+                setPackages([
+                    { id: '1', name: 'Paket Starter', token_amount: 5, price_idr: 25000, description: '5 Token untuk mencoba modul ujian & bahan ajar favorit', is_active: true },
+                    { id: '2', name: 'Paket Standar', token_amount: 12, price_idr: 50000, description: '12 Token (Bonus 2 token) untuk persiapan belajar mingguan', is_active: true },
+                    { id: '3', name: 'Paket Premium', token_amount: 30, price_idr: 100000, description: '30 Token (Bonus 10 token) akses intensif semua modul & tryout', is_active: true },
+                ]);
+            }
+            setLoading(false);
+        }).catch(() => {
+            if (mounted) setLoading(false);
+        });
+
+        return () => { mounted = false; };
+    }, []);
+
+    const handleBuyToken = async (pkg: TokenPackage) => {
+        setPurchasingId(pkg.id);
+        setFeedback(null);
+
+        try {
+            const res = await createPayment({ package_id: pkg.id });
+            if (!res.success) {
+                if (res.error?.includes('Email') || res.error?.includes('login')) {
+                    window.location.href = `/login?redirect=/#paket-token`;
+                    return;
+                }
+                throw new Error(res.error || 'Gagal memulai transaksi Midtrans.');
+            }
+            if (!res.snap_token) {
+                throw new Error('Token pembayaran tidak valid.');
+            }
+
+            // Buka Midtrans Snap
+            if (typeof window !== 'undefined' && (window as any).snap) {
+                (window as any).snap.pay(res.snap_token, {
+                    onSuccess: () => {
+                        setFeedback({ type: 'success', text: `Pembayaran ${pkg.name} berhasil! Saldo token telah ditambahkan.` });
+                    },
+                    onPending: () => {
+                        setFeedback({ type: 'success', text: 'Transaksi berhasil dibuat. Silakan selesaikan pembayaran sesuai instruksi.' });
+                    },
+                    onError: () => {
+                        setFeedback({ type: 'error', text: 'Pembayaran dibatalkan atau gagal.' });
+                    },
+                    onClose: () => {
+                        setPurchasingId(null);
+                    }
+                });
+            } else if (res.redirect_url) {
+                window.location.href = res.redirect_url;
+            } else {
+                window.location.href = `/login?redirect=/#paket-token`;
+            }
+        } catch (err: any) {
+            setFeedback({ type: 'error', text: err.message || 'Terjadi kesalahan sistem.' });
+        } finally {
+            setPurchasingId(null);
+        }
+    };
+
     return (
-        <section id="token" className="py-20 md:py-28 bg-white relative overflow-hidden">
+        <section id="paket-token" className="py-20 md:py-28 bg-slate-50 relative overflow-hidden">
+            <Script
+                src="https://app.sandbox.midtrans.com/snap/snap.js"
+                strategy="lazyOnload"
+                data-client-key={process.env.NEXT_PUBLIC_MIDTRANS_CLIENT_KEY || ''}
+            />
+
             <div className="container mx-auto px-4 md:px-6 relative z-10">
                 
-                {/* Header */}
-                <div className="max-w-3xl mx-auto text-center space-y-4 mb-16">
-                    <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#F8A01B]/15 text-[#b36c03] text-xs font-bold uppercase tracking-wider">
-                        <Ticket size={14} className="text-[#F8A01B]" />
-                        <span>Kapasitas Fleksibel</span>
+                {/* Header Title */}
+                <div className="text-center max-w-3xl mx-auto mb-14 space-y-4">
+                    <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#030C4D]/5 border border-[#030C4D]/10 text-[#030C4D] text-xs font-bold uppercase tracking-wider">
+                        <Coins size={14} className="text-[#F8A01B]" />
+                        <span>Sistem Koin Token Terpadu</span>
                     </div>
-                    <h2 className="text-3xl sm:text-4xl font-black text-[#030C4D] tracking-tight">
-                        Paket Token CBT Sesuai Kebutuhan
+
+                    <h2 className="text-3xl md:text-4xl lg:text-5xl font-black text-slate-900 tracking-tight">
+                        Pilihan Paket <span className="text-[#F8A01B]">Token Unelma</span>
                     </h2>
-                    <p className="text-slate-600 text-sm sm:text-base leading-relaxed">
-                        Bayar sesuai kuota token yang digunakan oleh madrasah Anda. Tanpa biaya instalasi server rumit.
+
+                    <p className="text-sm md:text-base text-slate-600 leading-relaxed">
+                        Beli token sesuai kebutuhan belajar Anda. Token digunakan untuk membuka akses modul ujian dan bahan ajar eksklusif di dashboard siswa.
                     </p>
+
+                    {feedback && (
+                        <div className={`p-4 rounded-xl text-sm font-semibold max-w-lg mx-auto ${feedback.type === 'success' ? 'bg-emerald-50 text-emerald-800 border border-emerald-200' : 'bg-red-50 text-red-800 border border-red-200'}`}>
+                            {feedback.text}
+                        </div>
+                    )}
                 </div>
 
-                {/* Cards Grid */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto items-stretch">
-                    {PACKAGES.map((pkg) => (
-                        <div
-                            key={pkg.id}
-                            className={`rounded-3xl p-7 sm:p-8 flex flex-col justify-between transition-all duration-300 relative ${
-                                pkg.isPopular
-                                    ? 'bg-[#030C4D] text-white shadow-2xl shadow-[#030C4D]/30 border-2 border-[#F8A01B] scale-100 md:-translate-y-2'
-                                    : 'bg-white text-slate-800 border border-slate-200 shadow-sm hover:shadow-lg'
-                            }`}
-                        >
-                            {pkg.badge && (
-                                <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 px-4 py-1 rounded-full bg-[#F8A01B] text-[#030C4D] text-[11px] font-black uppercase tracking-wider shadow-md">
-                                    {pkg.badge}
-                                </div>
-                            )}
-
-                            <div>
-                                <div className="space-y-2 mb-6">
-                                    <h3 className={`text-xl font-black tracking-tight ${pkg.isPopular ? 'text-white' : 'text-[#030C4D]'}`}>
-                                        {pkg.name}
-                                    </h3>
-                                    <p className={`text-xs leading-relaxed ${pkg.isPopular ? 'text-white/80' : 'text-slate-500'}`}>
-                                        {pkg.description}
-                                    </p>
-                                </div>
-
-                                <div className="mb-6 pb-6 border-b border-slate-100 dark:border-white/10">
-                                    <div className="flex items-baseline gap-1">
-                                        <span className="text-3xl sm:text-4xl font-black tracking-tight">
-                                            {pkg.price}
-                                        </span>
-                                    </div>
-                                    <span className={`text-xs font-semibold ${pkg.isPopular ? 'text-[#F8A01B]' : 'text-[#030C4D]'}`}>
-                                        Termasuk {pkg.tokens} Token Ujian Siswa
-                                    </span>
-                                </div>
-
-                                {/* Feature List */}
-                                <ul className="space-y-3.5 mb-8">
-                                    {pkg.features.map((feat, idx) => (
-                                        <li key={idx} className="flex items-start gap-3 text-xs sm:text-sm">
-                                            <div className={`w-4 h-4 rounded-full flex items-center justify-center shrink-0 mt-0.5 ${
-                                                pkg.isPopular ? 'bg-[#F8A01B] text-[#030C4D]' : 'bg-blue-50 text-[#030C4D]'
-                                            }`}>
-                                                <Check size={11} strokeWidth={3} />
-                                            </div>
-                                            <span className={pkg.isPopular ? 'text-white/90' : 'text-slate-600'}>
-                                                {feat}
-                                            </span>
-                                        </li>
-                                    ))}
-                                </ul>
-                            </div>
-
-                            <div>
-                                <a
-                                    href="https://wa.me/6281234567890?text=Halo%20Unelma%20Edu,%20saya%20tertarik%20konsultasi%20paket%20token%20CBT"
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className={`w-full py-3.5 px-4 rounded-xl font-bold text-xs uppercase tracking-wider transition-all flex items-center justify-center gap-2 cursor-pointer shadow-md ${
-                                        pkg.isPopular
-                                            ? 'bg-[#F8A01B] hover:bg-[#e08e15] text-[#030C4D] shadow-[#F8A01B]/20'
-                                            : 'bg-[#030C4D] hover:bg-[#020510] text-white shadow-[#030C4D]/20'
+                {/* Packages Grid */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8 max-w-6xl mx-auto">
+                    {loading ? (
+                        [1, 2, 3].map((i) => (
+                            <div key={i} className="h-96 rounded-3xl bg-white border border-slate-200/80 animate-pulse p-8" />
+                        ))
+                    ) : (
+                        packages.map((pkg, idx) => {
+                            const isFeatured = idx === 1 || packages.length === 1;
+                            return (
+                                <div
+                                    key={pkg.id}
+                                    className={`relative rounded-3xl transition-all duration-300 flex flex-col justify-between overflow-hidden ${
+                                        isFeatured
+                                            ? 'bg-gradient-to-b from-[#030C4D] to-[#0a1a5c] text-white shadow-2xl shadow-[#030C4D]/25 ring-2 ring-[#F8A01B] md:-translate-y-3'
+                                            : 'bg-white text-slate-800 border border-slate-200/80 shadow-lg hover:shadow-xl'
                                     }`}
                                 >
-                                    <span>Pesan Paket Token</span>
-                                    <ArrowRight size={14} />
-                                </a>
-                            </div>
-                        </div>
-                    ))}
+                                    {isFeatured && (
+                                        <div className="bg-[#F8A01B] text-[#030C4D] font-extrabold text-[11px] uppercase tracking-wider py-1.5 px-4 text-center">
+                                            Paling Populer & Hemat
+                                        </div>
+                                    )}
+
+                                    <div className="p-7 sm:p-8 space-y-6">
+                                        <div className="flex items-center justify-between">
+                                            <div className="space-y-1">
+                                                <h3 className="text-xl font-bold tracking-tight">
+                                                    {pkg.name}
+                                                </h3>
+                                                <p className={`text-xs ${isFeatured ? 'text-white/70' : 'text-slate-500'}`}>
+                                                    {pkg.description || 'Akses ujian dan bahan ajar terstruktur'}
+                                                </p>
+                                            </div>
+                                            <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 ${isFeatured ? 'bg-white/10 text-[#F8A01B]' : 'bg-[#030C4D]/5 text-[#030C4D]'}`}>
+                                                <Coins size={24} />
+                                            </div>
+                                        </div>
+
+                                        {/* Token Amount Badge */}
+                                        <div className="flex items-baseline gap-2">
+                                            <span className="text-4xl md:text-5xl font-black tracking-tight text-[#F8A01B]">
+                                                {pkg.token_amount}
+                                            </span>
+                                            <span className={`text-sm font-semibold uppercase tracking-wider ${isFeatured ? 'text-white/70' : 'text-slate-500'}`}>
+                                                Token Koin
+                                            </span>
+                                        </div>
+
+                                        <div className="pt-2 border-t border-slate-100/10">
+                                            <div className="text-xs uppercase tracking-wider font-semibold opacity-70 mb-1">
+                                                Harga Paket
+                                            </div>
+                                            <div className="text-2xl sm:text-3xl font-extrabold">
+                                                Rp {Number(pkg.price_idr).toLocaleString('id-ID')}
+                                            </div>
+                                        </div>
+
+                                        {/* Features List */}
+                                        <ul className="space-y-3 text-xs sm:text-sm pt-2">
+                                            <li className="flex items-center gap-2.5">
+                                                <Check size={16} className="text-[#F8A01B] shrink-0" />
+                                                <span>Akses bahan ajar dan modul PDF</span>
+                                            </li>
+                                            <li className="flex items-center gap-2.5">
+                                                <Check size={16} className="text-[#F8A01B] shrink-0" />
+                                                <span>Dapat digunakan untuk ujian berbayar</span>
+                                            </li>
+                                            <li className="flex items-center gap-2.5">
+                                                <Check size={16} className="text-[#F8A01B] shrink-0" />
+                                                <span>Masa aktif saldo selamanya (tanpa hangus)</span>
+                                            </li>
+                                            <li className="flex items-center gap-2.5">
+                                                <Check size={16} className="text-[#F8A01B] shrink-0" />
+                                                <span>Pembayaran instan QRIS, VA, & E-Wallet via Midtrans</span>
+                                            </li>
+                                        </ul>
+                                    </div>
+
+                                    {/* Action Button */}
+                                    <div className="p-7 sm:p-8 pt-0">
+                                        <button
+                                            type="button"
+                                            onClick={() => handleBuyToken(pkg)}
+                                            disabled={purchasingId === pkg.id}
+                                            className={`w-full py-3.5 px-4 rounded-xl font-bold text-sm transition-all shadow-md flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60 ${
+                                                isFeatured
+                                                    ? 'bg-[#F8A01B] hover:bg-[#e08e15] text-[#030C4D]'
+                                                    : 'bg-[#030C4D] hover:bg-[#020510] text-white'
+                                            }`}
+                                        >
+                                            <Zap size={16} />
+                                            <span>{purchasingId === pkg.id ? 'Memproses...' : 'Beli Paket Sekarang'}</span>
+                                            <ArrowRight size={16} />
+                                        </button>
+                                    </div>
+                                </div>
+                            );
+                        })
+                    )}
+                </div>
+
+                {/* Bottom Assurance Note */}
+                <div className="mt-14 max-w-2xl mx-auto text-center bg-white rounded-2xl p-6 border border-slate-200/80 shadow-sm flex flex-col sm:flex-row items-center justify-center gap-4 text-xs text-slate-600">
+                    <ShieldCheck size={28} className="text-[#030C4D] shrink-0" />
+                    <p className="text-left">
+                        Transaksi aman didukung oleh payment gateway <strong>Midtrans</strong> resmi. Saldo token otomatis bertambah seketika setelah pembayaran terverifikasi.
+                    </p>
                 </div>
 
             </div>

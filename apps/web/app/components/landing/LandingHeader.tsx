@@ -26,11 +26,10 @@ export default function LandingHeader({ currentUser }: LandingHeaderProps) {
     const bgColor = isScrolled ? 'bg-white/95 backdrop-blur-md shadow-md border-b border-slate-100' : 'bg-transparent';
 
     const menuItems = [
-        { name: 'Home', href: '#home', icon: Home },
-        { name: 'Bank Soal', href: '#bank-soal', icon: BookOpen },
-        { name: 'Paket Token', href: '#token', icon: Ticket },
+        { name: 'Beranda', href: '#home', icon: Home },
+        { name: 'Paket Token', href: '#paket-token', icon: Ticket },
         { name: 'Layanan', href: '#layanan', icon: Package },
-        { name: 'Informasi', href: '#posts', icon: FileText },
+        { name: 'Artikel', href: '#posts', icon: FileText },
         { name: 'Kontak', href: '#footer', icon: MessageCircle },
     ];
 

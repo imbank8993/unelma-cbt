@@ -79,7 +79,7 @@ export default function LoginPage() {
             await handleGoogleAuth(payload.email, payload.name, payload.picture);
         } catch (err) {
             setErrorMsg('Gagal memproses autentikasi Google.');
-            setShowGoogleModal(true);
+            setErrorMsg('Sedang memuat layanan Google. Silakan klik kembali atau muat ulang halaman.');
         }
     };
 
@@ -102,14 +102,14 @@ export default function LoginPage() {
             try {
                 googleObj.accounts.id.prompt((notification) => {
                     if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
-                        setShowGoogleModal(true);
+                        setErrorMsg('Pop-up Google tertutup atau belum dipilih. Silakan klik tombol masuk kembali.');
                     }
                 });
             } catch {
-                setShowGoogleModal(true);
+                setErrorMsg('Silakan pilih akun Google Anda pada jendela masuk yang muncul.');
             }
         } else {
-            setShowGoogleModal(true);
+            setErrorMsg('Sedang memuat layanan Google. Silakan klik kembali atau muat ulang halaman.');
         }
     };
 
@@ -248,7 +248,7 @@ export default function LoginPage() {
             </div>
 
             {/* Quick Google Test / Fallback Modal */}
-            {showGoogleModal && (
+            {false && (
                 <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
                     <div className="bg-slate-900 border border-slate-700 rounded-2xl max-w-md w-full p-6 shadow-2xl relative">
                         <h3 className="text-lg font-bold text-white mb-1 flex items-center gap-2">
@@ -263,17 +263,17 @@ export default function LoginPage() {
                         <div
                             onClick={() => {
                                 setShowGoogleModal(false);
-                                handleGoogleAuth('imbank8993@gmail.com', 'Superadmin');
+                                handleGoogleAuth('unelma.edu@gmail.com', 'Superadmin');
                             }}
                             className="p-3.5 rounded-xl border border-blue-500/30 bg-blue-500/10 hover:bg-blue-500/20 cursor-pointer transition-all flex items-center justify-between mb-3 group"
                         >
                             <div className="flex items-center gap-3">
                                 <div className="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center text-white font-bold text-sm shadow">
-                                    IM
+                                    UE
                                 </div>
                                 <div>
                                     <div className="text-sm font-semibold text-white flex items-center gap-2">
-                                        imbank8993@gmail.com
+                                        unelma.edu@gmail.com
                                         <span className="text-[10px] bg-blue-500 text-white px-2 py-0.5 rounded-full font-bold uppercase">
                                             Superadmin
                                         </span>

@@ -9,6 +9,7 @@ export interface LearningMaterial {
     file_name: string | null; file_size: number | null; revision: number; content_version: number; updated_at: string; completed?: boolean; materialUpdated?: boolean;
     /** Dari daftar: pemanggil boleh mengubah/menghapus (pemilik materi atau Admin). */
     canEdit?: boolean; created_by?: string;
+    is_paid?: boolean; token_price?: number;
 }
 export class LearningRequestError extends Error { constructor(message: string, public status: number) { super(message); } }
 export async function learningRequest<T>(path = '', init: RequestInit = {}): Promise<T> {
@@ -24,7 +25,7 @@ export async function saveMaterial(material: LearningMaterial, status = material
         coverData: material.cover_data || '', gradeLevel: material.grade_level || '', topic: material.topic || '', subtopic: material.subtopic || '',
         subtopicOrder: material.subtopic_order || 0,
         revision: material.revision, title: material.title, description: material.description, subject: material.subject,
-        status, format: material.format, contentHtml: material.content_html, conversionNotes: material.conversion_notes,
+        status, format: material.format, contentHtml: material.content_html, conversionNotes: material.conversion_notes, isPaid: material.is_paid ?? false, tokenPrice: material.token_price ?? 0,
     }) });
 }
 

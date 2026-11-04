@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import Script from 'next/script';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
-import { ArrowRight, ArrowDown, ShieldCheck, Sparkles, CheckCircle2, LayoutDashboard, LogIn } from 'lucide-react';
+import { ArrowRight, ArrowDown, ShieldCheck, Sparkles, CheckCircle2, LayoutDashboard, Coins, BookOpen } from 'lucide-react';
 import { setActiveRoleInStorage, lockActiveRole, getDashboardPath, type Role } from '@/lib/rbac';
 
 const GOOGLE_CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || '15496733034-vlkqs2ft95fgi3nnkbdm7eiq6i1ommem.apps.googleusercontent.com';
@@ -16,12 +16,11 @@ interface LandingHeroProps {
 export default function LandingHero({ currentUser }: LandingHeroProps) {
     const [loading, setLoading] = useState(false);
     const [errorMsg, setErrorMsg] = useState<string | null>(null);
-    const [showGoogleModal, setShowGoogleModal] = useState(false);
 
     const bullets = [
-        'Aplikasi CBT dan Bimbingan Belajar untuk mendukung proses pembelajaran serta evaluasi pengetahuan secara modern.',
-        'Layanan digital yang dapat disesuaikan dengan kebutuhan sekolah/madrasah dalam memperkuat tata kelola menuju Zona Integritas.',
-        'Autentikasi tunggal akun Google resmi — akses aman, instan, tanpa repot mengingat kata sandi tambahan.'
+        'Aplikasi CBT dan Bimbingan Belajar modern untuk mendukung proses pembelajaran serta evaluasi terstandar.',
+        'Akses materi bahan ajar terstruktur & modul ujian dengan sistem koin token yang fleksibel dan transparan.',
+        'Autentikasi tunggal akun Google resmi — akses cepat, aman, tanpa repot mengingat kata sandi tambahan.'
     ];
 
     const handleGoogleAuth = async (googleEmail: string, googleName: string, avatarUrl?: string) => {
@@ -70,8 +69,8 @@ export default function LandingHero({ currentUser }: LandingHeroProps) {
             const payload = JSON.parse(jsonPayload);
             await handleGoogleAuth(payload.email, payload.name, payload.picture);
         } catch {
-            setErrorMsg('Gagal memproses autentikasi Google.');
-            setShowGoogleModal(true);
+            setErrorMsg('Gagal memproses autentikasi akun Google.');
+            setLoading(false);
         }
     };
 
@@ -89,19 +88,20 @@ export default function LandingHero({ currentUser }: LandingHeroProps) {
     };
 
     const triggerGoogleSignIn = () => {
+        setErrorMsg(null);
         const googleObj = typeof window !== 'undefined' ? (window as unknown as { google?: { accounts?: { id: { prompt: (cb: (n: { isNotDisplayed: () => boolean; isSkippedMoment: () => boolean }) => void) => void } } } }).google : undefined;
         if (googleObj?.accounts?.id) {
             try {
                 googleObj.accounts.id.prompt((notification) => {
                     if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
-                        setShowGoogleModal(true);
+                        setErrorMsg('Jendela login Google tertutup atau belum dipilih. Silakan klik kembali.');
                     }
                 });
             } catch {
-                setShowGoogleModal(true);
+                setErrorMsg('Silakan gunakan tombol masuk di halaman login.');
             }
         } else {
-            setShowGoogleModal(true);
+            window.location.href = '/login';
         }
     };
 
@@ -137,7 +137,7 @@ export default function LandingHero({ currentUser }: LandingHeroProps) {
                         </div>
 
                         <h1 className="text-3xl sm:text-5xl md:text-6xl font-black text-white leading-[1.15] tracking-tight">
-                            Solusi Sukses <span className="text-[#F8A01B]">Madrasah</span>
+                            Unelma Edu <span className="text-[#F8A01B]">Indonesia</span>
                         </h1>
 
                         <ul className="space-y-4 max-w-2xl">
@@ -151,17 +151,19 @@ export default function LandingHero({ currentUser }: LandingHeroProps) {
 
                         <div className="flex flex-wrap items-center gap-4 pt-2">
                             <a
-                                href="#bank-soal"
+                                href="#paket-token"
                                 className="px-6 py-3 rounded-xl bg-[#F8A01B] hover:bg-[#e08e15] text-[#030C4D] font-bold text-sm transition-all shadow-lg shadow-[#F8A01B]/25 flex items-center gap-2 cursor-pointer"
                             >
-                                <span>Jelajahi Bank Soal</span>
+                                <Coins size={16} />
+                                <span>Lihat Paket Token</span>
                                 <ArrowRight size={16} />
                             </a>
                             <a
                                 href="#layanan"
-                                className="px-6 py-3 rounded-xl bg-white/10 hover:bg-white/20 border border-white/20 text-white font-semibold text-sm backdrop-blur-md transition-all cursor-pointer"
+                                className="px-6 py-3 rounded-xl bg-white/10 hover:bg-white/20 border border-white/20 text-white font-semibold text-sm backdrop-blur-md transition-all cursor-pointer flex items-center gap-2"
                             >
-                                Pelajari Layanan
+                                <BookOpen size={16} />
+                                <span>Layanan & Program</span>
                             </a>
                         </div>
                     </motion.div>
@@ -207,7 +209,7 @@ export default function LandingHero({ currentUser }: LandingHeroProps) {
                                             <ShieldCheck size={26} />
                                         </div>
                                         <h3 className="text-xl font-bold text-white tracking-tight">
-                                            Masuk ke Unelma CBT
+                                            Masuk ke Platform
                                         </h3>
                                         <p className="text-xs text-white/75 leading-relaxed">
                                             Gunakan akun Google resmi Anda untuk masuk atau mendaftar otomatis sebagai siswa.
@@ -237,7 +239,7 @@ export default function LandingHero({ currentUser }: LandingHeroProps) {
                                     </button>
 
                                     <div className="pt-2 text-center text-[11px] text-white/60 leading-relaxed">
-                                        Akun baru otomatis dibuat saat pertama kali masuk. Data foto & profil disinkronkan langsung dari Google.
+                                        Akun baru otomatis dibuat saat pertama kali masuk. Data foto & profil disinkronkan langsung dari akun Google Anda.
                                     </div>
                                 </div>
                             )}
@@ -250,7 +252,7 @@ export default function LandingHero({ currentUser }: LandingHeroProps) {
                 {/* Bottom Scroll Indicator */}
                 <div className="flex justify-center pt-8 md:pt-14">
                     <a
-                        href="#bank-soal"
+                        href="#paket-token"
                         className="w-10 h-10 rounded-full bg-white/10 hover:bg-[#F8A01B] text-white hover:text-[#030C4D] border border-white/20 flex items-center justify-center transition-all animate-bounce cursor-pointer shadow-lg"
                         aria-label="Scroll down"
                     >
@@ -258,53 +260,6 @@ export default function LandingHero({ currentUser }: LandingHeroProps) {
                     </a>
                 </div>
             </div>
-
-            {/* Quick Google Test / Fallback Modal */}
-            {showGoogleModal && (
-                <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4">
-                    <div className="bg-[#030C4D] border border-white/20 rounded-2xl max-w-md w-full p-6 shadow-2xl relative text-white">
-                        <h3 className="text-lg font-bold mb-1 flex items-center gap-2">
-                            <Sparkles className="w-5 h-5 text-[#F8A01B]" />
-                            Masuk Cepat Akun Google
-                        </h3>
-                        <p className="text-xs text-white/70 mb-4">
-                            Pilih akun untuk pengujian atau simulasi login Google:
-                        </p>
-
-                        <div
-                            onClick={() => {
-                                setShowGoogleModal(false);
-                                handleGoogleAuth('imbank8993@gmail.com', 'Superadmin');
-                            }}
-                            className="p-3.5 rounded-xl border border-white/20 bg-white/10 hover:bg-white/20 cursor-pointer transition-all flex items-center justify-between mb-3 group"
-                        >
-                            <div className="flex items-center gap-3">
-                                <div className="w-10 h-10 rounded-full bg-[#F8A01B] text-[#030C4D] flex items-center justify-center font-bold text-sm shadow">
-                                    IM
-                                </div>
-                                <div>
-                                    <div className="text-sm font-semibold flex items-center gap-2">
-                                        imbank8993@gmail.com
-                                        <span className="text-[10px] bg-[#F8A01B] text-[#030C4D] px-2 py-0.5 rounded-full font-bold uppercase">
-                                            Superadmin
-                                        </span>
-                                    </div>
-                                    <div className="text-xs text-white/60">Administrator Utama</div>
-                                </div>
-                            </div>
-                            <ArrowRight className="w-4 h-4 text-white/40 group-hover:text-white group-hover:translate-x-1 transition-all" />
-                        </div>
-
-                        <button
-                            type="button"
-                            onClick={() => setShowGoogleModal(false)}
-                            className="mt-2 w-full py-2 text-xs text-white/60 hover:text-white cursor-pointer"
-                        >
-                            Tutup
-                        </button>
-                    </div>
-                </div>
-            )}
         </section>
     );
 }

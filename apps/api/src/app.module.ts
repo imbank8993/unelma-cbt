@@ -22,6 +22,7 @@ import { SettingsModule } from './settings/settings.module';
 import { StorageModule } from './storage/storage.module';
 import { StudentsModule } from './students/students.module';
 import { TeachersModule } from './teachers/teachers.module';
+import { TokensModule } from './tokens/tokens.module';
 
 /**
  * Modul domain ditambahkan bertahap seiring server action dipindahkan.
@@ -53,6 +54,7 @@ import { TeachersModule } from './teachers/teachers.module';
     AnalyticsModule,
     LearningModule,
     ValidationsModule,
+    TokensModule,
   ],
 })
 export class AppModule {}

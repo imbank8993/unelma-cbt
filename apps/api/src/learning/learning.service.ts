@@ -13,7 +13,7 @@ export interface MaterialRow {
     rendered_pdf_key: string | null; conversion_notes: string; file_key: string | null; file_name: string | null; file_size: number | null;
     revision: number; content_version: number; created_at: string; updated_at: string; published_at: string | null;
 }
-const LIST_COLUMNS = 'subtopic_order, cover_data, id, organization_id, created_by, title, description, subject, grade_level, topic, subtopic, status, format, file_name, file_size, revision, content_version, created_at, updated_at, published_at';
+const LIST_COLUMNS = 'subtopic_order, cover_data, id, organization_id, created_by, title, description, subject, grade_level, topic, subtopic, status, format, file_name, file_size, revision, content_version, created_at, updated_at, published_at, is_paid, token_price';
 
 @Injectable()
 export class LearningService {
@@ -103,6 +103,8 @@ export class LearningService {
             content_version: (row.content_version || 1) + (row.content_html !== dto.contentHtml || row.format !== dto.format ? 1 : 0),
             revision: dto.revision + 1, updated_at: new Date().toISOString(),
             published_at: dto.status === 'published' ? (row.published_at || new Date().toISOString()) : null,
+            is_paid: dto.isPaid ?? (row as any).is_paid ?? false,
+            token_price: dto.tokenPrice ?? (row as any).token_price ?? 0,
         }).eq('id', id).eq('organization_id', org).eq('revision', dto.revision).select('*').maybeSingle();
         if (error) throw new InternalServerErrorException('Gagal menyimpan bahan ajar.');
         if (!data) throw new ConflictException('Materi telah berubah di tab lain. Muat ulang sebelum menyimpan.');

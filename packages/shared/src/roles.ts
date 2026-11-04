@@ -21,7 +21,7 @@ export type DashboardRole =
  * (termasuk menambah Admin baru); Admin biasa tidak bisa menambah Admin lain.
  */
 export const SUPERADMIN_EMAILS: readonly string[] = [
-  'imbank8993@gmail.com',
+  'unelma.edu@gmail.com',
 ];
 
 export const ROLE_PRIORITY: Record<DashboardRole, number> = {

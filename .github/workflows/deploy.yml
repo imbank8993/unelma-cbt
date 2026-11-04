@@ -145,7 +145,7 @@ jobs:
 
             echo "🔄 Me-restart kontainer ke versi terbaru..."
             docker compose down || true
-            docker rm -f cbt-web cbt-api cbt-scoring cbt-latex 2>/dev/null || true
+            docker rm -f unelma-cbt-web unelma-cbt-api unelma-cbt-scoring unelma-cbt-latex 2>/dev/null || true
             docker compose up -d --remove-orphans
 
             echo "🧹 Membersihkan image lama yang menggantung..."

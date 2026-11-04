@@ -52,8 +52,7 @@ export default function LandingFooter() {
                         </h4>
                         <ul className="space-y-2 text-xs text-white/80">
                             <li><a href="#home" className="hover:text-white transition-colors">Beranda</a></li>
-                            <li><a href="#bank-soal" className="hover:text-white transition-colors">Bank Soal Terstandar</a></li>
-                            <li><a href="#token" className="hover:text-white transition-colors">Paket Token CBT</a></li>
+                            <li><a href="#paket-token" className="hover:text-white transition-colors">Paket Token CBT</a></li>
                             <li><a href="#layanan" className="hover:text-white transition-colors">Layanan Unggulan</a></li>
                             <li><a href="#posts" className="hover:text-white transition-colors">Artikel & Wawasan</a></li>
                             <li><Link href="/login" className="hover:text-white transition-colors">Masuk Aplikasi CBT</Link></li>

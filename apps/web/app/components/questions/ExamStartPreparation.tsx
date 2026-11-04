@@ -1,9 +1,11 @@
 "use client";
 
 import { useEffect, useRef, useState } from 'react';
-import { AlertTriangle, Maximize2, ShieldCheck } from 'lucide-react';
+import Link from 'next/link';
+import { AlertTriangle, Coins, Lock, Maximize2, ShieldCheck } from 'lucide-react';
 import type { StudentExam } from '@/lib/api/students';
 import { exitExamFullscreen, hasExamFullscreen, subscribeExamFullscreen, type FullscreenElement } from '@/lib/exam-fullscreen';
+import { checkItemAccess, unlockItemWithTokens } from '@/lib/api/tokens';
 
 export function ExamStartPreparation({ exam, onConfirm, onBack, screenShare }: {
     exam: StudentExam;
@@ -17,6 +19,41 @@ export function ExamStartPreparation({ exam, onConfirm, onBack, screenShare }: {
     const [error, setError] = useState('');
     const confirmedRef = useRef(false);
     const leavingRef = useRef(false);
+
+    // Token check state
+    const [hasAccess, setHasAccess] = useState(true);
+    const [accessInfo, setAccessInfo] = useState<{ tokenPrice: number; balance: number } | null>(null);
+    const [unlocking, setUnlocking] = useState(false);
+    const [unlockError, setUnlockError] = useState('');
+
+    useEffect(() => {
+        if (exam.is_paid && (exam.token_price || 0) > 0) {
+            void checkItemAccess('exam', exam.id).then(res => {
+                if (res.success) {
+                    setHasAccess(res.hasAccess);
+                    setAccessInfo({ tokenPrice: res.tokenPrice, balance: res.balance || 0 });
+                }
+            });
+        }
+    }, [exam.id, exam.is_paid, exam.token_price]);
+
+    const handleUnlock = async () => {
+        if (unlocking) return;
+        setUnlocking(true);
+        setUnlockError('');
+        try {
+            const res = await unlockItemWithTokens('exam', exam.id);
+            if (!res.success) {
+                setUnlockError(res.error || 'Gagal membuka akses ujian.');
+                return;
+            }
+            setHasAccess(true);
+        } catch (err) {
+            setUnlockError((err as Error).message);
+        } finally {
+            setUnlocking(false);
+        }
+    };
 
     useEffect(() => {
         const changed = () => {
@@ -76,6 +113,73 @@ export function ExamStartPreparation({ exam, onConfirm, onBack, screenShare }: {
         } finally {
             setBusy(false);
         }
+    }
+
+    // Jika ujian berbayar dan belum di-unlock
+    if (!hasAccess) {
+        return (
+            <div className="fixed inset-0 z-[10000] flex items-center justify-center overflow-y-auto bg-slate-100 p-6 dark:bg-[#020718]">
+                <div className="w-full max-w-lg rounded-2xl border border-slate-200 bg-white p-6 shadow-xl dark:border-slate-700 dark:bg-[#0d1221] md:p-8 text-center">
+                    <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-amber-50 text-amber-600 border border-amber-200 dark:bg-amber-950/40">
+                        <Coins size={32} />
+                    </div>
+                    <span className="px-3 py-1 rounded-full bg-amber-100 text-amber-800 text-xs font-bold uppercase tracking-wider mb-2 inline-block">
+                        Ujian Berbayar
+                    </span>
+                    <h1 className="mb-2 text-2xl font-bold text-slate-800 dark:text-slate-100">
+                        {exam.title}
+                    </h1>
+                    <p className="mb-6 leading-relaxed text-slate-600 dark:text-slate-300 text-sm">
+                        Ujian ini memerlukan <strong className="text-amber-600 font-bold">{accessInfo?.tokenPrice || exam.token_price || 1} Token</strong> untuk dapat dikerjakan. Saldo token Anda akan otomatis dipotong setelah dikonfirmasi.
+                    </p>
+
+                    <div className="bg-slate-50 border border-slate-200/80 rounded-2xl p-4 max-w-sm mx-auto mb-6 text-left dark:bg-slate-800/50 dark:border-slate-700">
+                        <div className="flex justify-between items-center text-xs mb-1.5">
+                            <span className="text-slate-500">Biaya Akses Ujian:</span>
+                            <span className="font-bold text-amber-600">{accessInfo?.tokenPrice || exam.token_price || 1} Token</span>
+                        </div>
+                        <div className="flex justify-between items-center text-xs">
+                            <span className="text-slate-500">Saldo Token Anda:</span>
+                            <span className="font-bold text-slate-700 dark:text-slate-300">{accessInfo?.balance ?? 0} Token</span>
+                        </div>
+                    </div>
+
+                    {unlockError && (
+                        <div className="mb-4 text-xs text-rose-600 bg-rose-50 border border-rose-200 px-3 py-2 rounded-xl max-w-sm mx-auto">
+                            {unlockError}
+                        </div>
+                    )}
+
+                    <div className="flex flex-col gap-3">
+                        {(accessInfo?.balance ?? 0) >= (accessInfo?.tokenPrice || exam.token_price || 1) ? (
+                            <button
+                                disabled={unlocking}
+                                onClick={handleUnlock}
+                                className="w-full rounded-xl bg-amber-500 hover:bg-amber-600 px-4 py-3 font-bold text-white shadow-md transition-all active:scale-95 flex items-center justify-center gap-2"
+                            >
+                                <Coins size={16} />
+                                {unlocking ? 'Membuka Akses...' : `Buka dengan ${accessInfo?.tokenPrice || exam.token_price || 1} Token`}
+                            </button>
+                        ) : (
+                            <Link
+                                href="/dashboard/siswa/tokens"
+                                className="w-full rounded-xl bg-amber-500 hover:bg-amber-600 px-4 py-3 font-bold text-white shadow-md transition-all active:scale-95 flex items-center justify-center gap-2"
+                            >
+                                <Coins size={16} />
+                                Saldo Tidak Cukup · Beli Token Sekarang
+                            </Link>
+                        )}
+                        <button
+                            onClick={onBack}
+                            disabled={unlocking}
+                            className="w-full rounded-xl border border-slate-300 px-4 py-3 font-semibold text-slate-600 hover:bg-slate-50 dark:border-slate-600 dark:text-slate-300 transition-colors"
+                        >
+                            Kembali ke Jadwal
+                        </button>
+                    </div>
+                </div>
+            </div>
+        );
     }
 
     return (

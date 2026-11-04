@@ -559,15 +559,15 @@ export class AuthService {
       throw new NotFoundException('Pengguna tidak ditemukan.');
     }
 
-    // Akun utama imbank8993@gmail.com kebal terhadap perubahan peran oleh siapapun
+    // Akun Superadmin kebal terhadap perubahan peran oleh siapapun
     if (isSuperadminEmail(targetUser.email)) {
-      throw new ForbiddenException('Peran akun utama imbank8993@gmail.com kebal dan tidak dapat diubah.');
+      throw new ForbiddenException('Peran akun Superadmin kebal dan tidak dapat diubah.');
     }
 
-    // Hanya imbank8993@gmail.com yang berhak menunjuk Admin baru
+    // Hanya Superadmin yang berhak menunjuk Admin baru
     const actorIsSuper = isSuperadminEmail(actorUser.email);
     if (matchedRole === 'Admin' && !actorIsSuper) {
-      throw new ForbiddenException('Hanya imbank8993@gmail.com yang berhak menunjuk Admin baru.');
+      throw new ForbiddenException('Hanya Superadmin yang berhak menunjuk Admin baru.');
     }
 
     // Cek apakah target pengguna saat ini berstatus Admin
@@ -583,7 +583,7 @@ export class AuthService {
 
     // Admin lain tidak berhak menurunkan atau mengubah peran akun yang sudah menjadi Admin
     if (targetIsAdmin.length > 0 && !actorIsSuper) {
-      throw new ForbiddenException('Hanya imbank8993@gmail.com yang berhak mengubah peran sesama Admin.');
+      throw new ForbiddenException('Hanya Superadmin yang berhak mengubah peran sesama Admin.');
     }
 
     const school = await this.schoolScope.getSchool({ createIfMissing: true });
@@ -649,9 +649,9 @@ export class AuthService {
       throw new NotFoundException('Pengguna tidak ditemukan.');
     }
 
-    // Akun utama imbank8993@gmail.com tidak dapat dihapus oleh siapapun
+    // Akun Superadmin tidak dapat dihapus oleh siapapun
     if (isSuperadminEmail(targetUser.email)) {
-      throw new ForbiddenException('Akun utama imbank8993@gmail.com kebal dan tidak dapat dihapus.');
+      throw new ForbiddenException('Akun Superadmin kebal dan tidak dapat dihapus.');
     }
 
     const actorIsSuper = isSuperadminEmail(actorUser.email);
@@ -669,7 +669,7 @@ export class AuthService {
 
     // Admin lain tidak berhak menghapus akun Admin
     if (targetIsAdmin.length > 0 && !actorIsSuper) {
-      throw new ForbiddenException('Hanya imbank8993@gmail.com yang berhak menghapus akun Admin.');
+      throw new ForbiddenException('Hanya Superadmin yang berhak menghapus akun Admin.');
     }
 
     // Hapus dari auth.users (cascades ke cbt_profiles, platform_admins, cbt_organization_members, cbt_member_roles)
@@ -690,7 +690,7 @@ export class AuthService {
 
     const actorIsSuper = isSuperadminEmail(actorUser.email);
     if (matchedRole === 'Admin' && !actorIsSuper) {
-      throw new ForbiddenException('Hanya imbank8993@gmail.com yang berhak membuat atau menunjuk Admin baru.');
+      throw new ForbiddenException('Hanya Superadmin yang berhak membuat atau menunjuk Admin baru.');
     }
 
     const normalizedEmail = (dto.email || '').trim().toLowerCase();

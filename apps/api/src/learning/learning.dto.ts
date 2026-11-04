@@ -25,6 +25,8 @@ export class UpdateMaterialDto {
     @IsIn(['html', 'word', 'latex', 'text', 'pdf', 'image', 'audio', 'video', 'attachment']) format!: string;
     @IsString() @MaxLength(6_000_000) @IsByteLength(0, 8 * 1024 * 1024 - 1, { message: 'Isi materi harus kurang dari 8 MB.' }) contentHtml!: string;
     @IsString() @MaxLength(8000) conversionNotes!: string;
+    @IsOptional() @IsBoolean() isPaid?: boolean;
+    @IsOptional() @Type(() => Number) @IsInt() @Min(0) tokenPrice?: number;
 }
 export class ProgressDto {
     @IsBoolean() completed!: boolean;

@@ -173,6 +173,34 @@ export default function MaterialEditor() {
                 <p>Pilih BAB yang sama untuk menggabungkan beberapa subbab. Satu file mewakili satu subbab.</p>
                 <div className="learn-field"><label htmlFor="material-description">Deskripsi singkat</label><textarea id="material-description" placeholder="Apa yang akan dipelajari siswa?" maxLength={4000} value={material.description} onChange={event => edit({ description: event.target.value })} /></div>
                 <span className={`learn-status ${material.status}`}>{material.status === 'published' ? 'Terbit · semua siswa' : 'Draf · belum dibagikan'}</span>{dirty && <small style={{ marginLeft: 8 }}>Belum disimpan</small>}
+                <div className="learn-field" style={{ marginTop: 14, paddingTop: 12, borderTop: '1px solid #e2e8f0' }}>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontWeight: 600, fontSize: 13, color: '#1e293b' }}>
+                        <input
+                            type="checkbox"
+                            checked={Boolean(material.is_paid)}
+                            onChange={event => edit({ is_paid: event.target.checked, token_price: material.token_price || 1 })}
+                        />
+                        Akses Berbayar (Token Siswa)
+                    </label>
+                    {Boolean(material.is_paid) && (
+                        <div style={{ marginTop: 8, paddingLeft: 24 }}>
+                            <label htmlFor="material-token-price" style={{ fontSize: 11, color: '#64748b', display: 'block', marginBottom: 4 }}>Biaya Pembukaan</label>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                                <input
+                                    id="material-token-price"
+                                    type="number"
+                                    min={1}
+                                    max={999}
+                                    value={material.token_price || 1}
+                                    onChange={event => edit({ token_price: Math.max(1, Number(event.target.value) || 1) })}
+                                    style={{ width: 80, padding: '4px 8px', borderRadius: 6, border: '1px solid #cbd5e1', fontWeight: 'bold', color: '#d97706' }}
+                                />
+                                <span style={{ fontSize: 12, fontWeight: 'bold', color: '#d97706' }}>Token</span>
+                            </div>
+                            <small style={{ color: '#94a3b8', fontSize: 10, display: 'block', marginTop: 4 }}>Dipotong otomatis saat siswa membuka materi</small>
+                        </div>
+                    )}
+                </div>
             </section><section className="learn-panel"><h2>Cover bahan ajar</h2>
                 {material.cover_data && <>
                     {/* eslint-disable-next-line @next/next/no-img-element */}
