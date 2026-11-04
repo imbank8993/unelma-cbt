@@ -38,3 +38,36 @@ export class SsoTicketDto extends ClientMetaDto {
   @IsNotEmpty({ message: 'Tiket SSO wajib diisi' })
   token!: string;
 }
+
+
+export class SignupDto extends ClientMetaDto {
+  @ApiProperty({ example: 'siswa@email.com' })
+  @IsString()
+  @IsNotEmpty({ message: 'Email wajib diisi' })
+  email!: string;
+
+  @ApiProperty({ example: 'Ahmad Fauzi' })
+  @IsString()
+  @IsNotEmpty({ message: 'Nama lengkap wajib diisi' })
+  name!: string;
+
+  @ApiProperty({ example: 'SMA Negeri 1' })
+  @IsString()
+  @IsNotEmpty({ message: 'Asal sekolah wajib diisi' })
+  schoolName!: string;
+
+  @ApiPropertyOptional({ example: 'XII MIPA 1' })
+  @IsOptional()
+  @IsString()
+  className?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  password?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  avatarUrl?: string;
+}

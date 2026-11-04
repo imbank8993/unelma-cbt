@@ -1,3 +1,4 @@
+import { SignupDto } from './dto/login.dto';
 import { BadRequestException, ForbiddenException, Injectable, Logger, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
@@ -510,6 +511,8 @@ export class AuthService {
         u.last_sign_in_at,
         p.full_name, 
         p.avatar_url,
+        p.school_name,
+        p.class_name,
         pa.id IS NOT NULL as is_platform_admin,
         ARRAY_AGG(DISTINCT r.name) FILTER (WHERE r.name IS NOT NULL) as roles
       FROM auth.users u
@@ -519,7 +522,7 @@ export class AuthService {
       LEFT JOIN public.cbt_member_roles mr ON mr.organization_member_id = om.id
       LEFT JOIN public.cbt_roles r ON r.id = mr.role_id
       WHERE u.deleted_at IS NULL
-      GROUP BY u.id, u.email, u.created_at, u.last_sign_in_at, p.full_name, p.avatar_url, pa.id
+      GROUP BY u.id, u.email, u.created_at, u.last_sign_in_at, p.full_name, p.avatar_url, p.school_name, p.class_name, pa.id
       ORDER BY u.created_at DESC;
     `;
     const rows = await this.prisma.$queryRawUnsafe<any[]>(query);
@@ -528,6 +531,8 @@ export class AuthService {
       email: r.email,
       fullName: r.full_name || r.email,
       avatarUrl: r.avatar_url,
+      schoolName: r.school_name || null,
+      className: r.class_name || null,
       isSuperadmin: isSuperadminEmail(r.email),
       isPlatformAdmin: Boolean(r.is_platform_admin),
       roles: r.roles || [],
@@ -596,6 +601,122 @@ export class AuthService {
     }
 
     return { success: true, message: `Peran ${targetUser?.email || 'pengguna'} berhasil diubah menjadi ${matchedRole}.` };
+  }
+
+
+  async signup(dto: SignupDto, ipAddress?: string, userAgent?: string): Promise<LoginResponse> {
+    const normalizedEmail = (dto.email || '').trim().toLowerCase();
+    if (!normalizedEmail || !dto.name || !dto.schoolName) {
+      throw new BadRequestException('Email, Nama Lengkap, dan Asal Sekolah wajib diisi.');
+    }
+
+    const existing = await this.authUsers.findByEmail(normalizedEmail);
+    if (existing) {
+      throw new BadRequestException('Email sudah terdaftar. Silakan masuk ke akun Anda.');
+    }
+
+    const metadata = {
+      full_name: dto.name,
+      school_name: dto.schoolName,
+      class_name: dto.className || null,
+      role: 'Siswa',
+    };
+
+    let authUser: any;
+    if (dto.password) {
+      authUser = await this.authUsers.createUser({
+        email: normalizedEmail,
+        password: dto.password,
+        emailConfirm: true,
+        userMetadata: metadata,
+      });
+    } else {
+      authUser = await this.authUsers.findOrCreateOAuthUser({
+        email: normalizedEmail,
+        name: dto.name,
+        avatarUrl: dto.avatarUrl,
+        provider: 'google',
+      });
+    }
+
+    // Insert profile with school_name and class_name
+    await this.db.from('cbt_profiles').upsert(
+      {
+        id: authUser.id,
+        full_name: dto.name,
+        email: normalizedEmail,
+        school_name: dto.schoolName,
+        class_name: dto.className || null,
+        avatar_url: dto.avatarUrl || null,
+        role: 'Siswa',
+      },
+      { onConflict: 'id' },
+    );
+
+    const school = await this.schoolScope.getSchool({ createIfMissing: true });
+
+    const { data: member } = await this.db
+      .from('cbt_organization_members')
+      .upsert(
+        {
+          user_id: authUser.id,
+          organization_id: school.id,
+          is_active: true,
+        },
+        { onConflict: 'user_id,organization_id' },
+      )
+      .select('id')
+      .maybeSingle();
+
+    // Default role for registered users is Siswa
+    const isSuper = isSuperadminEmail(normalizedEmail);
+    if (isSuper) {
+      await this.prisma.$executeRawUnsafe(
+        `INSERT INTO public.platform_admins (id, email, created_at)
+         VALUES ($1::uuid, $2, now())
+         ON CONFLICT (id) DO NOTHING`,
+        authUser.id,
+        normalizedEmail,
+      );
+
+      const { data: adminRole } = await this.db.from('cbt_roles').select('id').eq('name', 'Admin').maybeSingle();
+      if (adminRole && member) {
+        await this.db.from('cbt_member_roles').upsert(
+          {
+            organization_member_id: (member as any).id,
+            role_id: (adminRole as any).id,
+          },
+          { onConflict: 'organization_member_id,role_id' },
+        );
+      }
+    } else {
+      const { data: siswaRole } = await this.db.from('cbt_roles').select('id').eq('name', 'Siswa').maybeSingle();
+      if (siswaRole && member) {
+        await this.db.from('cbt_member_roles').upsert(
+          {
+            organization_member_id: (member as any).id,
+            role_id: (siswaRole as any).id,
+          },
+          { onConflict: 'organization_member_id,role_id' },
+        );
+      }
+    }
+
+    await this.authUsers.touchLastSignIn(authUser.id);
+    void this.loginHistory.record({
+      userId: authUser.id,
+      loginMethod: dto.password ? 'password' : 'google',
+      ipAddress,
+      userAgent,
+      success: true,
+    });
+
+    return this.issueSession(
+      authUser.id,
+      normalizedEmail,
+      metadata,
+      dto.name,
+    );
   }
 
 }

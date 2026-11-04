@@ -4,7 +4,7 @@ import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import type { AuthUser } from '@acca-cbt/shared';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
 import { AuthService } from './auth.service';
-import { LoginDto, SsoTicketDto } from './dto/login.dto';
+import { LoginDto, SsoTicketDto, SignupDto } from './dto/login.dto';
 import { JwtAuthGuard } from './jwt-auth.guard';
 import { RateLimiter, tooManyRequests } from '../common/rate-limit';
 
@@ -44,6 +44,16 @@ export class AuthController {
       }
       throw error;
     }
+  }
+
+  
+  @Post('signup')
+  @HttpCode(HttpStatus.CREATED)
+  @ApiOperation({ summary: 'Daftar akun siswa baru' })
+  async signup(@Body() dto: SignupDto, @Req() req: Request) {
+    const ip = dto.ipAddress || req.ip;
+    const ua = dto.userAgent || req.headers['user-agent'];
+    return this.authService.signup(dto, ip, ua);
   }
 
   @Post('sso')

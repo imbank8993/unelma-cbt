@@ -4,6 +4,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { 
     Users, 
+    School,
     Shield, 
     ShieldAlert, 
     UserCheck, 
@@ -23,6 +24,8 @@ interface ManagedUser {
     email: string;
     fullName: string;
     avatarUrl: string | null;
+    schoolName: string | null;
+    className: string | null;
     isSuperadmin: boolean;
     isPlatformAdmin: boolean;
     roles: string[];
@@ -225,6 +228,7 @@ export default function AdminUsersPage() {
                                 <thead>
                                     <tr className="bg-slate-50/70 border-b border-slate-200 text-xs font-semibold text-slate-500 uppercase tracking-wider">
                                         <th className="py-3.5 px-6">Pengguna</th>
+                                        <th className="py-3.5 px-6">Asal Sekolah & Kelas</th>
                                         <th className="py-3.5 px-6">Peran Saat Ini</th>
                                         <th className="py-3.5 px-6">Terdaftar Pada</th>
                                         <th className="py-3.5 px-6 text-right">Tunjuk Peran</th>
@@ -263,6 +267,17 @@ export default function AdminUsersPage() {
                                                     </div>
                                                 </td>
 
+                                                <td className="py-4 px-6">
+                                                    <div className="flex items-center gap-1.5 font-medium text-slate-800">
+                                                        <School className="w-4 h-4 text-slate-400 shrink-0" />
+                                                        <span>{u.schoolName || '-'}</span>
+                                                    </div>
+                                                    {u.className && (
+                                                        <div className="text-xs text-slate-500 mt-0.5 ml-5">
+                                                            Kelas: <span className="font-semibold text-slate-700">{u.className}</span>
+                                                        </div>
+                                                    )}
+                                                </td>
                                                 <td className="py-4 px-6">
                                                     {getRoleBadge(primaryRole)}
                                                 </td>
