@@ -293,7 +293,7 @@ export function MathEditor({ isOpen, onClose, onInsert, initialLatex = '' }: Mat
           <button
             onClick={handleInsert}
             disabled={!input.trim() || previewError}
-            className="px-5 py-2 text-sm font-semibold bg-[#3083FF] text-white rounded-lg hover:bg-[#256fe0] disabled:opacity-40 disabled:cursor-not-allowed transition-all shadow flex items-center gap-2"
+            className="px-5 py-2 text-sm font-semibold bg-[#030C4D] text-white rounded-lg hover:bg-[#256fe0] disabled:opacity-40 disabled:cursor-not-allowed transition-all shadow flex items-center gap-2"
           >
             Sisipkan Rumus
           </button>

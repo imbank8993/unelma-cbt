@@ -66,7 +66,7 @@ export default function GradeEssayPage() {
     if (loading) {
         return (
             <div className="flex justify-center items-center min-h-[50vh]">
-                <Loader2 size={48} className="text-[#3083FF] animate-spin" />
+                <Loader2 size={48} className="text-[#030C4D] animate-spin" />
             </div>
         );
     }
@@ -75,7 +75,7 @@ export default function GradeEssayPage() {
         return (
             <div className="p-10 text-center bg-white border border-slate-100 rounded-[2rem]">
                 <p className="text-slate-400 font-bold">Data ujian tidak ditemukan atau tidak ada soal uraian.</p>
-                <button onClick={() => router.back()} className="mt-4 text-[#3083FF] font-bold uppercase tracking-widest text-sm hover:underline">
+                <button onClick={() => router.back()} className="mt-4 text-[#030C4D] font-bold uppercase tracking-widest text-sm hover:underline">
                     Kembali
                 </button>
             </div>
@@ -92,7 +92,7 @@ export default function GradeEssayPage() {
                     <button onClick={() => router.back()} className="flex items-center gap-2 text-slate-400 hover:text-primary transition-all font-black uppercase tracking-[0.2em] text-[10px] mb-6 group">
                         <ArrowLeft size={16} className="transition-transform group-hover:-translate-x-1" /> Kembali ke Daftar
                     </button>
-                    <h1 className="text-4xl font-black text-[#3083FF] uppercase tracking-tighter mb-3 leading-none">
+                    <h1 className="text-4xl font-black text-[#030C4D] uppercase tracking-tighter mb-3 leading-none">
                         Penilaian Uraian
                     </h1>
                     <div className="flex items-center gap-4">
@@ -123,7 +123,7 @@ export default function GradeEssayPage() {
                     <button
                         onClick={handleSave}
                         disabled={submitting}
-                        className="bg-[#3083FF] hover:bg-[#0a1a6e] text-white font-black px-10 py-5 rounded-2xl flex items-center gap-4 transition-all shadow-2xl shadow-[#3083FF]/20 disabled:opacity-50 tracking-[0.2em] text-[11px] uppercase active:scale-95"
+                        className="bg-[#030C4D] hover:bg-[#0a1a6e] text-white font-black px-10 py-5 rounded-2xl flex items-center gap-4 transition-all shadow-2xl shadow-[#030C4D]/20 disabled:opacity-50 tracking-[0.2em] text-[11px] uppercase active:scale-95"
                     >
                         {submitting ? <Loader2 size={18} className="animate-spin" /> : <Save size={18} />}
                         Simpan Nilai Uraian
@@ -162,7 +162,7 @@ export default function GradeEssayPage() {
 
                             <div className="flex justify-between items-center mb-8">
                                 <div className="flex items-center gap-4">
-                                    <div className="w-12 h-12 bg-slate-50 rounded-2xl flex items-center justify-center text-[#3083FF] font-black text-lg border border-slate-100">
+                                    <div className="w-12 h-12 bg-slate-50 rounded-2xl flex items-center justify-center text-[#030C4D] font-black text-lg border border-slate-100">
                                         {index + 1}
                                     </div>
                                     <div>
@@ -172,7 +172,7 @@ export default function GradeEssayPage() {
                                 </div>
                                 <div className="px-5 py-2.5 bg-slate-50 border border-slate-100 rounded-xl">
                                     <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
-                                        Bobot Maksimal: <span className="text-[#3083FF]">{maxScore}</span> Poin
+                                        Bobot Maksimal: <span className="text-[#030C4D]">{maxScore}</span> Poin
                                     </span>
                                 </div>
                             </div>
@@ -205,7 +205,7 @@ export default function GradeEssayPage() {
 
                                     return (
                                         <div className="space-y-6">
-                                            <div className="text-lg font-bold text-[#3083FF] leading-relaxed whitespace-pre-wrap pl-1 student-essay-answer">
+                                            <div className="text-lg font-bold text-[#030C4D] leading-relaxed whitespace-pre-wrap pl-1 student-essay-answer">
                                                 {text || <span className="text-slate-300 font-medium">Peserta tidak memberikan jawaban pada soal ini.</span>}
                                             </div>
 
@@ -216,7 +216,7 @@ export default function GradeEssayPage() {
                                                             <h5 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">Lampiran File</h5>
                                                             <div className="flex flex-wrap gap-3">
                                                                 {files.map((url, i) => (
-                                                                    <a key={i} href={safeExternalUrl(url) || undefined} target="_blank" rel="noopener noreferrer" className="px-4 py-2 bg-white border border-slate-200 rounded-lg text-xs font-bold text-[#3083FF] hover:border-primary hover:text-primary transition-colors shadow-sm flex items-center gap-2">
+                                                                    <a key={i} href={safeExternalUrl(url) || undefined} target="_blank" rel="noopener noreferrer" className="px-4 py-2 bg-white border border-slate-200 rounded-lg text-xs font-bold text-[#030C4D] hover:border-primary hover:text-primary transition-colors shadow-sm flex items-center gap-2">
                                                                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>
                                                                         {attachmentLabel(url, i)}
                                                                     </a>

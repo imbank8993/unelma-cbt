@@ -203,7 +203,7 @@ function VideoEditorModalContent({
                   setError('');
                 }}
                 placeholder="Contoh: https://www.youtube.com/watch?v=... atau https://youtu.be/..."
-                className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:bg-white focus:border-[#3083FF] focus:ring-2 focus:ring-[#3083FF]/10 transition-all pr-10"
+                className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:bg-white focus:border-[#030C4D] focus:ring-2 focus:ring-[#030C4D]/10 transition-all pr-10"
                 autoFocus
                 onKeyDown={(e) => {
                   if (e.key === 'Enter') handleSubmit();
@@ -273,8 +273,8 @@ function VideoEditorModalContent({
                   }}
                   className={`py-2 text-xs font-bold rounded-xl border transition-all cursor-pointer ${
                     width === w && !customWidth
-                      ? 'bg-[#3083FF] text-white border-[#3083FF] shadow-sm'
-                      : 'bg-white text-slate-600 border-slate-200 hover:border-[#3083FF]/40 hover:bg-slate-50'
+                      ? 'bg-[#030C4D] text-white border-[#030C4D] shadow-sm'
+                      : 'bg-white text-slate-600 border-slate-200 hover:border-[#030C4D]/40 hover:bg-slate-50'
                   }`}
                 >
                   {w}
@@ -295,7 +295,7 @@ function VideoEditorModalContent({
                   setWidth('custom');
                 }}
                 placeholder="misal: 600px, 80%, atau auto"
-                className="flex-1 px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-mono focus:outline-none focus:bg-white focus:border-[#3083FF]"
+                className="flex-1 px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-mono focus:outline-none focus:bg-white focus:border-[#030C4D]"
               />
             </div>
           </div>

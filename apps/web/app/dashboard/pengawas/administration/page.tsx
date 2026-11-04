@@ -91,7 +91,7 @@ export default function PengawasAdministrationPage() {
     if (isLoading) {
         return (
             <div className="flex flex-col items-center justify-center py-24 gap-3">
-                <Loader2 size={32} className="animate-spin text-[#3083FF]" />
+                <Loader2 size={32} className="animate-spin text-[#030C4D]" />
                 <p className="text-xs font-medium text-slate-500">Memuat penugasan ruang & sesi pengawas...</p>
             </div>
         );
@@ -102,7 +102,7 @@ export default function PengawasAdministrationPage() {
             {/* ── Header ── */}
             <div className="bg-white rounded-2xl border border-slate-200/90 p-5 shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div className="flex items-start sm:items-center gap-3.5">
-                    <div className="w-11 h-11 rounded-xl bg-blue-50 border border-blue-200 text-[#3083FF] flex items-center justify-center shrink-0">
+                    <div className="w-11 h-11 rounded-xl bg-blue-50 border border-blue-200 text-[#030C4D] flex items-center justify-center shrink-0">
                         <FileCheck2 size={20} />
                     </div>
                     <div>
@@ -162,7 +162,7 @@ export default function PengawasAdministrationPage() {
                                         onClick={() => setSelectedIndex(idx)}
                                         className={`text-left rounded-2xl border p-4 transition-all ${
                                             isSelected
-                                                ? 'bg-blue-50/60 border-[#3083FF] ring-2 ring-[#3083FF]/15 shadow-xs'
+                                                ? 'bg-blue-50/60 border-[#030C4D] ring-2 ring-[#030C4D]/15 shadow-xs'
                                                 : 'bg-white border-slate-200/90 hover:border-slate-300'
                                         }`}
                                     >
@@ -172,7 +172,7 @@ export default function PengawasAdministrationPage() {
                                                     {item.period.name}
                                                 </span>
                                                 <h3 className="text-sm font-bold text-slate-900 mt-1.5 flex items-center gap-1.5">
-                                                    <Building2 size={14} className="text-[#3083FF]" />
+                                                    <Building2 size={14} className="text-[#030C4D]" />
                                                     {item.room.name} — {item.session.name}
                                                 </h3>
                                             </div>
@@ -220,7 +220,7 @@ export default function PengawasAdministrationPage() {
                                                 <span className="shrink-0 ml-2 text-amber-700">Dibuka H-1 s.d. H+3</span>
                                             )}
                                             {item.is_assigned_to_me && (
-                                                <span className="text-[#3083FF] font-bold shrink-0 ml-2 flex items-center gap-0.5">
+                                                <span className="text-[#030C4D] font-bold shrink-0 ml-2 flex items-center gap-0.5">
                                                     <ShieldCheck size={12} /> Tugas Saya
                                                 </span>
                                             )}

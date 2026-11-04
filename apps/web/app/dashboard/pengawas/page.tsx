@@ -169,7 +169,7 @@ export default function PengawasDashboard() {
                 <div className="flex items-center gap-3">
                     <button
                         onClick={() => router.push('/dashboard/pengawas/administration')}
-                        className="flex items-center gap-2 px-4 py-2.5 bg-[#3083FF] hover:bg-blue-600 text-white font-bold text-xs rounded-xl shadow-xs transition-all"
+                        className="flex items-center gap-2 px-4 py-2.5 bg-[#030C4D] hover:bg-blue-600 text-white font-bold text-xs rounded-xl shadow-xs transition-all"
                         title="Kelola Berita Acara & Daftar Hadir PAS"
                     >
                         <span>Berita Acara & Absensi PAS</span>

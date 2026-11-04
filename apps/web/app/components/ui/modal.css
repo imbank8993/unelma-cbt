@@ -104,7 +104,7 @@
 
 /* Jenis modal ditandai warna garis tepi panel — tipis, mengelilingi semua sisi.
    Warnanya ikut dipakai ikon judul di header supaya keduanya senada. */
-.mdl-panel--add { border-color: #3083ff; }    /* navy — biru utama aplikasi */
+.mdl-panel--add { border-color: #030C4D; }    /* navy — biru utama aplikasi */
 .mdl-panel--edit { border-color: #0ea5e9; }   /* sky — biru muda, kontras dgn navy */
 .mdl-panel--delete { border-color: #dc2626; }
 
@@ -273,7 +273,7 @@
 
 .mdl-panel--delete .mdl-foot .ui-btn--cancel:hover {
   background: #E0ECFF !important;
-  border-color: #3083FF !important;
+  border-color: #030C4D !important;
 }
 
 /* Hanya judul, tanpa subjudul → teks dipusatkan vertikal terhadap kotak ikon.
@@ -415,10 +415,10 @@
 .mdl-foot .ui-btn--primary,
 .mdl-foot button[type="submit"],
 .mdl-foot button.ui-btn--primary {
-  background: #3083FF !important;
-  border: 1px solid #3083FF !important;
+  background: #030C4D !important;
+  border: 1px solid #030C4D !important;
   color: #ffffff !important;
-  box-shadow: 0 2px 6px rgba(48, 131, 255, 0.25) !important;
+  box-shadow: 0 2px 6px rgba(3, 12, 77, 0.25) !important;
 }
 
 .mdl-foot .ui-btn--primary:hover,
@@ -426,7 +426,7 @@
 .mdl-foot button.ui-btn--primary:hover {
   background: #2563EB !important;
   border-color: #2563EB !important;
-  box-shadow: 0 4px 10px rgba(48, 131, 255, 0.35) !important;
+  box-shadow: 0 4px 10px rgba(3, 12, 77, 0.35) !important;
 }
 
 .mdl-foot--end { justify-content: flex-end; }
@@ -494,7 +494,7 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  color: var(--n-primary, #3083FF);
+  color: var(--n-primary, #030C4D);
   font-size: 0.85rem;
   height: 1rem;
 }
@@ -694,7 +694,7 @@
   flex: 0 0 auto;
   display: flex;
   font-size: 1.05rem;
-  color: var(--n-primary, #3083ff);
+  color: var(--n-primary, #030C4D);
 }
 
 .mdl-file__text {
@@ -756,7 +756,7 @@
 
 .mdl-file__chipIcon {
   flex: 0 0 auto;
-  color: var(--n-primary, #3083ff);
+  color: var(--n-primary, #030C4D);
 }
 
 .mdl-file__chipName {
@@ -976,12 +976,12 @@
 .dark .mdl-head__sub { color: #94a3b8; }
 
 .dark .mdl-head__icon {
-  background: rgba(48, 131, 255, 0.18) !important;
+  background: rgba(3, 12, 77, 0.18) !important;
   color: #60a5fa !important;
   border: 1px solid rgba(59, 130, 246, 0.3) !important;
 }
 
-.dark .mdl-panel--add .mdl-head__icon { background: rgba(48, 131, 255, 0.18) !important; color: #60a5fa !important; border-color: rgba(59, 130, 246, 0.3) !important; }
+.dark .mdl-panel--add .mdl-head__icon { background: rgba(3, 12, 77, 0.18) !important; color: #60a5fa !important; border-color: rgba(59, 130, 246, 0.3) !important; }
 .dark .mdl-panel--edit .mdl-head__icon { background: rgba(14, 165, 233, 0.18) !important; color: #38bdf8 !important; border-color: rgba(14, 165, 233, 0.3) !important; }
 .dark .mdl-panel--delete .mdl-head__icon { background: rgba(239, 68, 68, 0.18) !important; color: #f87171 !important; border-color: rgba(239, 68, 68, 0.3) !important; }
 
@@ -1812,8 +1812,8 @@
 }
 
 .mdl-switch input[type="checkbox"]:checked + .mdl-switch__track {
-  background: #3083FF !important;
-  box-shadow: 0 2px 6px rgba(48, 131, 255, 0.3) !important;
+  background: #030C4D !important;
+  box-shadow: 0 2px 6px rgba(3, 12, 77, 0.3) !important;
 }
 
 .mdl-switch input[type="checkbox"]:checked + .mdl-switch__track .mdl-switch__thumb {
@@ -1821,7 +1821,7 @@
 }
 
 .mdl-switch input[type="checkbox"]:focus-visible + .mdl-switch__track {
-  outline: 2px solid #3083FF;
+  outline: 2px solid #030C4D;
   outline-offset: 2px;
 }
 
@@ -1837,7 +1837,7 @@
 
 .mdl-switch__badge.isOn {
   background: #E0ECFF;
-  color: #3083FF;
+  color: #030C4D;
   border: 1px solid #D0E2FF;
 }
 
@@ -1852,11 +1852,11 @@
 }
 
 .dark .mdl-switch input[type="checkbox"]:checked + .mdl-switch__track {
-  background: #3083FF !important;
+  background: #030C4D !important;
 }
 
 .dark .mdl-switch__badge.isOn {
-  background: rgba(48, 131, 255, 0.18);
+  background: rgba(3, 12, 77, 0.18);
   color: #60a5fa;
   border-color: rgba(59, 130, 246, 0.3);
 }

@@ -179,7 +179,7 @@ export default function EditPASPeriodModal({
                     {/* Section: Susunan Kepanitiaan (Ketua Panitia) */}
                     <div className="pt-2 border-t border-slate-100">
                         <div className="flex items-center gap-1.5 mb-2">
-                            <UserCheck size={14} className="text-[#3083FF]" />
+                            <UserCheck size={14} className="text-[#030C4D]" />
                             <span className="text-xs font-bold text-slate-800">Kepanitiaan Ujian (Administrasi Dokumen)</span>
                         </div>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">

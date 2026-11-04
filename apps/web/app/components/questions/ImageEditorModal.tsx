@@ -429,7 +429,7 @@ function ImageEditorModalContent({
                 type="button"
                 onClick={() => void handleFinalApply()}
                 disabled={isUploading}
-                className="px-5 py-2 text-sm font-semibold bg-[#3083FF] text-white rounded-lg hover:bg-[#0a1a6e] transition-all shadow-sm flex items-center gap-2 cursor-pointer disabled:opacity-60 disabled:cursor-wait"
+                className="px-5 py-2 text-sm font-semibold bg-[#030C4D] text-white rounded-lg hover:bg-[#0a1a6e] transition-all shadow-sm flex items-center gap-2 cursor-pointer disabled:opacity-60 disabled:cursor-wait"
               >
                 {isUploading ? 'Mengunggah...' : <><Check size={16} /> Sisipkan ke Soal</>}
               </button>

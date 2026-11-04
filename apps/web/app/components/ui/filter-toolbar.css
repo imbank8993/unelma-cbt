@@ -366,19 +366,19 @@
     justify-content: center;
     background: var(--n-card, #ffffff);
     border: 1px solid var(--n-border, #e2e8f0);
-    color: #3083FF;
+    color: #030C4D;
     font-size: 1.05rem;
     cursor: pointer;
     transition: all 0.15s ease;
 }
 
 .ftb-backBtn:hover {
-    border-color: #3083FF;
-    background: rgba(48, 131, 255, 0.05);
+    border-color: #030C4D;
+    background: rgba(3, 12, 77, 0.05);
 }
 
 .ftb-backBtn:active {
-    background: rgba(48, 131, 255, 0.1);
+    background: rgba(3, 12, 77, 0.1);
 }
 
 .dark .ftb-backBtn,
@@ -686,7 +686,7 @@ html.dark .ftb-backBtn:hover {
         border-radius: 50% !important;
         background: #ffffff !important;
         border: 1px solid var(--n-border, #e2e8f0) !important;
-        color: var(--n-primary, #3083FF) !important;
+        color: var(--n-primary, #030C4D) !important;
         box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04) !important;
         font-size: 1.1rem !important;
         cursor: pointer !important;
@@ -729,7 +729,7 @@ html.dark .ftb-backBtn:hover {
         justify-content: center !important;
         background: #ffffff !important;
         border: 1px solid var(--n-border, #e2e8f0) !important;
-        color: #3083FF !important;
+        color: #030C4D !important;
         box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04) !important;
         font-size: 1.1rem !important;
     }
@@ -798,7 +798,7 @@ html.dark .ftb-backBtn:hover {
     .sk__menu button:hover,
     .sk__menu [role="menuitem"]:hover {
         background: #f1f5f9 !important;
-        color: #3083FF !important;
+        color: #030C4D !important;
     }
 
     /* Pembungkus Ikon — DIPATOK 24PX RATA KETAT SUPAYA SEMUA IKON DUDUK DI GARIS VERTIKAL YANG SAMA PERSIS */
@@ -918,10 +918,10 @@ html.dark .ftb-backBtn:hover {
         margin-right: 0 !important;
         font-size: 0.95rem !important;
         /* Biru yang sama dengan ikon tab di mobile (.actab-tabIconOuter di
-           components/tab.css), bukan navy #3083FF. Kedua kontrol ini duduk
+           components/tab.css), bukan navy #030C4D. Kedua kontrol ini duduk
            bersebelahan di layar yang sama, jadi dua biru berbeda terbaca
            sebagai ketidaksengajaan. */
-        color: #3083FF !important;
+        color: #030C4D !important;
     }
 
     /* Embedded Filter Button Inside Search Pill (Mobile) */
@@ -938,8 +938,8 @@ html.dark .ftb-backBtn:hover {
         background: transparent;
         border: none;
         border-radius: 50% !important;
-        /* Biru ikon tab (#3083FF), lihat catatan di ikon cari di atas. */
-        color: #3083FF;
+        /* Biru ikon tab (#030C4D), lihat catatan di ikon cari di atas. */
+        color: #030C4D;
         cursor: pointer;
         transition: all 0.2s ease;
         box-sizing: border-box;
@@ -948,13 +948,13 @@ html.dark .ftb-backBtn:hover {
     .ftb-embedded-filter-btn:hover,
     .ftb-embedded-filter-btn:active {
         background: #E0ECFF;
-        color: #3083FF;
+        color: #030C4D;
         transform: scale(1.05);
     }
 
     .ftb-embedded-filter-btn--active {
         background: #E0ECFF;
-        color: #3083FF;
+        color: #030C4D;
     }
 
     .ftb-embedded-filter-badge {
@@ -968,12 +968,12 @@ html.dark .ftb-backBtn:hover {
         height: 15px;
         padding: 0 3px;
         border-radius: 999px;
-        /* #3083FF eksplisit, BUKAN var(--n-primary): token itu bernilai
-           #3083FF (navy) di :root, jadi badge-nya tidak pernah memakai nilai
+        /* #030C4D eksplisit, BUKAN var(--n-primary): token itu bernilai
+           #030C4D (navy) di :root, jadi badge-nya tidak pernah memakai nilai
            cadangan dan selalu terbaca lebih tua daripada ikon filter yang
            dilingkupinya. Disamakan dengan warna ikon di .ftb-embedded-filter-btn
            dan ikon tab di components/tab.css. */
-        background: #3083FF;
+        background: #030C4D;
         color: #ffffff;
         font-size: 9.5px;
         font-weight: 800;
@@ -995,7 +995,7 @@ html.dark .ftb-backBtn:hover {
         background: #ffffff;
         border: 1px solid var(--n-border, #e2e8f0) !important;
         border-radius: 50% !important;
-        color: #3083FF;
+        color: #030C4D;
         font-size: 1.15rem;
         cursor: pointer;
         transition: all 0.2s ease;
@@ -1006,15 +1006,15 @@ html.dark .ftb-backBtn:hover {
     .ftb-mobile-filter-btn:hover,
     .ftb-mobile-filter-btn:active {
         background: rgba(0, 56, 168, 0.06);
-        border-color: #3083FF !important;
-        color: #3083FF;
+        border-color: #030C4D !important;
+        color: #030C4D;
         transform: scale(1.04);
     }
 
     .ftb-mobile-filter-btn--active {
         background: rgba(0, 56, 168, 0.08);
-        border-color: #3083FF !important;
-        color: #3083FF;
+        border-color: #030C4D !important;
+        color: #030C4D;
     }
 
     .ftb-mobile-filter-btn--expanded {
@@ -1039,7 +1039,7 @@ html.dark .ftb-backBtn:hover {
         border-radius: 999px;
         /* Sama seperti .ftb-embedded-filter-badge di atas — ini varian badge
            saat toolbar tampil tanpa kolom cari, jadi warnanya harus sama. */
-        background: #3083FF;
+        background: #030C4D;
         color: #ffffff;
         font-size: 10.5px;
         font-weight: 700;
@@ -1205,7 +1205,7 @@ html.dark .ftb-backBtn:hover {
     .ftb-actions button:not(.ui-btn):hover:not(:disabled),
     .ftb-actions .sk__btnActionMenu:hover {
         background: #E0ECFF !important;
-        border-color: #3083FF !important;
+        border-color: #030C4D !important;
         color: #112E59 !important;
     }
 
@@ -1241,7 +1241,7 @@ html.dark .ftb-backBtn:hover {
         aspect-ratio: 1 / 1 !important;
     }
 
-    /* Ikon di dalamnya ikut biru tab (#3083FF), sama dengan ikon cari dan ikon
+    /* Ikon di dalamnya ikut biru tab (#030C4D), sama dengan ikon cari dan ikon
        filter di kapsul sebelahnya. Warna teks tombol (#112E59) sengaja tidak
        diubah — yang diminta seragam hanya ikonnya. */
     .ftb-actions .ftb-btn--iconOnlyMobile i,
@@ -1250,7 +1250,7 @@ html.dark .ftb-backBtn:hover {
     .ftb-actions button.ftb-btn--iconOnlyMobile svg,
     .ftb-actions > .sk__menuWrap > button.ftb-btn--iconOnlyMobile i,
     .ftb-actions > .sk__menuWrap > button.ftb-btn--iconOnlyMobile svg {
-        color: #3083FF !important;
+        color: #030C4D !important;
     }
 }
 
@@ -1302,7 +1302,7 @@ html.dark .ftb-backBtn:hover {
 .sk__btnMore:hover,
 .sk__btnMore.isOpen {
     background: #E0ECFF;
-    border-color: #3083FF;
+    border-color: #030C4D;
     color: #112E59;
 }
 
@@ -1357,7 +1357,7 @@ html.dark .ftb-backBtn:hover {
 .sk__menuItem:hover,
 .sk__menuItem:active {
     background: #f8fafc;
-    border-color: #3083FF;
+    border-color: #030C4D;
     transform: translateY(-1px);
 }
 
@@ -1667,7 +1667,7 @@ html.dark .ftb-backBtn:hover {
 }
 
 .dark .ftb-toggle input:checked + .ftb-toggle-track {
-    background: #3083ff;
+    background: #030C4D;
     box-shadow: inset 0 0 0 1px #60a5fa;
 }
 
@@ -1797,12 +1797,12 @@ html.dark .ftb-backBtn:hover {
 .mui-opt:hover,
 .mui-opt:active {
     background: #f8fafc;
-    border-color: #3083FF;
+    border-color: #030C4D;
 }
 
 .mui-opt.isSelected {
     background: #eff6ff;
-    border-color: #3083FF;
+    border-color: #030C4D;
 }
 
 .mui-opt__icon {
@@ -1813,7 +1813,7 @@ html.dark .ftb-backBtn:hover {
     height: 28px;
     border-radius: 50%;
     background: #eff6ff;
-    color: #3083FF;
+    color: #030C4D;
     flex-shrink: 0;
 }
 
@@ -1831,7 +1831,7 @@ html.dark .ftb-backBtn:hover {
 }
 
 .mui-opt.isSelected .mui-opt__label {
-    color: #3083FF;
+    color: #030C4D;
     font-weight: 700;
 }
 
@@ -1844,7 +1844,7 @@ html.dark .ftb-backBtn:hover {
     flex: 0 0 auto;
     width: 20px;
     text-align: right;
-    color: #3083FF;
+    color: #030C4D;
 }
 
 .dark .mui-opt {

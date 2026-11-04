@@ -6,7 +6,7 @@
   height: 80px;
   overflow: hidden;
   pointer-events: none;
-  background: #3083ff;
+  background: #030C4D;
   clip-path: polygon(0 0, 100% 0, 100% 100%);
   z-index: 2;
 }

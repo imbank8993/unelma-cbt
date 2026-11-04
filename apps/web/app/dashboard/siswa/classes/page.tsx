@@ -130,8 +130,8 @@ export default function SiswaClassesPage() {
                             type="button"
                             aria-pressed={selectedTab === tab.value}
                             onClick={() => setSelectedTab(tab.value)}
-                            className={`shrink-0 border-b-2 py-3 text-xs font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#3083FF] ${selectedTab === tab.value
-                                ? 'border-[#3083FF] text-[#3083FF]'
+                            className={`shrink-0 border-b-2 py-3 text-xs font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#030C4D] ${selectedTab === tab.value
+                                ? 'border-[#030C4D] text-[#030C4D]'
                                 : 'border-transparent text-slate-500 hover:border-slate-300 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200'}`}
                         >
                             {tab.label} ({tab.count})
@@ -141,7 +141,7 @@ export default function SiswaClassesPage() {
                 <button
                     type="button"
                     onClick={() => setIsJoinModalOpen(true)}
-                    className="mb-1 inline-flex shrink-0 items-center justify-center gap-1.5 rounded-xl bg-[#3083FF] px-3 py-2 text-xs font-semibold text-white shadow-xs shadow-[#3083FF]/20 transition-all hover:bg-[#2563EB] active:scale-95 sm:px-3.5"
+                    className="mb-1 inline-flex shrink-0 items-center justify-center gap-1.5 rounded-xl bg-[#030C4D] px-3 py-2 text-xs font-semibold text-white shadow-xs shadow-[#030C4D]/20 transition-all hover:bg-[#2563EB] active:scale-95 sm:px-3.5"
                 >
                     <Plus size={15} />
                     <span>Gabung Kelas</span>
@@ -151,13 +151,13 @@ export default function SiswaClassesPage() {
             {/* ── 3. Daftar Kartu Kelas ── */}
             {isLoading ? (
                 <div className="flex flex-col items-center justify-center py-20 space-y-3">
-                    <Loader2 size={24} className="animate-spin text-[#3083FF]" />
+                    <Loader2 size={24} className="animate-spin text-[#030C4D]" />
                     <p className="text-slate-400 font-semibold text-xs tracking-wide uppercase">Memuat kelas Anda...</p>
                 </div>
             ) : filteredClasses.length === 0 ? (
                 /* ── Empty State ── */
                 <div className="py-16 px-6 text-center bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl shadow-xs max-w-md mx-auto w-full flex flex-col items-center">
-                    <div className="w-12 h-12 bg-blue-50 dark:bg-slate-800 rounded-2xl flex items-center justify-center mb-3.5 text-[#3083FF]">
+                    <div className="w-12 h-12 bg-blue-50 dark:bg-slate-800 rounded-2xl flex items-center justify-center mb-3.5 text-[#030C4D]">
                         <GraduationCap size={24} />
                     </div>
                     <h3 className="text-base font-bold text-slate-800 dark:text-slate-100 mb-1">
@@ -172,7 +172,7 @@ export default function SiswaClassesPage() {
                         <button
                             type="button"
                             onClick={() => setIsJoinModalOpen(true)}
-                            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#3083FF] hover:bg-[#2563EB] text-white text-xs font-semibold shadow-xs transition-all active:scale-95"
+                            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#030C4D] hover:bg-[#2563EB] text-white text-xs font-semibold shadow-xs transition-all active:scale-95"
                         >
                             <KeyRound size={14} />
                             <span>Masukkan Kode Kelas</span>
@@ -191,12 +191,12 @@ export default function SiswaClassesPage() {
                                 initial={{ opacity: 0, y: 6 }}
                                 animate={{ opacity: 1, y: 0 }}
                                 transition={{ duration: 0.18, delay: index * 0.02 }}
-                                className="group bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 hover:border-[#3083FF]/40 dark:hover:border-[#3083FF]/50 rounded-2xl p-4 sm:p-5 shadow-xs hover:shadow-md transition-all duration-200 relative overflow-hidden flex flex-col justify-between"
+                                className="group bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 hover:border-[#030C4D]/40 dark:hover:border-[#030C4D]/50 rounded-2xl p-4 sm:p-5 shadow-xs hover:shadow-md transition-all duration-200 relative overflow-hidden flex flex-col justify-between"
                             >
                                 {/* Top Line Accent */}
                                 <div
                                     className={`absolute top-0 left-0 right-0 h-1 ${
-                                        isReguler ? 'bg-[#3083FF]' : 'bg-indigo-500'
+                                        isReguler ? 'bg-[#030C4D]' : 'bg-indigo-500'
                                     }`}
                                 />
 
@@ -207,7 +207,7 @@ export default function SiswaClassesPage() {
                                             <span
                                                 className={`text-[10px] font-bold tracking-wider uppercase ${
                                                     isReguler
-                                                        ? 'text-[#3083FF] dark:text-blue-400'
+                                                        ? 'text-[#030C4D] dark:text-blue-400'
                                                         : 'text-indigo-600 dark:text-indigo-400'
                                                 }`}
                                             >
@@ -231,7 +231,7 @@ export default function SiswaClassesPage() {
                                                 <LogOut size={13} />
                                             </button>
                                         ) : (
-                                            <div className="w-7 h-7 rounded-lg bg-slate-50 dark:bg-slate-800/80 border border-slate-100 dark:border-slate-700/60 flex items-center justify-center text-slate-400 group-hover:text-[#3083FF] transition-colors">
+                                            <div className="w-7 h-7 rounded-lg bg-slate-50 dark:bg-slate-800/80 border border-slate-100 dark:border-slate-700/60 flex items-center justify-center text-slate-400 group-hover:text-[#030C4D] transition-colors">
                                                 <School size={14} />
                                             </div>
                                         )}
@@ -239,7 +239,7 @@ export default function SiswaClassesPage() {
 
                                     {/* ── Nama Kelas (Fokus Utama, Tanpa Wali Kelas) ── */}
                                     <div className="pt-0.5">
-                                        <h2 className="text-sm font-semibold text-slate-800 dark:text-slate-100 group-hover:text-[#3083FF] dark:group-hover:text-blue-400 transition-colors leading-snug line-clamp-2">
+                                        <h2 className="text-sm font-semibold text-slate-800 dark:text-slate-100 group-hover:text-[#030C4D] dark:group-hover:text-blue-400 transition-colors leading-snug line-clamp-2">
                                             {cls.name}
                                         </h2>
                                         <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 font-medium">
@@ -255,7 +255,7 @@ export default function SiswaClassesPage() {
                                     </span>
                                     <Link
                                         href="/dashboard/siswa/schedule"
-                                        className="inline-flex items-center gap-1 text-xs font-semibold text-[#3083FF] hover:text-[#2563EB] group-hover:translate-x-0.5 transition-transform"
+                                        className="inline-flex items-center gap-1 text-xs font-semibold text-[#030C4D] hover:text-[#2563EB] group-hover:translate-x-0.5 transition-transform"
                                     >
                                         <span>Jadwal</span>
                                         <ChevronRight size={14} />
@@ -283,7 +283,7 @@ export default function SiswaClassesPage() {
 
                             <div className="flex items-center justify-between">
                                 <div className="flex items-center gap-3">
-                                    <div className="w-10 h-10 rounded-xl bg-blue-50 dark:bg-[#3083FF]/10 text-[#3083FF] flex items-center justify-center shrink-0 border border-blue-100/60 dark:border-[#3083FF]/20">
+                                    <div className="w-10 h-10 rounded-xl bg-blue-50 dark:bg-[#030C4D]/10 text-[#030C4D] flex items-center justify-center shrink-0 border border-blue-100/60 dark:border-[#030C4D]/20">
                                         <KeyRound size={18} />
                                     </div>
                                     <div>
@@ -315,7 +315,7 @@ export default function SiswaClassesPage() {
                                     placeholder="CONTOH: X9A"
                                     value={joinCode}
                                     onChange={e => setJoinCode(e.target.value)}
-                                    className="w-full bg-slate-50 dark:bg-slate-800/70 border border-slate-200 dark:border-slate-700 focus:bg-white dark:focus:bg-slate-800 rounded-xl py-2.5 px-3.5 focus:ring-2 focus:ring-[#3083FF]/20 focus:border-[#3083FF] outline-none font-bold text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 font-mono tracking-wider uppercase transition-all text-xs"
+                                    className="w-full bg-slate-50 dark:bg-slate-800/70 border border-slate-200 dark:border-slate-700 focus:bg-white dark:focus:bg-slate-800 rounded-xl py-2.5 px-3.5 focus:ring-2 focus:ring-[#030C4D]/20 focus:border-[#030C4D] outline-none font-bold text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 font-mono tracking-wider uppercase transition-all text-xs"
                                 />
 
                                 <div className="flex gap-2">
@@ -332,7 +332,7 @@ export default function SiswaClassesPage() {
                                     <button
                                         type="submit"
                                         disabled={isSubmitting || !joinCode.trim()}
-                                        className="flex-1 bg-[#3083FF] hover:bg-[#2563EB] text-white font-semibold py-2 px-4 rounded-xl shadow-xs shadow-[#3083FF]/20 transition-all flex items-center justify-center gap-1.5 active:scale-95 disabled:opacity-50 text-xs"
+                                        className="flex-1 bg-[#030C4D] hover:bg-[#2563EB] text-white font-semibold py-2 px-4 rounded-xl shadow-xs shadow-[#030C4D]/20 transition-all flex items-center justify-center gap-1.5 active:scale-95 disabled:opacity-50 text-xs"
                                     >
                                         {isSubmitting ? (
                                             <Loader2 size={14} className="animate-spin" />

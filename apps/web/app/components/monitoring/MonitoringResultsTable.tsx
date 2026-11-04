@@ -183,7 +183,7 @@ export function MonitoringResultsTable({ attempts, hasAnyAttempts, onViewDetails
             <ModalHeader
                 id="result-detail-modal-title"
                 title="Detail Hasil Peserta"
-                icon={<FileSpreadsheet className="text-[#3083FF]" size={20} />}
+                icon={<FileSpreadsheet className="text-[#030C4D]" size={20} />}
                 onClose={() => setSelectedId(null)}
             />
             {selectedAttempt && selectedFacts && (

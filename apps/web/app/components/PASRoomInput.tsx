@@ -81,7 +81,7 @@ export function PASRoomInput({ value, onChange, onCapacityChange, existingRooms 
                 if (room?.capacity && room.capacity > 0) onCapacityChange?.(room.capacity);
             }}
             placeholder="Cari atau ketik nama ruang..."
-            className="w-full h-[40px] px-3.5 bg-white border border-slate-200 rounded-xl text-sm text-slate-800 focus:outline-none focus:border-[#3083FF] focus:ring-1 focus:ring-[#3083FF]/20"
+            className="w-full h-[40px] px-3.5 bg-white border border-slate-200 rounded-xl text-sm text-slate-800 focus:outline-none focus:border-[#030C4D] focus:ring-1 focus:ring-[#030C4D]/20"
         />
         {open && <div id={id} role="listbox" aria-label="Daftar ruang"
             className="max-h-52 overflow-y-auto rounded-xl border border-slate-200 bg-white p-1.5 shadow-sm dark:border-slate-700 dark:bg-[var(--card)]">

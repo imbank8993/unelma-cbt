@@ -1,10 +1,10 @@
 :root {
-    --n-primary: #3083FF;
+    --n-primary: #030C4D;
     --n-border: #e2e8f0;
     --n-ink: #0f172a;
     --n-muted: #64748b;
     --n-card: #ffffff;
-    --n-soft: rgba(48, 131, 255, 0.08);
+    --n-soft: rgba(3, 12, 77, 0.08);
 }
 
 .tfd-root {
@@ -34,13 +34,13 @@
 }
 
 .tfd-trigger:hover:not(.tfd-disabled) {
-    border-color: var(--n-primary, #3083FF);
+    border-color: var(--n-primary, #030C4D);
 }
 
 .tfd-trigger.tfd-open,
 .tfd-trigger:focus-within:not(.tfd-disabled) {
-    border-color: var(--n-primary, #3083FF);
-    box-shadow: 0 0 0 3px rgba(48, 131, 255, 0.15);
+    border-color: var(--n-primary, #030C4D);
+    box-shadow: 0 0 0 3px rgba(3, 12, 77, 0.15);
     background: #ffffff;
 }
 
@@ -52,7 +52,7 @@
 
 .tfd-icon-btn {
     flex: none;
-    color: var(--n-primary, #3083FF);
+    color: var(--n-primary, #030C4D);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -121,12 +121,12 @@
 
 .tfd-chevron-btn:hover:not(:disabled) {
     opacity: 1;
-    color: var(--n-primary, #3083FF);
+    color: var(--n-primary, #030C4D);
 }
 
 .tfd-open .tfd-chevron-btn {
     transform: rotate(180deg);
-    color: var(--n-primary, #3083FF);
+    color: var(--n-primary, #030C4D);
     opacity: 1;
 }
 
@@ -166,8 +166,8 @@
 .tfd-badge {
     font-size: 0.7rem;
     font-weight: 700;
-    color: var(--n-primary, #3083FF);
-    background: var(--n-soft, rgba(48, 131, 255, 0.08));
+    color: var(--n-primary, #030C4D);
+    background: var(--n-soft, rgba(3, 12, 77, 0.08));
     padding: 2px 7px;
     border-radius: 6px;
 }
@@ -201,8 +201,8 @@
 }
 
 .tfd-manual-field:focus {
-    border-color: var(--n-primary, #3083FF);
-    box-shadow: 0 0 0 2px rgba(48, 131, 255, 0.2);
+    border-color: var(--n-primary, #030C4D);
+    box-shadow: 0 0 0 2px rgba(3, 12, 77, 0.2);
 }
 
 .tfd-colon {
@@ -274,12 +274,12 @@
 }
 
 .tfd-cell:hover:not(.selected) {
-    background: rgba(48, 131, 255, 0.1);
-    color: var(--n-primary, #3083FF);
+    background: rgba(3, 12, 77, 0.1);
+    color: var(--n-primary, #030C4D);
 }
 
 .tfd-cell.selected {
-    background: var(--n-primary, #3083FF);
+    background: var(--n-primary, #030C4D);
     color: #ffffff;
     font-weight: 700;
 }
@@ -296,7 +296,7 @@
 .tfd-link {
     border: none;
     background: transparent;
-    color: var(--n-primary, #3083FF);
+    color: var(--n-primary, #030C4D);
     font-size: 0.78rem;
     font-weight: 700;
     cursor: pointer;
@@ -305,12 +305,12 @@
 }
 
 .tfd-link:hover {
-    background: var(--n-soft, rgba(48, 131, 255, 0.08));
+    background: var(--n-soft, rgba(3, 12, 77, 0.08));
 }
 
 .tfd-btn-apply {
     border: none;
-    background: var(--n-primary, #3083FF);
+    background: var(--n-primary, #030C4D);
     color: #ffffff;
     font-size: 0.75rem;
     font-weight: 700;
@@ -354,13 +354,13 @@
 
 .dark .tfd-panel {
     background: var(--input, #1c2439) !important;
-    border: 1px solid rgba(48, 131, 255, 0.4) !important;
-    box-shadow: 0 0 35px rgba(48, 131, 255, 0.35) !important;
+    border: 1px solid rgba(3, 12, 77, 0.4) !important;
+    box-shadow: 0 0 35px rgba(3, 12, 77, 0.35) !important;
 }
 
 .dark .tfd-header,
 .dark .tfd-footer {
-    border-color: rgba(48, 131, 255, 0.25) !important;
+    border-color: rgba(3, 12, 77, 0.25) !important;
 }
 
 .dark .tfd-title,
@@ -393,11 +393,11 @@
 }
 
 .dark .tfd-cell:hover:not(.selected) {
-    background: rgba(48, 131, 255, 0.2) !important;
+    background: rgba(3, 12, 77, 0.2) !important;
     color: #60a5fa !important;
 }
 
 .dark .tfd-cell.selected {
-    background: #3083FF !important;
+    background: #030C4D !important;
     color: #ffffff !important;
 }

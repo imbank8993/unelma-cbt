@@ -27,7 +27,7 @@ export function AttemptAnalyticsHeader({ examTitle, attemptId, studentName, avat
                 </div>
                 <div className="flex max-w-[45%] shrink-0 items-center justify-end gap-3">
                     <span className="min-w-0 break-words text-right text-sm font-semibold text-slate-700">{studentName}</span>
-                    <div className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-full bg-blue-50 text-sm font-semibold text-[#3083FF]">
+                    <div className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-full bg-blue-50 text-sm font-semibold text-[#030C4D]">
                         {avatarUrl && failedAvatar !== avatarUrl ? (
                             // eslint-disable-next-line @next/next/no-img-element -- Profile photos can use external school URLs.
                             <img src={avatarUrl} alt={`Foto profil ${studentName}`} className="h-full w-full object-cover" onError={() => setFailedAvatar(avatarUrl)} />

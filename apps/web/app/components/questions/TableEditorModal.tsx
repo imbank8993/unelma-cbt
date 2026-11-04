@@ -325,7 +325,7 @@ function TableEditorModalContent({
                         }}
                         className={`py-1 rounded-md text-[11px] font-semibold border transition-all cursor-pointer ${
                           tableWidthPreset === p.key && !tableWidthCustom
-                            ? 'bg-[#3083FF] text-white border-[#3083FF] shadow-xs'
+                            ? 'bg-[#030C4D] text-white border-[#030C4D] shadow-xs'
                             : 'border-slate-200 text-slate-600 hover:border-slate-300'
                         }`}
                       >

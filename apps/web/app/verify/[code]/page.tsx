@@ -103,7 +103,7 @@ function VerifyPASDocumentContent({ rawCode }: { rawCode: string }) {
                 {/* Search / Switch Verification Code Bar */}
                 <div className="bg-white rounded-2xl border border-slate-200/90 p-4 shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                     <div className="flex min-w-0 items-center gap-2.5">
-                        <div className="w-9 h-9 rounded-xl bg-blue-50 border border-blue-200 text-[#3083FF] flex items-center justify-center shrink-0">
+                        <div className="w-9 h-9 rounded-xl bg-blue-50 border border-blue-200 text-[#030C4D] flex items-center justify-center shrink-0">
                             <ShieldCheck size={18} />
                         </div>
                         <div className="min-w-0">
@@ -124,12 +124,12 @@ function VerifyPASDocumentContent({ rawCode }: { rawCode: string }) {
                                 value={inputCode}
                                 onChange={(e) => setInputCode(e.target.value)}
                                 placeholder="BA-PAS-... / DH-PAS-..."
-                                className="w-full min-w-0 h-10 pl-8 pr-3 text-xs font-mono uppercase bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-[#3083FF]"
+                                className="w-full min-w-0 h-10 pl-8 pr-3 text-xs font-mono uppercase bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-[#030C4D]"
                             />
                         </div>
                         <button
                             type="submit"
-                            className="h-10 px-3.5 rounded-xl bg-[#3083FF] hover:bg-blue-600 text-white text-xs font-bold transition-colors shrink-0"
+                            className="h-10 px-3.5 rounded-xl bg-[#030C4D] hover:bg-blue-600 text-white text-xs font-bold transition-colors shrink-0"
                         >
                             Cek
                         </button>
@@ -138,7 +138,7 @@ function VerifyPASDocumentContent({ rawCode }: { rawCode: string }) {
 
                 {isLoading ? (
                     <div className="bg-white rounded-2xl border border-slate-200 p-8 sm:p-16 text-center space-y-3">
-                        <Loader2 size={32} className="animate-spin text-[#3083FF] mx-auto" />
+                        <Loader2 size={32} className="animate-spin text-[#030C4D] mx-auto" />
                         <p className="text-xs font-medium text-slate-500">
                             Memeriksa tanda tangan digital & integritas dokumen <strong className="font-mono break-all">{rawCode}</strong>...
                         </p>
@@ -237,7 +237,7 @@ function VerifyPASDocumentContent({ rawCode }: { rawCode: string }) {
                             {/* Attendance Summary */}
                             <div>
                                 <div className="text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-2 flex items-center gap-1.5">
-                                    <Users size={13} className="text-[#3083FF]" />
+                                    <Users size={13} className="text-[#030C4D]" />
                                     Rekapitulasi Kehadiran Peserta Tercatat
                                 </div>
                                 <div className="grid grid-cols-2 gap-2 text-center sm:grid-cols-5">
@@ -277,7 +277,7 @@ function VerifyPASDocumentContent({ rawCode }: { rawCode: string }) {
                             {/* Signatories */}
                             <div>
                                 <div className="text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-2 flex items-center gap-1.5">
-                                    <UserCheck size={13} className="text-[#3083FF]" />
+                                    <UserCheck size={13} className="text-[#030C4D]" />
                                     Pejabat Penandatangan Dokumen
                                 </div>
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">

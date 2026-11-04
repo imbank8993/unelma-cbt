@@ -277,7 +277,7 @@ export const SharedToolbar = React.memo(({ className = '' }: SharedToolbarProps)
                         <div className="px-5 py-4 bg-slate-50 border-b border-slate-100 flex items-center justify-between">
                             <div className="flex items-center gap-3">
                                 <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
-                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#3083FF" strokeWidth="2.5">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#030C4D" strokeWidth="2.5">
                                         <rect x="3" y="3" width="18" height="18" rx="2"/>
                                         <line x1="3" y1="9" x2="21" y2="9"/>
                                         <line x1="3" y1="15" x2="21" y2="15"/>
@@ -326,7 +326,7 @@ export const SharedToolbar = React.memo(({ className = '' }: SharedToolbarProps)
 
                         <div className="px-5 py-4 border-t border-slate-100 flex justify-end gap-3 bg-slate-50">
                             <button onClick={() => setTableDialogOpen(false)} className="px-4 py-2 text-sm font-medium text-slate-500 hover:text-slate-700 transition-colors">Batal</button>
-                            <button onClick={insertTable} className="px-5 py-2 text-sm font-semibold bg-[#3083FF] text-white rounded-lg hover:bg-[#3083FF] transition-colors shadow-lg shadow-blue-500/20">Sisipkan</button>
+                            <button onClick={insertTable} className="px-5 py-2 text-sm font-semibold bg-[#030C4D] text-white rounded-lg hover:bg-[#030C4D] transition-colors shadow-lg shadow-blue-500/20">Sisipkan</button>
                         </div>
                     </motion.div>
                 </div>
@@ -535,7 +535,7 @@ export const OptionToolbar = React.memo(({ className = '' }: OptionToolbarProps)
                         <div className="px-5 py-4 bg-slate-50 border-b border-slate-100 flex items-center justify-between">
                             <div className="flex items-center gap-3">
                                 <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
-                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#3083FF" strokeWidth="2.5">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#030C4D" strokeWidth="2.5">
                                         <rect x="3" y="3" width="18" height="18" rx="2"/>
                                         <line x1="3" y1="9" x2="21" y2="9"/>
                                         <line x1="3" y1="15" x2="21" y2="15"/>
@@ -584,7 +584,7 @@ export const OptionToolbar = React.memo(({ className = '' }: OptionToolbarProps)
 
                         <div className="px-5 py-4 border-t border-slate-100 flex justify-end gap-3 bg-slate-50">
                             <button onClick={() => setTableDialogOpen(false)} className="px-4 py-2 text-sm font-medium text-slate-500 hover:text-slate-700 transition-colors">Batal</button>
-                            <button onClick={insertTable} className="px-5 py-2 text-sm font-semibold bg-[#3083FF] text-white rounded-lg hover:bg-[#3083FF] transition-colors shadow-lg shadow-blue-500/20">Sisipkan</button>
+                            <button onClick={insertTable} className="px-5 py-2 text-sm font-semibold bg-[#030C4D] text-white rounded-lg hover:bg-[#030C4D] transition-colors shadow-lg shadow-blue-500/20">Sisipkan</button>
                         </div>
                     </motion.div>
                 </div>

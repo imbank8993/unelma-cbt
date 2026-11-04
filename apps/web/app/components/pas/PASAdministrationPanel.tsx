@@ -1406,7 +1406,7 @@ ${KOP_AND_A4_CSS}
                         <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
                             <div className="flex h-full flex-col gap-3 rounded-xl border border-slate-200 bg-white p-4">
                                 <div className="flex items-start gap-3">
-                                    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-blue-50 text-[#3083FF]">
+                                    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-blue-50 text-[#030C4D]">
                                         <Printer size={17} />
                                     </span>
                                     <div className="min-w-0">
@@ -1495,7 +1495,7 @@ ${KOP_AND_A4_CSS}
                                                 onClick={() => setOverviewFilter(filter.value)}
                                                 className={`inline-flex shrink-0 items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-semibold transition-colors cursor-pointer ${
                                                     active
-                                                        ? 'border-[#3083FF] bg-[#3083FF] text-white'
+                                                        ? 'border-[#030C4D] bg-[#030C4D] text-white'
                                                         : attention
                                                             ? 'border-amber-300 bg-amber-50 text-amber-800 hover:bg-amber-100'
                                                             : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50'
@@ -1514,7 +1514,7 @@ ${KOP_AND_A4_CSS}
                         {overviewError && <p role="alert" className="px-5 py-3 text-xs text-red-700">{overviewError}</p>}
                         {isLoadingOverview ? (
                             <div className="p-12 flex flex-col items-center justify-center gap-2 text-slate-500">
-                                <Loader2 size={24} className="animate-spin text-[#3083FF]" />
+                                <Loader2 size={24} className="animate-spin text-[#030C4D]" />
                                 <span className="text-xs">Memuat rekapitulasi administrasi...</span>
                             </div>
                         ) : overviewItems.length === 0 ? (
@@ -1702,7 +1702,7 @@ ${KOP_AND_A4_CSS}
 
                     {isLoading || !slot ? (
                         <div className="bg-white rounded-xl border border-slate-200 p-16 flex flex-col items-center justify-center gap-2">
-                            <Loader2 size={28} className="animate-spin text-[#3083FF]" />
+                            <Loader2 size={28} className="animate-spin text-[#030C4D]" />
                             <p className="text-xs text-slate-500 font-medium">Memuat data peserta, waktu ujian, dan Berita Acara...</p>
                         </div>
                     ) : subView === 'editor' ? (
@@ -1769,7 +1769,7 @@ ${KOP_AND_A4_CSS}
                         <div className="px-5 py-4 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                             <div>
                                 <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
-                                    <Users size={15} className="text-[#3083FF]" />
+                                    <Users size={15} className="text-[#030C4D]" />
                                     Daftar Hadir & Absensi
                                 </h3>
                                 {slot.students.length > 0 && (
@@ -1904,7 +1904,7 @@ ${KOP_AND_A4_CSS}
                                                                       ? 'Ket. izin...'
                                                                       : 'Catatan...'
                                                             }
-                                                            className="w-full min-w-[110px] px-2.5 py-1 text-xs bg-white border border-slate-200 rounded-lg focus:outline-none focus:border-[#3083FF]"
+                                                            className="w-full min-w-[110px] px-2.5 py-1 text-xs bg-white border border-slate-200 rounded-lg focus:outline-none focus:border-[#030C4D]"
                                                         />
                                                     </td>
                                                 </tr>
@@ -1921,7 +1921,7 @@ ${KOP_AND_A4_CSS}
                         <div className="bg-white rounded-xl border border-slate-200 p-4 space-y-4">
                             <div>
                                 <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
-                                    <FileText size={15} className="text-[#3083FF]" />
+                                    <FileText size={15} className="text-[#030C4D]" />
                                     Berita Acara Pelaksanaan Ujian
                                 </h3>
                                 {slot.schedules.length > 0 && (
@@ -1939,7 +1939,7 @@ ${KOP_AND_A4_CSS}
                                         value={notes}
                                         onChange={(e) => setNotes(e.target.value)}
                                         placeholder="Catatan pelaksanaan ujian (opsional)..."
-                                        className="w-full px-3 py-2 text-xs bg-white border border-slate-200 rounded-xl focus:outline-none focus:border-[#3083FF] focus:ring-1 focus:ring-[#3083FF]/20 resize-y"
+                                        className="w-full px-3 py-2 text-xs bg-white border border-slate-200 rounded-xl focus:outline-none focus:border-[#030C4D] focus:ring-1 focus:ring-[#030C4D]/20 resize-y"
                                     />
                                 </div>
 
@@ -1959,7 +1959,7 @@ ${KOP_AND_A4_CSS}
                                                 value={incidentSummary}
                                                 onChange={(e) => setIncidentSummary(e.target.value)}
                                                 placeholder="Catat jika ada kejadian atau kendala..."
-                                                className="w-full px-3 py-2 text-xs bg-white border border-slate-200 rounded-xl focus:outline-none focus:border-[#3083FF] focus:ring-1 focus:ring-[#3083FF]/20 resize-y"
+                                                className="w-full px-3 py-2 text-xs bg-white border border-slate-200 rounded-xl focus:outline-none focus:border-[#030C4D] focus:ring-1 focus:ring-[#030C4D]/20 resize-y"
                                             />
                                         </div>
                                     )}
@@ -2000,7 +2000,7 @@ ${KOP_AND_A4_CSS}
                                 )}
                                 <div className="min-w-0 flex-1 text-xs space-y-1">
                                     <div className="font-bold text-slate-900 flex items-center gap-1.5">
-                                        <ShieldCheck size={14} className="text-[#3083FF] shrink-0" />
+                                        <ShieldCheck size={14} className="text-[#030C4D] shrink-0" />
                                         Verifikasi Keaslian Dokumen (QR & SHA-256)
                                     </div>
                                     <div className="text-[11px] text-slate-600">
@@ -2017,7 +2017,7 @@ ${KOP_AND_A4_CSS}
                                             href={`/verify/${encodeURIComponent(baVerificationCode)}`}
                                             target="_blank"
                                             rel="noopener noreferrer"
-                                            className="inline-flex items-center gap-1 text-[11px] font-bold text-[#3083FF] hover:underline"
+                                            className="inline-flex items-center gap-1 text-[11px] font-bold text-[#030C4D] hover:underline"
                                         >
                                             Verifikasi Berita Acara <ExternalLink size={11} />
                                         </a>
@@ -2025,7 +2025,7 @@ ${KOP_AND_A4_CSS}
                                             href={`/verify/${encodeURIComponent(dhVerificationCode)}`}
                                             target="_blank"
                                             rel="noopener noreferrer"
-                                            className="inline-flex items-center gap-1 text-[11px] font-bold text-[#3083FF] hover:underline"
+                                            className="inline-flex items-center gap-1 text-[11px] font-bold text-[#030C4D] hover:underline"
                                         >
                                             Verifikasi Daftar Hadir <ExternalLink size={11} />
                                         </a>

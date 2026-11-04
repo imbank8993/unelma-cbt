@@ -285,7 +285,7 @@ export default function AdminPASDetailPage() {
     if (isLoading) {
         return (
             <div className="flex justify-center py-20">
-                <Loader2 size={36} className="text-[#3083FF] animate-spin" />
+                <Loader2 size={36} className="text-[#030C4D] animate-spin" />
             </div>
         );
     }
@@ -410,7 +410,7 @@ export default function AdminPASDetailPage() {
                                         <button
                                             type="button"
                                             onClick={() => setIsEditModalOpen(true)}
-                                            className="text-[11px] text-[#3083FF] hover:underline font-semibold cursor-pointer ml-0.5"
+                                            className="text-[11px] text-[#030C4D] hover:underline font-semibold cursor-pointer ml-0.5"
                                         >
                                             (Ubah)
                                         </button>
@@ -434,13 +434,13 @@ export default function AdminPASDetailPage() {
                     <button
                         onClick={() => setActiveTab('schedules')}
                         className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all ${
-                            activeTab === 'schedules' ? 'bg-white text-[#3083FF] shadow-xs' : 'text-slate-500 hover:text-slate-700'
+                            activeTab === 'schedules' ? 'bg-white text-[#030C4D] shadow-xs' : 'text-slate-500 hover:text-slate-700'
                         }`}
                     >
                         <Calendar size={13} />
                         Semua Jadwal
                         <span className={`px-1.5 py-0.2 rounded text-[10px] font-bold ${
-                            activeTab === 'schedules' ? 'bg-[#3083FF]/10 text-[#3083FF]' : 'bg-slate-200 text-slate-500'
+                            activeTab === 'schedules' ? 'bg-[#030C4D]/10 text-[#030C4D]' : 'bg-slate-200 text-slate-500'
                         }`}>
                             {schedules.length}
                         </span>
@@ -449,7 +449,7 @@ export default function AdminPASDetailPage() {
                     <button
                         onClick={() => setActiveTab('live_today')}
                         className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all ${
-                            activeTab === 'live_today' ? 'bg-white text-[#3083FF] shadow-xs' : 'text-slate-500 hover:text-slate-700'
+                            activeTab === 'live_today' ? 'bg-white text-[#030C4D] shadow-xs' : 'text-slate-500 hover:text-slate-700'
                         }`}
                     >
                         <Zap size={13} className={activeTab === 'live_today' ? 'text-amber-500' : ''} />
@@ -466,14 +466,14 @@ export default function AdminPASDetailPage() {
                         type="button"
                         onClick={() => setActiveTab('rooms_sessions')}
                         className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all ${
-                            activeTab === 'rooms_sessions' ? 'bg-white text-[#3083FF] shadow-xs' : 'text-slate-500 hover:text-slate-700'
+                            activeTab === 'rooms_sessions' ? 'bg-white text-[#030C4D] shadow-xs' : 'text-slate-500 hover:text-slate-700'
                         }`}
                     >
                         <DoorOpen size={13} />
                         Ruang & Sesi
                         {rooms.length > 0 && (
                             <span className={`px-1.5 py-0.2 rounded text-[10px] font-bold ${
-                                activeTab === 'rooms_sessions' ? 'bg-[#3083FF]/10 text-[#3083FF]' : 'bg-slate-200 text-slate-500'
+                                activeTab === 'rooms_sessions' ? 'bg-[#030C4D]/10 text-[#030C4D]' : 'bg-slate-200 text-slate-500'
                             }`}>
                                 {rooms.length}
                             </span>
@@ -483,7 +483,7 @@ export default function AdminPASDetailPage() {
                         type="button"
                         onClick={() => setActiveTab('administration')}
                         className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all ${
-                            activeTab === 'administration' ? 'bg-white text-[#3083FF] shadow-xs' : 'text-slate-500 hover:text-slate-700'
+                            activeTab === 'administration' ? 'bg-white text-[#030C4D] shadow-xs' : 'text-slate-500 hover:text-slate-700'
                         }`}
                     >
                         <FileText size={13} />
@@ -493,7 +493,7 @@ export default function AdminPASDetailPage() {
                         type="button"
                         onClick={() => setActiveTab('exam_settings')}
                         className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all ${
-                            activeTab === 'exam_settings' ? 'bg-white text-[#3083FF] shadow-xs' : 'text-slate-500 hover:text-slate-700'
+                            activeTab === 'exam_settings' ? 'bg-white text-[#030C4D] shadow-xs' : 'text-slate-500 hover:text-slate-700'
                         }`}
                     >
                         <Settings2 size={13} />
@@ -502,7 +502,7 @@ export default function AdminPASDetailPage() {
                     {!period.is_locked && (
                         <button type="button" onClick={() => setActiveTab('bulk')}
                             className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all ${
-                                activeTab === 'bulk' ? 'bg-white text-[#3083FF] shadow-xs' : 'text-slate-500 hover:text-slate-700'
+                                activeTab === 'bulk' ? 'bg-white text-[#030C4D] shadow-xs' : 'text-slate-500 hover:text-slate-700'
                             }`}>
                             <Table size={13} />
                             Jadwal Massal
@@ -633,7 +633,7 @@ export default function AdminPASDetailPage() {
                                     value={searchQuery}
                                     onChange={(e) => setSearchQuery(e.target.value)}
                                     placeholder="Cari bank soal, mapel, kelas, atau ruang..."
-                                    className="w-full bg-slate-50 border border-slate-200 rounded-lg py-2 pl-9 pr-8 text-xs focus:ring-1 focus:ring-[#3083FF] focus:border-[#3083FF] outline-none text-slate-700"
+                                    className="w-full bg-slate-50 border border-slate-200 rounded-lg py-2 pl-9 pr-8 text-xs focus:ring-1 focus:ring-[#030C4D] focus:border-[#030C4D] outline-none text-slate-700"
                                 />
                                 {searchQuery && (
                                     <button
@@ -682,7 +682,7 @@ export default function AdminPASDetailPage() {
                                             setClassFilter('all');
                                             setStatusFilter('all');
                                         }}
-                                        className="px-2.5 py-2 text-xs text-[#3083FF] hover:underline transition-colors whitespace-nowrap font-medium"
+                                        className="px-2.5 py-2 text-xs text-[#030C4D] hover:underline transition-colors whitespace-nowrap font-medium"
                                     >
                                         Reset
                                     </button>
@@ -703,7 +703,7 @@ export default function AdminPASDetailPage() {
                     {/* Empty State: Folder Empty */}
                     {activeTab === 'schedules' && schedules.length === 0 && (
                         <div className="py-14 text-center text-slate-500 border border-dashed border-slate-200 rounded-2xl bg-white p-6">
-                            <div className="w-12 h-12 rounded-2xl bg-blue-50 border border-blue-200 flex items-center justify-center text-[#3083FF] mx-auto mb-3">
+                            <div className="w-12 h-12 rounded-2xl bg-blue-50 border border-blue-200 flex items-center justify-center text-[#030C4D] mx-auto mb-3">
                                 <FolderOpen size={24} />
                             </div>
                             <p className="font-bold text-slate-800 text-sm">Folder Ujian Masih Kosong</p>
@@ -788,11 +788,11 @@ export default function AdminPASDetailPage() {
                                                 if (el) el.indeterminate = isSomeDaySelected;
                                             }}
                                             onChange={toggleSelectAllDay}
-                                            className="w-4 h-4 rounded text-[#3083FF] focus:ring-[#3083FF]/20 cursor-pointer"
+                                            className="w-4 h-4 rounded text-[#030C4D] focus:ring-[#030C4D]/20 cursor-pointer"
                                             title="Pilih semua jadwal di tanggal ini"
                                         />
                                         <div className="flex items-center gap-2">
-                                            <Calendar size={14} className="text-[#3083FF]" />
+                                            <Calendar size={14} className="text-[#030C4D]" />
                                             <span className="font-bold text-slate-800 text-sm">
                                                 {formatDateWithDay(dayGroup.date)}
                                             </span>
@@ -849,7 +849,7 @@ export default function AdminPASDetailPage() {
                                                                     aria-label={`Pilih jadwal ${bankTitle}`}
                                                                     checked={isSelected}
                                                                     onChange={() => toggleScheduleSelect(sc.id)}
-                                                                    className="w-4 h-4 rounded text-[#3083FF] focus:ring-[#3083FF]/20 cursor-pointer"
+                                                                    className="w-4 h-4 rounded text-[#030C4D] focus:ring-[#030C4D]/20 cursor-pointer"
                                                                 />
                                                             </td>
                                                             <td className="py-3 px-3">
@@ -894,7 +894,7 @@ export default function AdminPASDetailPage() {
                     {/* ── Floating Action Bar for Selected Schedules ── */}
                     {selectedScheduleIds.length > 0 && (
                         <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 bg-white/95 backdrop-blur-md border border-slate-200 shadow-2xl rounded-2xl px-5 py-3 flex flex-wrap items-center gap-4 max-w-xl w-[92%] sm:w-auto">
-                            <div className="w-8 h-8 rounded-lg bg-blue-50 text-[#3083FF] flex items-center justify-center shrink-0">
+                            <div className="w-8 h-8 rounded-lg bg-blue-50 text-[#030C4D] flex items-center justify-center shrink-0">
                                 <Zap size={16} />
                             </div>
                             <div className="min-w-0 pr-2">
@@ -1003,7 +1003,7 @@ export default function AdminPASDetailPage() {
                                     max={period.end_date?.split('T')[0]}
                                     value={scheduleForm.scheduled_date}
                                     onChange={e => setScheduleForm(p => ({ ...p, scheduled_date: e.target.value }))}
-                                    className="w-full h-[40px] px-3.5 bg-white border border-slate-200 rounded-xl text-sm text-slate-800 focus:outline-none focus:border-[#3083FF] focus:ring-1 focus:ring-[#3083FF]/20 transition-all"
+                                    className="w-full h-[40px] px-3.5 bg-white border border-slate-200 rounded-xl text-sm text-slate-800 focus:outline-none focus:border-[#030C4D] focus:ring-1 focus:ring-[#030C4D]/20 transition-all"
                                 />
                             </ModalField>
 
@@ -1032,7 +1032,7 @@ export default function AdminPASDetailPage() {
                                     min="1"
                                     value={scheduleForm.duration_minutes}
                                     onChange={e => setScheduleForm(p => ({ ...p, duration_minutes: parseInt(e.target.value) || 0 }))}
-                                    className="w-full h-[40px] px-3.5 bg-white border border-slate-200 rounded-xl text-sm text-slate-800 focus:outline-none focus:border-[#3083FF] focus:ring-1 focus:ring-[#3083FF]/20 transition-all"
+                                    className="w-full h-[40px] px-3.5 bg-white border border-slate-200 rounded-xl text-sm text-slate-800 focus:outline-none focus:border-[#030C4D] focus:ring-1 focus:ring-[#030C4D]/20 transition-all"
                                 />
                             </ModalField>
 

@@ -90,13 +90,13 @@
 }
 
 .insertion-modal .insertion-title-icon {
-  background: #3083ff26 !important;
-  border-color: #3083ff59 !important;
-  color: #3083ff !important;
+  background: #030C4D26 !important;
+  border-color: #030C4D59 !important;
+  color: #030C4D !important;
 }
 
 .insertion-modal .insertion-title-icon > svg {
-  color: #3083ff !important;
+  color: #030C4D !important;
 }
 
 .dark .insertion-modal [class~="bg-slate-50/40"],
@@ -118,8 +118,8 @@
   color: #f1f5f9;
   color-scheme: dark;
   --caret-color: #60a5fa;
-  --selection-background-color: #3083ff40;
-  --contains-highlight-background-color: #3083ff26;
+  --selection-background-color: #030C4D40;
+  --contains-highlight-background-color: #030C4D26;
 }
 
 .dark .insertion-modal #mf-editor-modal::part(prompt),

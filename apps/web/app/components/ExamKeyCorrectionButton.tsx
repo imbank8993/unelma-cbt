@@ -88,7 +88,7 @@ export function ExamKeyCorrectionButton({ examId, onComplete }: { examId: string
             <ModalBody className="exam-key-correction__body">
                 <p className="text-sm text-slate-500">Koreksi kunci dan pembatalan soal berlaku untuk ujian ini. Nilai akan ditutup sementara, kemudian seluruh peserta dinilai ulang termasuk IRT.</p>
                 {error && <p role="alert" className="mb-4 text-sm text-red-600">{error}</p>}
-                {progress && <p role="status" className="mb-4 text-sm text-[#3083FF]">{progress}</p>}
+                {progress && <p role="status" className="mb-4 text-sm text-[#030C4D]">{progress}</p>}
                 {!data && <p className="text-sm text-slate-500">{busy ? 'Memuat kunci ujian…' : 'Kunci ujian belum tersedia.'}</p>}
                 {data && <>
                     {pending ? <p className="mb-4 text-sm text-slate-600">Penilaian ulang belum selesai: {data.correction?.completed}/{data.correction?.total} peserta. Klik lanjutkan untuk meneruskan proses.</p> : <>
@@ -118,7 +118,7 @@ export function ExamKeyCorrectionButton({ examId, onComplete }: { examId: string
                             {voidDrafts[selected.id]
                                 ? <p className="text-sm text-amber-800">Soal ini tidak akan dihitung. Kunci jawabannya tidak perlu diubah.</p>
                                 : CORRECTABLE_QUESTION_TYPES.includes(selected.type) ? <>
-                                    <p className="mb-3 text-sm font-semibold text-[#3083FF]">Pilih atau isi jawaban yang benar</p>
+                                    <p className="mb-3 text-sm font-semibold text-[#030C4D]">Pilih atau isi jawaban yang benar</p>
                                     <QuestionRenderer key={`${data.revision}:${selected.id}`} question={selected} answer={drafts[selected.id]} onAnswerChange={answer => {
                                         setDrafts(current => ({ ...current, [selected.id]: typeof answer === 'string' ? answer : JSON.stringify(answer) }));
                                     }} />

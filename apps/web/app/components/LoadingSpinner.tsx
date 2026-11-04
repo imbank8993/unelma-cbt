@@ -31,7 +31,7 @@ export function LoadingDots() {
             {[0, 1, 2].map((i) => (
                 <motion.div
                     key={i}
-                    className="w-2 h-2 bg-[#3083FF] rounded-full"
+                    className="w-2 h-2 bg-[#030C4D] rounded-full"
                     animate={{ y: ["0%", "-50%", "0%"] }}
                     transition={{ duration: 0.6, repeat: Infinity, ease: "easeInOut", delay: i * 0.15 }}
                 />
@@ -47,7 +47,7 @@ export function LoadingPulse({ text }: { text?: string }) {
                 {[0, 1, 2].map((i) => (
                     <motion.div
                         key={i}
-                        className={`w-3 h-3 rounded-full ${i === 1 ? 'bg-[#3083FF]' : 'bg-[#3083FF]'}`}
+                        className={`w-3 h-3 rounded-full ${i === 1 ? 'bg-[#030C4D]' : 'bg-[#030C4D]'}`}
                         animate={{ scale: [1, 1.2, 1], opacity: [0.5, 1, 0.5] }}
                         transition={{ duration: 1, repeat: Infinity, ease: "easeInOut", delay: i * 0.2 }}
                     />

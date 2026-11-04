@@ -304,9 +304,9 @@ export function DatePicker({
                         <div className="dpk-range-header">
                             <span className="dpk-range-hint">
                                 {isPickingEnd ? (
-                                    <><i className="bi bi-cursor-fill" style={{ color: '#3083FF', marginRight: '4px' }} /> Pilih tanggal selesai...</>
+                                    <><i className="bi bi-cursor-fill" style={{ color: '#030C4D', marginRight: '4px' }} /> Pilih tanggal selesai...</>
                                 ) : (
-                                    <><i className="bi bi-calendar-range-fill" style={{ color: '#3083FF', marginRight: '4px' }} /> Pilih tanggal / rentang</>
+                                    <><i className="bi bi-calendar-range-fill" style={{ color: '#030C4D', marginRight: '4px' }} /> Pilih tanggal / rentang</>
                                 )}
                             </span>
                             {isPickingEnd && (

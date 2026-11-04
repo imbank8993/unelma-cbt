@@ -207,7 +207,7 @@ function ResetExamForm({
       <ModalHeader
         id="reset-exam-modal-title"
         title={notStarted ? 'Ujian Susulan' : isActive ? 'Reset Sesi Pengerjaan' : 'Pemulihan / Susulan Ujian'}
-        icon={<RotateCcw className="text-[#3083FF]" size={18} />}
+        icon={<RotateCcw className="text-[#030C4D]" size={18} />}
         onClose={isSubmitting ? undefined : onClose}
       />
 
@@ -291,7 +291,7 @@ function ResetExamForm({
                 aria-pressed={mode === 'PULIHKAN'}
                 className={`participant-recovery-mode rounded-xl border p-2.5 text-left transition-all ${
                   mode === 'PULIHKAN'
-                    ? 'border-[#3083FF] bg-[#3083FF]/5 ring-1 ring-[#3083FF]/30'
+                    ? 'border-[#030C4D] bg-[#030C4D]/5 ring-1 ring-[#030C4D]/30'
                     : 'border-slate-200 bg-white hover:border-slate-300'
                 }`}
               >
@@ -333,7 +333,7 @@ function ResetExamForm({
                   const digitsOnly = e.target.value.replace(/[^0-9]/g, '');
                   setDurationInput(digitsOnly);
                 }}
-                className="participant-recovery-field h-9 w-24 rounded-lg border border-slate-300 px-3 text-sm font-bold text-slate-800 outline-none focus:border-[#3083FF] focus:ring-2 focus:ring-[#3083FF]/15"
+                className="participant-recovery-field h-9 w-24 rounded-lg border border-slate-300 px-3 text-sm font-bold text-slate-800 outline-none focus:border-[#030C4D] focus:ring-2 focus:ring-[#030C4D]/15"
               />
               {quickDurations.map((mins) => (
                 <button
@@ -342,7 +342,7 @@ function ResetExamForm({
                   onClick={() => setDurationInput(String(mins))}
                   className={`h-9 px-2.5 rounded-lg text-xs font-semibold border transition-all ${
                     duration === mins
-                      ? 'border-[#3083FF] bg-[#3083FF] text-white'
+                      ? 'border-[#030C4D] bg-[#030C4D] text-white'
                       : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50'
                   }`}
                 >
@@ -370,7 +370,7 @@ function ResetExamForm({
               value={reason}
               onChange={(e) => setReason(e.target.value)}
               placeholder="Tuliskan alasan singkat (min. 5 karakter)..."
-              className="participant-recovery-field w-full rounded-lg border border-slate-300 p-2.5 text-xs text-slate-800 outline-none focus:border-[#3083FF] focus:ring-2 focus:ring-[#3083FF]/15 placeholder:text-slate-400"
+              className="participant-recovery-field w-full rounded-lg border border-slate-300 p-2.5 text-xs text-slate-800 outline-none focus:border-[#030C4D] focus:ring-2 focus:ring-[#030C4D]/15 placeholder:text-slate-400"
             />
             <div className="mt-1.5 flex flex-wrap gap-1">
               {PRESET_REASONS.map((preset) => (
@@ -378,7 +378,7 @@ function ResetExamForm({
                   key={preset}
                   type="button"
                   onClick={() => setReason(preset)}
-                  className="rounded-md border border-slate-200 bg-slate-50 px-2 py-0.5 text-[11px] text-slate-600 hover:border-[#3083FF]/40 hover:bg-[#3083FF]/10 hover:text-[#3083FF]"
+                  className="rounded-md border border-slate-200 bg-slate-50 px-2 py-0.5 text-[11px] text-slate-600 hover:border-[#030C4D]/40 hover:bg-[#030C4D]/10 hover:text-[#030C4D]"
                 >
                   {preset}
                 </button>

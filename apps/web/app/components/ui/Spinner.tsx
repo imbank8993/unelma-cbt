@@ -74,7 +74,7 @@ export function Spinner({
                 <span
                     className="acca-loader-buble"
                     aria-hidden="true"
-                    style={{ '--acca-size': `${size}px`, '--acca-color-1': color || 'var(--n-primary, #3083FF)' } as React.CSSProperties}
+                    style={{ '--acca-size': `${size}px`, '--acca-color-1': color || 'var(--n-primary, #030C4D)' } as React.CSSProperties}
                 />
             )}
 
@@ -155,7 +155,7 @@ export function Spinner({
                     width: 7px;
                     height: 7px;
                     border-radius: 50%;
-                    background-color: ${color || 'var(--n-primary, #3083FF)'};
+                    background-color: ${color || 'var(--n-primary, #030C4D)'};
                     display: inline-block;
                     animation: accaDotStep 1.2s infinite ease-in-out both;
                 }

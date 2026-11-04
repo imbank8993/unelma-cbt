@@ -59,7 +59,7 @@ export const ChartEmbed = Node.create({
     const labels = (node.attrs.labels || []) as string[];
     const values = (node.attrs.values || []) as number[];
     const width = (node.attrs.width || '100%') as '50%' | '100%';
-    const colors = ['#3083ff', '#10b981', '#ef4444', '#8b5cf6', '#f59e0b', '#06b6d4', '#ec4899', '#84cc16'];
+    const colors = ['#030C4D', '#10b981', '#ef4444', '#8b5cf6', '#f59e0b', '#06b6d4', '#ec4899', '#84cc16'];
 
     let chartVisual: unknown[];
 
@@ -143,7 +143,7 @@ export const ChartEmbed = Node.create({
             cx: p.x.toFixed(1),
             cy: p.y.toFixed(1),
             r: '4',
-            fill: '#3083ff',
+            fill: '#030C4D',
             stroke: '#ffffff',
             'stroke-width': '2',
           },
@@ -191,7 +191,7 @@ export const ChartEmbed = Node.create({
           // Baseline grid
           ['line', { x1: '15', y1: '130', x2: '285', y2: '130', stroke: '#e2e8f0', 'stroke-width': '1.5' }],
           // Polyline
-          ['polyline', { fill: 'none', stroke: '#3083ff', 'stroke-width': '2.5', points: polylinePoints }],
+          ['polyline', { fill: 'none', stroke: '#030C4D', 'stroke-width': '2.5', points: polylinePoints }],
           ...circles,
         ],
       ];

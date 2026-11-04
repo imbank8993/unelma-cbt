@@ -572,7 +572,7 @@ export default function RoomManagementPanel({ period, view, onViewChange, onChan
                     onClick={() => handleTabChange('rooms')}
                     className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
                         activeTab === 'rooms'
-                            ? 'bg-white text-[#3083FF] shadow-xs'
+                            ? 'bg-white text-[#030C4D] shadow-xs'
                             : 'text-slate-600 hover:text-slate-900'
                     }`}
                 >
@@ -580,7 +580,7 @@ export default function RoomManagementPanel({ period, view, onViewChange, onChan
                     Ruang & Pengawas
                     {rooms.length > 0 && (
                         <span className={`px-1.5 py-0.2 rounded text-[10px] font-bold ${
-                            activeTab === 'rooms' ? 'bg-[#3083FF]/10 text-[#3083FF]' : 'bg-slate-200 text-slate-500'
+                            activeTab === 'rooms' ? 'bg-[#030C4D]/10 text-[#030C4D]' : 'bg-slate-200 text-slate-500'
                         }`}>
                             {rooms.length}
                         </span>
@@ -591,7 +591,7 @@ export default function RoomManagementPanel({ period, view, onViewChange, onChan
                     onClick={() => handleTabChange('sessions')}
                     className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
                         activeTab === 'sessions'
-                            ? 'bg-white text-[#3083FF] shadow-xs'
+                            ? 'bg-white text-[#030C4D] shadow-xs'
                             : 'text-slate-600 hover:text-slate-900'
                     }`}
                 >
@@ -599,7 +599,7 @@ export default function RoomManagementPanel({ period, view, onViewChange, onChan
                     Sesi Ujian
                     {sessions.length > 0 && (
                         <span className={`px-1.5 py-0.2 rounded text-[10px] font-bold ${
-                            activeTab === 'sessions' ? 'bg-[#3083FF]/10 text-[#3083FF]' : 'bg-slate-200 text-slate-500'
+                            activeTab === 'sessions' ? 'bg-[#030C4D]/10 text-[#030C4D]' : 'bg-slate-200 text-slate-500'
                         }`}>
                             {sessions.length}
                         </span>
@@ -637,7 +637,7 @@ export default function RoomManagementPanel({ period, view, onViewChange, onChan
                                             disabled={isSaving || readOnly}
                                             value={newRoomCapacity}
                                             onChange={e => setNewRoomCapacity(parseInt(e.target.value) || 0)}
-                                            className="w-full h-[40px] px-3.5 bg-white border border-slate-200 rounded-xl text-sm text-slate-800 focus:outline-none focus:border-[#3083FF] focus:ring-1 focus:ring-[#3083FF]/20"
+                                            className="w-full h-[40px] px-3.5 bg-white border border-slate-200 rounded-xl text-sm text-slate-800 focus:outline-none focus:border-[#030C4D] focus:ring-1 focus:ring-[#030C4D]/20"
                                         />
                                         <p className="mt-1.5 text-xs text-slate-500">Pilih ruang dari daftar master untuk mengisi kapasitas otomatis, atau atur jumlah kursi secara manual.</p>
                                     </div>
@@ -727,7 +727,7 @@ export default function RoomManagementPanel({ period, view, onViewChange, onChan
                     {/* Daftar ruang beserta pengawas sesi terpilih */}
                     {isLoading ? (
                         <div className="text-center py-10 text-slate-400 text-xs flex items-center justify-center gap-2">
-                            <Loader2 size={18} className="animate-spin text-[#3083FF]" /> Memuat data ruangan...
+                            <Loader2 size={18} className="animate-spin text-[#030C4D]" /> Memuat data ruangan...
                         </div>
                     ) : rooms.length === 0 && !roomError ? (
                         <div className="pas-room-empty rounded-xl border border-dashed border-slate-300 bg-white py-10 text-center text-slate-500">
@@ -845,7 +845,7 @@ export default function RoomManagementPanel({ period, view, onViewChange, onChan
                             {roomDetailTab === 'schedules' && <div role="tabpanel" id="room-panel-schedules" aria-labelledby="room-tab-schedules" className="space-y-3">
                                 <div className="flex items-center justify-between">
                                     <div className="flex items-center gap-2 font-bold text-slate-800 text-xs uppercase tracking-wider">
-                                        <Calendar size={15} className="text-[#3083FF]" />
+                                        <Calendar size={15} className="text-[#030C4D]" />
                                         Jadwal Ujian di Ruangan Ini ({roomSchedules.length})
                                     </div>
                                     <span className="text-[11px] text-slate-500 font-medium">

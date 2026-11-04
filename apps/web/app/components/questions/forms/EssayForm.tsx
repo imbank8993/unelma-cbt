@@ -21,7 +21,7 @@ export const EssayForm = React.memo(({ metadata, onUpdateMetadata }: EssayFormPr
   return (
     <div className="essay-form p-5 bg-slate-50/50 rounded-lg border-2 border-slate-100 space-y-4">
       <div className="flex items-center gap-3 mb-2">
-        <div className="essay-form__icon w-10 h-10 rounded-lg bg-[#3083FF] flex items-center justify-center shadow-sm shadow-blue-200">
+        <div className="essay-form__icon w-10 h-10 rounded-lg bg-[#030C4D] flex items-center justify-center shadow-sm shadow-blue-200">
           <FileText size={16} className="text-white" />
         </div>
         <div>

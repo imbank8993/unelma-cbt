@@ -164,7 +164,7 @@ export const InteractiveMatching = ({
                                 className={`w-full text-left px-3 py-2.5 rounded-xl border text-xs font-semibold transition-all ${
                                   isLinkedToOther
                                     ? 'border-slate-100 bg-slate-50 text-slate-400 opacity-60 cursor-not-allowed'
-                                    : 'border-slate-200 bg-white hover:border-[#3083FF] hover:bg-blue-50/30 text-slate-700'
+                                    : 'border-slate-200 bg-white hover:border-[#030C4D] hover:bg-blue-50/30 text-slate-700'
                                 }`}
                               >
                                 <LatexRenderer text={cleanHtml(item)} />
@@ -183,7 +183,7 @@ export const InteractiveMatching = ({
                       !showFeedback && (
                         <button
                           onClick={() => setMobileSelectOptId(opt.id)}
-                          className="w-full flex items-center justify-center gap-1.5 border border-dashed border-indigo-200 bg-indigo-50/20 text-[#3083FF] hover:bg-indigo-50/40 px-4 py-2.5 rounded-xl text-xs font-bold transition-all active:scale-95"
+                          className="w-full flex items-center justify-center gap-1.5 border border-dashed border-indigo-200 bg-indigo-50/20 text-[#030C4D] hover:bg-indigo-50/40 px-4 py-2.5 rounded-xl text-xs font-bold transition-all active:scale-95"
                         >
                           <Sparkles size={13} /> Hubungkan Jawaban
                         </button>
@@ -219,7 +219,7 @@ export const InteractiveMatching = ({
                             ? (() => {
                                 const correctMatchTexts = opt?.metadata?.match_texts || (opt?.metadata?.match_text ? [opt.metadata.match_text] : []);
                                 const allCorrect = answers[opt.id].every((ans: string) => correctMatchTexts.includes(ans));
-                                return allCorrect ? "border-[#3083FF] bg-blue-50/70 text-blue-800" : "border-rose-400 bg-rose-50 text-rose-800";
+                                return allCorrect ? "border-[#030C4D] bg-blue-50/70 text-blue-800" : "border-rose-400 bg-rose-50 text-rose-800";
                               })()
                             : isConnected
                               ? "border-indigo-400 bg-indigo-50 dark:bg-indigo-950/40 text-indigo-800 dark:text-indigo-200"
@@ -314,7 +314,7 @@ export const InteractiveMatching = ({
               if (showFeedback) {
                 const correctMatchTexts = opt?.metadata?.match_texts || (opt?.metadata?.match_text ? [opt.metadata.match_text] : []);
                 const isCorrectMatch = correctMatchTexts.includes(rightText);
-                lineColor = isCorrectMatch ? "#3083FF" : "#f87171"; // Biru for correct match, soft red for wrong
+                lineColor = isCorrectMatch ? "#030C4D" : "#f87171"; // Biru for correct match, soft red for wrong
                 strokeWidth = 3;
                 zIndex = isCorrectMatch ? 10 : 5;
               }

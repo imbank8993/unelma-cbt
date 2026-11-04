@@ -130,11 +130,11 @@ export default function ProktorDashboard() {
             label: 'Bank Soal',
             value: stats.totalBanks,
             icon: BookOpen,
-            gradient: 'from-[#3083FF] to-[#3083FF]',
-            iconBg: 'bg-[#3083FF]/10',
-            iconColor: 'text-[#3083FF]',
-            borderColor: 'border-[#3083FF]/40',
-            valueColor: 'text-[#3083FF]',
+            gradient: 'from-[#030C4D] to-[#030C4D]',
+            iconBg: 'bg-[#030C4D]/10',
+            iconColor: 'text-[#030C4D]',
+            borderColor: 'border-[#030C4D]/40',
+            valueColor: 'text-[#030C4D]',
             description: 'Koleksi soal tersedia',
             onClick: () => router.push('/dashboard/proktor/questions'),
         },
@@ -142,11 +142,11 @@ export default function ProktorDashboard() {
             label: 'Ujian Mendatang',
             value: stats.draftExams,
             icon: Layers,
-            gradient: 'from-[#3083FF] to-[#2563EB]',
-            iconBg: 'bg-[#3083FF]/10',
-            iconColor: 'text-[#3083FF]',
-            borderColor: 'border-[#3083FF]/40',
-            valueColor: 'text-[#3083FF]',
+            gradient: 'from-[#030C4D] to-[#0a1a5c]',
+            iconBg: 'bg-[#030C4D]/10',
+            iconColor: 'text-[#030C4D]',
+            borderColor: 'border-[#030C4D]/40',
+            valueColor: 'text-[#030C4D]',
             description: 'Ujian terjadwal',
             onClick: () => router.push('/dashboard/proktor/exams'),
         },
@@ -154,11 +154,11 @@ export default function ProktorDashboard() {
             label: 'Ujian Aktif',
             value: stats.ongoingExams,
             icon: Clock,
-            gradient: 'from-[#3083FF] to-[#3083FF]',
-            iconBg: 'bg-[#3083FF]/10',
-            iconColor: 'text-[#3083FF]',
-            borderColor: 'border-[#3083FF]/40',
-            valueColor: 'text-[#3083FF]',
+            gradient: 'from-[#030C4D] to-[#030C4D]',
+            iconBg: 'bg-[#030C4D]/10',
+            iconColor: 'text-[#030C4D]',
+            borderColor: 'border-[#030C4D]/40',
+            valueColor: 'text-[#030C4D]',
             description: 'Sedang berlangsung',
             onClick: () => router.push('/dashboard/proktor/exams'),
         },
@@ -166,11 +166,11 @@ export default function ProktorDashboard() {
             label: 'Selesai',
             value: stats.finishedExams,
             icon: CheckCircle2,
-            gradient: 'from-[#3083FF] to-[#1D4ED8]',
-            iconBg: 'bg-[#3083FF]/10',
-            iconColor: 'text-[#3083FF]',
-            borderColor: 'border-[#3083FF]/40',
-            valueColor: 'text-[#3083FF]',
+            gradient: 'from-[#030C4D] to-[#0a1a5c]',
+            iconBg: 'bg-[#030C4D]/10',
+            iconColor: 'text-[#030C4D]',
+            borderColor: 'border-[#030C4D]/40',
+            valueColor: 'text-[#030C4D]',
             description: 'Telah selesai dikerjakan',
             onClick: () => router.push('/dashboard/proktor/exams'),
         },
@@ -224,13 +224,13 @@ export default function ProktorDashboard() {
                         aria-label={`${item.label}: ${item.value} — ${item.description}`}
                         onClick={() => item.onClick?.()}
                         onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); item.onClick?.(); } }}
-                        className="group relative min-h-[112px] bg-white rounded-xl sm:rounded-lg px-3 py-3 sm:px-4 sm:py-4 border border-[#3083FF]/20 shadow-sm sm:shadow-none hover:border-[#3083FF] hover:shadow-lg hover:shadow-[#3083FF]/10 transition-all duration-300 cursor-pointer overflow-hidden text-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#3083FF] focus-visible:ring-offset-2"
+                        className="group relative min-h-[112px] bg-white rounded-xl sm:rounded-lg px-3 py-3 sm:px-4 sm:py-4 border border-[#030C4D]/20 shadow-sm sm:shadow-none hover:border-[#030C4D] hover:shadow-lg hover:shadow-[#030C4D]/10 transition-all duration-300 cursor-pointer overflow-hidden text-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#030C4D] focus-visible:ring-offset-2"
                     >
                         {/* Top accent line */}
                         <div className={`absolute top-0 left-0 right-0 h-1 bg-gradient-to-r ${item.gradient} opacity-0 group-hover:opacity-100 transition-opacity duration-300`} />
 
                         {/* Affordance: panah muncul saat hover/focus (menandakan bisa diklik) */}
-                        <ChevronRight size={14} className="absolute top-2.5 right-2.5 text-[#3083FF]/0 group-hover:text-[#3083FF]/40 transition-colors duration-300" />
+                        <ChevronRight size={14} className="absolute top-2.5 right-2.5 text-[#030C4D]/0 group-hover:text-[#030C4D]/40 transition-colors duration-300" />
 
                         <div className="relative flex flex-col items-center">
                             {/* Icon dan Label berdampingan */}
@@ -254,13 +254,13 @@ export default function ProktorDashboard() {
             <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
 
                 {/* ── Left: Daftar Ujian ── */}
-                <div className="md:col-span-3 bg-white rounded-lg border border-[#3083FF]/30 overflow-hidden shadow-sm">
-                    <div className="px-5 py-4 border-b border-[#3083FF]/20 bg-gradient-to-r from-[#3083FF]/[.02] to-transparent flex items-center justify-between gap-2">
+                <div className="md:col-span-3 bg-white rounded-lg border border-[#030C4D]/30 overflow-hidden shadow-sm">
+                    <div className="px-5 py-4 border-b border-[#030C4D]/20 bg-gradient-to-r from-[#030C4D]/[.02] to-transparent flex items-center justify-between gap-2">
                         <h2 className="text-base font-bold text-slate-900 flex items-center gap-2">
-                            <ClipboardCheck size={16} className="text-[#3083FF] shrink-0" />
+                            <ClipboardCheck size={16} className="text-[#030C4D] shrink-0" />
                             <span>Daftar Ujian</span>
                         </h2>
-                        <span className="inline-flex items-center justify-center min-w-[24px] h-6 px-2 rounded-full text-xs font-bold bg-[#3083FF]/10 text-[#3083FF] border border-[#3083FF]/20 tabular-nums">
+                        <span className="inline-flex items-center justify-center min-w-[24px] h-6 px-2 rounded-full text-xs font-bold bg-[#030C4D]/10 text-[#030C4D] border border-[#030C4D]/20 tabular-nums">
                             {exams.length}
                         </span>
                     </div>
@@ -290,7 +290,7 @@ export default function ProktorDashboard() {
                                     >
                                         {/* Info */}
                                         <div className="flex-1 min-w-0">
-                                            <p className="text-sm font-semibold leading-snug text-slate-800 whitespace-normal break-words group-hover:text-[#3083FF] transition-colors">{exam.title}</p>
+                                            <p className="text-sm font-semibold leading-snug text-slate-800 whitespace-normal break-words group-hover:text-[#030C4D] transition-colors">{exam.title}</p>
                                             <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-slate-500 mt-1">
                                                 {exam.creatorName && exam.creatorName !== 'Unknown' && (
                                                     <span className="font-medium text-slate-600">{exam.creatorName}</span>
@@ -324,8 +324,8 @@ export default function ProktorDashboard() {
                                         {/* Status */}
                                         <div className="shrink-0 flex items-center self-start sm:self-center">
                                             {isOngoing ? (
-                                                <span className="inline-flex items-center gap-1.5 text-xs font-bold text-[#3083FF]">
-                                                    <span className="w-1.5 h-1.5 rounded-full bg-[#3083FF] animate-pulse" />
+                                                <span className="inline-flex items-center gap-1.5 text-xs font-bold text-[#030C4D]">
+                                                    <span className="w-1.5 h-1.5 rounded-full bg-[#030C4D] animate-pulse" />
                                                     Aktif
                                                 </span>
                                             ) : isDraft ? (
@@ -334,13 +334,13 @@ export default function ProktorDashboard() {
                                                     Draft
                                                 </span>
                                             ) : isFinished ? (
-                                                <span className="inline-flex items-center gap-1.5 text-xs font-bold text-[#3083FF]" title="Selesai">
-                                                    <CheckCircle2 size={15} className="text-[#3083FF]" />
+                                                <span className="inline-flex items-center gap-1.5 text-xs font-bold text-[#030C4D]" title="Selesai">
+                                                    <CheckCircle2 size={15} className="text-[#030C4D]" />
                                                     <span className="hidden sm:inline">Selesai</span>
                                                 </span>
                                             ) : (
-                                                <span className="inline-flex items-center gap-1.5 text-xs font-bold text-[#3083FF]">
-                                                    <Clock size={13} className="text-[#3083FF]" />
+                                                <span className="inline-flex items-center gap-1.5 text-xs font-bold text-[#030C4D]">
+                                                    <Clock size={13} className="text-[#030C4D]" />
                                                     Terjadwal
                                                 </span>
                                             )}
@@ -351,14 +351,14 @@ export default function ProktorDashboard() {
                         </div>
                     ) : (
                         <div className="py-16 text-center">
-                            <div className="w-16 h-16 bg-[#3083FF]/5 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                                <Activity size={22} className="text-[#3083FF]/40" />
+                            <div className="w-16 h-16 bg-[#030C4D]/5 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                                <Activity size={22} className="text-[#030C4D]/40" />
                             </div>
                             <p className="font-bold text-slate-700 mb-1">Belum Ada Ujian</p>
                             <p className="text-xs text-slate-400 mb-4">Mulai buat ujian pertama Anda</p>
                             <button
                                 onClick={() => router.push('/dashboard/proktor/exams')}
-                                className="inline-flex items-center gap-1.5 text-xs font-bold text-[#3083FF] bg-[#3083FF]/5 hover:bg-[#3083FF]/10 px-4 py-2 rounded-lg transition-colors"
+                                className="inline-flex items-center gap-1.5 text-xs font-bold text-[#030C4D] bg-[#030C4D]/5 hover:bg-[#030C4D]/10 px-4 py-2 rounded-lg transition-colors"
                             >
                                 <Plus size={12} /> Buat Ujian
                             </button>
@@ -371,7 +371,7 @@ export default function ProktorDashboard() {
                     {announcements.length > 0 && (
                         <div className="bg-white rounded-lg border border-blue-200 overflow-hidden shadow-sm">
                             <div className="px-5 py-4 border-b border-blue-100 bg-gradient-to-r from-blue-50 to-transparent flex justify-between items-center">
-                                <h2 className="text-sm font-bold text-[#3083FF] flex items-center gap-2">
+                                <h2 className="text-sm font-bold text-[#030C4D] flex items-center gap-2">
                                     <AlertCircle size={16} /> Informasi
                                 </h2>
                                 {announcements.length > 2 && (
@@ -388,7 +388,7 @@ export default function ProktorDashboard() {
                                     {announcements.slice(0, 2).map((ann, idx) => (
                                         <div key={ann.id || idx} className="bg-blue-50/50 border border-blue-100 rounded-lg p-3">
                                             <div className="flex justify-between items-start gap-2 mb-1">
-                                                <h3 className="font-semibold text-[#3083FF] text-xs line-clamp-1">{ann.title}</h3>
+                                                <h3 className="font-semibold text-[#030C4D] text-xs line-clamp-1">{ann.title}</h3>
                                                 {ann.created_at && (
                                                     <span className="text-[9px] text-slate-400 shrink-0 whitespace-nowrap">
                                                         {new Date(ann.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' })}
@@ -423,7 +423,7 @@ export default function ProktorDashboard() {
                     >
                         <div className="px-6 py-5 border-b border-slate-100 flex justify-between items-center bg-[#f8fafc]">
                             <div>
-                                <h2 className="text-lg font-bold text-[#3083FF] flex items-center gap-2">
+                                <h2 className="text-lg font-bold text-[#030C4D] flex items-center gap-2">
                                     <AlertCircle size={20} className="text-blue-600" /> Pusat Informasi
                                 </h2>
                                 <p className="text-xs text-slate-500 mt-0.5">Semua pengumuman yang sedang tayang.</p>
@@ -444,7 +444,7 @@ export default function ProktorDashboard() {
                                         </div>
                                         <div className="flex-1">
                                             <div className="flex justify-between items-start gap-2 mb-2">
-                                                <h3 className="font-bold text-[#3083FF] text-sm">{ann.title}</h3>
+                                                <h3 className="font-bold text-[#030C4D] text-sm">{ann.title}</h3>
                                                 {ann.created_at && (
                                                     <span className="text-xs text-slate-400 shrink-0 bg-slate-50 px-2 py-1 rounded-md border border-slate-100">
                                                         {new Date(ann.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
@@ -460,7 +460,7 @@ export default function ProktorDashboard() {
                         <div className="p-4 border-t border-slate-100 bg-white flex justify-end">
                             <button
                                 onClick={() => setShowAnnouncementsPopup(false)}
-                                className="px-5 py-2.5 bg-[#3083FF] text-white text-sm font-semibold rounded-xl hover:bg-[#0a1a6e] transition-colors"
+                                className="px-5 py-2.5 bg-[#030C4D] text-white text-sm font-semibold rounded-xl hover:bg-[#0a1a6e] transition-colors"
                             >
                                 Tutup
                             </button>
@@ -480,8 +480,8 @@ export default function ProktorDashboard() {
                     >
                         <div className="px-6 py-5 border-b border-slate-100 flex justify-between items-center bg-[#f8fafc]">
                             <div>
-                                <h2 className="text-lg font-bold text-[#3083FF] flex items-center gap-2">
-                                    <Users size={20} className="text-[#3083FF]" /> Anggota Pernah Login
+                                <h2 className="text-lg font-bold text-[#030C4D] flex items-center gap-2">
+                                    <Users size={20} className="text-[#030C4D]" /> Anggota Pernah Login
                                 </h2>
                                 <p className="text-xs text-slate-500 mt-0.5">{membersList.length} anggota sudah pernah masuk ke ACCA CBT.</p>
                             </div>
@@ -503,7 +503,7 @@ export default function ProktorDashboard() {
                                 <div className="space-y-2">
                                     {membersList.map((m) => (
                                         <div key={m.id} className="flex items-center gap-3 bg-white border border-slate-100 rounded-xl p-3">
-                                            <div className="w-9 h-9 rounded-full bg-[#3083FF]/10 text-[#3083FF] flex items-center justify-center font-bold shrink-0 uppercase">
+                                            <div className="w-9 h-9 rounded-full bg-[#030C4D]/10 text-[#030C4D] flex items-center justify-center font-bold shrink-0 uppercase">
                                                 {(m.fullName?.[0] || 'U')}
                                             </div>
                                             <div className="flex-1 min-w-0">

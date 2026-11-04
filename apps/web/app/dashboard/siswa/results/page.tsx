@@ -61,7 +61,7 @@ export default function StudentResultsPage() {
             <div className="flex items-center justify-between gap-4 bg-white border border-slate-200 rounded-2xl p-4 shadow-xs">
                 <div className="flex items-center gap-2">
                     <span className="text-xs font-bold text-slate-600">Total Ujian Selesai:</span>
-                    <span className="text-base font-black text-[#3083FF] font-mono bg-blue-50 border border-blue-100 px-2.5 py-0.5 rounded-lg leading-none">{results.length}</span>
+                    <span className="text-base font-black text-[#030C4D] font-mono bg-blue-50 border border-blue-100 px-2.5 py-0.5 rounded-lg leading-none">{results.length}</span>
                 </div>
                 <button
                     onClick={loadResults}
@@ -74,7 +74,7 @@ export default function StudentResultsPage() {
 
             {isLoading ? (
                 <div className="flex flex-col items-center justify-center py-24 space-y-3">
-                    <Loader2 size={36} className="text-[#3083FF] animate-spin" />
+                    <Loader2 size={36} className="text-[#030C4D] animate-spin" />
                     <p className="text-slate-400 font-bold text-xs tracking-wider uppercase font-sans">Memuat hasil studi...</p>
                 </div>
             ) : loadError ? (
@@ -98,21 +98,21 @@ export default function StudentResultsPage() {
                                 disabled={!canViewDetails}
                                 aria-label={canViewDetails ? `Buka hasil ${attempt.exams?.title || 'ujian'}` : undefined}
                                 onClick={() => canViewDetails ? router.push(`/dashboard/siswa/results/${attempt.id}`) : null}
-                                className={`w-full text-left bg-white border border-slate-100 rounded-2xl p-5 flex flex-col sm:flex-row gap-4 transition-all duration-300 group relative overflow-hidden shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#3083FF] focus-visible:ring-offset-2 ${
+                                className={`w-full text-left bg-white border border-slate-100 rounded-2xl p-5 flex flex-col sm:flex-row gap-4 transition-all duration-300 group relative overflow-hidden shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#030C4D] focus-visible:ring-offset-2 ${
                                     canViewDetails 
-                                        ? 'cursor-pointer hover:border-blue-100 hover:shadow-xl hover:shadow-[#3083FF]/5'
+                                        ? 'cursor-pointer hover:border-blue-100 hover:shadow-xl hover:shadow-[#030C4D]/5'
                                         : 'opacity-90'
                                 }`}
                             >
-                                <div className="absolute top-0 left-0 w-1 h-full bg-[#3083FF]"></div>
+                                <div className="absolute top-0 left-0 w-1 h-full bg-[#030C4D]"></div>
 
                                 <div className="flex items-start gap-4 flex-1 pl-1 min-w-0">
-                                    <div className="w-10 h-10 bg-blue-50 border border-blue-100/50 rounded-xl flex items-center justify-center shrink-0 group-hover:bg-[#3083FF] group-hover:border-[#3083FF] transition-colors text-[#3083FF] group-hover:text-white">
+                                    <div className="w-10 h-10 bg-blue-50 border border-blue-100/50 rounded-xl flex items-center justify-center shrink-0 group-hover:bg-[#030C4D] group-hover:border-[#030C4D] transition-colors text-[#030C4D] group-hover:text-white">
                                         <BookOpen size={18} />
                                     </div>
                                     <div className="space-y-1 min-w-0 flex-1">
                                         <div className="flex flex-wrap items-center gap-1.5 mb-1">
-                                            <span className="px-2 py-0.5 rounded-md text-[9px] font-bold bg-blue-50 text-[#3083FF] border border-blue-100 flex items-center gap-1 leading-none">
+                                            <span className="px-2 py-0.5 rounded-md text-[9px] font-bold bg-blue-50 text-[#030C4D] border border-blue-100 flex items-center gap-1 leading-none">
                                                 SELESAI
                                             </span>
                                             {attempt.needs_manual_grading && (
@@ -126,7 +126,7 @@ export default function StudentResultsPage() {
                                                 </span>
                                             )}
                                         </div>
-                                        <h3 className="font-bold text-slate-800 text-sm group-hover:text-[#3083FF] transition-colors line-clamp-2 leading-snug">
+                                        <h3 className="font-bold text-slate-800 text-sm group-hover:text-[#030C4D] transition-colors line-clamp-2 leading-snug">
                                             {attempt.exams?.title || 'Ujian Tidak Diketahui'}
                                         </h3>
                                         <p className="text-xs text-slate-400 flex items-center gap-1 font-medium font-sans">
@@ -144,7 +144,7 @@ export default function StudentResultsPage() {
                                                     {scoreLabel}
                                                 </p>
                                                 <div className="flex items-baseline justify-center gap-0.5">
-                                                    <span className="text-xl font-black text-[#3083FF] font-mono">{displayedScore == null ? '—' : Number(displayedScore).toFixed(2)}</span>
+                                                    <span className="text-xl font-black text-[#030C4D] font-mono">{displayedScore == null ? '—' : Number(displayedScore).toFixed(2)}</span>
                                                     <span className="text-[9px] font-bold text-slate-400">{(attempt.score_type || studentScoreType(attempt.exams)) === 'classical' ? '/100' : '200–800'}</span>
                                                 </div>
                                                 {displayedScore == null && <p className="mt-1 text-[9px] text-slate-500">{scoreLabel.startsWith('IRT') && !attempt.needs_manual_grading ? 'Menunggu perhitungan IRT' : 'Menunggu penilaian'}</p>}
@@ -156,7 +156,7 @@ export default function StudentResultsPage() {
                                         </div>
                                     )}
                                     {canViewDetails && (
-                                        <div className="w-8 h-8 rounded-full bg-slate-50 border border-slate-200 flex items-center justify-center group-hover:bg-[#3083FF] group-hover:border-[#3083FF] transition-colors shrink-0">
+                                        <div className="w-8 h-8 rounded-full bg-slate-50 border border-slate-200 flex items-center justify-center group-hover:bg-[#030C4D] group-hover:border-[#030C4D] transition-colors shrink-0">
                                             <ChevronRight size={16} className="text-slate-400 group-hover:text-white transition-colors" />
                                         </div>
                                     )}

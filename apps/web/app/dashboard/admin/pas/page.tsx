@@ -280,7 +280,7 @@ export default function ProctorPASPage({ activeTab = 'all', typeFilter = 'all', 
                                         </div>
                                         <div className="flex-1 min-w-0">
                                             <div className="flex flex-wrap items-center gap-2 mb-1.5">
-                                                <span className="px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider bg-blue-50 text-[#3083FF] border border-blue-200">
+                                                <span className="px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider bg-blue-50 text-[#030C4D] border border-blue-200">
                                                     FOLDER UJIAN
                                                 </span>
                                                 <span className={`px-2.5 py-0.5 rounded-md text-xs font-semibold ${
@@ -299,7 +299,7 @@ export default function ProctorPASPage({ activeTab = 'all', typeFilter = 'all', 
                                                     </span>
                                                 )}
                                             </div>
-                                            <h3 className="font-bold text-slate-900 text-lg leading-tight mb-2 group-hover:text-[#3083FF] transition-colors">{period.name}</h3>
+                                            <h3 className="font-bold text-slate-900 text-lg leading-tight mb-2 group-hover:text-[#030C4D] transition-colors">{period.name}</h3>
                                             <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-xs sm:text-sm text-slate-500 mt-1">
                                                 <span className="flex items-center gap-1.5 font-medium">
                                                     <Calendar size={14} className={isActive ? 'text-blue-500' : 'text-slate-400'} />
@@ -324,14 +324,14 @@ export default function ProctorPASPage({ activeTab = 'all', typeFilter = 'all', 
                                     <div className="flex items-center gap-2 shrink-0">
                                         <button
                                             onClick={() => router.push(`/dashboard/admin/exams/pas/${period.id}`)}
-                                            className="px-4 py-2 text-xs sm:text-sm bg-[#3083FF] text-white hover:bg-[#2563EB] rounded-lg transition-all font-semibold flex items-center gap-1.5 shadow-sm cursor-pointer">
+                                            className="px-4 py-2 text-xs sm:text-sm bg-[#030C4D] text-white hover:bg-[#2563EB] rounded-lg transition-all font-semibold flex items-center gap-1.5 shadow-sm cursor-pointer">
                                             Buka Folder <ChevronRight size={14} />
                                         </button>
 
                                         {!period.is_locked && (
                                             <button
                                                 onClick={() => setEditingPeriod(period)}
-                                                className="p-2 text-slate-400 hover:text-[#3083FF] hover:bg-blue-50 rounded-lg transition-all cursor-pointer"
+                                                className="p-2 text-slate-400 hover:text-[#030C4D] hover:bg-blue-50 rounded-lg transition-all cursor-pointer"
                                                 title="Edit Folder & Ketua Panitia">
                                                 <Edit3 size={15} />
                                             </button>
@@ -447,7 +447,7 @@ export default function ProctorPASPage({ activeTab = 'all', typeFilter = 'all', 
 
                         <div className="pt-2 border-t border-slate-100">
                             <div className="flex items-center gap-1.5 mb-2">
-                                <UserCheck size={14} className="text-[#3083FF]" />
+                                <UserCheck size={14} className="text-[#030C4D]" />
                                 <span className="text-xs font-bold text-slate-800">Kepanitiaan Ujian (Administrasi Dokumen)</span>
                             </div>
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">

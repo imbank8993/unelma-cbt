@@ -39,14 +39,14 @@
 .pas-schedule-table tbody tr { background: var(--card); }
 .pas-schedule-table tbody tr:hover,
 .pas-schedule-table tbody tr[data-selected="true"] {
-  background-color: color-mix(in srgb, var(--card) 94%, #3083ff 6%) !important;
+  background-color: color-mix(in srgb, var(--card) 94%, #030C4D 6%) !important;
 }
 .pas-schedule-actions { display: flex; justify-content: flex-end; align-items: center; gap: 6px; }
 .pas-schedule-activation {
   padding: 7px 10px;
   border-radius: 8px;
-  background: rgba(48, 131, 255, 0.1);
-  color: #3083ff;
+  background: rgba(3, 12, 77, 0.1);
+  color: #030C4D;
   font-size: 12px;
   font-weight: 600;
   white-space: nowrap;
@@ -157,7 +157,7 @@
 }
 
 .pas-room-management .pas-session-input:focus {
-  outline: 2px solid #3083ff;
+  outline: 2px solid #030C4D;
   outline-offset: 1px;
 }
 
@@ -175,6 +175,6 @@
 }
 
 .pas-schedule-form .ss .ss__trigger:focus-within {
-  border-color: #3083ff !important;
-  box-shadow: 0 0 0 2px rgba(48, 131, 255, 0.15);
+  border-color: #030C4D !important;
+  box-shadow: 0 0 0 2px rgba(3, 12, 77, 0.15);
 }

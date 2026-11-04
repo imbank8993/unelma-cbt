@@ -11,9 +11,9 @@ export function QuestionSearchBar({ value, onChange, matched, total }: {
                 onKeyDown={event => { if (event.key === 'Escape') onChange(''); }}
                 aria-label="Cari soal berdasarkan nomor atau teks" placeholder="Cari nomor atau teks soal…"
                 style={{ paddingLeft: 40, paddingRight: 40 }}
-                className="w-full h-11 rounded-lg border border-slate-200 bg-slate-50 text-sm outline-none focus:border-[#3083FF] focus:ring-2 focus:ring-[#3083FF]/15 [&::-webkit-search-cancel-button]:appearance-none" />
+                className="w-full h-11 rounded-lg border border-slate-200 bg-slate-50 text-sm outline-none focus:border-[#030C4D] focus:ring-2 focus:ring-[#030C4D]/15 [&::-webkit-search-cancel-button]:appearance-none" />
             {value && <button type="button" aria-label="Hapus pencarian soal" onClick={() => onChange('')}
-                className="absolute right-1 top-1/2 -translate-y-1/2 p-2 rounded-md text-slate-400 hover:text-[#3083FF] hover:bg-blue-50"><X size={16} /></button>}
+                className="absolute right-1 top-1/2 -translate-y-1/2 p-2 rounded-md text-slate-400 hover:text-[#030C4D] hover:bg-blue-50"><X size={16} /></button>}
         </div>
         <span role="status" className="text-xs text-slate-500 shrink-0 tabular-nums">{matched} dari {total} soal</span>
     </div>;

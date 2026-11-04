@@ -18,7 +18,7 @@ export default function VerifyIndexPage() {
     return (
         <div className="relative z-10 isolate min-h-dvh bg-slate-50 flex items-center justify-center px-4 py-8">
             <div className="max-w-md w-full min-w-0 bg-white rounded-2xl border border-slate-200 p-5 sm:p-6 shadow-xs space-y-4 text-center">
-                <div className="w-12 h-12 rounded-2xl bg-blue-50 border border-blue-200 text-[#3083FF] flex items-center justify-center mx-auto">
+                <div className="w-12 h-12 rounded-2xl bg-blue-50 border border-blue-200 text-[#030C4D] flex items-center justify-center mx-auto">
                     <ShieldCheck size={24} />
                 </div>
                 <div>
@@ -41,13 +41,13 @@ export default function VerifyIndexPage() {
                             value={code}
                             onChange={(e) => setCode(e.target.value)}
                             placeholder="Contoh: BA-PAS-20261017-A1B2C3D4"
-                            className="w-full min-w-0 h-11 pl-9 pr-3 text-xs font-mono uppercase bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-[#3083FF]"
+                            className="w-full min-w-0 h-11 pl-9 pr-3 text-xs font-mono uppercase bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-[#030C4D]"
                         />
                     </div>
                     <button
                         type="submit"
                         disabled={!code.trim()}
-                        className="w-full h-10 rounded-xl bg-[#3083FF] hover:bg-blue-600 disabled:opacity-50 text-white text-xs font-bold transition-colors"
+                        className="w-full h-10 rounded-xl bg-[#030C4D] hover:bg-blue-600 disabled:opacity-50 text-white text-xs font-bold transition-colors"
                     >
                         Verifikasi Dokumen
                     </button>

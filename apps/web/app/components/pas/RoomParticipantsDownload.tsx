@@ -41,7 +41,7 @@ export function RoomParticipantsDownload({ period, rooms }: {
         <section aria-label="Unduh daftar peserta ruang"
             className="flex h-full flex-col gap-3 rounded-xl border border-slate-200 bg-white p-4">
             <div className="flex items-start gap-3">
-                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-blue-50 text-[#3083FF]">
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-blue-50 text-[#030C4D]">
                     <Users size={17} />
                 </span>
                 <div className="min-w-0">

@@ -91,7 +91,7 @@ const PRINT_CSS = `
 .eqc-number {
     display: inline-flex; align-items: center; justify-content: center;
     min-width: 24px; height: 24px; padding: 0 6px; border-radius: 6px;
-    background: #eff6ff; border: 1px solid #bfdbfe; color: #3083FF;
+    background: #eff6ff; border: 1px solid #bfdbfe; color: #030C4D;
     font-size: 12px; font-weight: 700; font-family: ${POPPINS};
 }
 .eqc-body { min-width: 0; }
@@ -99,7 +99,7 @@ const PRINT_CSS = `
 .eqc-qtext p, .eqc-opt-content p, .eqc-stimulus p { margin: 0 0 6px 0; }
 .eqc-qtext p:last-child, .eqc-opt-content p:last-child, .eqc-stimulus p:last-child { margin-bottom: 0; }
 .eqc-stimulus { background: #f8fafc; border: 1px solid #e2e8f0; padding: 12px; border-radius: 6px; margin-bottom: 12px; font-size: 12px; }
-.eqc-stimulus-title { font-weight: bold; margin-bottom: 8px; color: #3083FF; break-after: avoid; }
+.eqc-stimulus-title { font-weight: bold; margin-bottom: 8px; color: #030C4D; break-after: avoid; }
 .eqc-instruction { font-style: italic; color: #475569; margin-bottom: 10px; font-size: 12px; break-after: avoid; }
 
 /* ── Opsi: kolom ditentukan otomatis (--eqc-cols) ── */
@@ -346,14 +346,14 @@ export function ExamPrintView({ bankInfo, questions, rootRef }: ExamPrintViewPro
 
                     <div className="eqc-header-block" data-print-block>
                         {/* ── Kop ── */}
-                        <div style={{ display: 'flex', alignItems: 'center', borderBottom: '2px solid #3083FF', paddingBottom: '12px', marginBottom: '16px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', borderBottom: '2px solid #030C4D', paddingBottom: '12px', marginBottom: '16px' }}>
                             <Image src="/logo-sidebar.png" alt="ACCA Logo" width={180} height={48} style={{ height: '40px', width: 'auto', objectFit: 'contain' }} priority />
                         </div>
 
                         {/* ── Judul ── */}
                         <div style={{ textAlign: 'center', marginBottom: '20px' }}>
                             <div style={{ fontFamily: POPPINS, fontSize: '16px', fontWeight: 800, color: '#0f172a', margin: 0, textTransform: 'uppercase' }}>LEMBAR SOAL UJIAN</div>
-                            <div style={{ fontFamily: POPPINS, fontSize: '14px', color: '#3083FF', marginTop: '4px', fontWeight: 600 }}>{title}</div>
+                            <div style={{ fontFamily: POPPINS, fontSize: '14px', color: '#030C4D', marginTop: '4px', fontWeight: 600 }}>{title}</div>
                         </div>
 
                         {/* ── Identitas siswa ── */}
@@ -364,7 +364,7 @@ export function ExamPrintView({ bankInfo, questions, rootRef }: ExamPrintViewPro
                                         {[[left, '70%', '70px'], [right, '30%', '50px']].map(([label, width, labelWidth]) => (
                                             <td key={label} style={{ border: '1px solid #cbd5e1', padding: '8px 12px', width }}>
                                                 <div style={{ display: 'flex', alignItems: 'flex-end' }}>
-                                                    <strong style={{ color: '#3083FF', width: labelWidth, flexShrink: 0 }}>{label}</strong>
+                                                    <strong style={{ color: '#030C4D', width: labelWidth, flexShrink: 0 }}>{label}</strong>
                                                     <span style={{ marginRight: '8px', fontWeight: 'bold' }}>:</span>
                                                     <div style={{ flex: 1, borderBottom: '2px dotted #cbd5e1', marginBottom: '3px' }} />
                                                 </div>
@@ -376,8 +376,8 @@ export function ExamPrintView({ bankInfo, questions, rootRef }: ExamPrintViewPro
                         </table>
 
                         {/* ── Petunjuk umum ── */}
-                        <div style={{ fontFamily: POPPINS, background: '#f1f5f9', borderLeft: '4px solid #3083FF', padding: '8px 12px', fontSize: '12px', color: '#475569', marginBottom: '20px' }}>
-                            <strong style={{ color: '#3083FF' }}>Petunjuk Umum:</strong><br />
+                        <div style={{ fontFamily: POPPINS, background: '#f1f5f9', borderLeft: '4px solid #030C4D', padding: '8px 12px', fontSize: '12px', color: '#475569', marginBottom: '20px' }}>
+                            <strong style={{ color: '#030C4D' }}>Petunjuk Umum:</strong><br />
                             1. Berdoalah sebelum mengerjakan soal.<br />
                             2. Bacalah setiap soal dengan seksama.<br />
                             3. Total soal: {list.length} butir | Nilai Total: {totalScore(list)} poin.
@@ -433,7 +433,7 @@ export function ExamPrintView({ bankInfo, questions, rootRef }: ExamPrintViewPro
                     {/* ── Footer ── */}
                     <div style={{ marginTop: '30px', paddingTop: '12px', borderTop: '2px solid #e2e8f0', fontSize: '11px', color: '#64748b', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px', breakInside: 'avoid' }}>
                         <div style={{ minWidth: 0 }}>Dicetak dari {title}</div>
-                        <div style={{ fontWeight: 'bold', color: '#3083FF', flexShrink: 0 }}>{documentHost()}</div>
+                        <div style={{ fontWeight: 'bold', color: '#030C4D', flexShrink: 0 }}>{documentHost()}</div>
                     </div>
 
                 </td></tr></tbody>

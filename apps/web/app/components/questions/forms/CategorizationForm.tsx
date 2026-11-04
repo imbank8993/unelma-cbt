@@ -27,7 +27,7 @@ const CATEGORY_COLORS = [
   { bg: 'bg-violet-500', light: 'bg-violet-100', border: 'border-violet-200', text: 'text-violet-600', ring: 'ring-violet-400' },
   { bg: 'bg-blue-500', light: 'bg-blue-100', border: 'border-blue-200', text: 'text-blue-600', ring: 'ring-blue-400' },
   { bg: 'bg-teal-500', light: 'bg-teal-100', border: 'border-teal-200', text: 'text-teal-600', ring: 'ring-teal-400' },
-  { bg: 'bg-[#3083FF]', light: 'bg-blue-100', border: 'border-blue-200', text: 'text-blue-600', ring: 'ring-blue-400' },
+  { bg: 'bg-[#030C4D]', light: 'bg-blue-100', border: 'border-blue-200', text: 'text-blue-600', ring: 'ring-blue-400' },
   { bg: 'bg-amber-500', light: 'bg-amber-100', border: 'border-amber-200', text: 'text-amber-600', ring: 'ring-amber-400' },
   { bg: 'bg-rose-500', light: 'bg-rose-100', border: 'border-rose-200', text: 'text-rose-600', ring: 'ring-rose-400' },
   { bg: 'bg-indigo-500', light: 'bg-indigo-100', border: 'border-indigo-200', text: 'text-indigo-600', ring: 'ring-indigo-400' },

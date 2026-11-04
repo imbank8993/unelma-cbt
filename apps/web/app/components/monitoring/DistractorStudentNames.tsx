@@ -31,7 +31,7 @@ export function DistractorStudentNames({ names, optionLetter, questionNumber, is
                 isCorrect ? 'bg-emerald-100/70 text-emerald-800' : 'bg-slate-100 text-slate-700'
             }`}>{firstName}</span>
             {names.length > 1 && <button type="button"
-                className="shrink-0 min-h-11 sm:min-h-9 px-2 text-xs font-semibold text-[#3083FF] rounded-lg hover:bg-blue-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+                className="shrink-0 min-h-11 sm:min-h-9 px-2 text-xs font-semibold text-[#030C4D] rounded-lg hover:bg-blue-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
                 aria-haspopup="dialog" aria-expanded={open}
                 aria-label={`Lihat ${names.length - 1} siswa lainnya yang memilih opsi ${optionLetter}`}
                 onClick={() => { setSearch(''); setOpen(true); }}>

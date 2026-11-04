@@ -37,12 +37,12 @@
 }
 
 .ss__trigger:hover:not(.ss--disabled) {
-  border-color: var(--n-primary, #3083FF);
+  border-color: var(--n-primary, #030C4D);
 }
 
 .ss__trigger.is-open {
-  border-color: var(--n-primary, #3083FF);
-  box-shadow: 0 0 0 3px rgba(48, 131, 255, 0.15);
+  border-color: var(--n-primary, #030C4D);
+  box-shadow: 0 0 0 3px rgba(3, 12, 77, 0.15);
 }
 
 .ss__badge {
@@ -55,8 +55,8 @@
   border-radius: 999px;
   font-size: 0.72rem;
   font-weight: 700;
-  background: rgba(48, 131, 255, 0.14);
-  color: var(--n-primary, #3083FF);
+  background: rgba(3, 12, 77, 0.14);
+  color: var(--n-primary, #030C4D);
   flex-shrink: 0;
 }
 
@@ -66,7 +66,7 @@
   height: 8px;
   flex-shrink: 0;
   border-radius: 50%;
-  background: #3083ff;
+  background: #030C4D;
   vertical-align: middle;
 }
 
@@ -252,11 +252,11 @@
 
 .ss__item:hover,
 .ss__item.is-highlighted:not(.is-active) {
-  background: rgba(48, 131, 255, 0.08);
+  background: rgba(3, 12, 77, 0.08);
 }
 
 .ss__item.is-active {
-  background: rgba(48, 131, 255, 0.12);
+  background: rgba(3, 12, 77, 0.12);
 }
 
 .ss__checkbox {

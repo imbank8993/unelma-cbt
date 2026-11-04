@@ -661,10 +661,10 @@ const QuestionContentRenderer = React.memo(({
 
                         if (showFeedback) {
                             if (hasStudentMark && markIsRight) {
-                                optionClass = 'bg-blue-50/70 border-[#3083FF] shadow-sm';
-                                labelClass = 'bg-[#3083FF] text-white border-[#3083FF]';
+                                optionClass = 'bg-blue-50/70 border-[#030C4D] shadow-sm';
+                                labelClass = 'bg-[#030C4D] text-white border-[#030C4D]';
                                 textClass = 'text-slate-900 font-medium';
-                                checkBg = 'bg-[#3083FF] border-[#3083FF] text-white';
+                                checkBg = 'bg-[#030C4D] border-[#030C4D] text-white';
                                 iconElement = <Check size={14} strokeWidth={3} />;
                             } else if (hasStudentMark) {
                                 optionClass = 'bg-rose-50/70 border-rose-200';
@@ -702,7 +702,7 @@ const QuestionContentRenderer = React.memo(({
                                 {showFeedback && (
                                     <div className="shrink-0 flex flex-col items-end gap-1">
                                         {hasStudentMark && markIsRight && (
-                                            <span className="px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider bg-[#3083FF] text-white flex items-center gap-1">
+                                            <span className="px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider bg-[#030C4D] text-white flex items-center gap-1">
                                                 <Check size={10} strokeWidth={3} /> {question.type === 'true_false' ? `Jawab: ${trueFalseValueLabel(tfChoice, tfLabels)} (Benar)` : 'Jawaban Siswa (Benar)'}
                                             </span>
                                         )}

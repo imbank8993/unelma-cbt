@@ -301,7 +301,7 @@
 }
 
 .bnav__item:active {
-    background: rgba(48, 131, 255, 0.08);
+    background: rgba(3, 12, 77, 0.08);
 }
 
 .bnav__iconWrap {
@@ -328,7 +328,7 @@
 }
 
 .bnav__item.isActive {
-    color: #3083FF;
+    color: #030C4D;
 }
 
 .bnav__item.isActive .bnav__label {
@@ -345,7 +345,7 @@
     padding: 0 4px;
     box-sizing: border-box;
     border-radius: 999px;
-    background: #3083FF;
+    background: #030C4D;
     color: #E0ECFF;
     font-size: 0.62rem;
     font-weight: 800;
@@ -391,13 +391,13 @@
     width: 46px;
     height: 46px;
     border-radius: 50%;
-    background: #3083FF;
+    background: #030C4D;
     border: none;
 
     /* TANPA bayangan — mengikuti bahasa header mobile, yang putih pekat dengan
        garis rambut dan tidak memberi cahaya berwarna pada kontrol mana pun.
 
-       Sebelumnya di sini ada `0 6px 16px rgba(48, 131, 255, 0.32)`: cahaya biru
+       Sebelumnya di sini ada `0 6px 16px rgba(3, 12, 77, 0.32)`: cahaya biru
        ber-blur 16px yang terbaca sebagai halo berkabut mengelilingi cakram —
        satu-satunya efek kabur yang tersisa di bilah ini setelah blur pelat dan
        pita di atasnya dilepas.
@@ -462,7 +462,7 @@
     right: -4px;
     left: auto;
     transform: none;
-    background: #3083FF;
+    background: #030C4D;
     color: #E0ECFF;
     font-size: 0.6rem;
     font-weight: 800;
@@ -564,7 +564,7 @@
     font-weight: 600;
     text-transform: none;
     letter-spacing: 0.01em;
-    color: #3083FF;
+    color: #030C4D;
     display: inline-flex;
     align-items: center;
     gap: 4px;
@@ -641,7 +641,7 @@
     height: 32px;
     border-radius: 50%;
     background: #E0ECFF;
-    color: #3083FF;
+    color: #030C4D;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -677,7 +677,7 @@
 }
 
 .bnav__sheet-tab-check {
-    color: #3083FF;
+    color: #030C4D;
 }
 
 /* Active tab state */
@@ -686,7 +686,7 @@
 }
 
 .bnav__sheet-tab-btn.is-active .bnav__sheet-tab-icon {
-    background: #3083FF;
+    background: #030C4D;
     color: #ffffff;
 }
 
@@ -700,7 +700,7 @@
    ========================================================= */
 
 .bnav__sheet-badge--action {
-    color: #3083FF;
+    color: #030C4D;
 }
 
 .bnav__action-item {
@@ -735,8 +735,8 @@
     width: 38px;
     height: 38px;
     border-radius: 50%;
-    background: rgba(48, 131, 255, 0.1);
-    color: #3083FF;
+    background: rgba(3, 12, 77, 0.1);
+    color: #030C4D;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -746,8 +746,8 @@
 
 .bnav__action-item:hover .bnav__action-icon,
 .bnav__action-item:active .bnav__action-icon {
-    background: rgba(48, 131, 255, 0.18);
-    color: #3083FF;
+    background: rgba(3, 12, 77, 0.18);
+    color: #030C4D;
 }
 
 .bnav__action-info {
@@ -790,7 +790,7 @@
 }
 
 .bnav__action-item:hover .bnav__action-arrow {
-    background: #3083ff;
+    background: #030C4D;
     color: #ffffff;
     transform: translate(1px, -1px);
 }

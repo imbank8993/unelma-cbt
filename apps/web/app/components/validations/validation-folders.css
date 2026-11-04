@@ -1,7 +1,7 @@
 .validation-folders { display: grid; gap: 12px; min-width: 0; }
 .validation-folder-group { min-width: 0; }
 .validation-folder { display: flex; align-items: center; min-width: 0; border: 1px solid #c2d8f8; border-radius: 10px; background: #eff6ff; }
-.validation-folder__open { display: flex; gap: 10px; align-items: center; flex: 1; min-width: 0; padding: 16px; text-align: left; color: #3083ff; border-radius: 10px; }
+.validation-folder__open { display: flex; gap: 10px; align-items: center; flex: 1; min-width: 0; padding: 16px; text-align: left; color: #030C4D; border-radius: 10px; }
 .validation-folder__open > svg { flex-shrink: 0; }
 .validation-folder__open > svg:first-child { color: #94a3b8; transition: transform .15s; }
 .validation-folder__chevron--open { transform: rotate(90deg); }
@@ -11,7 +11,7 @@
 .validation-folder__actions button { padding: 8px; color: #64748b; border-radius: 7px; }
 .validation-folder__actions button:disabled { opacity: .35; cursor: not-allowed; }
 .validation-folder__actions button:not(:disabled):hover { background: #dceafe; }
-.validation-folder button:focus-visible { outline: 2px solid #3083ff; outline-offset: 2px; }
+.validation-folder button:focus-visible { outline: 2px solid #030C4D; outline-offset: 2px; }
 .validation-folder__contents { min-width: 0; padding: 10px 0 0 24px; }
 .validation-folder__empty { padding: 24px 16px; text-align: center; font-size: 12px; color: #64748b; }
 .validation-folder-input { width: 100%; border: 1px solid #cbd5e1; border-radius: 10px; padding: 11px 12px; background: #fff; color: #1e293b; font-size: 14px; }

@@ -64,10 +64,10 @@
 
 /* Variants */
 .ui-btn--primary {
-  background: #3083FF;
+  background: #030C4D;
   color: #ffffff;
-  border: 1.8px solid #3083FF;
-  box-shadow: 0 2px 6px rgba(48, 131, 255, 0.25);
+  border: 1.8px solid #030C4D;
+  box-shadow: 0 2px 6px rgba(3, 12, 77, 0.25);
 }
 
 .ui-btn--primary i,
@@ -79,7 +79,7 @@
   background: #2563EB;
   border-color: #2563EB;
   transform: translateY(-1px);
-  box-shadow: 0 4px 10px rgba(48, 131, 255, 0.35);
+  box-shadow: 0 4px 10px rgba(3, 12, 77, 0.35);
 }
 
 .ui-btn--outline,
@@ -93,7 +93,7 @@
 .ui-btn--outline:hover:not(:disabled),
 .ui-btn--secondary:hover:not(:disabled) {
   background: #f8fafc;
-  border-color: #3083FF;
+  border-color: #030C4D;
   transform: translateY(-1px);
   box-shadow: 0 4px 8px rgba(0, 56, 168, 0.12);
 }
@@ -138,13 +138,13 @@
 .ui-btn--add svg,
 .ui-btn--edit i,
 .ui-btn--edit svg {
-  color: #3083FF;
+  color: #030C4D;
 }
 
 .ui-btn--add:hover:not(:disabled),
 .ui-btn--edit:hover:not(:disabled) {
   background: #f8fafc;
-  border-color: #3083FF;
+  border-color: #030C4D;
   color: #0f172a;
   transform: translateY(-1px);
   box-shadow: 0 4px 8px rgba(0, 56, 168, 0.12);
@@ -210,7 +210,7 @@
 
 .ui-btn--more {
   background: #ffffff;
-  color: #3083FF;
+  color: #030C4D;
   border: 1px solid var(--n-border, #e2e8f0);
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
   min-width: 38px;
@@ -224,8 +224,8 @@
 .ui-btn--more:hover:not(:disabled),
 .ui-btn--more.isOpen {
   background: #f8fafc;
-  border-color: #3083FF;
-  color: #3083FF;
+  border-color: #030C4D;
+  color: #030C4D;
   transform: translateY(-1px);
   box-shadow: 0 4px 8px rgba(0, 56, 168, 0.12);
 }

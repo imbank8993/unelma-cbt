@@ -104,20 +104,20 @@ export default function AttemptAnalyticsPage() {
     if (loading) {
         return (
             <div className="flex items-center justify-center min-h-screen">
-                <Loader2 size={48} className="text-[#3083FF] animate-spin" />
+                <Loader2 size={48} className="text-[#030C4D] animate-spin" />
             </div>
         );
     }
 
     if (!data) {
         return (
-            <div className="py-20 text-center bg-white border border-[#3083FF]/20 rounded-lg shadow-sm">
+            <div className="py-20 text-center bg-white border border-[#030C4D]/20 rounded-lg shadow-sm">
                 <div className="w-16 h-16 bg-red-50 text-red-500 rounded-full flex items-center justify-center mx-auto mb-4">
                     <AlertTriangle size={24} />
                 </div>
                 <h3 className="text-lg font-bold text-slate-800 mb-1">Data Tidak Ditemukan</h3>
                 <p className="text-slate-500 text-sm mb-6">Kami tidak dapat menemukan rekaman pengerjaan untuk ID tersebut.</p>
-                <button onClick={() => router.back()} className="px-6 py-2.5 bg-[#3083FF] hover:bg-[#2563EB] text-white rounded-lg text-sm font-semibold transition-all">
+                <button onClick={() => router.back()} className="px-6 py-2.5 bg-[#030C4D] hover:bg-[#2563EB] text-white rounded-lg text-sm font-semibold transition-all">
                     Kembali Ke Monitoring
                 </button>
             </div>
@@ -150,7 +150,7 @@ export default function AttemptAnalyticsPage() {
                             <button
                                 onClick={handleSave}
                                 disabled={submitting}
-                                className="bg-[#3083FF] hover:bg-[#002d86] text-white font-semibold px-4 py-2 rounded-lg flex items-center gap-2 transition-all shadow-xs disabled:opacity-50 text-sm"
+                                className="bg-[#030C4D] hover:bg-[#002d86] text-white font-semibold px-4 py-2 rounded-lg flex items-center gap-2 transition-all shadow-xs disabled:opacity-50 text-sm"
                             >
                                 {submitting ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />}
                                 Simpan Perubahan
@@ -165,10 +165,10 @@ export default function AttemptAnalyticsPage() {
                 <AttemptScoreCard attempt={attempt} />
 
                 {/* Timing Info */}
-                <div className="bg-white p-5 rounded-lg border border-[#3083FF]/20 shadow-sm relative overflow-hidden">
+                <div className="bg-white p-5 rounded-lg border border-[#030C4D]/20 shadow-sm relative overflow-hidden">
                     <div className="flex justify-between items-start mb-4">
                         <span className="text-sm font-bold text-slate-500">Waktu</span>
-                        <div className="w-8 h-8 bg-[#3083FF]/10 rounded-lg flex items-center justify-center text-[#3083FF]">
+                        <div className="w-8 h-8 bg-[#030C4D]/10 rounded-lg flex items-center justify-center text-[#030C4D]">
                             <Clock size={16} />
                         </div>
                     </div>
@@ -189,7 +189,7 @@ export default function AttemptAnalyticsPage() {
                 </div>
 
                 {/* Security Shield */}
-                <div className="bg-white p-5 rounded-lg border border-[#3083FF]/20 shadow-sm relative overflow-hidden">
+                <div className="bg-white p-5 rounded-lg border border-[#030C4D]/20 shadow-sm relative overflow-hidden">
                     <div className="flex justify-between items-start mb-2">
                         <span className="text-sm font-bold text-slate-500">Keamanan</span>
                         <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${(attempt.warning_count || 0) > 0 ? 'bg-red-100 text-red-500' : 'bg-emerald-100 text-emerald-600'}`}>
@@ -211,10 +211,10 @@ export default function AttemptAnalyticsPage() {
                 </div>
 
                 {/* Answer Summary */}
-                <div className="bg-white p-5 rounded-lg border border-[#3083FF]/20 shadow-sm relative overflow-hidden">
+                <div className="bg-white p-5 rounded-lg border border-[#030C4D]/20 shadow-sm relative overflow-hidden">
                     <div className="flex justify-between items-start mb-4">
                         <span className="text-sm font-bold text-slate-500">Statistik Jawaban</span>
-                        <div className="w-8 h-8 bg-[#3083FF]/10 rounded-lg flex items-center justify-center text-[#3083FF]">
+                        <div className="w-8 h-8 bg-[#030C4D]/10 rounded-lg flex items-center justify-center text-[#030C4D]">
                             <Activity size={16} />
                         </div>
                     </div>
@@ -232,15 +232,15 @@ export default function AttemptAnalyticsPage() {
                             <p className="text-[10px] text-slate-400 uppercase font-bold">Tidak dijawab</p>
                         </div>
                         <div>
-                            <p className="text-lg font-bold text-[#3083FF] leading-none mb-0.5">{stats?.answered}</p>
+                            <p className="text-lg font-bold text-[#030C4D] leading-none mb-0.5">{stats?.answered}</p>
                             <p className="text-[10px] text-slate-400 uppercase font-bold">Terjawab</p>
                         </div>
                         <div>
-                            <p className="text-lg font-bold text-[#3083FF] leading-none mb-0.5">{stats?.essays}</p>
+                            <p className="text-lg font-bold text-[#030C4D] leading-none mb-0.5">{stats?.essays}</p>
                             <p className="text-[10px] text-slate-400 uppercase font-bold">Esai terjawab</p>
                         </div>
                         <div>
-                            <p className="text-lg font-bold text-[#3083FF] leading-none mb-0.5">{stats?.total}</p>
+                            <p className="text-lg font-bold text-[#030C4D] leading-none mb-0.5">{stats?.total}</p>
                             <p className="text-[10px] text-slate-400 uppercase font-bold">Total</p>
                         </div>
                     </div>
@@ -249,11 +249,11 @@ export default function AttemptAnalyticsPage() {
 
             {/* Content Tabs */}
             <div className="space-y-4">
-                <div className="flex gap-1 bg-white border border-[#3083FF]/30 p-1 rounded-lg w-fit shadow-sm">
+                <div className="flex gap-1 bg-white border border-[#030C4D]/30 p-1 rounded-lg w-fit shadow-sm">
                     <button
                         onClick={() => setActiveTab('questions')}
                         className={`relative flex items-center gap-2 px-6 py-2 rounded-lg text-xs font-bold transition-all ${
-                            activeTab === 'questions' ? 'bg-[#3083FF] text-white shadow-sm' : 'text-slate-500 hover:text-slate-800 hover:bg-slate-50'
+                            activeTab === 'questions' ? 'bg-[#030C4D] text-white shadow-sm' : 'text-slate-500 hover:text-slate-800 hover:bg-slate-50'
                         }`}
                     >
                         <BarChart3 size={14} /> Analisis Jawaban
@@ -273,7 +273,7 @@ export default function AttemptAnalyticsPage() {
                     </button>
                 </div>
 
-                <div className="bg-white border border-[#3083FF]/20 rounded-xl p-4 sm:p-6 shadow-sm">
+                <div className="bg-white border border-[#030C4D]/20 rounded-xl p-4 sm:p-6 shadow-sm">
                     <AnimatePresence mode="wait">
                         {activeTab === 'questions' && (
                             <motion.div key="questions" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="space-y-5 sm:space-y-6">
@@ -300,7 +300,7 @@ export default function AttemptAnalyticsPage() {
                                             </div>
 
                                             {/* Card Content */}
-                                            <div className="attempt-answer-review flex-1 bg-slate-50/70 border border-slate-200 rounded-xl p-3.5 sm:p-4 hover:border-[#3083FF]/30 transition-colors">
+                                            <div className="attempt-answer-review flex-1 bg-slate-50/70 border border-slate-200 rounded-xl p-3.5 sm:p-4 hover:border-[#030C4D]/30 transition-colors">
                                                 <div className="flex flex-wrap gap-2 justify-between items-center mb-3 pb-2.5 border-b border-slate-200">
                                                     <div className="flex gap-2">
                                                         <span className="px-2.5 py-1 bg-white border border-slate-200 rounded text-[10px] font-bold text-slate-500">
@@ -312,7 +312,7 @@ export default function AttemptAnalyticsPage() {
                                                     </div>
                                                     <div className="flex items-center gap-2">
                                                         <span className="text-xs font-semibold text-slate-500">Points:</span>
-                                                        <span className={`text-lg font-bold ${unanswered ? 'text-slate-400' : pending ? 'text-[#3083FF]' : answer.is_correct ? 'text-emerald-600' : isEssay ? 'text-[#3083FF]' : 'text-red-500'}`}>
+                                                        <span className={`text-lg font-bold ${unanswered ? 'text-slate-400' : pending ? 'text-[#030C4D]' : answer.is_correct ? 'text-emerald-600' : isEssay ? 'text-[#030C4D]' : 'text-red-500'}`}>
                                                             {unanswered ? '—' : pending ? 'Menunggu nilai' : isEssay ? (Number(grades[answer.id]) || answer.score || 0) : (answer.is_correct ? q.score_default : 0)}
                                                         </span>
                                                     </div>
@@ -332,9 +332,9 @@ export default function AttemptAnalyticsPage() {
 
                                                 {/* Essay Grading UI */}
                                                 {isEssay && !unanswered && (
-                                                    <div className="bg-white border-2 border-dashed border-[#3083FF]/40 rounded-lg p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                                                        <div className="flex items-start sm:items-center gap-3 text-[#3083FF]">
-                                                            <div className="w-8 h-8 bg-[#3083FF]/10 rounded flex items-center justify-center shrink-0">
+                                                    <div className="bg-white border-2 border-dashed border-[#030C4D]/40 rounded-lg p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                                                        <div className="flex items-start sm:items-center gap-3 text-[#030C4D]">
+                                                            <div className="w-8 h-8 bg-[#030C4D]/10 rounded flex items-center justify-center shrink-0">
                                                                 <BarChart3 size={16} />
                                                             </div>
                                                             <div>
@@ -351,7 +351,7 @@ export default function AttemptAnalyticsPage() {
                                                                 step="0.5"
                                                                 value={grades[answer.id] === undefined ? 0 : grades[answer.id]}
                                                                 onChange={(e) => handleGradeChange(answer.id, e.target.value)}
-                                                                className="w-16 bg-white border border-slate-300 focus:border-[#3083FF] rounded px-2 py-1.5 text-center text-sm font-bold text-slate-800 outline-none"
+                                                                className="w-16 bg-white border border-slate-300 focus:border-[#030C4D] rounded px-2 py-1.5 text-center text-sm font-bold text-slate-800 outline-none"
                                                             />
                                                             <span className="text-slate-400 font-bold text-sm pr-2">/ {q.score_default || 1}</span>
                                                         </div>
@@ -418,7 +418,7 @@ export default function AttemptAnalyticsPage() {
             </div>
 
             {/* Bottom Actions */}
-            <div className="mt-8 bg-white border border-[#3083FF]/20 p-6 rounded-lg shadow-sm flex flex-col sm:flex-row justify-between items-center gap-4">
+            <div className="mt-8 bg-white border border-[#030C4D]/20 p-6 rounded-lg shadow-sm flex flex-col sm:flex-row justify-between items-center gap-4">
                 <div>
                     <h4 className="text-sm font-bold text-slate-800 mb-1">Aksi Halaman</h4>
                     <p className="text-xs text-slate-500">Pastikan untuk menyimpan jika ada perubahan nilai uraian.</p>
@@ -434,7 +434,7 @@ export default function AttemptAnalyticsPage() {
                         <button
                             onClick={handleSave}
                             disabled={submitting}
-                            className="flex-1 sm:flex-none bg-[#3083FF] hover:bg-[#2563EB] text-white font-semibold px-6 py-2.5 rounded-lg transition-all shadow-md active:scale-95 text-sm flex items-center justify-center gap-2"
+                            className="flex-1 sm:flex-none bg-[#030C4D] hover:bg-[#2563EB] text-white font-semibold px-6 py-2.5 rounded-lg transition-all shadow-md active:scale-95 text-sm flex items-center justify-center gap-2"
                         >
                             {submitting ? <Loader2 size={16} className="animate-spin" /> : <CheckCircle2 size={16} />}
                             Simpan Perubahan

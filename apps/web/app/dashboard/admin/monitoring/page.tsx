@@ -420,9 +420,9 @@ function MonitoringContent() {
 
             {/* Empty state */}
             {!pickedExamId && (
-                <div className="py-16 text-center bg-white border border-[#3083FF]/30 rounded-lg">
-                    <div className="w-16 h-16 bg-[#3083FF]/10 rounded-lg flex items-center justify-center mx-auto mb-4 border border-[#3083FF]/30">
-                        <ShieldAlert size={32} className="text-[#3083FF]" />
+                <div className="py-16 text-center bg-white border border-[#030C4D]/30 rounded-lg">
+                    <div className="w-16 h-16 bg-[#030C4D]/10 rounded-lg flex items-center justify-center mx-auto mb-4 border border-[#030C4D]/30">
+                        <ShieldAlert size={32} className="text-[#030C4D]" />
                     </div>
                     <h2 className="text-lg font-bold text-slate-700 mb-2">Pilih Ujian</h2>
                     <p className="text-sm text-slate-500">Pilih ujian untuk mulai memonitoring</p>

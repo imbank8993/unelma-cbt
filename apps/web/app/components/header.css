@@ -11,7 +11,7 @@
 
   --header-bg: #ffffff;
   /* Solid White */
-  --header-border: rgba(48, 131, 255, 0.16);
+  --header-border: rgba(3, 12, 77, 0.16);
   --header-shadow: none;
   --header-text: #1e293b;
 }
@@ -692,7 +692,7 @@ html.dark .user_menu_nip {
     width: 17px;
     height: 19.6px;
     flex-shrink: 0;
-    color: var(--n-primary, #3083FF);
+    color: var(--n-primary, #030C4D);
   }
 
   .dark .header-pageTitle-logo {
@@ -921,7 +921,7 @@ html.dark .user_menu_nip {
     height: 32px !important;
     padding: 0 !important;
     border-radius: 8px !important;
-    color: #3083FF !important;
+    color: #030C4D !important;
     font-size: 1.05rem !important;
     cursor: pointer;
     flex-shrink: 0;
@@ -964,7 +964,7 @@ html.dark .user_menu_nip {
     align-items: center !important;
     justify-content: center !important;
     font-size: 0.9rem !important;
-    color: #3083FF !important;
+    color: #030C4D !important;
     background: #E0ECFF !important;
     border: 1px solid #E0ECFF !important;
     box-shadow: none !important;
@@ -1077,7 +1077,7 @@ html.dark .user_menu_nip {
   }
 
   .header .user-avatar-small i {
-    color: #3083FF !important;
+    color: #030C4D !important;
     font-size: 0.9rem !important;
   }
 

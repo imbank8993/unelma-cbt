@@ -37,7 +37,7 @@ function UserAvatar({
             <div
                 data-login-success={success}
                 className={`login-activity-avatar w-9 h-9 rounded-full overflow-hidden shrink-0 border ${
-                    success ? 'border-[#3083FF]/20 bg-slate-100' : 'border-rose-200 bg-rose-50'
+                    success ? 'border-[#030C4D]/20 bg-slate-100' : 'border-rose-200 bg-rose-50'
                 }`}
             >
                 <img
@@ -56,7 +56,7 @@ function UserAvatar({
             data-login-success={success}
             className={`login-activity-avatar w-9 h-9 rounded-full flex items-center justify-center shrink-0 border ${
                 success
-                    ? 'bg-gradient-to-br from-[#3083FF]/15 to-[#3083FF]/5 border-[#3083FF]/20 text-[#3083FF]'
+                    ? 'bg-gradient-to-br from-[#030C4D]/15 to-[#030C4D]/5 border-[#030C4D]/20 text-[#030C4D]'
                     : 'bg-rose-50 border-rose-200 text-rose-500'
             }`}
         >
@@ -160,9 +160,9 @@ export function RecentLoginsCard({ initialLogins }: { initialLogins: LoginUser[]
     // Icon perangkat
     const DeviceIcon = ({ type }: { type: string | null }) => {
         switch (type) {
-            case 'mobile': return <Smartphone size={11} className="text-[#3083FF]/60" />;
-            case 'tablet': return <Tablet size={11} className="text-[#3083FF]/60" />;
-            default: return <Monitor size={11} className="text-[#3083FF]/60" />;
+            case 'mobile': return <Smartphone size={11} className="text-[#030C4D]/60" />;
+            case 'tablet': return <Tablet size={11} className="text-[#030C4D]/60" />;
+            default: return <Monitor size={11} className="text-[#030C4D]/60" />;
         }
     };
 
@@ -196,7 +196,7 @@ export function RecentLoginsCard({ initialLogins }: { initialLogins: LoginUser[]
                 data-login-success={record.success}
                 className={`login-activity-row group flex items-center gap-3 px-3 py-2.5 rounded-xl border transition-all ${
                     record.success
-                        ? 'border-transparent hover:border-[#3083FF]/15 hover:bg-[#3083FF]/[0.03]'
+                        ? 'border-transparent hover:border-[#030C4D]/15 hover:bg-[#030C4D]/[0.03]'
                         : 'bg-rose-50/40 border-rose-100/80 hover:bg-rose-50/70'
                 }`}
             >
@@ -209,19 +209,19 @@ export function RecentLoginsCard({ initialLogins }: { initialLogins: LoginUser[]
                     />
                     <span
                         className={`login-activity-status-dot absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full ring-2 ring-white ${
-                            record.success ? 'bg-[#3083FF]' : 'bg-rose-500'
+                            record.success ? 'bg-[#030C4D]' : 'bg-rose-500'
                         }`}
                     />
                 </div>
 
                 {/* Info utama */}
                 <div className="flex-1 min-w-0">
-                    <p className="text-xs font-bold text-slate-800 truncate group-hover:text-[#3083FF] transition-colors">
+                    <p className="text-xs font-bold text-slate-800 truncate group-hover:text-[#030C4D] transition-colors">
                         {record.fullName}
                     </p>
                     <div className="flex items-center gap-1.5 mt-0.5 text-[11px] text-slate-400 truncate">
                         {record.role && (
-                            <span className="login-activity-role font-semibold text-[#3083FF]/80 shrink-0">{record.role}</span>
+                            <span className="login-activity-role font-semibold text-[#030C4D]/80 shrink-0">{record.role}</span>
                         )}
                         {record.role && (deviceLabel || record.ipAddress) && (
                             <span className="text-slate-300">•</span>
@@ -250,7 +250,7 @@ export function RecentLoginsCard({ initialLogins }: { initialLogins: LoginUser[]
                 <div className="hidden sm:block shrink-0 text-right">
                     <span data-login-success={record.success} className={`login-activity-time inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-semibold whitespace-nowrap ${
                         record.success
-                            ? 'bg-[#3083FF]/[0.07] text-[#3083FF]'
+                            ? 'bg-[#030C4D]/[0.07] text-[#030C4D]'
                             : 'bg-rose-100/70 text-rose-600'
                     }`}>
                         {getTimeAgo(record.createdAt)}
@@ -265,7 +265,7 @@ export function RecentLoginsCard({ initialLogins }: { initialLogins: LoginUser[]
         <div
             key={login.id}
             data-login-success="true"
-            className="login-activity-row group flex items-center gap-3 px-3 py-2.5 rounded-xl border border-transparent hover:border-[#3083FF]/15 hover:bg-[#3083FF]/[0.03] transition-all"
+            className="login-activity-row group flex items-center gap-3 px-3 py-2.5 rounded-xl border border-transparent hover:border-[#030C4D]/15 hover:bg-[#030C4D]/[0.03] transition-all"
         >
             <div className="relative shrink-0">
                 <UserAvatar
@@ -275,21 +275,21 @@ export function RecentLoginsCard({ initialLogins }: { initialLogins: LoginUser[]
                 />
                 <span
                     className={`login-activity-status-dot absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full ring-2 ring-white ${
-                        login.isActive ? 'bg-[#3083FF]' : 'bg-slate-300'
+                        login.isActive ? 'bg-[#030C4D]' : 'bg-slate-300'
                     }`}
                 />
             </div>
             <div className="flex-1 min-w-0">
-                <p className="text-xs font-bold text-slate-800 truncate group-hover:text-[#3083FF] transition-colors">
+                <p className="text-xs font-bold text-slate-800 truncate group-hover:text-[#030C4D] transition-colors">
                     {login.fullName}
                 </p>
-                <p className="login-activity-role text-[11px] font-medium text-[#3083FF]/80 mt-0.5">{login.role}</p>
+                <p className="login-activity-role text-[11px] font-medium text-[#030C4D]/80 mt-0.5">{login.role}</p>
                 <p className="sm:hidden text-[10px] text-slate-400 mt-0.5">
                     {getTimeAgo(login.lastLoginAt)}
                 </p>
             </div>
             <div className="hidden sm:block shrink-0 text-right">
-                <span data-login-success="true" className="login-activity-time inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-semibold bg-[#3083FF]/[0.07] text-[#3083FF] whitespace-nowrap">
+                <span data-login-success="true" className="login-activity-time inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-semibold bg-[#030C4D]/[0.07] text-[#030C4D] whitespace-nowrap">
                     {getTimeAgo(login.lastLoginAt)}
                 </span>
             </div>
@@ -298,9 +298,9 @@ export function RecentLoginsCard({ initialLogins }: { initialLogins: LoginUser[]
 
     if (loading) {
         return (
-            <div className="bg-white rounded-lg border border-[#3083FF]/30 overflow-hidden shadow-sm">
-                <div className="px-5 py-4 border-b border-[#3083FF]/15 bg-gradient-to-r from-[#3083FF]/[0.05] via-[#3083FF]/[0.02] to-transparent flex items-center gap-2.5">
-                    <div className="w-8 h-8 rounded-lg bg-[#3083FF]/10 border border-[#3083FF]/20 flex items-center justify-center text-[#3083FF]">
+            <div className="bg-white rounded-lg border border-[#030C4D]/30 overflow-hidden shadow-sm">
+                <div className="px-5 py-4 border-b border-[#030C4D]/15 bg-gradient-to-r from-[#030C4D]/[0.05] via-[#030C4D]/[0.02] to-transparent flex items-center gap-2.5">
+                    <div className="w-8 h-8 rounded-lg bg-[#030C4D]/10 border border-[#030C4D]/20 flex items-center justify-center text-[#030C4D]">
                         <Activity size={15} />
                     </div>
                     <div>
@@ -309,18 +309,18 @@ export function RecentLoginsCard({ initialLogins }: { initialLogins: LoginUser[]
                     </div>
                 </div>
                 <div className="py-12 flex items-center justify-center">
-                    <Loader2 size={22} className="text-[#3083FF] animate-spin" />
+                    <Loader2 size={22} className="text-[#030C4D] animate-spin" />
                 </div>
             </div>
         );
     }
 
     return (
-        <div className="bg-white rounded-lg border border-[#3083FF]/30 overflow-hidden shadow-sm">
+        <div className="bg-white rounded-lg border border-[#030C4D]/30 overflow-hidden shadow-sm">
             {/* Header */}
-            <div className="px-5 py-3.5 border-b border-[#3083FF]/15 bg-gradient-to-r from-[#3083FF]/[0.05] via-[#3083FF]/[0.02] to-transparent flex items-center justify-between gap-2">
+            <div className="px-5 py-3.5 border-b border-[#030C4D]/15 bg-gradient-to-r from-[#030C4D]/[0.05] via-[#030C4D]/[0.02] to-transparent flex items-center justify-between gap-2">
                 <div className="flex items-center gap-2.5 min-w-0">
-                    <div className="w-8 h-8 rounded-lg bg-[#3083FF]/10 border border-[#3083FF]/20 flex items-center justify-center text-[#3083FF] shrink-0">
+                    <div className="w-8 h-8 rounded-lg bg-[#030C4D]/10 border border-[#030C4D]/20 flex items-center justify-center text-[#030C4D] shrink-0">
                         <Activity size={15} />
                     </div>
                     <div className="min-w-0">
@@ -336,7 +336,7 @@ export function RecentLoginsCard({ initialLogins }: { initialLogins: LoginUser[]
                     onClick={openAllModal}
                     title="Lihat Detail Riwayat Login"
                     aria-label="Lihat Detail Riwayat Login"
-                    className="w-8 h-8 rounded-lg text-[#3083FF] bg-[#3083FF]/[0.08] hover:bg-[#3083FF]/15 border border-[#3083FF]/20 flex items-center justify-center transition-colors shrink-0"
+                    className="w-8 h-8 rounded-lg text-[#030C4D] bg-[#030C4D]/[0.08] hover:bg-[#030C4D]/15 border border-[#030C4D]/20 flex items-center justify-center transition-colors shrink-0"
                 >
                     <Eye size={15} />
                 </button>
@@ -361,8 +361,8 @@ export function RecentLoginsCard({ initialLogins }: { initialLogins: LoginUser[]
                     </div>
                 ) : (
                     <div className="py-10 text-center">
-                        <div className="w-12 h-12 bg-[#3083FF]/5 border border-[#3083FF]/10 rounded-2xl flex items-center justify-center mx-auto mb-3">
-                            <Activity size={20} className="text-[#3083FF]/50" />
+                        <div className="w-12 h-12 bg-[#030C4D]/5 border border-[#030C4D]/10 rounded-2xl flex items-center justify-center mx-auto mb-3">
+                            <Activity size={20} className="text-[#030C4D]/50" />
                         </div>
                         <p className="text-xs font-medium text-slate-500">Belum ada aktivitas login</p>
                     </div>
@@ -376,18 +376,18 @@ export function RecentLoginsCard({ initialLogins }: { initialLogins: LoginUser[]
                 size="lg"
                 title="Riwayat Aktivitas Login"
                 subtitle={!allLoading ? `Menampilkan ${filteredAllHistory.length} aktivitas tercatat` : 'Memuat riwayat masuk...'}
-                icon={<LogIn size={18} className="text-[#3083FF]" />}
+                icon={<LogIn size={18} className="text-[#030C4D]" />}
             >
                 {/* Filter bar */}
                 <div className="px-4 py-2.5 flex flex-wrap items-center gap-2 border-b border-slate-100 bg-slate-50/70 shrink-0">
                     <div className="flex-1 min-w-[180px] relative">
-                        <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#3083FF]/60" />
+                        <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#030C4D]/60" />
                         <input
                             type="text"
                             value={searchAll}
                             onChange={(e) => setSearchAll(e.target.value)}
                             placeholder="Cari nama pengguna..."
-                            className="w-full h-[34px] bg-white border border-[#3083FF]/20 text-slate-800 placeholder:text-slate-400 focus:border-[#3083FF] focus:ring-2 focus:ring-[#3083FF]/20 outline-none pl-9 pr-8 rounded-lg text-xs"
+                            className="w-full h-[34px] bg-white border border-[#030C4D]/20 text-slate-800 placeholder:text-slate-400 focus:border-[#030C4D] focus:ring-2 focus:ring-[#030C4D]/20 outline-none pl-9 pr-8 rounded-lg text-xs"
                         />
                         {searchAll && (
                             <button
@@ -428,7 +428,7 @@ export function RecentLoginsCard({ initialLogins }: { initialLogins: LoginUser[]
                 <ModalBody className="p-3 overflow-y-auto flex-1 max-h-[65vh]">
                     {allLoading ? (
                         <div className="py-12 flex items-center justify-center">
-                            <Loader2 size={24} className="text-[#3083FF] animate-spin" />
+                            <Loader2 size={24} className="text-[#030C4D] animate-spin" />
                         </div>
                     ) : filteredAllHistory.length > 0 ? (
                         <div className="space-y-1.5">
@@ -440,7 +440,7 @@ export function RecentLoginsCard({ initialLogins }: { initialLogins: LoginUser[]
                                         data-login-success={record.success}
                                         className={`login-activity-row flex items-center gap-3 p-3 rounded-xl border transition-all ${
                                             record.success
-                                                ? 'border-transparent hover:border-[#3083FF]/15 hover:bg-[#3083FF]/[0.03]'
+                                                ? 'border-transparent hover:border-[#030C4D]/15 hover:bg-[#030C4D]/[0.03]'
                                                 : 'bg-rose-50/40 border-rose-100/80 hover:bg-rose-50/70'
                                         }`}
                                     >
@@ -453,7 +453,7 @@ export function RecentLoginsCard({ initialLogins }: { initialLogins: LoginUser[]
                                             />
                                             <span
                                                 className={`login-activity-status-dot absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full ring-2 ring-white ${
-                                                    record.success ? 'bg-[#3083FF]' : 'bg-rose-500'
+                                                    record.success ? 'bg-[#030C4D]' : 'bg-rose-500'
                                                 }`}
                                             />
                                         </div>
@@ -464,7 +464,7 @@ export function RecentLoginsCard({ initialLogins }: { initialLogins: LoginUser[]
                                                 <p className="text-xs font-bold text-slate-800 truncate">{record.fullName}</p>
                                                 <MethodBadge method={record.loginMethod} />
                                                 {record.role && (
-                                                    <span className="login-activity-role text-[10px] bg-[#3083FF]/[0.06] text-[#3083FF] px-1.5 py-0.5 rounded font-semibold">
+                                                    <span className="login-activity-role text-[10px] bg-[#030C4D]/[0.06] text-[#030C4D] px-1.5 py-0.5 rounded font-semibold">
                                                         {record.role}
                                                     </span>
                                                 )}
@@ -495,7 +495,7 @@ export function RecentLoginsCard({ initialLogins }: { initialLogins: LoginUser[]
 
                                         {/* Waktu */}
                                         <div className="hidden sm:block shrink-0 text-right">
-                                            <span data-login-success={record.success} className="login-activity-time inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-semibold bg-[#3083FF]/[0.07] text-[#3083FF]">
+                                            <span data-login-success={record.success} className="login-activity-time inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-semibold bg-[#030C4D]/[0.07] text-[#030C4D]">
                                                 {getTimeAgo(record.createdAt)}
                                             </span>
                                             <p className="text-[10px] text-slate-400 mt-1 tabular-nums">{formatTime(record.createdAt)}</p>

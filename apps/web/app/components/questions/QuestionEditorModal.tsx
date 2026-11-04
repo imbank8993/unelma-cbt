@@ -599,7 +599,7 @@ export default function QuestionEditorModal({
                             <button
                                 onClick={handleSave}
                                 disabled={isSubmitting}
-                                className="flex items-center justify-center gap-1 sm:gap-2 px-3 py-1.5 sm:px-5 sm:py-2 text-xs sm:text-sm font-semibold bg-[#3083FF] text-white rounded-lg hover:bg-[#256fe0] shadow-sm transition-all disabled:opacity-50 shrink-0"
+                                className="flex items-center justify-center gap-1 sm:gap-2 px-3 py-1.5 sm:px-5 sm:py-2 text-xs sm:text-sm font-semibold bg-[#030C4D] text-white rounded-lg hover:bg-[#256fe0] shadow-sm transition-all disabled:opacity-50 shrink-0"
                             >
                                 {isSubmitting ? (
                                     <>
@@ -1188,7 +1188,7 @@ export default function QuestionEditorModal({
                         {/* Header */}
                         <div className="px-6 pt-5 pb-0 flex items-start justify-between">
                             <div className="flex items-center gap-3">
-                                <div className="w-10 h-10 bg-[#3083FF] rounded-lg flex items-center justify-center shadow-lg shadow-amber-500/20">
+                                <div className="w-10 h-10 bg-[#030C4D] rounded-lg flex items-center justify-center shadow-lg shadow-amber-500/20">
                                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5">
                                         <path d="M4 4h6v6H4z"/><path d="M14 4h6v6h-6z"/><path d="M4 14h6v6H4z"/><path d="M17 14v3h3"/>
                                     </svg>
@@ -1232,7 +1232,7 @@ export default function QuestionEditorModal({
                                 <div className="bg-white rounded-lg border border-slate-100 p-4 flex flex-col gap-2">
                                     <div className="flex items-center gap-2">
                                         <div className="w-5 h-5 bg-blue-100 rounded flex items-center justify-center">
-                                            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#3083FF" strokeWidth="2">
+                                            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#030C4D" strokeWidth="2">
                                                 <path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>
                                             </svg>
                                         </div>
@@ -1300,7 +1300,7 @@ export default function QuestionEditorModal({
                             </button>
                             <button
                                 onClick={saveLatexToOption}
-                                className="px-5 py-2 text-sm font-semibold bg-[#3083FF] text-white rounded-lg hover:bg-[#256fe0] transition-all shadow-lg shadow-amber-500/20 flex items-center gap-2"
+                                className="px-5 py-2 text-sm font-semibold bg-[#030C4D] text-white rounded-lg hover:bg-[#256fe0] transition-all shadow-lg shadow-amber-500/20 flex items-center gap-2"
                             >
                                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                                     <path d="M12 5v14M5 12l7 7 7-7"/>

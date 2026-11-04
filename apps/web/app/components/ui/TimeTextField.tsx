@@ -35,7 +35,7 @@ export function TimeTextField({ value, onChange, label, disabled, required }: {
     };
     return (
         <div className="relative">
-            <Clock size={16} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[#3083FF]" />
+            <Clock size={16} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[#030C4D]" />
             <input
                 ref={input => {
                     if (input) input.setCustomValidity(draft.trim() && parseTypedTime(draft) === null
@@ -56,7 +56,7 @@ export function TimeTextField({ value, onChange, label, disabled, required }: {
                 // Modal controls supply their own padding, overriding utilities.
                 // Reserve the icon gutter explicitly for both placeholder and value.
                 style={{ paddingLeft: 40, paddingRight: 12 }}
-                className={`h-[38px] w-full rounded-lg border bg-white pl-10 pr-3 font-mono text-sm tabular-nums outline-none transition-colors placeholder:text-slate-400 focus:border-[#3083FF] focus:ring-2 focus:ring-[#3083FF]/15 disabled:opacity-50 ${invalid ? 'border-red-400' : 'border-slate-200'}`}
+                className={`h-[38px] w-full rounded-lg border bg-white pl-10 pr-3 font-mono text-sm tabular-nums outline-none transition-colors placeholder:text-slate-400 focus:border-[#030C4D] focus:ring-2 focus:ring-[#030C4D]/15 disabled:opacity-50 ${invalid ? 'border-red-400' : 'border-slate-200'}`}
                 onFocus={event => { event.currentTarget.select(); validate(event.currentTarget); }}
                 onChange={event => {
                     const input = event.currentTarget;

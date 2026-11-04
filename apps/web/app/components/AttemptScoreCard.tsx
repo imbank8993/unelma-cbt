@@ -6,10 +6,10 @@ import { monitoringScoreModels } from '@/lib/monitoring-score-models';
 
 export function AttemptScoreCard({ attempt }: { attempt: ExamAttemptRecord }) {
     return (
-        <div className="bg-white p-5 rounded-lg border border-[#3083FF]/20 shadow-sm relative overflow-hidden">
+        <div className="bg-white p-5 rounded-lg border border-[#030C4D]/20 shadow-sm relative overflow-hidden">
             <div className="flex justify-between items-start mb-3">
                 <span className="text-sm font-bold text-slate-500">Nilai Ujian{attempt.status === 'in_progress' ? ' · Sementara' : ''}</span>
-                <div className="w-8 h-8 bg-[#3083FF]/10 rounded-lg flex items-center justify-center text-[#3083FF]">
+                <div className="w-8 h-8 bg-[#030C4D]/10 rounded-lg flex items-center justify-center text-[#030C4D]">
                     <BarChart3 size={16} />
                 </div>
             </div>
@@ -21,14 +21,14 @@ export function AttemptScoreCard({ attempt }: { attempt: ExamAttemptRecord }) {
                             {model.score === null ? (
                                 <span className="text-xs text-slate-400 text-right">{model.pendingLabel}</span>
                             ) : (
-                                <span className="text-lg font-bold text-[#3083FF] tabular-nums">
+                                <span className="text-lg font-bold text-[#030C4D] tabular-nums">
                                     {model.score.toFixed(2)}<span className="ml-1 text-xs text-slate-400">/100</span>
                                 </span>
                             )}
                         </div>
                         {model.score !== null && (
                             <div className="mt-1.5 h-1.5 bg-slate-100 rounded-full overflow-hidden">
-                                <div className="h-full bg-[#3083FF] rounded-full" style={{ width: `${model.score}%` }} />
+                                <div className="h-full bg-[#030C4D] rounded-full" style={{ width: `${model.score}%` }} />
                             </div>
                         )}
                     </div>

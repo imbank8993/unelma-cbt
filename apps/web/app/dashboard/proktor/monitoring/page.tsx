@@ -437,9 +437,9 @@ function MonitoringContent() {
 
             {/* Empty state */}
             {!pickedExamId && (
-                <div className="py-16 text-center bg-white border border-[#3083FF]/30 rounded-lg">
-                    <div className="w-16 h-16 bg-[#3083FF]/10 rounded-lg flex items-center justify-center mx-auto mb-4 border border-[#3083FF]/30">
-                        <ShieldAlert size={32} className="text-[#3083FF]" />
+                <div className="py-16 text-center bg-white border border-[#030C4D]/30 rounded-lg">
+                    <div className="w-16 h-16 bg-[#030C4D]/10 rounded-lg flex items-center justify-center mx-auto mb-4 border border-[#030C4D]/30">
+                        <ShieldAlert size={32} className="text-[#030C4D]" />
                     </div>
                     <h2 className="text-lg font-bold text-slate-700 mb-2">Pilih Ujian</h2>
                     <p className="text-sm text-slate-500">Pilih ujian untuk mulai memonitoring</p>
@@ -490,7 +490,7 @@ function MonitoringContent() {
                             <motion.div
                                 key="results"
                                 initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }}
-                                className="bg-white border border-[#3083FF]/30 rounded-lg shadow-sm overflow-hidden"
+                                className="bg-white border border-[#030C4D]/30 rounded-lg shadow-sm overflow-hidden"
                             >
                                 <MonitoringResultsTable attempts={finishedAttempts} hasAnyAttempts={attempts.length > 0} onViewDetails={id => router.push(`/dashboard/proktor/monitoring/${id}`)} onRecover={canResetParticipants ? handleResetAttempt : undefined} showRoomInfo={roomOptions.length > 0} />
                             </motion.div>
@@ -505,7 +505,7 @@ function MonitoringContent() {
                             >
                                 <MonitoringAnalysisView topicAnalysis={topicAnalysis?.examId === selectedExamId ? topicAnalysis.data : null} key={selectedExamId} hasIrt={hasIRTScoring || Boolean(irtCalibration)}
                                     irt={<IrtParametersPanel questions={analysis} calibration={irtCalibration} scoringType={selectedExam?.scoring_type} exportTitle={selectedExam ? monitoringExamLabel(selectedExam) : undefined} />}>
-                                <div className="monitoring-analysis bg-white border border-[#3083FF]/30 rounded-lg shadow-sm overflow-hidden">
+                                <div className="monitoring-analysis bg-white border border-[#030C4D]/30 rounded-lg shadow-sm overflow-hidden">
                                 <div className="flex items-center justify-between gap-2 border-b border-slate-100 px-4 py-3 text-xs">
                                     <span className="font-semibold text-slate-700 truncate">Urut dari soal tersulit</span>
                                     {analysis.some(item => item.incorrectPercentage > 50) && (
@@ -558,14 +558,14 @@ function MonitoringContent() {
                                 <div className="hidden sm:block overflow-x-auto">
                                     <table className="w-full min-w-[600px]">
                                         <thead>
-                                            <tr className="bg-[#3083FF]/5 text-[11px] uppercase tracking-wider text-slate-500 font-semibold">
-                                                <th className="p-4 text-center font-bold text-[#3083FF] w-14">No</th>
-                                                <th className="p-4 text-left font-bold text-[#3083FF]">Soal</th>
-                                                <th className="p-4 text-center font-bold text-[#3083FF]">Menjawab</th>
-                                                <th className="p-4 text-center font-bold text-[#3083FF]">Benar</th>
-                                                <th className="p-4 text-center font-bold text-[#3083FF]">Salah</th>
-                                                <th className="p-4 text-center font-bold text-[#3083FF]">Belum Ternilai</th>
-                                                <th className="p-4 text-right font-bold text-[#3083FF]">% Salah</th>
+                                            <tr className="bg-[#030C4D]/5 text-[11px] uppercase tracking-wider text-slate-500 font-semibold">
+                                                <th className="p-4 text-center font-bold text-[#030C4D] w-14">No</th>
+                                                <th className="p-4 text-left font-bold text-[#030C4D]">Soal</th>
+                                                <th className="p-4 text-center font-bold text-[#030C4D]">Menjawab</th>
+                                                <th className="p-4 text-center font-bold text-[#030C4D]">Benar</th>
+                                                <th className="p-4 text-center font-bold text-[#030C4D]">Salah</th>
+                                                <th className="p-4 text-center font-bold text-[#030C4D]">Belum Ternilai</th>
+                                                <th className="p-4 text-right font-bold text-[#030C4D]">% Salah</th>
                                             </tr>
                                         </thead>
                                         <tbody>
@@ -575,8 +575,8 @@ function MonitoringContent() {
                                                 pagedAnalysis.map((anl) => {
                                                     const isCritical = anl.incorrectPercentage > 50;
                                                     return (
-                                                        <tr key={anl.id} className={`border-b border-[#3083FF]/10 last:border-0 ${isCritical ? 'bg-amber-50/40' : 'hover:bg-slate-50/40'} transition-colors`}>
-                                                            <td className="p-4 text-center font-bold text-[#3083FF] text-[11px]">{anl.number}</td>
+                                                        <tr key={anl.id} className={`border-b border-[#030C4D]/10 last:border-0 ${isCritical ? 'bg-amber-50/40' : 'hover:bg-slate-50/40'} transition-colors`}>
+                                                            <td className="p-4 text-center font-bold text-[#030C4D] text-[11px]">{anl.number}</td>
                                                             <td className="p-4">
                                                                 <div className="min-w-0">
                                                                     <div className="relative max-h-[3.5rem] overflow-hidden font-medium text-slate-700 [mask-image:linear-gradient(to_bottom,black_50%,transparent_100%)]">
@@ -600,9 +600,9 @@ function MonitoringContent() {
                                                             <td className="p-4 text-center"><span className="font-bold text-slate-400 text-[11px]">{anl.ungraded ?? 0}</span></td>
                                                             <td className="p-4 text-right">
                                                                 <div className="flex flex-col items-end">
-                                                                    <span className={`font-bold text-[11px] ${isCritical ? 'text-red-600' : 'text-[#3083FF]'}`}>{anl.incorrectPercentage.toFixed(0)}%</span>
+                                                                    <span className={`font-bold text-[11px] ${isCritical ? 'text-red-600' : 'text-[#030C4D]'}`}>{anl.incorrectPercentage.toFixed(0)}%</span>
                                                                     <div className="w-20 h-1 bg-slate-100 rounded-full mt-1 overflow-hidden">
-                                                                        <div className={`h-full rounded-full ${isCritical ? 'bg-red-500' : 'bg-[#3083FF]'}`} style={{ width: `${anl.incorrectPercentage}%` }} />
+                                                                        <div className={`h-full rounded-full ${isCritical ? 'bg-red-500' : 'bg-[#030C4D]'}`} style={{ width: `${anl.incorrectPercentage}%` }} />
                                                                     </div>
                                                                 </div>
                                                             </td>

@@ -2103,15 +2103,15 @@ html.dark,
 
 
 /* Hardcoded hex brand colors overrides */
-.dark [class*="text-[#3083FF]"],
+.dark [class*="text-[#030C4D]"],
 .dark [class*="text-[#030C4D]"],
 .dark [class*="text-[#0038A8]"] {
   color: #f1f5f9 !important;
 }
-.dark [class*="bg-[#3083FF]/"],
+.dark [class*="bg-[#030C4D]/"],
 .dark [class*="bg-[#030C4D]/"],
 .dark [class*="bg-[#0038A8]/"] {
-  background-color: rgba(48, 131, 255, 0.18) !important;
+  background-color: rgba(3, 12, 77, 0.18) !important;
 }
 .dark [class*="border-[#030C4D]"],
 .dark [class*="border-[#0038A8]"] {
@@ -2465,7 +2465,7 @@ html.dark,
 .dark textarea:focus:not(.bg-transparent) {
   border-color: #4f8ef7 !important;
   outline: none !important;
-  box-shadow: 0 0 0 2px rgba(79, 142, 247, 0.25) !important;
+  box-shadow: 0 0 0 2px rgba(3, 12, 77, 0.25) !important;
 }
 .dark input::placeholder,
 .dark textarea::placeholder {
@@ -2547,16 +2547,16 @@ html.dark,
 .dark .cbt-option-item:hover,
 .dark [data-cbt-option]:hover {
   background-color: #222f4b !important;
-  border-color: rgba(48, 131, 255, 0.6) !important;
+  border-color: rgba(3, 12, 77, 0.6) !important;
 }
 
 /* Selected option */
 .dark .cbt-option-item.selected,
 .dark .cbt-option-item[data-selected="true"],
 .dark [data-cbt-option][data-selected="true"] {
-  background-color: rgba(48, 131, 255, 0.2) !important;
-  border-color: #3083FF !important;
-  box-shadow: 0 0 0 1px rgba(48, 131, 255, 0.35) !important;
+  background-color: rgba(3, 12, 77, 0.2) !important;
+  border-color: #030C4D !important;
+  box-shadow: 0 0 0 1px rgba(3, 12, 77, 0.35) !important;
 }
 
 /* Unselected option letter badge [ A ], [ B ], etc. */
@@ -2572,8 +2572,8 @@ html.dark,
 .dark [data-selected="true"] .cbt-option-badge,
 .dark [data-selected="true"] [data-cbt-badge],
 .dark [data-cbt-badge][data-selected="true"] {
-  background-color: #3083FF !important;
-  border-color: #3083FF !important;
+  background-color: #030C4D !important;
+  border-color: #030C4D !important;
   color: #ffffff !important;
 }
 
@@ -2724,7 +2724,7 @@ html.dark,
   color: #ffffff !important;
 }
 .dark .editor-toolbar button.active,
-.dark .editor-toolbar button[class*="bg-[#3083FF]"],
+.dark .editor-toolbar button[class*="bg-[#030C4D]"],
 .dark .editor-toolbar button[class*="bg-[#030C4D]"] {
   background-color: #4f8ef7 !important;
   color: #ffffff !important;

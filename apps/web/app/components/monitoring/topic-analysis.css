@@ -1,6 +1,6 @@
 .topic-analysis { min-width: 0; border: 1px solid var(--border, #e2e8f0); border-radius: 12px; background: var(--card, #fff); color: var(--foreground, #1e293b); overflow: hidden; }
 .topic-analysis__header { display: flex; align-items: flex-start; gap: 10px; padding: 18px 20px 12px; }
-.topic-analysis__header > svg { flex-shrink: 0; margin-top: 2px; color: #3083ff; }
+.topic-analysis__header > svg { flex-shrink: 0; margin-top: 2px; color: #030C4D; }
 .topic-analysis h2 { font-size: 15px; line-height: 1.5; font-weight: 650; margin: 0; }
 .topic-analysis__header p, .topic-analysis__material > span { font-size: 12px; line-height: 1.6; color: var(--muted-foreground, #64748b); }
 .topic-analysis__summary { padding: 0 20px 18px; font-size: 13px; line-height: 1.7; overflow-wrap: anywhere; }

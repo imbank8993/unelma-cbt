@@ -69,8 +69,8 @@ export function EquationDialog({ isOpen, onClose, onInsert }: EquationDialogProp
                 {/* Editor Mode Toggle */}
                 <div className="px-6 pt-4">
                     <div className="flex gap-2 mb-2">
-                        <button onClick={() => setEditorMode('visual')} className={`flex-1 py-1.5 rounded-lg text-xs font-semibold border transition-all ${editorMode === 'visual' ? 'bg-[#3083FF] text-white' : 'bg-white text-slate-600 hover:bg-slate-50'}`}>Visual (Word)</button>
-                        <button onClick={() => setEditorMode('latex')} className={`flex-1 py-1.5 rounded-lg text-xs font-semibold border transition-all ${editorMode === 'latex' ? 'bg-[#3083FF] text-white' : 'bg-white text-slate-600 hover:bg-slate-50'}`}>Kode LaTeX</button>
+                        <button onClick={() => setEditorMode('visual')} className={`flex-1 py-1.5 rounded-lg text-xs font-semibold border transition-all ${editorMode === 'visual' ? 'bg-[#030C4D] text-white' : 'bg-white text-slate-600 hover:bg-slate-50'}`}>Visual (Word)</button>
+                        <button onClick={() => setEditorMode('latex')} className={`flex-1 py-1.5 rounded-lg text-xs font-semibold border transition-all ${editorMode === 'latex' ? 'bg-[#030C4D] text-white' : 'bg-white text-slate-600 hover:bg-slate-50'}`}>Kode LaTeX</button>
                     </div>
                 </div>
 
@@ -176,7 +176,7 @@ export function EquationDialog({ isOpen, onClose, onInsert }: EquationDialogProp
                         Batal
                     </button>
                     <button onClick={handleInsert} disabled={!input.trim()}
-                        className="px-5 py-2 text-sm font-semibold bg-[#3083FF] text-white rounded-lg hover:bg-[#020735] disabled:opacity-40 disabled:cursor-not-allowed transition-all shadow-sm">
+                        className="px-5 py-2 text-sm font-semibold bg-[#030C4D] text-white rounded-lg hover:bg-[#020735] disabled:opacity-40 disabled:cursor-not-allowed transition-all shadow-sm">
                         Sisipkan
                     </button>
                 </div>
@@ -385,7 +385,7 @@ export const AnswerOptionCard = React.memo(({
                         w-7 h-7 rounded-lg flex items-center justify-center
                         text-xs font-black select-none transition-all
                         ${isCorrect
-                            ? 'bg-[#3083FF] text-white shadow-sm'
+                            ? 'bg-[#030C4D] text-white shadow-sm'
                             : isFocused
                                 ? 'bg-slate-800 text-white'
                                 : 'bg-slate-100 text-slate-600'
@@ -404,7 +404,7 @@ export const AnswerOptionCard = React.memo(({
                             title={isCorrect ? 'Kunci jawaban' : 'Jadikan kunci jawaban'}
                             className={`w-8 h-8 shrink-0 flex items-center justify-center rounded-lg border transition-all ${
                                 isCorrect
-                                    ? 'bg-[#3083FF] border-[#3083FF] text-white shadow-sm shadow-blue-500/20'
+                                    ? 'bg-[#030C4D] border-[#030C4D] text-white shadow-sm shadow-blue-500/20'
                                     : 'bg-slate-50 text-slate-500 hover:bg-slate-100 border-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:border-slate-600'
                             }`}
                         >
@@ -456,7 +456,7 @@ export const AnswerOptionCard = React.memo(({
                     text-sm font-black select-none
                     transition-all duration-200
                     ${isCorrect
-                        ? 'bg-[#3083FF] text-white'
+                        ? 'bg-[#030C4D] text-white'
                         : isFocused
                             ? 'bg-slate-800 text-white'
                             : 'bg-slate-100 text-slate-500'
@@ -514,7 +514,7 @@ export const AnswerOptionCard = React.memo(({
                             w-8 h-8 rounded-lg border-2
                             transition-all duration-200
                             ${isCorrect
-                                ? 'bg-[#3083FF] border-blue-500 text-white'
+                                ? 'bg-[#030C4D] border-blue-500 text-white'
                                 : 'border-slate-200 text-transparent group-hover:border-blue-400 group-hover:text-blue-500'
                             }
                         `}

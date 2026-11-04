@@ -31,8 +31,8 @@ export function QuestionBankCover({
 
     if (!src || failedSrc === src) {
         const computedIconClass = iconClassName || (isPublished !== undefined
-            ? (isPublished ? 'text-[#3083FF]' : 'text-red-600')
-            : 'text-[#3083FF]');
+            ? (isPublished ? 'text-[#030C4D]' : 'text-red-600')
+            : 'text-[#030C4D]');
 
         return <BookOpen size={iconSize} className={computedIconClass} aria-label={`Cover ${title} tidak tersedia`} />;
     }

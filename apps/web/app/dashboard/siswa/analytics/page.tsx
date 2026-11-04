@@ -153,7 +153,7 @@ export default function StudentAnalyticsPage() {
     if (loading) {
         return (
             <div className="flex flex-col items-center justify-center py-32 space-y-3">
-                <Loader2 size={36} className="text-[#3083FF] animate-spin" />
+                <Loader2 size={36} className="text-[#030C4D] animate-spin" />
                 <p className="text-slate-400 font-bold text-xs tracking-wider uppercase font-poppins">Memuat analisis performa...</p>
             </div>
         );
@@ -190,13 +190,13 @@ export default function StudentAnalyticsPage() {
         datasets: [{
             label: 'Skor',
             data: performanceTrend.map(p => p.score),
-            borderColor: '#3083FF',
+            borderColor: '#030C4D',
             backgroundColor: 'rgba(0, 56, 168, 0.06)',
             fill: true,
             tension: 0,
             pointRadius: 5,
             pointHoverRadius: 7,
-            pointBackgroundColor: '#3083FF',
+            pointBackgroundColor: '#030C4D',
             pointBorderColor: '#fff',
             pointBorderWidth: 2
         }]
@@ -371,14 +371,14 @@ export default function StudentAnalyticsPage() {
                         transition={{ delay: 0.25 }}
                         className="bg-white border border-slate-100 rounded-2xl p-6 shadow-sm flex flex-col text-left relative overflow-hidden pl-7"
                     >
-                        <div className="absolute left-0 top-0 h-full w-1.5 bg-[#3083FF]" />
+                        <div className="absolute left-0 top-0 h-full w-1.5 bg-[#030C4D]" />
                         <h3 className="font-bold text-slate-800 mb-5 flex items-center gap-2">
-                            <Zap size={16} className="text-[#3083FF]" />
+                            <Zap size={16} className="text-[#030C4D]" />
                             Perbandingan Peserta Ujian yang Sama
                         </h3>
                         <div className="grid grid-cols-3 gap-6">
                             <div className="text-center">
-                                <p className="text-4xl font-semibold text-[#3083FF] tabular-nums tracking-tight">{comparison.studentAverage}{scoreUnit}</p>
+                                <p className="text-4xl font-semibold text-[#030C4D] tabular-nums tracking-tight">{comparison.studentAverage}{scoreUnit}</p>
                                 <p className="text-xs font-bold text-slate-400 mt-1 uppercase tracking-wider">Skor Anda</p>
                             </div>
                             <div className="text-center flex flex-col items-center justify-center">
@@ -412,7 +412,7 @@ export default function StudentAnalyticsPage() {
                         className="bg-white border border-slate-100 rounded-2xl p-6 shadow-sm text-left"
                     >
                         <h3 className="font-bold text-slate-800 mb-4 flex items-center gap-2">
-                            <TrendingUp size={16} className="text-[#3083FF]" />
+                            <TrendingUp size={16} className="text-[#030C4D]" />
                             Tren Performa
                         </h3>
                         <div className="h-64">
@@ -428,7 +428,7 @@ export default function StudentAnalyticsPage() {
                         className="bg-white border border-slate-100 rounded-2xl p-6 shadow-sm text-left"
                     >
                         <h3 className="font-bold text-slate-800 mb-4 flex items-center gap-2">
-                            <BookOpen size={16} className="text-[#3083FF]" />
+                            <BookOpen size={16} className="text-[#030C4D]" />
                             Performa per Mata Pelajaran
                         </h3>
                         <div className="h-64">
@@ -446,7 +446,7 @@ export default function StudentAnalyticsPage() {
                 >
                     <div className="px-6 py-4 border-b border-slate-100">
                         <h3 className="font-bold text-slate-800 flex items-center gap-2">
-                            <PieChart size={16} className="text-[#3083FF]" />
+                            <PieChart size={16} className="text-[#030C4D]" />
                             Detail per Mata Pelajaran
                         </h3>
                     </div>
@@ -502,9 +502,9 @@ export default function StudentAnalyticsPage() {
                         transition={{ delay: 0.45 }}
                         className="bg-white border border-slate-100 rounded-2xl p-6 shadow-sm text-left relative overflow-hidden pl-7"
                     >
-                        <div className="absolute left-0 top-0 h-full w-1.5 bg-[#3083FF]" />
+                        <div className="absolute left-0 top-0 h-full w-1.5 bg-[#030C4D]" />
                         <h3 className="font-bold text-slate-800 mb-5 flex items-center gap-2">
-                            <Brain size={16} className="text-[#3083FF]" />
+                            <Brain size={16} className="text-[#030C4D]" />
                             Analisis tingkat kesulitan
                         </h3>
                         <div className="space-y-4">
@@ -615,14 +615,14 @@ export default function StudentAnalyticsPage() {
                     transition={{ delay: 0.6 }}
                     className="bg-white border border-slate-100 rounded-2xl p-6 shadow-sm text-left relative overflow-hidden pl-7"
                 >
-                    <div className="absolute left-0 top-0 h-full w-1.5 bg-[#3083FF]" />
+                    <div className="absolute left-0 top-0 h-full w-1.5 bg-[#030C4D]" />
                     <h3 className="font-bold text-slate-800 mb-5 flex items-center gap-2">
-                        <Clock size={16} className="text-[#3083FF]" />
+                        <Clock size={16} className="text-[#030C4D]" />
                         Waktu Pengerjaan Ujian
                     </h3>
                     <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                         <div className="text-center p-4 bg-slate-50/50 border border-slate-100 rounded-xl">
-                            <p className="text-xl font-bold text-[#3083FF] tabular-nums tracking-tight leading-none">{formatDuration(studyHabits.averageTimePerExam)}</p>
+                            <p className="text-xl font-bold text-[#030C4D] tabular-nums tracking-tight leading-none">{formatDuration(studyHabits.averageTimePerExam)}</p>
                             <p className="text-xs font-semibold text-slate-400 mt-2 uppercase tracking-wide">Rata-rata / Ujian</p>
                         </div>
                         <div className="text-center p-4 bg-slate-50/50 border border-slate-100 rounded-xl">
@@ -650,7 +650,7 @@ export default function StudentAnalyticsPage() {
                 >
                     <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
                         <h3 className="font-bold text-slate-800 flex items-center gap-2">
-                            <Calendar size={16} className="text-[#3083FF]" />
+                            <Calendar size={16} className="text-[#030C4D]" />
                             Riwayat Ujian
                         </h3>
                     </div>
@@ -664,7 +664,7 @@ export default function StudentAnalyticsPage() {
                                 return (
                                     <div key={exam.id} className="px-6 py-4 flex items-center justify-between hover:bg-slate-50/50 transition-colors">
                                         <div className="flex items-center gap-3.5 min-w-0">
-                                            <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 bg-blue-50 text-[#3083FF] border border-blue-100">
+                                            <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 bg-blue-50 text-[#030C4D] border border-blue-100">
                                                 <BookOpen size={18} />
                                             </div>
                                             <div className="min-w-0">

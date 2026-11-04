@@ -469,11 +469,11 @@ export const QuestionRenderer = React.memo<QuestionRendererProps>(({
                         // putus-putus tanpa tanda centang.
                         if (showFeedback) {
                             if (isSelected && isCorrect) {
-                                borderClass = 'border-[#3083FF] shadow-sm dark:border-primary';
+                                borderClass = 'border-[#030C4D] shadow-sm dark:border-primary';
                                 bgClass = 'bg-blue-50/70 dark:bg-blue-950/40';
-                                labelClass = 'bg-[#3083FF] text-white border-[#3083FF] dark:bg-primary dark:text-white dark:border-primary';
+                                labelClass = 'bg-[#030C4D] text-white border-[#030C4D] dark:bg-primary dark:text-white dark:border-primary';
                                 textClass = 'text-slate-900 dark:text-white font-medium';
-                                checkClass = 'bg-[#3083FF] text-white';
+                                checkClass = 'bg-[#030C4D] text-white';
                             } else if (isSelected) {
                                 borderClass = 'border-rose-300 dark:border-rose-700';
                                 bgClass = 'bg-rose-50/70 dark:bg-rose-950/40';
@@ -491,11 +491,11 @@ export const QuestionRenderer = React.memo<QuestionRendererProps>(({
                                 bgClass = 'bg-white/60 dark:bg-[#1a233a]/60 opacity-60';
                             }
                         } else if (isSelected) {
-                            borderClass = 'border-[#3083FF] shadow-sm dark:border-primary ring-1 ring-[#3083FF]/30 dark:ring-primary/40';
+                            borderClass = 'border-[#030C4D] shadow-sm dark:border-primary ring-1 ring-[#030C4D]/30 dark:ring-primary/40';
                             bgClass = 'bg-blue-50/50 dark:bg-primary/20';
-                            labelClass = 'bg-[#3083FF] text-white border-[#3083FF] dark:bg-primary dark:text-white dark:border-primary';
+                            labelClass = 'bg-[#030C4D] text-white border-[#030C4D] dark:bg-primary dark:text-white dark:border-primary';
                             textClass = 'text-slate-900 dark:text-white font-medium';
-                            checkClass = 'bg-[#3083FF] text-white';
+                            checkClass = 'bg-[#030C4D] text-white';
                         }
 
                         return (
@@ -528,7 +528,7 @@ export const QuestionRenderer = React.memo<QuestionRendererProps>(({
                                 {showFeedback && showFeedbackLabels && (
                                     <div className="shrink-0 flex flex-col items-end gap-1">
                                         {isSelected && isCorrect && (
-                                            <span className="px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider bg-[#3083FF] text-white flex items-center gap-1">
+                                            <span className="px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider bg-[#030C4D] text-white flex items-center gap-1">
                                                 <Check size={10} strokeWidth={3} /> Jawaban Siswa (Benar)
                                             </span>
                                         )}
@@ -644,9 +644,9 @@ export const QuestionRenderer = React.memo<QuestionRendererProps>(({
                         // hilang jadi mustahil terdeteksi dari layar monitoring.
                         if (showFeedback) {
                             if (isSelected && isCorrect) {
-                                borderClass = 'border-[#3083FF] shadow-sm dark:border-primary'; bgClass = 'bg-blue-50/70 dark:bg-blue-950/40';
-                                labelClass = 'bg-[#3083FF] text-white border-[#3083FF] dark:bg-primary dark:text-white dark:border-primary';
-                                textClass = 'text-slate-900 dark:text-white font-medium'; checkBg = 'bg-[#3083FF] border-[#3083FF] text-white dark:bg-primary dark:border-primary dark:text-white';
+                                borderClass = 'border-[#030C4D] shadow-sm dark:border-primary'; bgClass = 'bg-blue-50/70 dark:bg-blue-950/40';
+                                labelClass = 'bg-[#030C4D] text-white border-[#030C4D] dark:bg-primary dark:text-white dark:border-primary';
+                                textClass = 'text-slate-900 dark:text-white font-medium'; checkBg = 'bg-[#030C4D] border-[#030C4D] text-white dark:bg-primary dark:border-primary dark:text-white';
                             } else if (isSelected) {
                                 borderClass = 'border-rose-300 dark:border-rose-700'; bgClass = 'bg-rose-50/70 dark:bg-rose-950/40';
                                 labelClass = 'bg-rose-100 text-rose-700 border-rose-200 dark:bg-rose-900/60 dark:text-rose-200 dark:border-rose-700 font-bold';
@@ -659,9 +659,9 @@ export const QuestionRenderer = React.memo<QuestionRendererProps>(({
                                 textClass = 'text-slate-400 dark:text-slate-500'; bgClass = 'bg-white/60 dark:bg-[#1a233a]/60 opacity-60';
                             }
                         } else if (isSelected) {
-                            borderClass = 'border-[#3083FF] shadow-sm dark:border-primary ring-1 ring-[#3083FF]/30 dark:ring-primary/40'; bgClass = 'bg-blue-50/50 dark:bg-primary/20';
-                            labelClass = 'bg-[#3083FF] text-white border-[#3083FF] dark:bg-primary dark:text-white dark:border-primary';
-                            textClass = 'text-slate-900 dark:text-white font-medium'; checkBg = 'bg-[#3083FF] border-[#3083FF] text-white dark:bg-primary dark:border-primary dark:text-white';
+                            borderClass = 'border-[#030C4D] shadow-sm dark:border-primary ring-1 ring-[#030C4D]/30 dark:ring-primary/40'; bgClass = 'bg-blue-50/50 dark:bg-primary/20';
+                            labelClass = 'bg-[#030C4D] text-white border-[#030C4D] dark:bg-primary dark:text-white dark:border-primary';
+                            textClass = 'text-slate-900 dark:text-white font-medium'; checkBg = 'bg-[#030C4D] border-[#030C4D] text-white dark:bg-primary dark:border-primary dark:text-white';
                         }
 
                         return (
@@ -700,7 +700,7 @@ export const QuestionRenderer = React.memo<QuestionRendererProps>(({
                                 {showFeedback && showFeedbackLabels && (
                                     <div className="shrink-0 flex flex-col items-end gap-1">
                                         {isSelected && isCorrect && (
-                                            <span className="px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider bg-[#3083FF] text-white flex items-center gap-1">
+                                            <span className="px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider bg-[#030C4D] text-white flex items-center gap-1">
                                                 <Check size={10} strokeWidth={3} /> Jawaban Siswa (Benar)
                                             </span>
                                         )}
@@ -825,7 +825,7 @@ export const QuestionRenderer = React.memo<QuestionRendererProps>(({
                                                                         className={`w-8 h-8 rounded-lg border-2 flex items-center justify-center transition-all text-white text-xs font-bold
                                                                             ${cellStatus === 'idle' ? 'border-slate-200 dark:border-slate-700 bg-white dark:bg-[#1a233a] hover:bg-slate-100 dark:hover:bg-[#24324f]' : ''}
                                                                             ${cellStatus === 'selected' ? `${color.active} border-transparent shadow-sm` : ''}
-                                                                            ${cellStatus === 'correct' ? 'bg-[#3083FF] border-transparent shadow-sm' : ''}
+                                                                            ${cellStatus === 'correct' ? 'bg-[#030C4D] border-transparent shadow-sm' : ''}
                                                                             ${cellStatus === 'wrong' ? 'bg-rose-400 border-transparent shadow-sm' : ''}
                                                                             ${cellStatus === 'missing' ? 'bg-emerald-500 border-transparent shadow-sm text-white' : ''}
                                                                         `}
@@ -908,7 +908,7 @@ export const QuestionRenderer = React.memo<QuestionRendererProps>(({
                                                                 } ${
                                                                     cellStatus === 'selected' ? `${color.active} shadow-sm` : ''
                                                                 } ${
-                                                                    cellStatus === 'correct' ? 'bg-[#3083FF] border-transparent text-white' : ''
+                                                                    cellStatus === 'correct' ? 'bg-[#030C4D] border-transparent text-white' : ''
                                                                 } ${
                                                                     cellStatus === 'wrong' ? 'bg-rose-400 border-transparent text-white' : ''
                                                                 } ${
@@ -1205,11 +1205,11 @@ export const QuestionRenderer = React.memo<QuestionRendererProps>(({
 
                             if (showFeedback) {
                                 if (isSelected && isHighest) {
-                                    borderClass = 'border-[#3083FF] dark:border-primary';
+                                    borderClass = 'border-[#030C4D] dark:border-primary';
                                     bgClass = 'bg-blue-50/70 dark:bg-blue-950/40';
-                                    labelClass = 'bg-[#3083FF] text-white border-[#3083FF] dark:bg-primary dark:border-primary';
+                                    labelClass = 'bg-[#030C4D] text-white border-[#030C4D] dark:bg-primary dark:border-primary';
                                     textClass = 'text-slate-900 dark:text-white font-medium';
-                                    checkClass = 'bg-[#3083FF] text-white';
+                                    checkClass = 'bg-[#030C4D] text-white';
                                 } else if (isHighest) {
                                     borderClass = 'border-emerald-400 dark:border-emerald-600';
                                     bgClass = 'bg-emerald-50 dark:bg-emerald-950/40';
@@ -1682,7 +1682,7 @@ const ShortAnswerInline = React.memo(({
         if (blanksCount <= 1) {
             return `<span class="tracking-[0.2em] text-slate-400 font-bold mx-1">.....</span>`;
         }
-        return `<span class="inline-flex items-center mx-1"><span class="tracking-[0.2em] text-slate-400 font-bold">.....</span><span class="inline-flex items-center justify-center min-w-[16px] h-[16px] px-1 rounded-full bg-[#3083FF]/10 text-[#3083FF] text-[9px] font-black ml-1 shadow-sm">${counter}</span></span>`;
+        return `<span class="inline-flex items-center mx-1"><span class="tracking-[0.2em] text-slate-400 font-bold">.....</span><span class="inline-flex items-center justify-center min-w-[16px] h-[16px] px-1 rounded-full bg-[#030C4D]/10 text-[#030C4D] text-[9px] font-black ml-1 shadow-sm">${counter}</span></span>`;
     });
 
     const replacedText = safeText.replace(/__PROTECTED_BLOCK_(\d+)__/g, (_, i) => protectedBlocks[parseInt(i)]);
@@ -1724,12 +1724,12 @@ const ShortAnswerInline = React.memo(({
                                         placeholder="Ketik jawaban..."
                                         className={`w-full px-4 py-2.5 text-sm font-medium rounded-lg border-2 outline-none transition-all short-answer-input
                                             ${showFeedback
-                                                ? (isCorrect ? 'border-[#3083FF] bg-blue-50/70 text-blue-900 pr-10' : 'border-rose-200 bg-rose-50/70 text-rose-800 pr-10')
+                                                ? (isCorrect ? 'border-[#030C4D] bg-blue-50/70 text-blue-900 pr-10' : 'border-rose-200 bg-rose-50/70 text-rose-800 pr-10')
                                                 : 'border-slate-200 bg-white text-slate-700 focus:border-slate-400 focus:ring-2 focus:ring-slate-100'
                                             }`}
                                     />
                                     {showFeedback && isCorrect && (
-                                        <div className="absolute right-3 top-1/2 -translate-y-1/2 text-[#3083FF]">
+                                        <div className="absolute right-3 top-1/2 -translate-y-1/2 text-[#030C4D]">
                                             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
                                                 <polyline points="20 6 9 17 4 12"></polyline>
                                             </svg>
@@ -1847,7 +1847,7 @@ const OrderingRenderer = React.memo(({
               if (showFeedback) {
                 const isCorrect = String(currentVal) === String(correctIdx + 1);
                 bgClass = isCorrect ? 'bg-blue-50/70 dark:bg-blue-950/40' : 'bg-rose-50 dark:bg-rose-950/40';
-                inputBorder = isCorrect ? 'border-[#3083FF] text-blue-700 dark:text-blue-300 bg-blue-100 dark:bg-blue-900/50' : 'border-rose-500 text-rose-700 dark:text-rose-300 bg-rose-100 dark:bg-rose-900/50';
+                inputBorder = isCorrect ? 'border-[#030C4D] text-blue-700 dark:text-blue-300 bg-blue-100 dark:bg-blue-900/50' : 'border-rose-500 text-rose-700 dark:text-rose-300 bg-rose-100 dark:bg-rose-900/50';
               } else if (isDuplicate) {
                 bgClass = 'bg-amber-50/60 dark:bg-amber-950/30';
                 inputBorder = 'border-amber-400 text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-900/50 ring-2 ring-amber-200 dark:ring-amber-800';

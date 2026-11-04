@@ -41,7 +41,7 @@
 
 .uisel select.uisel-input:focus {
     outline: none;
-    border-color: var(--n-primary, #3083FF);
+    border-color: var(--n-primary, #030C4D);
 }
 
 .uisel select.uisel-input:disabled {
@@ -62,7 +62,7 @@
 
 .uisel:focus-within .uisel-icon {
     transform: rotate(180deg);
-    color: var(--n-primary, #3083FF);
+    color: var(--n-primary, #030C4D);
 }
 
 .dark .uisel select.uisel-input {

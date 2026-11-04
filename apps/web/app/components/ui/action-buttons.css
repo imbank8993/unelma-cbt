@@ -116,9 +116,9 @@
 }
 
 .btn-action-primary {
-  background: #3083FF;
+  background: #030C4D;
   color: #ffffff;
-  border: 1.5px solid #3083FF;
+  border: 1.5px solid #030C4D;
   box-shadow: 0 2px 6px rgba(0, 56, 168, 0.25);
 }
 
@@ -442,8 +442,8 @@ table tbody tr:last-child [data-tooltip]:not([data-tooltip-pos="left"]):not([dat
 .btn-icon-view:hover,
 .btn-icon-view:focus {
   background: rgba(0, 56, 168, 0.12);
-  border-color: #3083FF;
-  color: #3083FF;
+  border-color: #030C4D;
+  color: #030C4D;
   transform: translateY(-1px);
   box-shadow: 0 4px 12px rgba(0, 56, 168, 0.2);
 }
@@ -671,7 +671,7 @@ table tbody tr:last-child [data-tooltip]:not([data-tooltip-pos="left"]):not([dat
 }
 
 .btn-kh-navy {
-  background: #3083FF;
+  background: #030C4D;
   color: white;
   border: none;
   padding: 0.65rem 1rem;

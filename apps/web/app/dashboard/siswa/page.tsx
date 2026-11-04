@@ -133,11 +133,11 @@ export default function SiswaDashboard() {
                 key={exam.id || i}
                 className="p-4 bg-white border border-slate-100 hover:border-indigo-100/80 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-4 transition-all duration-300 relative overflow-hidden group shadow-sm hover:shadow-md"
             >
-                <div className={`absolute left-0 top-0 h-full w-1 ${isReady ? 'bg-[#3083FF]' : 'bg-blue-400'}`} />
+                <div className={`absolute left-0 top-0 h-full w-1 ${isReady ? 'bg-[#030C4D]' : 'bg-blue-400'}`} />
                 
                 <div className="flex items-center gap-3.5 flex-1 pl-1 min-w-0 text-left">
                     {/* Date Badge */}
-                    <div className="w-10 h-10 bg-indigo-50 border border-indigo-100/30 rounded-xl flex flex-col items-center justify-center shrink-0 group-hover:bg-[#3083FF] group-hover:border-[#3083FF] transition-colors text-indigo-600 group-hover:text-white">
+                    <div className="w-10 h-10 bg-indigo-50 border border-indigo-100/30 rounded-xl flex flex-col items-center justify-center shrink-0 group-hover:bg-[#030C4D] group-hover:border-[#030C4D] transition-colors text-indigo-600 group-hover:text-white">
                         {getDayNum(exam.start_time) === '--' ? (
                             <Zap size={16} />
                         ) : (
@@ -156,8 +156,8 @@ export default function SiswaDashboard() {
                                     {recovery.badge}
                                 </span>
                             ) : isReady ? (
-                                <span className="px-2 py-0.5 rounded-md text-[9px] font-bold bg-blue-50 text-[#3083FF] border border-blue-100 flex items-center gap-1 leading-none">
-                                    <span className="w-1 h-1 rounded-full bg-[#3083FF] animate-pulse"></span>
+                                <span className="px-2 py-0.5 rounded-md text-[9px] font-bold bg-blue-50 text-[#030C4D] border border-blue-100 flex items-center gap-1 leading-none">
+                                    <span className="w-1 h-1 rounded-full bg-[#030C4D] animate-pulse"></span>
                                     Aktif
                                 </span>
                             ) : (
@@ -165,13 +165,13 @@ export default function SiswaDashboard() {
                                     Terjadwal
                                 </span>
                             )}
-                            <span className="px-2 py-0.5 rounded-md text-[9px] font-bold bg-blue-50 text-[#3083FF] border border-blue-100/30 flex items-center gap-1 leading-none">
+                            <span className="px-2 py-0.5 rounded-md text-[9px] font-bold bg-blue-50 text-[#030C4D] border border-blue-100/30 flex items-center gap-1 leading-none">
                                 <Timer size={10} />
                                 {exam.duration_minutes} Menit
                             </span>
                         </div>
 
-                        <h3 className="font-bold text-slate-800 text-sm group-hover:text-[#3083FF] transition-colors line-clamp-1 leading-snug">{exam.title}</h3>
+                        <h3 className="font-bold text-slate-800 text-sm group-hover:text-[#030C4D] transition-colors line-clamp-1 leading-snug">{exam.title}</h3>
                         
                         <p className="text-xs text-slate-400 flex items-center gap-1.5 font-sans font-medium">
                             <Clock size={12} className="text-slate-300" />
@@ -190,7 +190,7 @@ export default function SiswaDashboard() {
                                 if (scheduleState(exam, currentTime) === 'open') router.push(`/dashboard/siswa/exam/${exam.id}`);
                                 else void loadData();
                             }}
-                            className="w-full sm:w-auto bg-[#3083FF] hover:bg-[#2563EB] text-white text-[10px] font-bold px-3.5 py-1.5 rounded-xl flex items-center justify-center gap-1.5 transition-colors shadow-sm active:scale-95"
+                            className="w-full sm:w-auto bg-[#030C4D] hover:bg-[#2563EB] text-white text-[10px] font-bold px-3.5 py-1.5 rounded-xl flex items-center justify-center gap-1.5 transition-colors shadow-sm active:scale-95"
                         >
                             {inRecovery ? recovery.button : exam.isInProgress ? 'Lanjutkan' : 'Mulai'} <ArrowRight size={12} />
                         </button>
@@ -227,10 +227,10 @@ export default function SiswaDashboard() {
                 <StudentScoreAverages results={results} />
 
                 {/* Ujian Selesai */}
-                <div className="bg-white border border-slate-100 rounded-2xl p-5 hover:shadow-xl hover:shadow-[#3083FF]/5 transition-all duration-300 relative overflow-hidden flex items-center justify-between gap-4">
-                    <div className="absolute left-0 top-0 h-full w-1.5 bg-[#3083FF]" />
+                <div className="bg-white border border-slate-100 rounded-2xl p-5 hover:shadow-xl hover:shadow-[#030C4D]/5 transition-all duration-300 relative overflow-hidden flex items-center justify-between gap-4">
+                    <div className="absolute left-0 top-0 h-full w-1.5 bg-[#030C4D]" />
                     <div className="flex items-center gap-3.5">
-                        <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center text-[#3083FF] border border-blue-100/50">
+                        <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center text-[#030C4D] border border-blue-100/50">
                             <CheckCircle2 size={18} />
                         </div>
                         <div className="text-left">
@@ -249,16 +249,16 @@ export default function SiswaDashboard() {
                         <div className="px-5 py-4 border-b border-slate-100 flex justify-between items-center gap-4">
                             <div className="text-left">
                                 <h2 className="text-base font-bold text-slate-800 flex items-center gap-2">
-                                    <BookOpen size={16} className="text-[#3083FF]" />
+                                    <BookOpen size={16} className="text-[#030C4D]" />
                                     Ujian Sekolah Anda
                                 </h2>
                                 <p className="text-xs text-slate-400 mt-0.5">Ujian aktif dan terjadwal dari sekolah</p>
                             </div>
                             <button 
                                 onClick={() => router.push('/dashboard/siswa/schedule')} 
-                                className="inline-flex items-center gap-1 px-3 py-1.5 bg-blue-50 hover:bg-[#3083FF] text-[#3083FF] hover:text-white text-[10px] font-bold rounded-xl transition-all active:scale-95 shrink-0 font-sans"
+                                className="inline-flex items-center gap-1 px-3 py-1.5 bg-blue-50 hover:bg-[#030C4D] text-[#030C4D] hover:text-white text-[10px] font-bold rounded-xl transition-all active:scale-95 shrink-0 font-sans"
                             >
-                                <span className="w-1 h-1 bg-[#3083FF] rounded-full animate-pulse group-hover:bg-white"></span>
+                                <span className="w-1 h-1 bg-[#030C4D] rounded-full animate-pulse group-hover:bg-white"></span>
                                 Jadwal Anda
                             </button>
                         </div>
@@ -293,7 +293,7 @@ export default function SiswaDashboard() {
                 <div className="bg-white rounded-2xl border border-slate-100 overflow-hidden shadow-sm flex flex-col">
                     <div className="px-5 py-4 border-b border-slate-100 text-left">
                         <h2 className="text-base font-bold text-slate-800 flex items-center gap-2">
-                            <TrendingUp size={16} className="text-[#3083FF]" />
+                            <TrendingUp size={16} className="text-[#030C4D]" />
                             Riwayat Nilai
                         </h2>
                         <p className="text-xs text-slate-400 mt-0.5">Performa ujian terakhir Anda</p>
@@ -313,8 +313,8 @@ export default function SiswaDashboard() {
                                     const pendingLabel = !res.exams?.show_results ? 'Nilai belum dibuka'
                                         : res.score_type?.startsWith('irt_') && !res.needs_manual_grading
                                             ? 'Menunggu perhitungan IRT' : 'Menunggu penilaian';
-                                    const barColorClass = 'bg-[#3083FF]';
-                                    const textColorClass = gradingPending ? 'text-slate-400' : 'text-[#3083FF]';
+                                    const barColorClass = 'bg-[#030C4D]';
+                                    const textColorClass = gradingPending ? 'text-slate-400' : 'text-[#030C4D]';
 
                                     return (
                                         <div key={res.id || i} className="space-y-1.5 text-left">
@@ -336,7 +336,7 @@ export default function SiswaDashboard() {
                         
                         <button 
                             onClick={() => router.push('/dashboard/siswa/results')} 
-                            className="w-full text-center text-xs font-bold text-[#3083FF] hover:text-[#2563EB] pt-4 mt-6 border-t border-slate-100 flex items-center justify-center gap-1 group transition-colors active:scale-[0.98]"
+                            className="w-full text-center text-xs font-bold text-[#030C4D] hover:text-[#2563EB] pt-4 mt-6 border-t border-slate-100 flex items-center justify-center gap-1 group transition-colors active:scale-[0.98]"
                         >
                             Laporan Lengkap
                             <ChevronRight size={13} className="group-hover:translate-x-0.5 transition-transform" />

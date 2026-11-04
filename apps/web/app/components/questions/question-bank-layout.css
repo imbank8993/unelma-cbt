@@ -29,7 +29,7 @@
   padding: 0;
   border: 1px solid #bfdbfe;
   border-radius: 50%;
-  color: #3083ff;
+  color: #030C4D;
   background: #fff;
   cursor: pointer;
 }
@@ -51,7 +51,7 @@
   .question-bank-import__label { display: inline; }
 }
 
-.question-bank-import:focus-visible { outline: 2px solid #3083ff; outline-offset: 3px; }
+.question-bank-import:focus-visible { outline: 2px solid #030C4D; outline-offset: 3px; }
 .dark .question-bank-import { background: #172235; border-color: #334155; color: #60a5fa; }
 .dark .question-bank-import:hover { background: #193e6b; }
 

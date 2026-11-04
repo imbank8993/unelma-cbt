@@ -239,7 +239,7 @@ function AudioEditorModalContent({
             onClick={() => setActiveTab('upload')}
             className={`flex-1 py-2 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer ${
               activeTab === 'upload'
-                ? 'bg-white text-[#3083FF] shadow-sm'
+                ? 'bg-white text-[#030C4D] shadow-sm'
                 : 'text-slate-500 hover:text-slate-700'
             }`}
           >
@@ -251,7 +251,7 @@ function AudioEditorModalContent({
             onClick={() => setActiveTab('record')}
             className={`flex-1 py-2 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer ${
               activeTab === 'record'
-                ? 'bg-white text-[#3083FF] shadow-sm'
+                ? 'bg-white text-[#030C4D] shadow-sm'
                 : 'text-slate-500 hover:text-slate-700'
             }`}
           >
@@ -263,7 +263,7 @@ function AudioEditorModalContent({
             onClick={() => setActiveTab('url')}
             className={`flex-1 py-2 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer ${
               activeTab === 'url'
-                ? 'bg-white text-[#3083FF] shadow-sm'
+                ? 'bg-white text-[#030C4D] shadow-sm'
                 : 'text-slate-500 hover:text-slate-700'
             }`}
           >
@@ -297,13 +297,13 @@ function AudioEditorModalContent({
                     const file = e.dataTransfer.files?.[0];
                     if (file) handleFileChange(file);
                   }}
-                  className="border-2 border-dashed border-slate-200 hover:border-[#3083FF] bg-slate-50/50 hover:bg-blue-50/20 rounded-2xl p-8 flex flex-col items-center justify-center gap-3 cursor-pointer transition-all group"
+                  className="border-2 border-dashed border-slate-200 hover:border-[#030C4D] bg-slate-50/50 hover:bg-blue-50/20 rounded-2xl p-8 flex flex-col items-center justify-center gap-3 cursor-pointer transition-all group"
                 >
-                  <div className="w-14 h-14 rounded-2xl bg-white border border-slate-200 shadow-sm flex items-center justify-center text-slate-400 group-hover:text-[#3083FF] group-hover:scale-105 transition-all">
+                  <div className="w-14 h-14 rounded-2xl bg-white border border-slate-200 shadow-sm flex items-center justify-center text-slate-400 group-hover:text-[#030C4D] group-hover:scale-105 transition-all">
                     <Music size={28} />
                   </div>
                   <div className="text-center">
-                    <p className="text-sm font-bold text-slate-700 group-hover:text-[#3083FF]">
+                    <p className="text-sm font-bold text-slate-700 group-hover:text-[#030C4D]">
                       Pilih file audio atau seret ke sini
                     </p>
                     <p className="text-xs text-slate-400 mt-1">
@@ -433,7 +433,7 @@ function AudioEditorModalContent({
                   value={directUrl}
                   onChange={(e) => setDirectUrl(e.target.value)}
                   placeholder="https://domain.com/audio/listening-comprehension.mp3"
-                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:bg-white focus:border-[#3083FF] focus:ring-2 focus:ring-[#3083FF]/10 transition-all"
+                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:bg-white focus:border-[#030C4D] focus:ring-2 focus:ring-[#030C4D]/10 transition-all"
                   autoFocus
                 />
                 <p className="text-[11px] text-slate-400 mt-1.5">

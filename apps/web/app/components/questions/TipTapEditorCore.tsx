@@ -1010,7 +1010,7 @@ export default function TipTapEditorCore({
               onClick={() => editor.chain().focus().toggleBold().run()}
               className={`w-7 h-7 flex items-center justify-center rounded-md text-xs transition-all cursor-pointer ${
                 editor.isActive('bold')
-                  ? 'bg-white text-[#3083FF] shadow-xs font-bold'
+                  ? 'bg-white text-[#030C4D] shadow-xs font-bold'
                   : 'text-slate-600 hover:bg-white/80 hover:text-slate-900'
               }`}
               title="Tebal (Ctrl+B)"
@@ -1022,7 +1022,7 @@ export default function TipTapEditorCore({
               onClick={() => editor.chain().focus().toggleItalic().run()}
               className={`w-7 h-7 flex items-center justify-center rounded-md text-xs transition-all cursor-pointer ${
                 editor.isActive('italic')
-                  ? 'bg-white text-[#3083FF] shadow-xs font-bold'
+                  ? 'bg-white text-[#030C4D] shadow-xs font-bold'
                   : 'text-slate-600 hover:bg-white/80 hover:text-slate-900'
               }`}
               title="Miring (Ctrl+I)"
@@ -1034,7 +1034,7 @@ export default function TipTapEditorCore({
               onClick={() => editor.chain().focus().toggleUnderline().run()}
               className={`w-7 h-7 flex items-center justify-center rounded-md text-xs transition-all cursor-pointer ${
                 editor.isActive('underline')
-                  ? 'bg-white text-[#3083FF] shadow-xs font-bold'
+                  ? 'bg-white text-[#030C4D] shadow-xs font-bold'
                   : 'text-slate-600 hover:bg-white/80 hover:text-slate-900'
               }`}
               title="Garis Bawah (Ctrl+U)"
@@ -1046,7 +1046,7 @@ export default function TipTapEditorCore({
               onClick={() => editor.chain().focus().toggleStrike().run()}
               className={`w-7 h-7 flex items-center justify-center rounded-md text-xs transition-all cursor-pointer ${
                 editor.isActive('strike')
-                  ? 'bg-white text-[#3083FF] shadow-xs font-bold'
+                  ? 'bg-white text-[#030C4D] shadow-xs font-bold'
                   : 'text-slate-600 hover:bg-white/80 hover:text-slate-900'
               }`}
               title="Coret"
@@ -1062,7 +1062,7 @@ export default function TipTapEditorCore({
               onClick={() => editor.chain().focus().toggleSubscript().run()}
               className={`w-7 h-7 flex items-center justify-center rounded-md text-xs transition-all cursor-pointer ${
                 editor.isActive('subscript')
-                  ? 'bg-white text-[#3083FF] shadow-xs font-bold'
+                  ? 'bg-white text-[#030C4D] shadow-xs font-bold'
                   : 'text-slate-600 hover:bg-white/80 hover:text-slate-900'
               }`}
               title="Subscript / Indeks Bawah (contoh: H₂O, v₀)"
@@ -1074,7 +1074,7 @@ export default function TipTapEditorCore({
               onClick={() => editor.chain().focus().toggleSuperscript().run()}
               className={`w-7 h-7 flex items-center justify-center rounded-md text-xs transition-all cursor-pointer ${
                 editor.isActive('superscript')
-                  ? 'bg-white text-[#3083FF] shadow-xs font-bold'
+                  ? 'bg-white text-[#030C4D] shadow-xs font-bold'
                   : 'text-slate-600 hover:bg-white/80 hover:text-slate-900'
               }`}
               title="Superscript / Pangkat (contoh: x², cm³, 10⁵)"
@@ -1110,7 +1110,7 @@ export default function TipTapEditorCore({
               onClick={() => editor.chain().focus().setTextAlign('left').run()}
               className={`w-7 h-7 flex items-center justify-center rounded-md text-xs transition-all cursor-pointer ${
                 isLeftAlign
-                  ? 'bg-white text-[#3083FF] shadow-xs font-bold'
+                  ? 'bg-white text-[#030C4D] shadow-xs font-bold'
                   : 'text-slate-600 hover:bg-white/80 hover:text-slate-900'
               }`}
               title="Rata Kiri (Ctrl+Shift+L)"
@@ -1122,7 +1122,7 @@ export default function TipTapEditorCore({
               onClick={() => editor.chain().focus().setTextAlign('center').run()}
               className={`w-7 h-7 flex items-center justify-center rounded-md text-xs transition-all cursor-pointer ${
                 isCenterAlign
-                  ? 'bg-white text-[#3083FF] shadow-xs font-bold'
+                  ? 'bg-white text-[#030C4D] shadow-xs font-bold'
                   : 'text-slate-600 hover:bg-white/80 hover:text-slate-900'
               }`}
               title="Rata Tengah (Ctrl+Shift+E)"
@@ -1134,7 +1134,7 @@ export default function TipTapEditorCore({
               onClick={() => editor.chain().focus().setTextAlign('right').run()}
               className={`w-7 h-7 flex items-center justify-center rounded-md text-xs transition-all cursor-pointer ${
                 isRightAlign
-                  ? 'bg-white text-[#3083FF] shadow-xs font-bold'
+                  ? 'bg-white text-[#030C4D] shadow-xs font-bold'
                   : 'text-slate-600 hover:bg-white/80 hover:text-slate-900'
               }`}
               title="Rata Kanan (Ctrl+Shift+R)"
@@ -1146,7 +1146,7 @@ export default function TipTapEditorCore({
               onClick={() => editor.chain().focus().setTextAlign('justify').run()}
               className={`w-7 h-7 flex items-center justify-center rounded-md text-xs transition-all cursor-pointer ${
                 isJustifyAlign
-                  ? 'bg-white text-[#3083FF] shadow-xs font-bold'
+                  ? 'bg-white text-[#030C4D] shadow-xs font-bold'
                   : 'text-slate-600 hover:bg-white/80 hover:text-slate-900'
               }`}
               title="Rata Kiri-Kanan / Justify (Ctrl+Shift+J)"
@@ -1181,7 +1181,7 @@ export default function TipTapEditorCore({
               onClick={() => editor.chain().focus().toggleOrderedList().run()}
               className={`w-7 h-7 flex items-center justify-center rounded-md text-xs transition-all cursor-pointer ${
                 editor.isActive('orderedList')
-                  ? 'bg-white text-[#3083FF] shadow-xs font-bold'
+                  ? 'bg-white text-[#030C4D] shadow-xs font-bold'
                   : 'text-slate-600 hover:bg-white/80 hover:text-slate-900'
               }`}
               title="Daftar Bernomor (1, 2, 3)"
@@ -1193,7 +1193,7 @@ export default function TipTapEditorCore({
               onClick={() => editor.chain().focus().toggleBulletList().run()}
               className={`w-7 h-7 flex items-center justify-center rounded-md text-xs transition-all cursor-pointer ${
                 editor.isActive('bulletList')
-                  ? 'bg-white text-[#3083FF] shadow-xs font-bold'
+                  ? 'bg-white text-[#030C4D] shadow-xs font-bold'
                   : 'text-slate-600 hover:bg-white/80 hover:text-slate-900'
               }`}
               title="Daftar Simbol Poin (Bullet)"
@@ -1256,7 +1256,7 @@ export default function TipTapEditorCore({
               onClick={() => setShowAudioModal(true)}
               className={`w-7 h-7 flex items-center justify-center rounded-md text-xs transition-all cursor-pointer ${
                 showAudioModal
-                  ? 'bg-white text-[#3083FF] shadow-xs font-bold'
+                  ? 'bg-white text-[#030C4D] shadow-xs font-bold'
                   : 'text-slate-600 hover:bg-white/80 hover:text-slate-900'
               }`}
               title="Sisipkan Audio MP3 / Rekam Suara (Voice Note)"
@@ -1270,7 +1270,7 @@ export default function TipTapEditorCore({
               onClick={() => setVideoModal({ isOpen: true, mode: 'insert', url: '', width: '100%', pos: null })}
               className={`w-7 h-7 flex items-center justify-center rounded-md text-xs transition-all cursor-pointer ${
                 videoModal.isOpen
-                  ? 'bg-white text-[#3083FF] shadow-xs font-bold'
+                  ? 'bg-white text-[#030C4D] shadow-xs font-bold'
                   : 'text-slate-600 hover:bg-white/80 hover:text-slate-900'
               }`}
               title="Sisipkan Video (YouTube / Vimeo / File)"
@@ -1284,7 +1284,7 @@ export default function TipTapEditorCore({
               onClick={() => setShowTableModal(true)}
               className={`w-7 h-7 flex items-center justify-center rounded-md text-xs transition-all cursor-pointer ${
                 isInTable || showTableModal
-                  ? 'bg-white text-[#3083FF] shadow-xs font-bold'
+                  ? 'bg-white text-[#030C4D] shadow-xs font-bold'
                   : 'text-slate-600 hover:bg-white/80 hover:text-slate-900'
               }`}
               title={isInTable ? "Kelola Tabel Aktif" : "Sisipkan Tabel Baru"}
@@ -1298,7 +1298,7 @@ export default function TipTapEditorCore({
               onClick={() => setShowChartModal(true)}
               className={`w-7 h-7 flex items-center justify-center rounded-md text-xs transition-all cursor-pointer ${
                 showChartModal
-                  ? 'bg-white text-[#3083FF] shadow-xs font-bold'
+                  ? 'bg-white text-[#030C4D] shadow-xs font-bold'
                   : 'text-slate-600 hover:bg-white/80 hover:text-slate-900'
               }`}
               title="Sisipkan Grafik Statistik (Bar / Pie / Line)"
@@ -1318,7 +1318,7 @@ export default function TipTapEditorCore({
               }}
               className={`w-7 h-7 flex items-center justify-center rounded-md text-xs transition-all cursor-pointer ${
                 showMathModal
-                  ? 'bg-white text-[#3083FF] shadow-xs font-bold'
+                  ? 'bg-white text-[#030C4D] shadow-xs font-bold'
                   : 'text-slate-600 hover:bg-white/80 hover:text-slate-900'
               }`}
               title="Sisipkan Rumus Matematika (LaTeX & Visual)"
@@ -1335,7 +1335,7 @@ export default function TipTapEditorCore({
               }}
               className={`w-7 h-7 flex items-center justify-center rounded-md text-xs transition-all cursor-pointer ${
                 editor.isActive('link')
-                  ? 'bg-white text-[#3083FF] shadow-xs font-bold'
+                  ? 'bg-white text-[#030C4D] shadow-xs font-bold'
                   : 'text-slate-600 hover:bg-white/80 hover:text-slate-900'
               }`}
               title="Sisipkan / Edit Link Tautan"
@@ -1745,7 +1745,7 @@ export default function TipTapEditorCore({
         .ProseMirror sup { vertical-align: super; font-size: smaller; line-height: 0; }
         .ProseMirror mark { background-color: #fef08a; padding: 0.05rem 0.25rem; border-radius: 0.25rem; }
         .ProseMirror hr { border: none; border-top: 2px dashed #cbd5e1; margin: 1.25rem 0; }
-        .ProseMirror blockquote { border-left: 3px solid #3083FF; padding-left: 1rem; margin: 0.75rem 0; color: #475569; font-style: italic; }
+        .ProseMirror blockquote { border-left: 3px solid #030C4D; padding-left: 1rem; margin: 0.75rem 0; color: #475569; font-style: italic; }
 
         .ProseMirror ul {
           list-style-type: disc !important;
@@ -1759,7 +1759,7 @@ export default function TipTapEditorCore({
         .ProseMirror ul[data-bullet-style="arrow"]     { list-style-type: none !important; padding-left: 1.5rem !important; }
         .ProseMirror ul[data-bullet-style="arrow"] > li::before { content: "▸ "; }
         .ProseMirror ul[data-bullet-style="checkmark"] { list-style-type: none !important; padding-left: 1.5rem !important; }
-        .ProseMirror ul[data-bullet-style="checkmark"] > li::before { content: "✓ "; color: #3083FF; font-weight: bold; }
+        .ProseMirror ul[data-bullet-style="checkmark"] > li::before { content: "✓ "; color: #030C4D; font-weight: bold; }
         .ProseMirror ul[data-bullet-style="circle"]   { list-style-type: circle !important; }
         .ProseMirror ul[data-bullet-style="diamond"]  { list-style-type: none !important; padding-left: 1.5rem !important; }
         .ProseMirror ul[data-bullet-style="diamond"] > li::before { content: "◆ "; }
@@ -1810,7 +1810,7 @@ export default function TipTapEditorCore({
           height: 0;
         }
         /* Table selection highlight */
-        .ProseMirror .selectedCell:after { background: #3083FF20; content: ''; left: 0; right: 0; top: 0; bottom: 0; pointer-events: none; position: absolute; z-index: 2; }
+        .ProseMirror .selectedCell:after { background: #030C4D20; content: ''; left: 0; right: 0; top: 0; bottom: 0; pointer-events: none; position: absolute; z-index: 2; }
         .ProseMirror td, .ProseMirror th { position: relative; }
         .ProseMirror .math-node {
           display: inline;

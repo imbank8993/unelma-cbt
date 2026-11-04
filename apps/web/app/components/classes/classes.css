@@ -32,6 +32,6 @@
 }
 
 .dark .classes-table .classes-student-count:focus-visible {
-  outline: 2px solid #3083ff;
+  outline: 2px solid #030C4D;
   outline-offset: 2px;
 }

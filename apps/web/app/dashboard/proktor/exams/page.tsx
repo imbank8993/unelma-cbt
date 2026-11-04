@@ -387,8 +387,8 @@ const ExamsPage = () => {
                             onClick={() => setActiveTab(tab.id)}
                             className={`flex items-center justify-center gap-1.5 sm:gap-2 px-2 sm:px-4 py-2.5 rounded-lg font-medium text-xs sm:text-sm transition-all whitespace-nowrap shrink-0 ${
                                 isActive
-                                    ? 'bg-[#3083FF] text-white shadow-lg'
-                                    : 'bg-white text-slate-600 border border-[#3083FF]/30 hover:border-[#3083FF] hover:bg-[#3083FF]/5'
+                                    ? 'bg-[#030C4D] text-white shadow-lg'
+                                    : 'bg-white text-slate-600 border border-[#030C4D]/30 hover:border-[#030C4D] hover:bg-[#030C4D]/5'
                             }`}
                         >
                             <Icon size={16} className={isActive ? 'text-white' : tab.color} />
@@ -398,7 +398,7 @@ const ExamsPage = () => {
                                     ? 'bg-white/20 text-white'
                                     : tab.id === 'draft'
                                         ? 'bg-red-50 text-red-600 border border-red-200'
-                                        : 'bg-[#3083FF]/10 text-[#3083FF]'
+                                        : 'bg-[#030C4D]/10 text-[#030C4D]'
                             }`}>
                                 {count}
                             </span>
@@ -472,7 +472,7 @@ const ExamsPage = () => {
                     <Spinner variant="buble" size={32} />
                 </div>
             ) : (filteredExams.length === 0 && filteredPasFolders.length === 0) ? (
-                <div className="py-16 text-center text-slate-400 border-2 border-dashed border-[#3083FF]/30 rounded-lg">
+                <div className="py-16 text-center text-slate-400 border-2 border-dashed border-[#030C4D]/30 rounded-lg">
                     <ClipboardCheck size={40} className="mx-auto mb-3 opacity-40" />
                     <p className="font-medium">Tidak ada ujian{activeTab === 'draft' ? ' draft' : activeTab === 'active' ? ' aktif' : ''}</p>
                     <p className="text-sm mt-1">Klik &quot;Buat Ujian Baru&quot; untuk memulai</p>
@@ -553,7 +553,7 @@ const ExamsPage = () => {
                                         {period.canShare && <CollaborationButton type="period" resourceId={period.id} collaboratorCount={period.collaboratorCount} onChanged={() => void loadData()} mobileIconOnly />}
                                         <button
                                             onClick={() => router.push('/dashboard/proktor/exams/pas/' + period.id)}
-                                            className="px-3.5 py-2 text-xs bg-[#3083FF] text-white hover:bg-[#2563EB] rounded-lg transition-all font-semibold flex items-center gap-1.5 shadow-sm shadow-[#3083FF]/20 cursor-pointer"
+                                            className="px-3.5 py-2 text-xs bg-[#030C4D] text-white hover:bg-[#2563EB] rounded-lg transition-all font-semibold flex items-center gap-1.5 shadow-sm shadow-[#030C4D]/20 cursor-pointer"
                                         >
                                             <FolderOpen size={14} />
                                             Buka Folder
@@ -561,7 +561,7 @@ const ExamsPage = () => {
                                         <button
                                             type="button"
                                             onClick={() => setPeriodToEdit(period as unknown as PASPeriod)}
-                                            className="p-2 text-slate-500 hover:text-[#3083FF] hover:bg-blue-50 border border-slate-200 rounded-lg transition-all flex items-center justify-center cursor-pointer"
+                                            className="p-2 text-slate-500 hover:text-[#030C4D] hover:bg-blue-50 border border-slate-200 rounded-lg transition-all flex items-center justify-center cursor-pointer"
                                             disabled={period.canManage !== true}
                                             title="Edit Folder & Ketua Panitia"
                                         >
@@ -607,7 +607,7 @@ const ExamsPage = () => {
                         return (
                             <div key={exam.id} className={`bg-white border rounded-xl overflow-hidden transition-all hover:shadow-lg ${
                                 exam.is_published
-                                    ? 'border-[#3083FF]/30 hover:border-[#3083FF]'
+                                    ? 'border-[#030C4D]/30 hover:border-[#030C4D]'
                                     : isArchived
                                         ? 'border-slate-200 hover:border-slate-300'
                                         : 'border-red-200 hover:border-red-300'
@@ -617,13 +617,13 @@ const ExamsPage = () => {
                                     <div className="flex items-start gap-3">
                                         <div className={`w-10 h-10 sm:w-12 sm:h-12 rounded-lg flex items-center justify-center shrink-0 border ${
                                             exam.is_published
-                                                ? 'bg-[#3083FF]/10 text-[#3083FF] border-[#3083FF]/40'
+                                                ? 'bg-[#030C4D]/10 text-[#030C4D] border-[#030C4D]/40'
                                                 : isArchived
                                                     ? 'bg-slate-100 text-slate-600 border border-slate-200'
                                                     : 'bg-red-50 text-red-600 border border-red-200'
                                         }`}>
                                             {exam.is_published ? (
-                                                <Globe size={18} className="text-[#3083FF]" />
+                                                <Globe size={18} className="text-[#030C4D]" />
                                             ) : isArchived ? (
                                                 <Archive size={18} className="text-slate-500" />
                                             ) : (
@@ -705,7 +705,7 @@ const ExamsPage = () => {
                                             exam.is_published
                                                 ? 'bg-red-50 text-red-600 hover:bg-red-500 hover:text-white border border-red-200 hover:border-red-500'
                                                 : canPublish
-                                                    ? 'bg-[#3083FF] text-white hover:bg-[#2563EB] shadow-sm shadow-[#3083FF]/20'
+                                                    ? 'bg-[#030C4D] text-white hover:bg-[#2563EB] shadow-sm shadow-[#030C4D]/20'
                                                     : 'bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed'
                                         }`}
                                         title={!exam.is_published && !canPublish ? 'Tugaskan ke kelas terlebih dahulu sebelum mempublish' : ''}
@@ -726,7 +726,7 @@ const ExamsPage = () => {
                                     {/* Monitor */}
                                     <button
                                         onClick={() => router.push('/dashboard/proktor/monitoring?exam=' + exam.id)}
-                                        className="flex-1 sm:flex-none px-3 py-2 text-xs bg-[#3083FF] text-white hover:bg-[#3083FF]/90 rounded-lg transition-all font-medium flex items-center justify-center gap-1.5"
+                                        className="flex-1 sm:flex-none px-3 py-2 text-xs bg-[#030C4D] text-white hover:bg-[#030C4D]/90 rounded-lg transition-all font-medium flex items-center justify-center gap-1.5"
                                     >
                                         <Eye size={12} />
                                         Monitor
@@ -747,7 +747,7 @@ const ExamsPage = () => {
                                     <button
                                         disabled={exam.canManage !== true}
                                         onClick={() => openEdit(exam)}
-                                        className="p-2 text-slate-400 hover:text-[#3083FF] hover:bg-[#3083FF]/10 rounded-lg transition-all border border-slate-200 hover:border-[#3083FF]/30"
+                                        className="p-2 text-slate-400 hover:text-[#030C4D] hover:bg-[#030C4D]/10 rounded-lg transition-all border border-slate-200 hover:border-[#030C4D]/30"
                                     >
                                         <Settings size={14} />
                                     </button>
@@ -758,8 +758,8 @@ const ExamsPage = () => {
                                         onClick={() => openAssign(exam)}
                                         className={`p-2 rounded-lg transition-all border ${
                                             isAssigned
-                                                ? 'text-[#3083FF] hover:text-[#2563EB] hover:bg-[#3083FF]/10 border-[#3083FF]/30 hover:border-[#3083FF]'
-                                                : 'text-slate-400 hover:text-[#3083FF] hover:bg-[#3083FF]/10 border-slate-200 hover:border-[#3083FF]/30'
+                                                ? 'text-[#030C4D] hover:text-[#2563EB] hover:bg-[#030C4D]/10 border-[#030C4D]/30 hover:border-[#030C4D]'
+                                                : 'text-slate-400 hover:text-[#030C4D] hover:bg-[#030C4D]/10 border-slate-200 hover:border-[#030C4D]/30'
                                         }`}
                                         title={isAssigned ? 'Ubah penugasan kelas' : 'Tugaskan ke kelas'}
                                     >

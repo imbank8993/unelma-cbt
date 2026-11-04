@@ -44,8 +44,8 @@ export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElemen
 export const ICON_PRESETS: Record<ButtonIconPreset, React.ReactNode> = {
     import: <FileSpreadsheet size={16} strokeWidth={2} style={{ color: '#f97316' }} />,
     export: <Download size={16} strokeWidth={2} style={{ color: '#3b82f6' }} />,
-    add: <Plus size={18} strokeWidth={2.2} style={{ color: '#3083FF' }} />,
-    edit: <Pencil size={16} strokeWidth={2} style={{ color: '#3083FF' }} />,
+    add: <Plus size={18} strokeWidth={2.2} style={{ color: '#030C4D' }} />,
+    edit: <Pencil size={16} strokeWidth={2} style={{ color: '#030C4D' }} />,
     delete: <Trash2 size={16} strokeWidth={2} style={{ color: '#dc2626' }} />,
     save: <Check size={18} strokeWidth={2.5} style={{ color: '#16a34a' }} />,
     cancel: <X size={18} strokeWidth={2.5} style={{ color: '#ef4444' }} />,
@@ -66,7 +66,7 @@ export const ICON_PRESETS: Record<ButtonIconPreset, React.ReactNode> = {
     history: <Clock size={16} strokeWidth={2} style={{ color: '#8b5cf6' }} />,
     clock: <Clock size={16} strokeWidth={2} style={{ color: '#64748b' }} />,
     filter: <Filter size={16} strokeWidth={2} style={{ color: '#3b82f6' }} />,
-    refresh: <RefreshCw size={16} strokeWidth={2} style={{ color: '#3083FF' }} />,
+    refresh: <RefreshCw size={16} strokeWidth={2} style={{ color: '#030C4D' }} />,
 };
 
 /**

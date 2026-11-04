@@ -171,7 +171,7 @@ const PairingRow = React.memo(({ leftLabel, leftFallback, selectedMatches, right
                 <button key={i} type="button"
                   onClick={() => { onToggle(item); setOpen(false); }}
                   className={`w-full flex items-center gap-1.5 px-2 py-1.5 text-left text-[11px] transition-colors hover:bg-slate-50 ${isSelected ? 'bg-blue-50 text-blue-700 font-medium' : 'text-slate-700'}`}>
-                  <span className={`w-3 h-3 rounded border flex items-center justify-center shrink-0 ${isSelected ? 'bg-[#3083FF] border-blue-500' : 'border-slate-300'}`}>
+                  <span className={`w-3 h-3 rounded border flex items-center justify-center shrink-0 ${isSelected ? 'bg-[#030C4D] border-blue-500' : 'border-slate-300'}`}>
                     {isSelected && <svg width="5" height="5" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="4"><polyline points="20 6 9 17 4 12" /></svg>}
                   </span>
                   <InlineMathLabel text={item} fallback={`Item ${i + 1}`} />

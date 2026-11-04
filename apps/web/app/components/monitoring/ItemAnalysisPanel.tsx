@@ -124,7 +124,7 @@ export function ItemAnalysisPanel({ analysis, className = '', analysisSelector }
         <p className="text-[11px] leading-relaxed text-slate-500">
             Kategori P: ≤0,10 Sangat Sulit; 0,10&lt;P≤0,30 Sulit; 0,30&lt;P≤0,70 Sedang; 0,70&lt;P≤0,90 Mudah; &gt;0,90 Sangat Mudah. P adalah proporsi benar dari respons ternilai; hasil sementara selama ujian atau koreksi berlangsung.
         </p>
-        <div className={`monitoring-analysis bg-white border border-[#3083FF]/30 rounded-lg shadow-sm overflow-hidden ${className}`}>
+        <div className={`monitoring-analysis bg-white border border-[#030C4D]/30 rounded-lg shadow-sm overflow-hidden ${className}`}>
             <div className="flex items-center justify-between gap-2 border-b border-slate-100 px-4 py-3 text-xs">
                 <span className="font-semibold text-slate-700 truncate">Urut dari soal tersulit</span>
                 {analysis.some(item => item.incorrectPercentage > 50) && (
@@ -178,16 +178,16 @@ export function ItemAnalysisPanel({ analysis, className = '', analysisSelector }
             <div className="hidden sm:block overflow-x-auto">
                 <table className="w-full min-w-[700px]">
                     <thead>
-                        <tr className="bg-[#3083FF]/5 text-[11px] uppercase tracking-wider text-slate-500 font-semibold">
-                            <th className="p-4 text-center font-bold text-[#3083FF] w-14">No</th>
-                            <th className="p-4 text-left font-bold text-[#3083FF]">Soal</th>
-                            <th className="p-4 text-center font-bold text-[#3083FF] w-20">Tipe</th>
-                            <th className="p-4 text-center font-bold text-[#3083FF] w-28">Kesukaran</th>
-                            <th className="p-4 text-center font-bold text-[#3083FF]">Menjawab</th>
-                            <th className="p-4 text-center font-bold text-[#3083FF]">Benar</th>
-                            <th className="p-4 text-center font-bold text-[#3083FF]">Salah</th>
-                            <th className="p-4 text-center font-bold text-[#3083FF]">Belum Ternilai</th>
-                            <th className="p-4 text-right font-bold text-[#3083FF]">% Salah</th>
+                        <tr className="bg-[#030C4D]/5 text-[11px] uppercase tracking-wider text-slate-500 font-semibold">
+                            <th className="p-4 text-center font-bold text-[#030C4D] w-14">No</th>
+                            <th className="p-4 text-left font-bold text-[#030C4D]">Soal</th>
+                            <th className="p-4 text-center font-bold text-[#030C4D] w-20">Tipe</th>
+                            <th className="p-4 text-center font-bold text-[#030C4D] w-28">Kesukaran</th>
+                            <th className="p-4 text-center font-bold text-[#030C4D]">Menjawab</th>
+                            <th className="p-4 text-center font-bold text-[#030C4D]">Benar</th>
+                            <th className="p-4 text-center font-bold text-[#030C4D]">Salah</th>
+                            <th className="p-4 text-center font-bold text-[#030C4D]">Belum Ternilai</th>
+                            <th className="p-4 text-right font-bold text-[#030C4D]">% Salah</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -199,8 +199,8 @@ export function ItemAnalysisPanel({ analysis, className = '', analysisSelector }
                                 const diffColor = difficultyColor(anl.difficultyLabel);
 
                                 return (
-                                    <tr key={anl.id} className={`border-b border-[#3083FF]/10 last:border-0 ${isCritical ? 'bg-amber-50/40' : 'hover:bg-slate-50/40'} transition-colors`}>
-                                        <td className="p-4 text-center font-bold text-[#3083FF] text-[11px]">{anl.number}</td>
+                                    <tr key={anl.id} className={`border-b border-[#030C4D]/10 last:border-0 ${isCritical ? 'bg-amber-50/40' : 'hover:bg-slate-50/40'} transition-colors`}>
+                                        <td className="p-4 text-center font-bold text-[#030C4D] text-[11px]">{anl.number}</td>
                                         <td className="p-4">
                                             <div className="min-w-0">
                                                 {anl.topic && <p className="mb-1 text-[11px] font-medium text-blue-700">Materi: {anl.topic}</p>}
@@ -264,9 +264,9 @@ export function ItemAnalysisPanel({ analysis, className = '', analysisSelector }
                                         <td className="p-4 text-center"><span className="font-bold text-slate-400 text-[11px]">{anl.ungraded ?? 0}</span></td>
                                         <td className="p-4 text-right">
                                             <div className="flex flex-col items-end">
-                                                <span className={`font-bold text-[11px] ${isCritical ? 'text-red-600' : 'text-[#3083FF]'}`}>{anl.incorrectPercentage.toFixed(0)}%</span>
+                                                <span className={`font-bold text-[11px] ${isCritical ? 'text-red-600' : 'text-[#030C4D]'}`}>{anl.incorrectPercentage.toFixed(0)}%</span>
                                                 <div className="w-20 h-1 bg-slate-100 rounded-full mt-1 overflow-hidden">
-                                                    <div className={`h-full rounded-full ${isCritical ? 'bg-red-500' : 'bg-[#3083FF]'}`} style={{ width: `${anl.incorrectPercentage}%` }} />
+                                                    <div className={`h-full rounded-full ${isCritical ? 'bg-red-500' : 'bg-[#030C4D]'}`} style={{ width: `${anl.incorrectPercentage}%` }} />
                                                 </div>
                                             </div>
                                         </td>
@@ -343,7 +343,7 @@ export function ItemAnalysisPanel({ analysis, className = '', analysisSelector }
                                 onClick={() => setModalActiveTab('soal')}
                                 className={`px-4 py-2.5 text-xs font-bold border-b-2 transition-all flex items-center gap-1.5 whitespace-nowrap ${
                                     modalActiveTab === 'soal'
-                                        ? 'border-[#3083FF] text-[#3083FF]'
+                                        ? 'border-[#030C4D] text-[#030C4D]'
                                         : 'border-transparent text-slate-500 hover:text-slate-800'
                                 }`}
                             >
@@ -607,7 +607,7 @@ export function ItemAnalysisPanel({ analysis, className = '', analysisSelector }
                                                 <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden mb-3">
                                                     <div
                                                         className={`h-full rounded-full transition-all ${
-                                                            dist.is_correct ? 'bg-emerald-500' : 'bg-[#3083FF]'
+                                                            dist.is_correct ? 'bg-emerald-500' : 'bg-[#030C4D]'
                                                         }`}
                                                         style={{ width: `${Math.min(100, dist.percentage)}%` }}
                                                     />

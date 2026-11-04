@@ -4,7 +4,7 @@
   --cp-panel: var(--card, #fff);
   --cp-line: var(--border, #e2e8f0);
   --cp-soft: var(--background, #f8fafc);
-  --cp-blue: var(--primary, #3083ff);
+  --cp-blue: var(--primary, #030C4D);
   --cp-warning: #946014;
   --cp-warning-bg: #fff7e9;
   color: var(--cp-text);

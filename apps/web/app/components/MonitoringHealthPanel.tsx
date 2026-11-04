@@ -160,7 +160,7 @@ export function MonitoringHealthPanel({ attempts, onRecover, onViewDetails, exte
                         type="button"
                         disabled={currentPage <= 1}
                         onClick={() => setPage(currentPage - 1)}
-                        className="inline-flex items-center gap-1 font-semibold text-slate-600 transition-colors hover:text-[#3083FF] cursor-pointer disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:text-slate-600"
+                        className="inline-flex items-center gap-1 font-semibold text-slate-600 transition-colors hover:text-[#030C4D] cursor-pointer disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:text-slate-600"
                     >
                         <ChevronLeft size={14} /> Sebelumnya
                     </button>
@@ -168,7 +168,7 @@ export function MonitoringHealthPanel({ attempts, onRecover, onViewDetails, exte
                         type="button"
                         disabled={currentPage >= pageCount}
                         onClick={() => setPage(currentPage + 1)}
-                        className="inline-flex items-center gap-1 font-semibold text-slate-600 transition-colors hover:text-[#3083FF] cursor-pointer disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:text-slate-600"
+                        className="inline-flex items-center gap-1 font-semibold text-slate-600 transition-colors hover:text-[#030C4D] cursor-pointer disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:text-slate-600"
                     >
                         Berikutnya <ChevronRight size={14} />
                     </button>

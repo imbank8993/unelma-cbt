@@ -303,7 +303,7 @@ export function ValidationsListPage({ role }: ValidationsListPageProps) {
                                                 {item.validators?.map(v => (
                                                     <span
                                                         key={v.id}
-                                                        className="text-[11px] text-[#3083FF] dark:!text-blue-400"
+                                                        className="text-[11px] text-[#030C4D] dark:!text-blue-400"
                                                     >
                                                         {v.profile?.full_name || 'Validator'}
                                                     </span>

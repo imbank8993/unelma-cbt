@@ -72,8 +72,8 @@ export function TopScorersCard({
     );
 
     return (
-        <div className="bg-white rounded-lg border border-[#3083FF]/30 overflow-hidden shadow-sm">
-            <div className="px-5 py-4 border-b border-[#3083FF]/20 bg-gradient-to-r from-[#3083FF]/[.02] to-transparent flex items-center justify-between gap-2">
+        <div className="bg-white rounded-lg border border-[#030C4D]/30 overflow-hidden shadow-sm">
+            <div className="px-5 py-4 border-b border-[#030C4D]/20 bg-gradient-to-r from-[#030C4D]/[.02] to-transparent flex items-center justify-between gap-2">
                 <h2 className="text-base font-bold text-slate-900 flex items-center gap-2">
                     <Trophy size={16} className="text-amber-500 shrink-0" />
                     <span className="truncate">Nilai Tertinggi per Ujian</span>
@@ -89,7 +89,7 @@ export function TopScorersCard({
                             onClick={() => setPage((p) => Math.max(0, p - 1))}
                             disabled={safePage === 0}
                             aria-label="Sebelumnya"
-                            className="w-6 h-6 rounded-md border border-slate-200 flex items-center justify-center text-slate-500 hover:text-[#3083FF] hover:border-[#3083FF]/40 disabled:opacity-35 disabled:pointer-events-none transition-colors"
+                            className="w-6 h-6 rounded-md border border-slate-200 flex items-center justify-center text-slate-500 hover:text-[#030C4D] hover:border-[#030C4D]/40 disabled:opacity-35 disabled:pointer-events-none transition-colors"
                         >
                             <ChevronLeft size={13} />
                         </button>
@@ -98,7 +98,7 @@ export function TopScorersCard({
                             onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
                             disabled={safePage >= totalPages - 1}
                             aria-label="Berikutnya"
-                            className="w-6 h-6 rounded-md border border-slate-200 flex items-center justify-center text-slate-500 hover:text-[#3083FF] hover:border-[#3083FF]/40 disabled:opacity-35 disabled:pointer-events-none transition-colors"
+                            className="w-6 h-6 rounded-md border border-slate-200 flex items-center justify-center text-slate-500 hover:text-[#030C4D] hover:border-[#030C4D]/40 disabled:opacity-35 disabled:pointer-events-none transition-colors"
                         >
                             <ChevronRight size={13} />
                         </button>
@@ -126,11 +126,11 @@ export function TopScorersCard({
                             key={exam.examId}
                             type="button"
                             onClick={() => router.push(`${monitoringBasePath}?exam=${exam.examId}`)}
-                            className="w-full group text-left px-5 py-3.5 hover:bg-slate-50/70 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#3083FF]"
+                            className="w-full group text-left px-5 py-3.5 hover:bg-slate-50/70 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#030C4D]"
                         >
                             {/* Header ujian */}
                             <div className="flex items-center justify-between gap-2 mb-2">
-                                <p className="text-xs font-bold text-slate-800 truncate group-hover:text-[#3083FF] transition-colors">
+                                <p className="text-xs font-bold text-slate-800 truncate group-hover:text-[#030C4D] transition-colors">
                                     {exam.title}
                                 </p>
                                 <span className="shrink-0 inline-flex items-center gap-1 text-[10px] font-medium text-slate-400">

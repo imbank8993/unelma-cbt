@@ -15,7 +15,7 @@
   --sidebar-text-active: #ffffff;
   --sidebar-accent: #0f172a;
   --sidebar-hover: #f1f5f9;
-  --sidebar-border: rgba(48, 131, 255, 0.16);
+  --sidebar-border: rgba(3, 12, 77, 0.16);
   --sidebar-shadow: none;
 
   /* Shared transitions */
@@ -488,9 +488,9 @@
 }
 
 .menu-btn.active {
-  background: var(--n-primary);
+  background: var(--n-primary, #030C4D) !important;
   color: #ffffff;
-  box-shadow: 0 4px 16px rgba(79, 142, 247, 0.3);
+  box-shadow: 0 4px 16px rgba(3, 12, 77, 0.3);
 }
 
 .menu-content {
@@ -644,7 +644,7 @@
 
 .submenu-btn.active {
   color: var(--n-primary);
-  background: rgba(79, 142, 247, 0.08);
+  background: rgba(3, 12, 77, 0.08);
   font-weight: 700;
   box-shadow: none;
   position: relative;
@@ -656,9 +656,9 @@
   left: 28px;
   width: 6px;
   height: 6px;
-  background: var(--n-primary);
+  background: var(--n-primary, #030C4D) !important;
   border-radius: 50%;
-  box-shadow: 0 0 8px rgba(79, 142, 247, 0.5);
+  box-shadow: 0 0 8px rgba(3, 12, 77, 0.5);
 }
 
 .sidebar.collapsed .submenu {
@@ -748,7 +748,7 @@
 }
 
 .tooltip-sub-btn.active {
-  background: rgba(79, 142, 247, 0.08);
+  background: rgba(3, 12, 77, 0.08);
   color: var(--n-primary-light);
   box-shadow: none;
   font-weight: 700;
@@ -770,7 +770,7 @@
 .dark .cbt-access-btn {
   border-color: #2563eb;
   color: #2563eb;
-  background: rgba(79, 142, 247, 0.08);
+  background: rgba(3, 12, 77, 0.08);
 }
 
 .dark .cbt-access-btn:hover {
@@ -901,7 +901,7 @@
 .nav-mode-btn i { font-size: 0.85rem; }
 .nav-mode-btn:hover { color: var(--sidebar-accent); }
 .nav-mode-btn.active {
-  background: var(--n-primary);
+  background: var(--n-primary, #030C4D) !important;
   color: #fff;
   box-shadow: 0 4px 12px rgba(0, 56, 168, 0.25);
 }

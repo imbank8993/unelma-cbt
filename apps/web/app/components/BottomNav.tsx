@@ -385,7 +385,7 @@ export default function BottomNav({
                     <span className="bnav__iconWrap">
                         <Pin size={22} strokeWidth={1.5} className="bnav__icon" aria-hidden="true" />
                         {pinnedItems.length > 0 && (
-                            <span className="bnav__badge" style={{ background: '#3083FF' }}>
+                            <span className="bnav__badge" style={{ background: '#030C4D' }}>
                                 {pinnedItems.length > 9 ? '9+' : pinnedItems.length}
                             </span>
                         )}
@@ -402,7 +402,7 @@ export default function BottomNav({
                         <div className="bnav__sheet-header">
                             <div className="bnav__sheet-title-wrap">
                                 <h3 className="bnav__sheet-title" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                    <Pin size={18} style={{ color: '#3083FF' }} />
+                                    <Pin size={18} style={{ color: '#030C4D' }} />
                                     <span>Pintasan Menu</span>
                                 </h3>
                             </div>
@@ -430,7 +430,7 @@ export default function BottomNav({
                                     </div>
                                     <button
                                         type="button"
-                                        style={{ marginTop: 6, padding: '8px 18px', background: '#3083FF', color: '#fff', border: 'none', borderRadius: '999px', fontSize: '0.85rem', fontWeight: 700, cursor: 'pointer' }}
+                                        style={{ marginTop: 6, padding: '8px 18px', background: '#030C4D', color: '#fff', border: 'none', borderRadius: '999px', fontSize: '0.85rem', fontWeight: 700, cursor: 'pointer' }}
                                         onClick={() => {
                                             setIsPinnedOpen(false)
                                             onOpenMenu()

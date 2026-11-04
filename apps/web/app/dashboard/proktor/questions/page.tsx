@@ -444,25 +444,25 @@ export default function ProktorQuestionBankPage() {
 
     // Render bank card for desktop
     const renderBankCard = (bank: QuestionBank) => (
-        <div key={bank.id} className="bank-library-card bg-white border border-[#3083FF]/30 rounded-lg p-4 flex items-center justify-between hover:border-[#3083FF] transition-all">
+        <div key={bank.id} className="bank-library-card bg-white border border-[#030C4D]/30 rounded-lg p-4 flex items-center justify-between hover:border-[#030C4D] transition-all">
             <div className="flex items-center gap-4 min-w-0">
                 <input
                     type="checkbox"
                     disabled={bank.canManage !== true}
                     checked={selectedBankIds.has(bank.id)}
                     onChange={() => toggleSelectBank(bank.id)}
-                    className="bank-checkbox bg-transparent w-4 h-4 text-[#3083FF] border-[#3083FF]/30 rounded focus:ring-2 focus:ring-[#3083FF]/20 shrink-0 cursor-pointer"
+                    className="bank-checkbox bg-transparent w-4 h-4 text-[#030C4D] border-[#030C4D]/30 rounded focus:ring-2 focus:ring-[#030C4D]/20 shrink-0 cursor-pointer"
                 />
                 <div className={`bank-library-cover w-12 h-12 rounded-lg overflow-hidden shrink-0 border flex items-center justify-center ${
                     bank.is_published
-                        ? 'border-[#3083FF]/40 bg-[#3083FF]/10 text-[#3083FF]'
+                        ? 'border-[#030C4D]/40 bg-[#030C4D]/10 text-[#030C4D]'
                         : 'border-red-200 bg-red-50 text-red-600'
                 }`}>
                     <QuestionBankCover imageUrl={bank.image_url} title={bank.title} width={48} height={48} isPublished={bank.is_published} />
                 </div>
                 <div className="min-w-0">
                     <div className="flex items-center gap-2 mb-1 flex-wrap">
-                        <span className={`px-2 py-0.5 rounded-lg text-xs font-semibold ${bank.is_published ? 'bg-[#3083FF]/10 text-[#3083FF] border border-[#3083FF]/30' : 'bg-red-50 text-red-600 border border-red-200'}`}>
+                        <span className={`px-2 py-0.5 rounded-lg text-xs font-semibold ${bank.is_published ? 'bg-[#030C4D]/10 text-[#030C4D] border border-[#030C4D]/30' : 'bg-red-50 text-red-600 border border-red-200'}`}>
                             {bank.is_published ? 'Published' : 'Draft'}
                         </span>
                         <ValidationBadge summary={bank.validation_summary} />
@@ -530,16 +530,16 @@ export default function ProktorQuestionBankPage() {
             {/* ── Hero Header — Navy Gradient ── */}
             {/* ── Stats Grid ── */}
             <div className="grid grid-cols-3 gap-x-2 mb-6">
-                <div className="bg-white rounded-lg border border-[#3083FF]/30 text-center px-4 py-3">
-                    <p className="text-2xl font-bold text-[#3083FF]">{allCount}</p>
+                <div className="bg-white rounded-lg border border-[#030C4D]/30 text-center px-4 py-3">
+                    <p className="text-2xl font-bold text-[#030C4D]">{allCount}</p>
                     <p className="text-xs text-slate-500">Total</p>
                 </div>
-                <div className="bg-white rounded-lg border border-[#3083FF]/30 text-center px-4 py-3">
-                    <p className="text-2xl font-bold text-[#3083FF]">{draftCount}</p>
+                <div className="bg-white rounded-lg border border-[#030C4D]/30 text-center px-4 py-3">
+                    <p className="text-2xl font-bold text-[#030C4D]">{draftCount}</p>
                     <p className="text-xs text-red-400 font-medium">Draft</p>
                 </div>
-                <div className="bg-white rounded-lg border border-[#3083FF]/30 text-center px-4 py-3">
-                    <p className="text-2xl font-bold text-[#3083FF]">{publishedCount}</p>
+                <div className="bg-white rounded-lg border border-[#030C4D]/30 text-center px-4 py-3">
+                    <p className="text-2xl font-bold text-[#030C4D]">{publishedCount}</p>
                     <p className="text-xs text-slate-500">Published</p>
                 </div>
             </div>
@@ -599,7 +599,7 @@ export default function ProktorQuestionBankPage() {
                         <Button
                             variant="outline"
                             className="ftb-btn-icon-mobile rounded-full"
-                            leftIcon={<Folder size={18} className="text-[#3083FF] dark:text-[#60a5fa]" />}
+                            leftIcon={<Folder size={18} className="text-[#030C4D] dark:text-[#60a5fa]" />}
                             onClick={handleOpenCreateFolder}
                             title="Folder"
                             aria-label="Folder"
@@ -624,10 +624,10 @@ export default function ProktorQuestionBankPage() {
 
             {/* Bulk Actions Panel */}
             {selectedBankIds.size > 0 && (
-                <div className="bg-[#3083FF]/5 border border-[#3083FF]/30 rounded-xl p-3.5 flex items-center justify-between mb-4 animate-in fade-in slide-in-from-top-2 duration-200">
+                <div className="bg-[#030C4D]/5 border border-[#030C4D]/30 rounded-xl p-3.5 flex items-center justify-between mb-4 animate-in fade-in slide-in-from-top-2 duration-200">
                     <div className="flex items-center gap-2">
                         <div className="w-2 h-2 bg-primary rounded-full animate-pulse" />
-                        <span className="text-xs font-bold text-[#3083FF] uppercase tracking-wider">{selectedBankIds.size} Bank Soal Terpilih</span>
+                        <span className="text-xs font-bold text-[#030C4D] uppercase tracking-wider">{selectedBankIds.size} Bank Soal Terpilih</span>
                     </div>
                     <div className="flex items-center gap-2">
                         <Button size="sm" variant="secondary" onClick={handleSelectAll}>
@@ -656,18 +656,18 @@ export default function ProktorQuestionBankPage() {
                     </div>
                 ) : (
                     paginatedBanks.map((bank) => (
-                        <div key={bank.id} className="bank-library-card bg-white border border-[#3083FF]/30 rounded-lg p-4 shadow-sm">
+                        <div key={bank.id} className="bank-library-card bg-white border border-[#030C4D]/30 rounded-lg p-4 shadow-sm">
                             <div className="flex items-start gap-3 mb-3">
                                 <input
                                     type="checkbox"
                                     disabled={bank.canManage !== true}
                     checked={selectedBankIds.has(bank.id)}
                                     onChange={() => toggleSelectBank(bank.id)}
-                                    className="bank-checkbox bg-transparent w-4 h-4 text-[#3083FF] border-[#3083FF]/30 rounded focus:ring-2 focus:ring-[#3083FF]/20 shrink-0 cursor-pointer mt-0.5"
+                                    className="bank-checkbox bg-transparent w-4 h-4 text-[#030C4D] border-[#030C4D]/30 rounded focus:ring-2 focus:ring-[#030C4D]/20 shrink-0 cursor-pointer mt-0.5"
                                 />
                                 <div className="flex-1 min-w-0">
                                     <div className="flex flex-wrap items-center gap-2 mb-1">
-                                        <span className={`px-2 py-0.5 rounded-lg text-[10px] font-semibold ${bank.is_published ? 'bg-[#3083FF]/10 text-[#3083FF] border border-[#3083FF]/30' : 'bg-red-50 text-red-600 border border-red-200'}`}>
+                                        <span className={`px-2 py-0.5 rounded-lg text-[10px] font-semibold ${bank.is_published ? 'bg-[#030C4D]/10 text-[#030C4D] border border-[#030C4D]/30' : 'bg-red-50 text-red-600 border border-red-200'}`}>
                                             {bank.is_published ? 'Published' : 'Draft'}
                                         </span>
                                         <ValidationBadge summary={bank.validation_summary} />
@@ -740,10 +740,10 @@ export default function ProktorQuestionBankPage() {
                             return (
                                 <div key={folder.id} className="bank-folder-group">
                                     {/* Folder header */}
-                                    <div data-expanded={isExpanded} className="bank-folder-row flex items-center gap-2 px-4 py-3 bg-[#3083FF]/5 border border-[#3083FF]/30 rounded-lg mb-2">
+                                    <div data-expanded={isExpanded} className="bank-folder-row flex items-center gap-2 px-4 py-3 bg-[#030C4D]/5 border border-[#030C4D]/30 rounded-lg mb-2">
                                         <button
                                             onClick={() => toggleFolderExpand(folder.id)}
-                                            className="bank-folder-toggle flex items-center gap-2 flex-1 min-w-0 text-left hover:text-[#3083FF] transition-all"
+                                            className="bank-folder-toggle flex items-center gap-2 flex-1 min-w-0 text-left hover:text-[#030C4D] transition-all"
                                         >
                                             <input
                                                 type="checkbox"
@@ -751,10 +751,10 @@ export default function ProktorQuestionBankPage() {
                                                 checked={movableBanks.length > 0 && movableBanks.every(b => selectedBankIds.has(b.id))}
                                                 onChange={() => toggleSelectAllInFolder(folderBanks)}
                                                 onClick={(e) => e.stopPropagation()}
-                                                className="bank-checkbox bg-transparent w-4 h-4 text-[#3083FF] border-[#3083FF]/30 rounded focus:ring-2 focus:ring-[#3083FF]/20 cursor-pointer shrink-0"
+                                                className="bank-checkbox bg-transparent w-4 h-4 text-[#030C4D] border-[#030C4D]/30 rounded focus:ring-2 focus:ring-[#030C4D]/20 cursor-pointer shrink-0"
                                             />
                                             {isExpanded ? <ChevronRight size={16} className="text-slate-400 rotate-90" /> : <ChevronRight size={16} className="text-slate-400" />}
-                                            <Folder size={16} className="text-[#3083FF]" />
+                                            <Folder size={16} className="text-[#030C4D]" />
                                             <span className="bank-folder-identity">
                                                 <span className="bank-folder-title">
                                                     <span className="font-semibold text-slate-700">{folder.name}</span>
@@ -786,7 +786,7 @@ export default function ProktorQuestionBankPage() {
                                                 <MoreHorizontal size={14} />
                                             </button>
                                             {folderMenuId === folder.id && (
-                                                <div className="bank-folder-menu absolute right-0 top-full mt-1 bg-white border border-[#3083FF]/30 rounded-lg shadow-lg py-1 z-20 min-w-[160px]">
+                                                <div className="bank-folder-menu absolute right-0 top-full mt-1 bg-white border border-[#030C4D]/30 rounded-lg shadow-lg py-1 z-20 min-w-[160px]">
                                                     <div className="bank-folder-menu__heading px-3 py-1 text-[10px] text-slate-400 font-medium uppercase">Tambah Bank Soal</div>
                                                     <button
                                                         onClick={() => {
@@ -795,19 +795,19 @@ export default function ProktorQuestionBankPage() {
                                                             setIsAddModalOpen(true);
                                                             setFolderMenuId(null);
                                                         }}
-                                                        className="w-full text-left px-3 py-2 text-xs text-slate-600 hover:bg-[#3083FF]/5 flex items-center gap-2"
+                                                        className="w-full text-left px-3 py-2 text-xs text-slate-600 hover:bg-[#030C4D]/5 flex items-center gap-2"
                                                     >
                                                         <Plus size={12} /> Buat Baru
                                                     </button>
                                                     <button
                                                         onClick={() => handleOpenAddToFolder(folder)}
-                                                        className="w-full text-left px-3 py-2 text-xs text-slate-600 hover:bg-[#3083FF]/5 flex items-center gap-2"
+                                                        className="w-full text-left px-3 py-2 text-xs text-slate-600 hover:bg-[#030C4D]/5 flex items-center gap-2"
                                                     >
                                                         <BookOpen size={12} /> Pilih Existing
                                                     </button>
                                                     {folderBanks.length > 0 && (
                                                         <>
-                                                            <div className="bank-folder-menu__separator border-t border-[#3083FF]/20 my-1"></div>
+                                                            <div className="bank-folder-menu__separator border-t border-[#030C4D]/20 my-1"></div>
                                                             <button
                                                                 onClick={() => {
                                                                     setBulkMode(true);
@@ -815,7 +815,7 @@ export default function ProktorQuestionBankPage() {
                                                                     setExpandedFolders(prev => new Set([...prev, folder.id]));
                                                                     setFolderMenuId(null);
                                                                 }}
-                                                                className="w-full text-left px-3 py-2 text-xs text-slate-600 hover:bg-[#3083FF]/5 flex items-center gap-2"
+                                                                className="w-full text-left px-3 py-2 text-xs text-slate-600 hover:bg-[#030C4D]/5 flex items-center gap-2"
                                                             >
                                                                 <Check size={12} /> Pindahkan
                                                             </button>
@@ -824,10 +824,10 @@ export default function ProktorQuestionBankPage() {
                                                     {/* Ganti nama/visibilitas dan hapus: hanya pembuat folder atau Admin. */}
                                                     {folder.canManage === true && (
                                                         <>
-                                                            <div className="bank-folder-menu__separator border-t border-[#3083FF]/20 my-1"></div>
+                                                            <div className="bank-folder-menu__separator border-t border-[#030C4D]/20 my-1"></div>
                                                             <button
                                                                 onClick={() => handleOpenEditFolder(folder)}
-                                                                className="w-full text-left px-3 py-2 text-xs text-slate-600 hover:bg-[#3083FF]/5 flex items-center gap-2"
+                                                                className="w-full text-left px-3 py-2 text-xs text-slate-600 hover:bg-[#030C4D]/5 flex items-center gap-2"
                                                             >
                                                                 <Edit3 size={12} /> Edit Folder
                                                             </button>
@@ -863,7 +863,7 @@ export default function ProktorQuestionBankPage() {
                                                     setTargetFolderId(folder.id);
                                                     setIsAddModalOpen(true);
                                                 }}
-                                                className="w-full py-2 border border-dashed border-[#3083FF]/30 rounded-lg text-xs text-slate-500 hover:border-[#3083FF] hover:text-[#3083FF] transition-all flex items-center justify-center gap-1"
+                                                className="w-full py-2 border border-dashed border-[#030C4D]/30 rounded-lg text-xs text-slate-500 hover:border-[#030C4D] hover:text-[#030C4D] transition-all flex items-center justify-center gap-1"
                                             >
                                                 <Plus size={12} /> Tambah Bank Soal
                                             </button>
@@ -914,7 +914,7 @@ export default function ProktorQuestionBankPage() {
                                 type="checkbox"
                                 checked={newFolderPublic}
                                 onChange={e => setNewFolderPublic(e.target.checked)}
-                                className="bank-checkbox bg-transparent w-4 h-4 mt-0.5 text-[#3083FF] border-[#3083FF]/30 rounded focus:ring-2 focus:ring-[#3083FF]/20 shrink-0 cursor-pointer"
+                                className="bank-checkbox bg-transparent w-4 h-4 mt-0.5 text-[#030C4D] border-[#030C4D]/30 rounded focus:ring-2 focus:ring-[#030C4D]/20 shrink-0 cursor-pointer"
                             />
                             <span className="min-w-0">
                                 <span className="flex items-center gap-1.5 text-sm font-semibold text-slate-700">
@@ -1035,7 +1035,7 @@ export default function ProktorQuestionBankPage() {
                                     <div className="flex-1 min-w-0">
                                         <p className="font-medium text-slate-800 text-sm truncate">{bank.title}</p>
                                         <div className="flex items-center gap-2 mt-0.5">
-                                            <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-medium ${bank.is_published ? 'bg-[#3083FF]/10 text-[#3083FF]' : 'bg-red-50 text-red-600'}`}>
+                                            <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-medium ${bank.is_published ? 'bg-[#030C4D]/10 text-[#030C4D]' : 'bg-red-50 text-red-600'}`}>
                                                 {bank.is_published ? 'Published' : 'Draft'}
                                             </span>
                                             <span className="text-xs text-slate-400">{bank.question_count || 0} soal</span>

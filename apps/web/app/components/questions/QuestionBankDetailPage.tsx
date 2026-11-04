@@ -1049,7 +1049,7 @@ export default function QuestionBankDetailPage({ role }: QuestionBankDetailPageP
                                                                     <Target size={10} /> {dimName}
                                                                 </div>
                                                             )}
-                                                            <div className="bg-[#3083FF]/10 text-[#3083FF] px-2 py-1 rounded text-[10px] font-bold border border-[#3083FF]/20 whitespace-nowrap shrink-0">
+                                                            <div className="bg-[#030C4D]/10 text-[#030C4D] px-2 py-1 rounded text-[10px] font-bold border border-[#030C4D]/20 whitespace-nowrap shrink-0">
                                                                 {opt.weight || 0} Poin
                                                             </div>
                                                         </div>

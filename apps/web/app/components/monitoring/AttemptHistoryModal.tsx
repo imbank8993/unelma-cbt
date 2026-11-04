@@ -102,7 +102,7 @@ export function AttemptHistoryModal({
       return {
         label,
         icon: Wifi,
-        color: 'text-[#3083FF] dark:text-blue-400',
+        color: 'text-[#030C4D] dark:text-blue-400',
       };
     }
     if (type.includes('reset') || type.includes('recovery') || type.includes('makeup')) {
@@ -138,7 +138,7 @@ export function AttemptHistoryModal({
       <ModalHeader
         id="history-modal-title"
         title={showSessionDetails ? 'Detail Peserta & Riwayat' : 'Riwayat Kontak & Pemantauan Sesi'}
-        icon={<History className="text-[#3083FF]" size={20} />}
+        icon={<History className="text-[#030C4D]" size={20} />}
         onClose={onClose}
       />
 
@@ -243,12 +243,12 @@ export function AttemptHistoryModal({
                 return (
                   <div key={`${event.at}:${index}`} className="relative pl-6 group">
                     {/* Node Dot */}
-                    <span className="absolute -left-[9px] top-1 flex h-4 w-4 items-center justify-center rounded-full bg-white ring-2 ring-[#3083FF]">
-                      <span className="h-1.5 w-1.5 rounded-full bg-[#3083FF]" />
+                    <span className="absolute -left-[9px] top-1 flex h-4 w-4 items-center justify-center rounded-full bg-white ring-2 ring-[#030C4D]">
+                      <span className="h-1.5 w-1.5 rounded-full bg-[#030C4D]" />
                     </span>
 
                     {/* Event Card */}
-                    <div className="rounded-xl border border-slate-200 bg-white p-3.5 shadow-xs transition-all hover:border-[#3083FF]/30 hover:shadow-sm">
+                    <div className="rounded-xl border border-slate-200 bg-white p-3.5 shadow-xs transition-all hover:border-[#030C4D]/30 hover:shadow-sm">
                       <div className="flex items-center justify-between gap-2 mb-2">
                         <div className={`inline-flex items-center gap-1.5 text-xs font-semibold leading-none ${badge.color}`}>
                           <EventIcon size={14} className="shrink-0" />
@@ -298,7 +298,7 @@ export function AttemptHistoryModal({
                         {event.recovery_until && (
                           <div>
                             <span className="text-slate-400 font-medium">Tenggat Baru:</span>{' '}
-                            <span className="font-semibold text-[#3083FF]">{formatDate(event.recovery_until)}</span>
+                            <span className="font-semibold text-[#030C4D]">{formatDate(event.recovery_until)}</span>
                           </div>
                         )}
                         {event.last_seen_at && (

@@ -311,7 +311,7 @@ export default function Header({
                                     {isDark ? (
                                         <Sun size={16} style={{ color: '#f59e0b', flexShrink: 0 }} />
                                     ) : (
-                                        <Moon size={16} style={{ color: '#3083FF', flexShrink: 0 }} />
+                                        <Moon size={16} style={{ color: '#030C4D', flexShrink: 0 }} />
                                     )}
                                     <span>{isDark ? "Mode Terang" : "Mode Gelap"}</span>
                                 </button>

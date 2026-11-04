@@ -21,7 +21,7 @@
 .uimsel-quick-btn {
     background: none;
     border: none;
-    color: var(--n-primary, #3083FF);
+    color: var(--n-primary, #030C4D);
     font-size: 0.8rem;
     font-weight: 600;
     cursor: pointer;
@@ -60,14 +60,14 @@
 }
 
 .uimsel-trigger:hover {
-    border-color: var(--n-primary, #3083FF);
+    border-color: var(--n-primary, #030C4D);
 }
 
 .uimsel.is-open .uimsel-trigger,
 .uimsel-trigger:focus {
     outline: none;
-    border-color: var(--n-primary, #3083FF);
-    box-shadow: 0 0 0 3px rgba(48, 131, 255, 0.12);
+    border-color: var(--n-primary, #030C4D);
+    box-shadow: 0 0 0 3px rgba(3, 12, 77, 0.12);
 }
 
 .uimsel.is-disabled .uimsel-trigger {
@@ -94,7 +94,7 @@
 
 .uimsel.is-open .uimsel-icon {
     transform: rotate(180deg);
-    color: var(--n-primary, #3083FF);
+    color: var(--n-primary, #030C4D);
 }
 
 .uimsel-menu {
@@ -162,7 +162,7 @@
 .uimsel-checkbox {
     width: 16px;
     height: 16px;
-    accent-color: #3083FF;
+    accent-color: #030C4D;
     cursor: pointer;
     margin: 0;
 }
@@ -222,8 +222,8 @@
 
 .dark .uimsel-item:hover,
 .dark .uimsel-item.is-selected {
-    background-color: rgba(48, 131, 255, 0.2);
-    border-color: #3083FF;
+    background-color: rgba(3, 12, 77, 0.2);
+    border-color: #030C4D;
 }
 
 .dark .uimsel-item.is-selected .uimsel-item-label {

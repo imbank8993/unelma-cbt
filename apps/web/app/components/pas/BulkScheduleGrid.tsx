@@ -352,7 +352,7 @@ export default function BulkScheduleGrid({
                         disabled={isSaving || isImporting}
                         className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-semibold text-slate-700 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 transition-colors disabled:opacity-50"
                     >
-                        <Download size={14} className="text-[#3083FF]" />
+                        <Download size={14} className="text-[#030C4D]" />
                         Unduh Template Excel
                     </button>
                     <button
@@ -406,7 +406,7 @@ export default function BulkScheduleGrid({
                     <tbody className="divide-y divide-slate-200">
                         {rows.map((row, index) => {
                             const disabled = isSaving || row.status === 'saved';
-                            const controlClass = `w-full h-9 px-2.5 bg-white border rounded-lg text-xs text-slate-800 outline-none focus:border-[#3083FF] focus:ring-1 focus:ring-[#3083FF]/20 disabled:opacity-60 ${
+                            const controlClass = `w-full h-9 px-2.5 bg-white border rounded-lg text-xs text-slate-800 outline-none focus:border-[#030C4D] focus:ring-1 focus:ring-[#030C4D]/20 disabled:opacity-60 ${
                                 row.status === 'error' ? 'border-red-300 bg-red-50/40' : 'border-slate-200'
                             }`;
                             return (
@@ -533,7 +533,7 @@ export default function BulkScheduleGrid({
                                                 disabled={isSaving}
                                                 title="Duplikat baris untuk kelas lain"
                                                 aria-label="Duplikat baris"
-                                                className="p-1.5 text-slate-400 hover:text-[#3083FF] rounded-lg disabled:opacity-30 transition-colors"
+                                                className="p-1.5 text-slate-400 hover:text-[#030C4D] rounded-lg disabled:opacity-30 transition-colors"
                                             >
                                                 <Copy size={14} />
                                             </button>
@@ -600,7 +600,7 @@ export default function BulkScheduleGrid({
                         type="button"
                         onClick={() => void handleSave()}
                         disabled={isSaving}
-                        className="px-4 py-2 text-xs font-bold text-white bg-[#3083FF] rounded-xl hover:bg-[#2563EB] flex items-center gap-1.5 disabled:opacity-50"
+                        className="px-4 py-2 text-xs font-bold text-white bg-[#030C4D] rounded-xl hover:bg-[#2563EB] flex items-center gap-1.5 disabled:opacity-50"
                     >
                         {isSaving ? <Loader2 size={15} className="animate-spin" /> : retryCount > 0 ? <RotateCcw size={15} /> : <Save size={15} />}
                         {isSaving ? 'Menyimpan...' : retryCount > 0 ? `Coba Lagi ${retryCount} Baris` : 'Simpan Semua Jadwal'}
