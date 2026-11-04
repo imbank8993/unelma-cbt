@@ -9,7 +9,7 @@
  * BOLEH menyentuh database. Semua query lewat NestJS.
  */
 
-const NEST_API_URL = process.env.NEST_API_URL || 'http://127.0.0.1:3009/api';
+const NEST_API_URL = process.env.NEST_API_URL || 'http://127.0.0.1:3019/api';
 
 export interface NestResponse<T = unknown> {
     status: number;

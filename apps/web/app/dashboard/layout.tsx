@@ -4,6 +4,7 @@ import BottomNav from '@/app/components/BottomNav';
 import DashboardLoading from '@/app/components/DashboardLoading';
 import Header, { type HeaderUser } from '@/app/components/Header';
 import Sidebar from '@/app/components/Sidebar';
+import ProfileCompletionModal from '@/app/components/ProfileCompletionModal';
 import { getAccountProfile } from '@/lib/api/account';
 import { getSetting, type AppConfig } from '@/lib/api/settings';
 import {
@@ -43,7 +44,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     const [isCollapsed, setIsCollapsed] = useState(false);
     const [mobileOpen, setMobileOpen] = useState(false);
     const [currentUser, setCurrentUser] = useState<HeaderUser | null>(null);
-    const [appSubtitle, setAppSubtitle] = useState('MAN IC Gowa');
+    const [appSubtitle, setAppSubtitle] = useState('Platform CBT');
+    const [showProfileCompletion, setShowProfileCompletion] = useState(false);
     const lastResolvedPath = useRef<string | null>(null);
     const pathRoleRef = useRef<DashboardRole | null>(null);
     const scrollPosRef = useRef(0);
@@ -136,8 +138,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 }
 
                 // Load user profile & app config for Header
+                let profileData: Awaited<ReturnType<typeof getAccountProfile>> | null = null;
                 try {
-                    const [profileData, appConfig] = await Promise.all([
+                    let appConfig: AppConfig | null = null;
+                    [profileData, appConfig] = await Promise.all([
                         getAccountProfile().catch(() => null),
                         getSetting<AppConfig>('app_config').catch(() => null),
                     ]);
@@ -204,6 +208,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 if (!active) active = list[0] ?? { role: activeRole };
 
                 setActiveRoleCtx(active);
+                if (active.role === 'Siswa' && !profileData?.profile?.school_name) {
+                    setShowProfileCompletion(true);
+                }
                 setAuthError(null);
                 setAuthChecked(true);
                 clearTimeout(safetyTimer);
@@ -352,6 +359,21 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                     onNavigate={(p) => router.push(p)}
                     onOpenMenu={() => changeMobileOpen(true)}
                 />
+                {showProfileCompletion && (
+                <ProfileCompletionModal
+                    isOpen={showProfileCompletion}
+                    initialName={currentUser?.nama}
+                    onSaved={(schoolName, className, fullName) => {
+                        setShowProfileCompletion(false);
+                        if (currentUser) {
+                            setCurrentUser({
+                                ...currentUser,
+                                nama: fullName || currentUser.nama,
+                            });
+                        }
+                    }}
+                />
+            )}
                 {mobileOpen && (
                     <div
                         className="sidebar-mobile-backdrop"

@@ -1,11 +1,14 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import Script from 'next/script';
 import { getDashboardPath, type Role } from '@/lib/rbac';
 import { setActiveRoleInStorage, lockActiveRole } from '@/lib/rbac';
-import { LogIn, Mail, Lock, ShieldCheck, UserCheck, AlertCircle, Sparkles } from 'lucide-react';
+import { LogIn, Mail, Lock, ShieldCheck, UserCheck, AlertCircle, Sparkles, School, Layers } from 'lucide-react';
+
+const GOOGLE_CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || '15496733034-vlkqs2ft95fgi3nnkbdm7eiq6i1ommem.apps.googleusercontent.com';
 
 export default function LoginPage() {
     const router = useRouter();
@@ -14,12 +17,20 @@ export default function LoginPage() {
     const [loading, setLoading] = useState(false);
     const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
-    // Google modal simulation when Google Cloud Console is not yet configured
+    // Google modal simulation & fallback
     const [showGoogleModal, setShowGoogleModal] = useState(false);
     const [customGoogleEmail, setCustomGoogleEmail] = useState('');
     const [customGoogleName, setCustomGoogleName] = useState('');
+    const [customGoogleSchool, setCustomGoogleSchool] = useState('');
+    const [customGoogleClass, setCustomGoogleClass] = useState('');
 
-    const handleGoogleAuth = async (googleEmail: string, googleName: string) => {
+    const handleGoogleAuth = async (
+        googleEmail: string,
+        googleName: string,
+        avatarUrl?: string,
+        schoolName?: string,
+        className?: string
+    ) => {
         setLoading(true);
         setErrorMsg(null);
         try {
@@ -29,7 +40,9 @@ export default function LoginPage() {
                 body: JSON.stringify({
                     email: googleEmail,
                     name: googleName,
-                    avatarUrl: `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(googleName)}`,
+                    avatarUrl: avatarUrl || `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(googleName)}`,
+                    schoolName: schoolName || undefined,
+                    className: className || undefined,
                 }),
             });
 
@@ -47,6 +60,56 @@ export default function LoginPage() {
         } catch (err) {
             setErrorMsg((err as Error).message);
             setLoading(false);
+        }
+    };
+
+    const handleGoogleCredentialResponse = async (response: { credential?: string }) => {
+        try {
+            const token = response.credential;
+            if (!token) throw new Error('Token Google tidak ditemukan.');
+            const base64Url = token.split('.')[1];
+            const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+            const jsonPayload = decodeURIComponent(
+                atob(base64)
+                    .split('')
+                    .map((c) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
+                    .join('')
+            );
+            const payload = JSON.parse(jsonPayload);
+            await handleGoogleAuth(payload.email, payload.name, payload.picture);
+        } catch (err) {
+            setErrorMsg('Gagal memproses autentikasi Google.');
+            setShowGoogleModal(true);
+        }
+    };
+
+    const initGoogleGsi = () => {
+        if (typeof window !== 'undefined' && (window as unknown as { google?: { accounts?: { id: { initialize: (opts: unknown) => void } } } }).google?.accounts?.id) {
+            try {
+                (window as unknown as { google: { accounts: { id: { initialize: (opts: unknown) => void } } } }).google.accounts.id.initialize({
+                    client_id: GOOGLE_CLIENT_ID,
+                    callback: handleGoogleCredentialResponse,
+                });
+            } catch {
+                // Ignore initialization error
+            }
+        }
+    };
+
+    const triggerGoogleSignIn = () => {
+        const googleObj = typeof window !== 'undefined' ? (window as unknown as { google?: { accounts?: { id: { prompt: (cb: (n: { isNotDisplayed: () => boolean; isSkippedMoment: () => boolean }) => void) => void } } } }).google : undefined;
+        if (googleObj?.accounts?.id) {
+            try {
+                googleObj.accounts.id.prompt((notification) => {
+                    if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
+                        setShowGoogleModal(true);
+                    }
+                });
+            } catch {
+                setShowGoogleModal(true);
+            }
+        } else {
+            setShowGoogleModal(true);
         }
     };
 
@@ -86,6 +149,12 @@ export default function LoginPage() {
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-indigo-950 flex items-center justify-center p-4 text-slate-100 font-sans">
+            <Script
+                src="https://accounts.google.com/gsi/client"
+                strategy="afterInteractive"
+                onLoad={initGoogleGsi}
+            />
+
             <div className="w-full max-w-md bg-slate-900/80 backdrop-blur-xl border border-slate-700/60 rounded-2xl shadow-2xl p-8 relative overflow-hidden">
                 <div className="absolute -top-12 -right-12 w-36 h-36 bg-blue-500/20 rounded-full blur-2xl pointer-events-none" />
                 <div className="absolute -bottom-12 -left-12 w-36 h-36 bg-indigo-500/20 rounded-full blur-2xl pointer-events-none" />
@@ -109,7 +178,7 @@ export default function LoginPage() {
                 {/* Google Sign-In Button */}
                 <button
                     type="button"
-                    onClick={() => setShowGoogleModal(true)}
+                    onClick={triggerGoogleSignIn}
                     disabled={loading}
                     className="w-full flex items-center justify-center gap-3 py-3 px-4 rounded-xl bg-white hover:bg-slate-50 text-slate-800 font-semibold transition-all shadow-md hover:shadow-lg disabled:opacity-60 mb-6 cursor-pointer"
                 >
@@ -134,14 +203,13 @@ export default function LoginPage() {
                     <span>Masuk dengan Google</span>
                 </button>
 
-                {/* Divider */}
                 <div className="relative flex items-center justify-center mb-6">
-                    <div className="border-t border-slate-700/80 w-full" />
+                    <div className="border-t border-slate-700 w-full" />
                     <span className="bg-slate-900 px-3 text-xs uppercase tracking-wider text-slate-500 font-medium">atau email</span>
-                    <div className="border-t border-slate-700/80 w-full" />
+                    <div className="border-t border-slate-700 w-full" />
                 </div>
 
-                {/* Email & Password Form */}
+                {/* Form Login Email / Password */}
                 <form onSubmit={handlePasswordLogin} className="space-y-4">
                     <div>
                         <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5">
@@ -151,6 +219,7 @@ export default function LoginPage() {
                             <Mail className="w-5 h-5 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
                             <input
                                 type="email"
+                                required
                                 value={email}
                                 onChange={(e) => setEmail(e.target.value)}
                                 placeholder="nama@email.com"
@@ -167,6 +236,7 @@ export default function LoginPage() {
                             <Lock className="w-5 h-5 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
                             <input
                                 type="password"
+                                required
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}
                                 placeholder="••••••••"
@@ -191,7 +261,6 @@ export default function LoginPage() {
                     </button>
                 </form>
 
-                {/* Footer link to Signup */}
                 <div className="mt-6 text-center text-sm text-slate-400">
                     Belum punya akun?{' '}
                     <Link href="/signup" className="text-blue-400 hover:text-blue-300 font-semibold hover:underline">
@@ -200,23 +269,23 @@ export default function LoginPage() {
                 </div>
             </div>
 
-            {/* Google Account Modal (One-click Google Sign-In) */}
+            {/* Quick Google Test / Fallback Modal */}
             {showGoogleModal && (
                 <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
                     <div className="bg-slate-900 border border-slate-700 rounded-2xl max-w-md w-full p-6 shadow-2xl relative">
                         <h3 className="text-lg font-bold text-white mb-1 flex items-center gap-2">
                             <Sparkles className="w-5 h-5 text-blue-400" />
-                            Pilih Akun Google
+                            Masuk Akun Google
                         </h3>
                         <p className="text-xs text-slate-400 mb-4">
-                            Login instan dengan Google OAuth. Otomatis terdaftar ke sistem bila akun baru.
+                            Pilih akun cepat atau masukkan akun Google untuk masuk:
                         </p>
 
-                        {/* Superadmin Card Button */}
+                        {/* Quick Superadmin Button */}
                         <div
                             onClick={() => {
                                 setShowGoogleModal(false);
-                                handleGoogleAuth('imbank8993@gmail.com', 'Superadmin Unelma');
+                                handleGoogleAuth('imbank8993@gmail.com', 'Superadmin');
                             }}
                             className="p-3.5 rounded-xl border border-blue-500/30 bg-blue-500/10 hover:bg-blue-500/20 cursor-pointer transition-all flex items-center justify-between mb-3 group"
                         >
@@ -237,9 +306,9 @@ export default function LoginPage() {
                             <UserCheck className="w-5 h-5 text-blue-400 group-hover:scale-110 transition-transform" />
                         </div>
 
-                        {/* Custom Google Account Form for Testing Other Roles */}
+                        {/* Custom Google Account Form */}
                         <div className="mt-4 pt-4 border-t border-slate-800">
-                            <span className="text-xs text-slate-400 block mb-2 font-medium">Atau uji dengan akun Google lain:</span>
+                            <span className="text-xs text-slate-400 block mb-2 font-medium">Atau masuk dengan akun Google lain:</span>
                             <div className="space-y-2">
                                 <input
                                     type="email"
@@ -252,17 +321,39 @@ export default function LoginPage() {
                                     type="text"
                                     value={customGoogleName}
                                     onChange={(e) => setCustomGoogleName(e.target.value)}
-                                    placeholder="Nama Lengkap"
+                                    placeholder="Nama Lengkap Siswa"
                                     className="w-full bg-slate-800 border border-slate-700 text-white text-xs rounded-lg px-3 py-2 outline-none focus:border-blue-500"
                                 />
+                                <div className="grid grid-cols-2 gap-2">
+                                    <input
+                                        type="text"
+                                        value={customGoogleSchool}
+                                        onChange={(e) => setCustomGoogleSchool(e.target.value)}
+                                        placeholder="Asal Sekolah"
+                                        className="w-full bg-slate-800 border border-slate-700 text-white text-xs rounded-lg px-3 py-2 outline-none focus:border-blue-500"
+                                    />
+                                    <input
+                                        type="text"
+                                        value={customGoogleClass}
+                                        onChange={(e) => setCustomGoogleClass(e.target.value)}
+                                        placeholder="Kelas (Opsional)"
+                                        className="w-full bg-slate-800 border border-slate-700 text-white text-xs rounded-lg px-3 py-2 outline-none focus:border-blue-500"
+                                    />
+                                </div>
                                 <button
                                     type="button"
                                     onClick={() => {
                                         if (!customGoogleEmail) return;
                                         setShowGoogleModal(false);
-                                        handleGoogleAuth(customGoogleEmail, customGoogleName || 'Pengguna Baru');
+                                        handleGoogleAuth(
+                                            customGoogleEmail,
+                                            customGoogleName || 'Pengguna Baru',
+                                            undefined,
+                                            customGoogleSchool || undefined,
+                                            customGoogleClass || undefined
+                                        );
                                     }}
-                                    className="w-full py-2 bg-slate-800 hover:bg-slate-700 border border-slate-600 text-white rounded-lg text-xs font-semibold transition-all"
+                                    className="w-full py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-xs font-semibold transition-all cursor-pointer"
                                 >
                                     Masuk dengan Akun Ini
                                 </button>
@@ -272,7 +363,7 @@ export default function LoginPage() {
                         <button
                             type="button"
                             onClick={() => setShowGoogleModal(false)}
-                            className="mt-4 w-full py-2 text-xs text-slate-400 hover:text-white"
+                            className="mt-4 w-full py-2 text-xs text-slate-400 hover:text-white cursor-pointer"
                         >
                             Batal
                         </button>

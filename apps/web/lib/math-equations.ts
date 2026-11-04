@@ -18,7 +18,7 @@ import { SVG } from 'mathjax-full/js/output/svg';
  *   → kembalikan URL untuk disimpan dalam teks soal
  */
 
-const NEST_API_URL = process.env.NEST_API_URL || 'http://127.0.0.1:3009/api';
+const NEST_API_URL = process.env.NEST_API_URL || 'http://127.0.0.1:3019/api';
 const INTERNAL_API_KEY = process.env.INTERNAL_API_KEY || '';
 
 let document: ReturnType<typeof mathjax.document> | null = null;

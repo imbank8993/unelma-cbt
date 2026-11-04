@@ -2,16 +2,20 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
+import Script from 'next/script';
 import { useRouter } from 'next/navigation';
 import { getDashboardPath, type Role } from '@/lib/rbac';
 import { setActiveRoleInStorage, lockActiveRole } from '@/lib/rbac';
-import { UserPlus, Mail, Lock, User, School, AlertCircle, Sparkles, CheckCircle2 } from 'lucide-react';
+import { UserPlus, Mail, Lock, User, School, Layers, AlertCircle, Sparkles, CheckCircle2 } from 'lucide-react';
+
+const GOOGLE_CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || '15496733034-vlkqs2ft95fgi3nnkbdm7eiq6i1ommem.apps.googleusercontent.com';
 
 export default function SignupPage() {
     const router = useRouter();
     const [name, setName] = useState('');
     const [email, setEmail] = useState('');
     const [schoolName, setSchoolName] = useState('');
+    const [className, setClassName] = useState('');
     const [password, setPassword] = useState('');
     const [loading, setLoading] = useState(false);
     const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -21,7 +25,7 @@ export default function SignupPage() {
     const [googleEmail, setGoogleEmail] = useState('');
     const [googleName, setGoogleName] = useState('');
 
-    const handleSignup = async (e?: React.FormEvent, customData?: { email: string; name: string }) => {
+    const handleSignup = async (e?: React.FormEvent, customData?: { email: string; name: string; avatarUrl?: string }) => {
         if (e) e.preventDefault();
 
         const targetEmail = customData?.email || email;
@@ -48,8 +52,9 @@ export default function SignupPage() {
                     email: targetEmail,
                     name: targetName,
                     schoolName: schoolName.trim(),
+                    className: className.trim() || undefined,
                     password: password || undefined,
-                    avatarUrl: `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(targetName)}`,
+                    avatarUrl: customData?.avatarUrl || `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(targetName)}`,
                 }),
             });
 
@@ -70,8 +75,65 @@ export default function SignupPage() {
         }
     };
 
+    const handleGoogleCredentialResponse = async (response: { credential?: string }) => {
+        try {
+            const token = response.credential;
+            if (!token) throw new Error('Token Google tidak ditemukan.');
+            const base64Url = token.split('.')[1];
+            const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+            const jsonPayload = decodeURIComponent(
+                atob(base64)
+                    .split('')
+                    .map((c) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
+                    .join('')
+            );
+            const payload = JSON.parse(jsonPayload);
+            setGoogleEmail(payload.email || '');
+            setGoogleName(payload.name || '');
+            setShowGoogleModal(true);
+        } catch {
+            setShowGoogleModal(true);
+        }
+    };
+
+    const initGoogleGsi = () => {
+        if (typeof window !== 'undefined' && (window as unknown as { google?: { accounts?: { id: { initialize: (opts: unknown) => void } } } }).google?.accounts?.id) {
+            try {
+                (window as unknown as { google: { accounts: { id: { initialize: (opts: unknown) => void } } } }).google.accounts.id.initialize({
+                    client_id: GOOGLE_CLIENT_ID,
+                    callback: handleGoogleCredentialResponse,
+                });
+            } catch {
+                // Ignore initialization error
+            }
+        }
+    };
+
+    const triggerGoogleSignIn = () => {
+        const googleObj = typeof window !== 'undefined' ? (window as unknown as { google?: { accounts?: { id: { prompt: (cb: (n: { isNotDisplayed: () => boolean; isSkippedMoment: () => boolean }) => void) => void } } } }).google : undefined;
+        if (googleObj?.accounts?.id) {
+            try {
+                googleObj.accounts.id.prompt((notification) => {
+                    if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
+                        setShowGoogleModal(true);
+                    }
+                });
+            } catch {
+                setShowGoogleModal(true);
+            }
+        } else {
+            setShowGoogleModal(true);
+        }
+    };
+
     return (
         <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-indigo-950 flex items-center justify-center p-4 text-slate-100 font-sans">
+            <Script
+                src="https://accounts.google.com/gsi/client"
+                strategy="afterInteractive"
+                onLoad={initGoogleGsi}
+            />
+
             <div className="w-full max-w-lg bg-slate-900/80 backdrop-blur-xl border border-slate-700/60 rounded-2xl shadow-2xl p-8 relative overflow-hidden">
                 <div className="absolute -top-12 -right-12 w-36 h-36 bg-blue-500/20 rounded-full blur-2xl pointer-events-none" />
                 <div className="absolute -bottom-12 -left-12 w-36 h-36 bg-indigo-500/20 rounded-full blur-2xl pointer-events-none" />
@@ -92,10 +154,10 @@ export default function SignupPage() {
                     </div>
                 )}
 
-                {/* Google Sign-Up Quick Option */}
+                {/* Google Sign-Up Button */}
                 <button
                     type="button"
-                    onClick={() => setShowGoogleModal(true)}
+                    onClick={triggerGoogleSignIn}
                     disabled={loading}
                     className="w-full flex items-center justify-center gap-3 py-2.5 px-4 rounded-xl bg-white hover:bg-slate-50 text-slate-800 font-semibold transition-all shadow-md hover:shadow-lg disabled:opacity-60 mb-5 cursor-pointer text-sm"
                 >
@@ -164,21 +226,39 @@ export default function SignupPage() {
                         </div>
                     </div>
 
-                    {/* Asal Sekolah */}
-                    <div>
-                        <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">
-                            Asal Sekolah <span className="text-red-400">*</span>
-                        </label>
-                        <div className="relative">
-                            <School className="w-4 h-4 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
-                            <input
-                                type="text"
-                                required
-                                value={schoolName}
-                                onChange={(e) => setSchoolName(e.target.value)}
-                                placeholder="Nama Sekolah / Madrasah"
-                                className="w-full bg-slate-800/80 border border-slate-700 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 text-white rounded-xl py-2 pl-10 pr-4 text-sm outline-none transition-all placeholder:text-slate-500"
-                            />
+                    {/* Asal Sekolah & Kelas */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div>
+                            <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">
+                                Asal Sekolah <span className="text-red-400">*</span>
+                            </label>
+                            <div className="relative">
+                                <School className="w-4 h-4 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                                <input
+                                    type="text"
+                                    required
+                                    value={schoolName}
+                                    onChange={(e) => setSchoolName(e.target.value)}
+                                    placeholder="Nama Sekolah"
+                                    className="w-full bg-slate-800/80 border border-slate-700 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 text-white rounded-xl py-2 pl-10 pr-4 text-sm outline-none transition-all placeholder:text-slate-500"
+                                />
+                            </div>
+                        </div>
+
+                        <div>
+                            <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">
+                                Kelas <span className="text-slate-500 text-[10px] font-normal">(Opsional)</span>
+                            </label>
+                            <div className="relative">
+                                <Layers className="w-4 h-4 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                                <input
+                                    type="text"
+                                    value={className}
+                                    onChange={(e) => setClassName(e.target.value)}
+                                    placeholder="Contoh: XII MIPA 1"
+                                    className="w-full bg-slate-800/80 border border-slate-700 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 text-white rounded-xl py-2 pl-10 pr-4 text-sm outline-none transition-all placeholder:text-slate-500"
+                                />
+                            </div>
                         </div>
                     </div>
 
@@ -239,7 +319,7 @@ export default function SignupPage() {
                             Daftar dengan Akun Google
                         </h3>
                         <p className="text-xs text-slate-400 mb-4">
-                            Masukkan email Google dan asal sekolah Anda untuk mendaftar otomatis sebagai Siswa.
+                            Lengkapi asal sekolah dan kelas untuk menyelesaikan pendaftaran akun Google Anda.
                         </p>
 
                         <div className="space-y-3">
@@ -265,15 +345,27 @@ export default function SignupPage() {
                                 />
                             </div>
 
-                            <div>
-                                <label className="block text-[11px] text-slate-400 mb-1">Asal Sekolah:</label>
-                                <input
-                                    type="text"
-                                    value={schoolName}
-                                    onChange={(e) => setSchoolName(e.target.value)}
-                                    placeholder="Nama Sekolah / Madrasah"
-                                    className="w-full bg-slate-800 border border-slate-700 text-white text-xs rounded-xl px-3 py-2 outline-none focus:border-blue-500"
-                                />
+                            <div className="grid grid-cols-2 gap-2">
+                                <div>
+                                    <label className="block text-[11px] text-slate-400 mb-1">Asal Sekolah <span className="text-red-400">*</span>:</label>
+                                    <input
+                                        type="text"
+                                        value={schoolName}
+                                        onChange={(e) => setSchoolName(e.target.value)}
+                                        placeholder="Nama Sekolah"
+                                        className="w-full bg-slate-800 border border-slate-700 text-white text-xs rounded-xl px-3 py-2 outline-none focus:border-blue-500"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-[11px] text-slate-400 mb-1">Kelas (Opsional):</label>
+                                    <input
+                                        type="text"
+                                        value={className}
+                                        onChange={(e) => setClassName(e.target.value)}
+                                        placeholder="Contoh: XII MIPA 1"
+                                        className="w-full bg-slate-800 border border-slate-700 text-white text-xs rounded-xl px-3 py-2 outline-none focus:border-blue-500"
+                                    />
+                                </div>
                             </div>
 
                             <button

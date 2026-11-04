@@ -328,7 +328,7 @@ export class AuthService {
   async getProfileWithOrganization(user: AuthUser) {
     let { data: profile } = await this.db
       .from('cbt_profiles')
-      .select('id, full_name, identity_number, avatar_url')
+      .select('id, full_name, identity_number, avatar_url, school_name, class_name')
       .eq('id', user.id)
       .maybeSingle();
 
@@ -397,7 +397,7 @@ export class AuthService {
 
 
   async loginWithGoogle(
-    payload: { email: string; name: string; avatarUrl?: string | null; googleId?: string },
+    payload: { email: string; name: string; avatarUrl?: string | null; googleId?: string; schoolName?: string; className?: string },
     ipAddress?: string,
     userAgent?: string,
   ): Promise<LoginResponse> {
@@ -418,13 +418,17 @@ export class AuthService {
     }
 
     // Ensure profile in cbt_profiles
+    const profileUpsertData: Record<string, any> = {
+      id: authUser.id,
+      full_name: payload.name || 'Pengguna Google',
+      avatar_url: payload.avatarUrl || null,
+      email: normalizedEmail,
+    };
+    if (payload.schoolName) profileUpsertData.school_name = payload.schoolName.trim();
+    if (payload.className) profileUpsertData.class_name = payload.className.trim();
+
     await this.db.from('cbt_profiles').upsert(
-      {
-        id: authUser.id,
-        full_name: payload.name || 'Pengguna Google',
-        avatar_url: payload.avatarUrl || null,
-        email: normalizedEmail,
-      },
+      profileUpsertData,
       { onConflict: 'id' },
     );
 
@@ -788,6 +792,30 @@ export class AuthService {
       metadata,
       dto.name,
     );
+  }
+
+  async updateStudentProfile(
+    user: AuthUser,
+    payload: { fullName?: string; schoolName: string; className?: string },
+  ): Promise<{ success: boolean; message: string }> {
+    if (!payload.schoolName || !payload.schoolName.trim()) {
+      throw new BadRequestException('Asal sekolah wajib diisi.');
+    }
+    const updateData: Record<string, any> = {
+      school_name: payload.schoolName.trim(),
+    };
+    if (payload.fullName && payload.fullName.trim()) {
+      updateData.full_name = payload.fullName.trim();
+    }
+    if (payload.className !== undefined) {
+      updateData.class_name = payload.className ? payload.className.trim() : null;
+    }
+    await this.db
+      .from('cbt_profiles')
+      .update(updateData)
+      .eq('id', user.id);
+
+    return { success: true, message: 'Profil sekolah dan kelas berhasil disimpan.' };
   }
 
 }

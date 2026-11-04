@@ -1,4 +1,4 @@
-import { Body, Delete, ForbiddenException, Param, Controller, Get, HttpCode, HttpStatus, Post, Req, UnauthorizedException, UseGuards } from '@nestjs/common';
+import { Body, Delete, ForbiddenException, Param, Controller, Get, HttpCode, HttpStatus, Patch, Post, Req, UnauthorizedException, UseGuards } from '@nestjs/common';
 import { Request } from 'express';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import type { AuthUser } from '@acca-cbt/shared';
@@ -96,11 +96,22 @@ export class AuthController {
   }
 
 
+  @Patch('profile')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Perbarui profil pengguna (sekolah & kelas)' })
+  async updateProfile(
+    @CurrentUser() user: AuthUser,
+    @Body() body: { fullName?: string; schoolName: string; className?: string },
+  ) {
+    return this.authService.updateStudentProfile(user, body);
+  }
+
   @Post('google')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Masuk atau mendaftar dengan akun Google' })
   async googleLogin(
-    @Body() body: { email: string; name: string; avatarUrl?: string; googleId?: string },
+    @Body() body: { email: string; name: string; avatarUrl?: string; googleId?: string; schoolName?: string; className?: string },
     @Req() req: Request,
   ) {
     const ip = req.ip;

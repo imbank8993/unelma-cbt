@@ -4,7 +4,7 @@ export async function GET(request: NextRequest, context: { params: Promise<{ id:
     const token = extractRequestToken(request);
     if (!token) return new NextResponse(null, { status: 401 });
     const { id } = await context.params;
-    const base = process.env.NEST_API_URL || 'http://127.0.0.1:3009/api';
+    const base = process.env.NEST_API_URL || 'http://127.0.0.1:3019/api';
     try {
         const response = await fetch(`${base}/proctoring/screenshots/${encodeURIComponent(id)}/image`,
             { headers: { Authorization: `Bearer ${token}` }, cache: 'no-store' });

@@ -30,7 +30,7 @@ import { TeachersModule } from './teachers/teachers.module';
  */
 @Module({
   imports: [
-    ConfigModule.forRoot({ isGlobal: true, envFilePath: '.env' }),
+    ConfigModule.forRoot({ isGlobal: true, envFilePath: ['.env', '../../.env'] }),
     PrismaModule,
     AuthModule,
     HealthModule,

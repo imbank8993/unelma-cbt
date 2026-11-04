@@ -7,7 +7,7 @@ const TWELVE_HOURS = 12 * 60 * 60;
 export async function POST(request: NextRequest) {
     try {
         const body = await request.json().catch(() => ({}));
-        const { email, name, avatarUrl, googleId } = body;
+        const { email, name, avatarUrl, googleId, schoolName, className } = body;
 
         if (!email) {
             return NextResponse.json(
@@ -23,7 +23,7 @@ export async function POST(request: NextRequest) {
             message?: string;
         }>('/auth/google', {
             method: 'POST',
-            body: JSON.stringify({ email, name: name || 'Pengguna Google', avatarUrl, googleId }),
+            body: JSON.stringify({ email, name: name || 'Pengguna Google', avatarUrl, googleId, schoolName, className }),
         });
 
         if (status !== 200 || !resBody?.access_token) {

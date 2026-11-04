@@ -14,6 +14,8 @@ export interface AccountProfile {
     full_name: string | null;
     identity_number: string | null;
     avatar_url: string | null;
+    school_name?: string | null;
+    class_name?: string | null;
 }
 
 export interface AccountOrganization {

@@ -1,3 +1,9 @@
+import * as dotenv from 'dotenv';
+import * as path from 'path';
+dotenv.config({ path: path.resolve(process.cwd(), '.env') });
+dotenv.config({ path: path.resolve(__dirname, '../.env') });
+dotenv.config({ path: path.resolve(__dirname, '../../.env') });
+
 import { Logger, ValidationPipe } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
@@ -23,7 +29,7 @@ async function bootstrap() {
   app.use(urlencoded({ extended: true, limit: MAX_REQUEST_BODY_SIZE }));
 
   const configService = app.get(ConfigService);
-  const port = Number(configService.get('PORT')) || 3009;
+  const port = Number(configService.get('PORT')) || 3019;
   const host = configService.get<string>('HOST') || '127.0.0.1';
   const rawOrigins = configService.get<string>('CORS_ORIGIN') || '*';
   const origins = rawOrigins === '*' ? '*' : rawOrigins.split(',').map((o) => o.trim());
