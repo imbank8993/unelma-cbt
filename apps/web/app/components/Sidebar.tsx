@@ -9,7 +9,7 @@ import { usePathname } from 'next/navigation';
 import { useCallback,useEffect,useMemo,useRef,useState } from 'react';
 import './sidebar.css';
 
-const ACCA_URL = process.env.NEXT_PUBLIC_ACCA_URL || 'https://acca.icgowa.sch.id';
+
 
 interface MenuItem {
     icon: string;
@@ -174,43 +174,22 @@ export default function Sidebar({
                             <div className="brand-logo">
                                 {!isCollapsed ? (
                                     <>
-                                        <Image src="/logo-sidebar.png" alt="ACCA Logo" width={180} height={48} className="brand-logo-img light-logo" />
-                                        <Image src="/logo-sidebar-dark.png" alt="ACCA Logo" width={180} height={48} className="brand-logo-img dark-logo" />
+                                        <Image src="/logo-sidebar.png?v=2" alt="Unelma Logo" width={180} height={48} className="brand-logo-img light-logo" unoptimized priority />
+                                        <Image src="/logo-sidebar-dark.png?v=2" alt="Unelma Logo" width={180} height={48} className="brand-logo-img dark-logo" unoptimized priority />
                                     </>
                                 ) : (
-                                    <Image src="/logo-sidebar-kecil.webp" alt="ACCA Logo" width={48} height={48} className="brand-logo-img" />
+                                    <>
+                                        <Image src="/logo-sidebar-kecil.webp?v=2" alt="Unelma Logo" width={48} height={48} className="brand-logo-img light-logo" unoptimized priority />
+                                        <Image src="/logo-sidebar-kecil-dark.webp?v=2" alt="Unelma Logo" width={48} height={48} className="brand-logo-img dark-logo" unoptimized priority />
+                                    </>
                                 )}
                             </div>
                         </button>
                     </div>
                 </div>
 
-                <div className="sidebar-nav-fixed">
-                    {/* SSO App Links — Kembali ke ACCA + ACCA TOOLS */}
-                    <div className="sso-cbt-container">
-                        <a
-                            href={ACCA_URL}
-                            className="sso-cbt-btn"
-                            title="Kembali ke Portal ACCA"
-                        >
-                            <i className="fa-solid fa-arrow-left btn-icon"></i>
-                            {!isCollapsed && <span className="btn-label">ACCA</span>}
-                        </a>
-                        <a
-                            href={`${ACCA_URL}/api/sso/tools`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="sso-cbt-btn"
-                            title="Buka ACCA TOOLS"
-                        >
-                            <i className="fa-solid fa-toolbox btn-icon"></i>
-                            {!isCollapsed && <span className="btn-label">TOOLS</span>}
-                        </a>
-                    </div>
-                </div>
-
                 <nav className="sidebar-nav">
-                            {!isCollapsed && <div className="nav-section-label">Menu Utama</div>}
+
 
                             {/* MAIN MENU ITEMS */}
                             {menuItems.map((item, index) => {

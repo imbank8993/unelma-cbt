@@ -203,70 +203,48 @@ export default function LoginPage() {
                     <span>Masuk dengan Google</span>
                 </button>
 
-                <div className="relative flex items-center justify-center mb-6">
-                    <div className="border-t border-slate-700 w-full" />
-                    <span className="bg-slate-900 px-3 text-xs uppercase tracking-wider text-slate-500 font-medium">atau email</span>
-                    <div className="border-t border-slate-700 w-full" />
+                {/* Informasi Akun Google Tunggal */}
+                <div className="bg-blue-500/10 border border-blue-500/20 rounded-xl p-3.5 mb-6 text-xs text-blue-300/90 leading-relaxed text-center">
+                    Masuk atau daftar baru dilakukan otomatis melalui akun Google. Foto profil & identitas utama disinkronkan langsung dari akun Google Anda.
                 </div>
 
-                {/* Form Login Email / Password */}
-                <form onSubmit={handlePasswordLogin} className="space-y-4">
-                    <div>
-                        <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5">
-                            Email
-                        </label>
-                        <div className="relative">
-                            <Mail className="w-5 h-5 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                {/* Form Darurat / Backup Admin (Opsional) */}
+                <details className="mt-4 text-center text-xs text-slate-500 cursor-pointer">
+                    <summary className="hover:text-slate-400 select-none">Opsi Masuk Manual (Khusus Administrator)</summary>
+                    <form onSubmit={handlePasswordLogin} className="mt-4 space-y-3 text-left">
+                        <div>
+                            <label className="block text-[11px] font-semibold uppercase tracking-wider text-slate-400 mb-1">
+                                Email
+                            </label>
                             <input
                                 type="email"
-                                required
                                 value={email}
                                 onChange={(e) => setEmail(e.target.value)}
-                                placeholder="nama@email.com"
-                                className="w-full bg-slate-800/80 border border-slate-700 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 text-white rounded-xl py-2.5 pl-11 pr-4 text-sm outline-none transition-all placeholder:text-slate-500"
+                                placeholder="admin@email.com"
+                                className="w-full bg-slate-800/80 border border-slate-700 focus:border-blue-500 text-white rounded-lg py-2 px-3 text-xs outline-none"
                             />
                         </div>
-                    </div>
-
-                    <div>
-                        <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5">
-                            Password
-                        </label>
-                        <div className="relative">
-                            <Lock className="w-5 h-5 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                        <div>
+                            <label className="block text-[11px] font-semibold uppercase tracking-wider text-slate-400 mb-1">
+                                Password
+                            </label>
                             <input
                                 type="password"
-                                required
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}
                                 placeholder="••••••••"
-                                className="w-full bg-slate-800/80 border border-slate-700 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 text-white rounded-xl py-2.5 pl-11 pr-4 text-sm outline-none transition-all placeholder:text-slate-500"
+                                className="w-full bg-slate-800/80 border border-slate-700 focus:border-blue-500 text-white rounded-lg py-2 px-3 text-xs outline-none"
                             />
                         </div>
-                    </div>
-
-                    <button
-                        type="submit"
-                        disabled={loading}
-                        className="w-full mt-2 py-3 px-4 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-semibold transition-all shadow-md shadow-blue-500/20 disabled:opacity-60 flex items-center justify-center gap-2 cursor-pointer"
-                    >
-                        {loading ? (
-                            <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                        ) : (
-                            <>
-                                <LogIn className="w-5 h-5" />
-                                <span>Masuk</span>
-                            </>
-                        )}
-                    </button>
-                </form>
-
-                <div className="mt-6 text-center text-sm text-slate-400">
-                    Belum punya akun?{' '}
-                    <Link href="/signup" className="text-blue-400 hover:text-blue-300 font-semibold hover:underline">
-                        Daftar Akun Baru
-                    </Link>
-                </div>
+                        <button
+                            type="submit"
+                            disabled={loading}
+                            className="w-full py-2 px-3 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold border border-slate-700"
+                        >
+                            Masuk Manual
+                        </button>
+                    </form>
+                </details>
             </div>
 
             {/* Quick Google Test / Fallback Modal */}

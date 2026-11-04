@@ -41,7 +41,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends curl ca-certifi
 
 ENV NODE_ENV=production \
     NEXT_TELEMETRY_DISABLED=1 \
-    PORT=3008 \
+    PORT=3018 \
     HOSTNAME="0.0.0.0"
 
 # Jalankan dengan non-root user demi keamanan (Debian system user)
@@ -57,10 +57,10 @@ COPY --from=builder --chown=nextjs:nodejs /app/apps/web/.next/static ./apps/web/
 
 USER nextjs
 
-EXPOSE 3008
+EXPOSE 3018
 
 HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
-  CMD curl -f -L http://127.0.0.1:3008/ || exit 1
+  CMD curl -f -L http://127.0.0.1:3018/ || exit 1
 
 CMD ["sh", "-c", "node apps/web/server.js 2>/dev/null || node server.js"]
 

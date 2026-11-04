@@ -1,6 +1,7 @@
 services:
   cbt-latex:
     build: ./apps/latex-renderer
+    container_name: cbt-latex
     restart: unless-stopped
     read_only: true
     tmpfs:
@@ -73,19 +74,20 @@ services:
     env_file:
       - .env
     environment:
-      - PORT=3008
+      - PORT=3018
       - HOSTNAME=0.0.0.0
       - NEST_API_URL=http://cbt-api:3009/api
       - NEXT_PUBLIC_SITE_URL=${NEXT_PUBLIC_SITE_URL:-https://acca-cbt.icgowa.sch.id}
       - NEXT_PUBLIC_ACCA_URL=${NEXT_PUBLIC_ACCA_URL:-https://acca.icgowa.sch.id}
     ports:
       # Hanya port ini yang diekspos ke host VPS untuk disambungkan ke Nginx/Reverse Proxy
-      - "${CBT_WEB_PORT:-3008}:3008"
+      - "${CBT_WEB_PORT:-3018}:3018"
     networks:
       - cbt-network
 
 networks:
   latex-network:
+    name: cbt-latex-network
     internal: true
   cbt-network:
     name: cbt-network

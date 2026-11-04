@@ -34,7 +34,7 @@ const poppins = Poppins({
 });
 
 export async function generateMetadata(): Promise<Metadata> {
-  const appName = "ACCA - CBT";
+  const appName = "Unelma Edu Indonesia";
   return {
     title: {
       template: `%s | ${appName}`,
@@ -44,11 +44,11 @@ export async function generateMetadata(): Promise<Metadata> {
     manifest: "/manifest.webmanifest",
     icons: {
       icon: [
-        { url: "/icon.svg", type: "image/svg+xml" },
-        { url: "/logo-icon.png", type: "image/png" },
+        { url: "/logo-sidebar-kecil.webp", media: "(prefers-color-scheme: light)" },
+        { url: "/logo-sidebar-kecil-dark.webp", media: "(prefers-color-scheme: dark)" },
       ],
-      shortcut: "/icon.svg",
-      apple: "/logo-icon.png",
+      shortcut: "/logo-sidebar-kecil.webp",
+      apple: "/logo-sidebar-kecil.webp",
     },
   };
 }
@@ -69,6 +69,9 @@ export default async function RootLayout({
         <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)" id="theme-color-light-meta" />
         <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: dark)" id="theme-color-dark-meta" />
         <meta name="theme-color" content="#ffffff" id="theme-color-meta" />
+        <link rel="icon" href="/logo-sidebar-kecil.webp" media="(prefers-color-scheme: light)" type="image/webp" />
+        <link rel="icon" href="/logo-sidebar-kecil-dark.webp" media="(prefers-color-scheme: dark)" type="image/webp" />
+        <link rel="apple-touch-icon" href="/logo-sidebar-kecil.webp" />
         <script
           dangerouslySetInnerHTML={{
             __html: `

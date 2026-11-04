@@ -1,16 +1,16 @@
 {
-  "name": "ACCA CBT",
-  "short_name": "ACCA CBT",
-  "description": "Aplikasi ujian ACCA CBT",
+  "name": "Unelma Edu Indonesia",
+  "short_name": "Unelma CBT",
+  "description": "Platform Ujian CBT Unelma Edu Indonesia",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#f8fafc",
   "theme_color": "#3083ff",
   "icons": [
     {
-      "src": "/icon.svg",
+      "src": "/logo-sidebar-kecil.webp",
       "sizes": "any",
-      "type": "image/svg+xml",
+      "type": "image/webp",
       "purpose": "any"
     }
   ]

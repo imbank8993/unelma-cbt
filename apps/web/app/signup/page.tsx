@@ -182,124 +182,15 @@ export default function SignupPage() {
                     <span>Daftar Cepat dengan Akun Google</span>
                 </button>
 
-                <div className="relative flex items-center justify-center mb-5">
-                    <div className="border-t border-slate-700/80 w-full" />
-                    <span className="bg-slate-900 px-3 text-[11px] uppercase tracking-wider text-slate-500 font-medium">atau formulir siswa</span>
-                    <div className="border-t border-slate-700/80 w-full" />
+                {/* Informasi Pendaftaran Google */}
+                <div className="bg-blue-500/10 border border-blue-500/20 rounded-xl p-3.5 mb-5 text-xs text-blue-300/90 leading-relaxed text-center">
+                    Pendaftaran akun baru dilakukan secara instan menggunakan akun Google. Foto profil & nama akan diambil langsung dari akun Google Anda.
                 </div>
 
-                {/* Form Pendaftaran Siswa */}
-                <form onSubmit={handleSignup} className="space-y-3.5">
-                    {/* Nama Lengkap */}
-                    <div>
-                        <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">
-                            Nama Lengkap <span className="text-red-400">*</span>
-                        </label>
-                        <div className="relative">
-                            <User className="w-4 h-4 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
-                            <input
-                                type="text"
-                                required
-                                value={name}
-                                onChange={(e) => setName(e.target.value)}
-                                placeholder="Contoh: Muhammad Raihan"
-                                className="w-full bg-slate-800/80 border border-slate-700 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 text-white rounded-xl py-2 pl-10 pr-4 text-sm outline-none transition-all placeholder:text-slate-500"
-                            />
-                        </div>
-                    </div>
-
-                    {/* Email */}
-                    <div>
-                        <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">
-                            Email <span className="text-red-400">*</span>
-                        </label>
-                        <div className="relative">
-                            <Mail className="w-4 h-4 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
-                            <input
-                                type="email"
-                                required
-                                value={email}
-                                onChange={(e) => setEmail(e.target.value)}
-                                placeholder="siswa@email.com"
-                                className="w-full bg-slate-800/80 border border-slate-700 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 text-white rounded-xl py-2 pl-10 pr-4 text-sm outline-none transition-all placeholder:text-slate-500"
-                            />
-                        </div>
-                    </div>
-
-                    {/* Asal Sekolah & Kelas */}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        <div>
-                            <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">
-                                Asal Sekolah <span className="text-red-400">*</span>
-                            </label>
-                            <div className="relative">
-                                <School className="w-4 h-4 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
-                                <input
-                                    type="text"
-                                    required
-                                    value={schoolName}
-                                    onChange={(e) => setSchoolName(e.target.value)}
-                                    placeholder="Nama Sekolah"
-                                    className="w-full bg-slate-800/80 border border-slate-700 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 text-white rounded-xl py-2 pl-10 pr-4 text-sm outline-none transition-all placeholder:text-slate-500"
-                                />
-                            </div>
-                        </div>
-
-                        <div>
-                            <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">
-                                Kelas <span className="text-slate-500 text-[10px] font-normal">(Opsional)</span>
-                            </label>
-                            <div className="relative">
-                                <Layers className="w-4 h-4 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
-                                <input
-                                    type="text"
-                                    value={className}
-                                    onChange={(e) => setClassName(e.target.value)}
-                                    placeholder="Contoh: XII MIPA 1"
-                                    className="w-full bg-slate-800/80 border border-slate-700 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 text-white rounded-xl py-2 pl-10 pr-4 text-sm outline-none transition-all placeholder:text-slate-500"
-                                />
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Password */}
-                    <div>
-                        <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">
-                            Password <span className="text-red-400">*</span>
-                        </label>
-                        <div className="relative">
-                            <Lock className="w-4 h-4 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
-                            <input
-                                type="password"
-                                required
-                                value={password}
-                                onChange={(e) => setPassword(e.target.value)}
-                                placeholder="Minimal 6 karakter"
-                                className="w-full bg-slate-800/80 border border-slate-700 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 text-white rounded-xl py-2 pl-10 pr-4 text-sm outline-none transition-all placeholder:text-slate-500"
-                            />
-                        </div>
-                    </div>
-
-                    <div className="p-2.5 rounded-xl bg-blue-500/10 border border-blue-500/20 text-blue-300 text-xs flex items-center gap-2">
-                        <CheckCircle2 className="w-4 h-4 text-blue-400 shrink-0" />
-                        <span>Akun pendaftar otomatis berstatus <strong>Siswa</strong>. Hak akses Admin/Proktor ditentukan oleh admin di aplikasi.</span>
-                    </div>
-
-                    <button
-                        type="submit"
-                        disabled={loading}
-                        className="w-full mt-3 py-2.5 px-4 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-semibold transition-all shadow-md shadow-blue-500/20 disabled:opacity-60 flex items-center justify-center gap-2 cursor-pointer text-sm"
-                    >
-                        {loading ? (
-                            <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                        ) : (
-                            <>
-                                <UserPlus className="w-4 h-4" />
-                                <span>Daftar Akun Siswa</span>
-                            </>
-                        )}
-                    </button>
-                </form>
+                <div className="p-3 rounded-xl bg-slate-800/60 border border-slate-700/80 text-slate-300 text-xs flex items-center gap-2 mb-4">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+                    <span>Akun baru otomatis terdaftar sebagai <strong>Siswa</strong>. Data asal sekolah & kelas dapat dilengkapi saat pertama kali masuk.</span>
+                </div>
 
                 {/* Footer link to Login */}
                 <div className="mt-5 text-center text-sm text-slate-400">

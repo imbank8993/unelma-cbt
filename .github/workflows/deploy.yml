@@ -1,4 +1,4 @@
-name: Build & Deploy ACCA CBT via Docker
+name: Build & Deploy UNELMA CBT via Docker
 
 on:
   push:
@@ -62,7 +62,7 @@ jobs:
     runs-on: ubuntu-latest
     # main and master deploy to the same VPS; do not interrupt a live rollout.
     concurrency:
-      group: acca-cbt-production-vps
+      group: unelma-cbt-production-vps
       cancel-in-progress: false
     permissions:
       contents: read
@@ -85,7 +85,7 @@ jobs:
           script: |
             set -e
             echo "🚀 Menghubungkan ke VPS..."
-            TARGET_DIR="${{ secrets.VPS_APP_DIR || '/www/wwwroot/acca-cbt-new' }}"
+            TARGET_DIR="${{ secrets.VPS_APP_DIR || '/www/wwwroot/unelma-cbt' }}"
             REPOSITORY_URL="https://github.com/$DEPLOY_REPOSITORY.git"
 
             # Also serialize remote scripts that outlive their Actions runner.
@@ -94,7 +94,7 @@ jobs:
               echo "flock diperlukan untuk mengunci proses deployment di VPS."
               exit 1
             }
-            exec 9>/var/lock/acca-cbt-production-deploy.lock
+            exec 9>/var/lock/unelma-cbt-production-deploy.lock
             echo "⏳ Menunggu deployment lain selesai..."
             flock -w 1500 9 || {
               echo "Deployment lain masih berjalan; tidak ada kontainer yang diubah."
@@ -145,7 +145,7 @@ jobs:
 
             echo "🔄 Me-restart kontainer ke versi terbaru..."
             docker compose down || true
-            docker rm -f cbt-web cbt-api cbt-scoring 2>/dev/null || true
+            docker rm -f cbt-web cbt-api cbt-scoring cbt-latex 2>/dev/null || true
             docker compose up -d --remove-orphans
 
             echo "🧹 Membersihkan image lama yang menggantung..."
@@ -153,4 +153,4 @@ jobs:
 
             echo "✅ Status kontainer saat ini:"
             docker compose ps
-            echo "🎉 Deployment ACCA CBT selesai dengan sukses!"
+            echo "🎉 Deployment UNELMA CBT selesai dengan sukses!"

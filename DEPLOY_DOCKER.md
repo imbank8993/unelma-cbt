@@ -12,7 +12,7 @@ Arsitektur multi-layanan dirancang agar berdampingan dengan proyek `acca-new` ta
 |---|---|---|---|---|
 | **acca-web** | Next.js | 3000 / 3006 | **3006** | Publik via Nginx aaPanel |
 | **acca-api** | Express / Nest | 3001 / 3007 | **3007** | Publik via Nginx aaPanel |
-| **cbt-web** | Next.js Standalone | 3008 | **3008** | **Publik via Nginx aaPanel (Reverse Proxy)** |
+| **cbt-web** | Next.js Standalone | 3018 | **3018** | **Publik via Nginx aaPanel (Reverse Proxy)** |
 | **cbt-api** | NestJS 10 | 3009 | *Tidak diekspos* | Internal Docker network (`cbt-network`) |
 | **cbt-scoring**| FastAPI / Python | 8000 | *Tidak diekspos* | Internal Docker network (`cbt-network`) |
 | **PostgreSQL** | PostgreSQL 16 | 5432 | 5432 (Host) | Diakses lewat `host.docker.internal:5432` |
@@ -26,8 +26,8 @@ Masuk ke terminal VPS via SSH, lalu jalankan:
 
 ```bash
 cd /www/wwwroot/
-git clone https://github.com/imbank8993/acca-cbt-new.git
-cd acca-cbt-new
+git clone https://github.com/imbank8993/unelma-cbt.git unelma-cbt
+cd unelma-cbt
 ```
 
 ### B. Konfigurasi Lingkungan (`.env`)
@@ -76,7 +76,7 @@ Pastikan ketiga service (`cbt-web`, `cbt-api`, `cbt-scoring`) berstatus `Up`.
    - **Reverse Proxy**:
      1. Klik tab **Reverse Proxy** -> Klik **Add reverse proxy**.
      2. Proxy Name: `cbt-proxy`
-     3. Target URL: `http://127.0.0.1:3008`
+     3. Target URL: `http://127.0.0.1:3018`
      4. Sent Host: `$host`
      5. Klik **Save**.
    - **SSL Certificate**:
@@ -100,7 +100,7 @@ Buka repositori Anda di GitHub -> **Settings** -> **Secrets and variables** -> *
 | `VPS_USERNAME` | `root` | Username SSH VPS |
 | `VPS_SSH_KEY` | *(Konten Private SSH Key)* | Private key dari pasangan kunci yang ada di VPS `~/.ssh/authorized_keys` |
 | `VPS_PORT` | `22` *(Opsional)* | Port SSH jika bukan port standar 22 |
-| `VPS_APP_DIR` | `/www/wwwroot/acca-cbt-new` | Path root proyek (sudah menjadi default) |
+| `VPS_APP_DIR` | `/www/wwwroot/unelma-cbt` | Path root proyek (default: `/www/wwwroot/unelma-cbt`) |
 
 ### Alur Kerja CI/CD
 Setiap kali Anda menjalankan `git push origin master` (atau `main`):
@@ -123,7 +123,7 @@ Setiap kali Anda menjalankan `git push origin master` (atau `main`):
 
 ```bash
 # Masuk ke folder proyek
-cd /www/wwwroot/acca-cbt-new
+cd /www/wwwroot/unelma-cbt
 
 # Melihat log langsung (live stream)
 docker compose logs -f
@@ -144,7 +144,7 @@ docker stats
 
 ## Perbaikan sesi SSO dan HTTPS (5 Oktober 2026)
 
-Pada domain CBT produksi, HTTP harus dialihkan di aaPanel/Nginx **sebelum** mencapai Next.js. Jangan mengalihkan berdasarkan protokol koneksi internal Docker: koneksi Nginx ke port 3008 memang HTTP, walaupun browser memakai HTTPS.
+Pada domain CBT produksi, HTTP harus dialihkan di aaPanel/Nginx **sebelum** mencapai Next.js. Jangan mengalihkan berdasarkan protokol koneksi internal Docker: koneksi Nginx ke port 3018 memang HTTP, walaupun browser memakai HTTPS.
 
 1. Set `NEXT_PUBLIC_SITE_URL=https://acca-cbt.icgowa.sch.id` dan `NEXT_PUBLIC_ACCA_URL=https://acca.icgowa.sch.id` pada `.env` VPS. Nilai build dan runtime harus sama. Bawaan domain lama `accav2-cbt` sudah diganti.
 2. Aktifkan **Force HTTPS** di SSL situs aaPanel. HTTP port 80 harus mengembalikan 301/308 ke `https://acca-cbt.icgowa.sch.id$request_uri`, bukan menyajikan halaman login dengan status 200. Pertahankan pengecualian ACME yang dikelola panel.

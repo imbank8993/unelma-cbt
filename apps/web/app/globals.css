@@ -55,7 +55,7 @@ mjx-container svg {
 
 .acca-hero-gradient {
   display: none !important;
-  background: linear-gradient(135deg, #3083FF 0%, #c2185b 100%) !important;
+  background: linear-gradient(135deg, #030C4D 0%, #0a1a5c 100%) !important;
 }
 
 /* ============================================
@@ -71,16 +71,16 @@ mjx-container svg {
   --card-foreground: #0f172a;
 
   /* Brand Colors - Primary Blue (ACCA Main Blue) */
-  --primary: #3083FF;
+  --primary: #030C4D;
   --primary-foreground: #ffffff;
-  --primary-light: #60a5fa;
-  --primary-hover: #2563eb;
+  --primary-light: #0a1a5c;
+  --primary-hover: #020510;
 
   /* Brand Colors - Accent */
-  --accent: #3083FF;
-  --accent-light: #60a5fa;
-  --accent-hover: #2563eb;
-  --accent-foreground: #ffffff;
+  --accent: #F8A01B;
+  --accent-light: #fbb954;
+  --accent-hover: #d88902;
+  --accent-foreground: #030C4D;
 
   /* Neutral Colors */
   --secondary: #f1f5f9;
@@ -92,7 +92,7 @@ mjx-container svg {
   --border: #e2e8f0;
   --border-light: #f1f5f9;
   --input: #e2e8f0;
-  --ring: #3083FF;
+  --ring: #030C4D;
 
   /* Status Colors */
   --success: #10b981;
@@ -121,15 +121,15 @@ mjx-container svg {
   --sidebar-text-active: #ffffff;
   --sidebar-accent: #0f172a;
   --sidebar-hover: #f1f5f9;
-  --sidebar-border: rgba(48, 131, 255, 0.16);
+  --sidebar-border: rgba(3, 12, 77, 0.16);
   --header-bg: #ffffff;
-  --header-border: rgba(48, 131, 255, 0.16);
+  --header-border: rgba(3, 12, 77, 0.16);
   --header-text: #1e293b;
   --n-bg: #ebecf1;
   --n-card: #ffffff;
   --n-surface: #ffffff;
-  --n-primary: #3083ff;
-  --n-border: rgba(48, 131, 255, 0.16);
+  --n-primary: #030C4D;
+  --n-border: rgba(3, 12, 77, 0.16);
   --font-sans: var(--font-poppins), 'Poppins', system-ui, -apple-system, sans-serif;
   --font-poppins: var(--font-poppins), 'Poppins', system-ui, -apple-system, sans-serif;
   --font-exam: var(--font-open-sans), 'Open Sans', system-ui, -apple-system, sans-serif;
@@ -154,12 +154,12 @@ mjx-container svg {
   --color-info: var(--info);
 
   /* Brand Colors */
-  --color-acca-navy: #3083FF;
-  --color-acca-orange: #3083FF;          /* Brand accent (kept name for compat) — now magenta */
-  --color-acca-orange-light: #60a5fa;    /* Light brand blue */
-  --color-acca-magenta: #3083FF;
-  --color-acca-magenta-light: #60a5fa;
-  --color-acca-navy-light: #60a5fa;
+  --color-acca-navy: #030C4D;
+  --color-acca-orange: #F8A01B;          /* Brand accent (kept name for compat) — now magenta */
+  --color-acca-orange-light: #fbb954;    /* Light brand blue */
+  --color-acca-magenta: #030C4D;
+  --color-acca-magenta-light: #0a1a5c;
+  --color-acca-navy-light: #0a1a5c;
 
   /* Fonts */
   --font-sans: var(--font-poppins), 'Poppins', system-ui, -apple-system, sans-serif;
