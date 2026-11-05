@@ -177,7 +177,7 @@ export default function ProktorQuestionBankPage() {
                     setIsDualRole(dualRoleStatus);
                     setCurrentUserId(user.id);
                     const [bankList, labelList, folderList, subjectList] = await Promise.all([
-                        listQuestionBanks(),
+                        listQuestionBanks(false, true),
                         listOrganizationLabels(),
                         listBankFolders(),
                         listSubjects()
@@ -486,19 +486,18 @@ export default function ProktorQuestionBankPage() {
             </div>
             <div className="flex flex-wrap items-center gap-1.5 shrink-0">
                 {(bank.canShare || bank.collaborationPermission) && <CollaborationButton type="bank" resourceId={bank.id} collaboratorCount={bank.collaboratorCount} onChanged={() => void loadData()} />}
-                {bank.canManage === true && (<Button
+                {bank.canPublish === true && (<Button
                     size="sm"
                     variant={bank.is_published ? "warning" : "primary"}
-                    disabled={bank.canManage !== true}
                     onClick={() => handleTogglePublish(bank)}
                 >
                     {bank.is_published ? 'Unpublish' : 'Publish'}
                 </Button>)}
-                <Link href={`/dashboard/proktor/questions/${bank.id}`}>
+                {bank.canRead === false ? <Button size="sm" variant="secondary" disabled title="Isi soal hanya tersedia bagi pembuat bank, pembuat folder, atau pihak yang diberi akses.">Terkunci</Button> : <Link href={`/dashboard/proktor/questions/${bank.id}`}>
                     <Button size="sm" variant="secondary" rightIcon={<ArrowRight size={14} />}>
                         Lihat
                     </Button>
-                </Link>
+                </Link>}
                 {bank.canManage === true && (<ActionButton
                     action="move"
                     iconOnly
@@ -525,64 +524,64 @@ export default function ProktorQuestionBankPage() {
     );
 
     const renderMobileBankCard = (bank: QuestionBank) => (
-            <div key={bank.id} className="bank-library-card bg-white border border-[#030C4D]/30 rounded-lg p-4 shadow-sm">
-                <div className="flex items-start gap-3 mb-3">
-                    <input
-                        type="checkbox"
-                        disabled={bank.canManage !== true}
+        <div key={bank.id} className="bank-library-card bg-white border border-[#030C4D]/30 rounded-lg p-4 shadow-sm">
+            <div className="flex items-start gap-3 mb-3">
+                <input
+                    type="checkbox"
+                    disabled={bank.canManage !== true}
         checked={selectedBankIds.has(bank.id)}
-                        onChange={() => toggleSelectBank(bank.id)}
-                        className="bank-checkbox bg-transparent w-4 h-4 text-[#030C4D] border-[#030C4D]/30 rounded focus:ring-2 focus:ring-[#030C4D]/20 shrink-0 cursor-pointer mt-0.5"
-                    />
-                    <div className="flex-1 min-w-0">
-                        <div className="flex flex-wrap items-center gap-2 mb-1">
-                            <span className={`px-2 py-0.5 rounded-lg text-[10px] font-semibold ${bank.is_published ? 'bg-[#030C4D]/10 text-[#030C4D] border border-[#030C4D]/30' : 'bg-red-50 text-red-600 border border-red-200'}`}>
-                                {bank.is_published ? 'Published' : 'Draft'}
-                            </span>
-                            <ValidationBadge summary={bank.validation_summary} />
-                            {bank.subject && <span className="text-xs text-slate-400">{bank.subject}</span>}
-                            {bank.class_level && <span className="text-xs text-slate-400">• {bank.class_level}</span>}
-                        </div>
-                        <h3 className="font-semibold text-slate-800 text-sm leading-snug break-words">{bank.title}</h3>
-                        <div className="flex flex-wrap items-center gap-2 text-[10px] text-slate-400 mt-0.5">
-                            <span>{bank.question_count || 0} soal</span>
-                            {bank.created_at && <><span>•</span><span>{formatDate(bank.created_at)}</span></>}
-                            <span>•</span><span>Oleh: {bank.creator_name}</span>
-                            {bank.tags && bank.tags.length > 0 && bank.tags.map((tag: string) => (
-                                <span
-                                    key={tag}
-                                    className="inline-flex items-center justify-center px-1.5 py-0.5 rounded-sm text-[9px] font-bold text-white ml-1 leading-none"
-                                    style={{ backgroundColor: getLabelColor(tag) }}
-                                >{tag}</span>
-                            ))}
-                        </div>
+                    onChange={() => toggleSelectBank(bank.id)}
+                    className="bank-checkbox bg-transparent w-4 h-4 text-[#030C4D] border-[#030C4D]/30 rounded focus:ring-2 focus:ring-[#030C4D]/20 shrink-0 cursor-pointer mt-0.5"
+                />
+                <div className="flex-1 min-w-0">
+                    <div className="flex flex-wrap items-center gap-2 mb-1">
+                        <span className={`px-2 py-0.5 rounded-lg text-[10px] font-semibold ${bank.is_published ? 'bg-[#030C4D]/10 text-[#030C4D] border border-[#030C4D]/30' : 'bg-red-50 text-red-600 border border-red-200'}`}>
+                            {bank.is_published ? 'Published' : 'Draft'}
+                        </span>
+                        <ValidationBadge summary={bank.validation_summary} />
+                        {bank.subject && <span className="text-xs text-slate-400">{bank.subject}</span>}
+                        {bank.class_level && <span className="text-xs text-slate-400">• {bank.class_level}</span>}
+                    </div>
+                    <h3 className="font-semibold text-slate-800 text-sm leading-snug break-words">{bank.title}</h3>
+                    <div className="flex flex-wrap items-center gap-2 text-[10px] text-slate-400 mt-0.5">
+                        <span>{bank.question_count || 0} soal</span>
+                        {bank.created_at && <><span>•</span><span>{formatDate(bank.created_at)}</span></>}
+                        <span>•</span><span>Oleh: {bank.creator_name}</span>
+                        {bank.tags && bank.tags.length > 0 && bank.tags.map((tag: string) => (
+                            <span
+                                key={tag}
+                                className="inline-flex items-center justify-center px-1.5 py-0.5 rounded-sm text-[9px] font-bold text-white ml-1 leading-none"
+                                style={{ backgroundColor: getLabelColor(tag) }}
+                            >{tag}</span>
+                        ))}
                     </div>
                 </div>
-                <div className="bank-card-mobile-actions flex items-center gap-1.5">
-                    {bank.canManage === true && (<Button
-                        aria-label={bank.is_published ? 'Unpublish' : 'Publish'}
-                        title={bank.is_published ? 'Unpublish' : 'Publish'}
-                        leftIcon={bank.is_published ? <CloudOff size={15} /> : <CloudUpload size={15} />}
-                        size="sm"
-                        variant={bank.is_published ? "warning" : "primary"}
-                        disabled={bank.canManage !== true}
-                    onClick={() => handleTogglePublish(bank)}
-                        className="bank-card-publish shrink-0"
-                    >
-                        {bank.is_published ? 'Unpublish' : 'Publish'}
-                    </Button>)}
-                    <Link href={`/dashboard/proktor/questions/${bank.id}`} className="shrink-0">
-                        <Button mobileIconOnly aria-label="Lihat bank soal" title="Lihat bank soal" size="sm" variant="secondary" leftIcon={<Eye size={16} />} className="w-full">
-                            Lihat
-                        </Button>
-                    </Link>
-                    {(bank.canShare || bank.collaborationPermission) && <CollaborationButton mobileIconOnly className="shrink-0" type="bank" resourceId={bank.id} collaboratorCount={bank.collaboratorCount} onChanged={() => void loadData()} />}
-                    {bank.canManage === true && (<Button mobileIconOnly aria-label="Edit bank soal" title="Edit bank soal" variant="outline" size="sm" leftIcon={<Edit3 size={16} />} disabled={bank.canManage !== true}
-                    onClick={() => handleOpenEdit(bank)} />)}
-                    {bank.canManage === true && (<Button mobileIconOnly aria-label="Hapus bank soal" title="Hapus bank soal" variant="danger" size="sm" leftIcon={<Trash2 size={16} />} disabled={bank.canDelete !== true}
-                    onClick={() => { setBankToDelete(bank); setIsDeleteModalOpen(true); }} />)}
-                </div>
             </div>
+            <div className="bank-card-mobile-actions flex items-center gap-1.5">
+                {bank.canPublish === true && (<Button
+                    aria-label={bank.is_published ? 'Unpublish' : 'Publish'}
+                    title={bank.is_published ? 'Unpublish' : 'Publish'}
+                    leftIcon={bank.is_published ? <CloudOff size={15} /> : <CloudUpload size={15} />}
+                    size="sm"
+                    variant={bank.is_published ? "warning" : "primary"}
+                    onClick={() => handleTogglePublish(bank)}
+                    className="bank-card-publish shrink-0"
+                >
+                    {bank.is_published ? 'Unpublish' : 'Publish'}
+                </Button>)}
+                {bank.canRead === false ? <Button mobileIconOnly aria-label="Bank soal terkunci" title="Isi soal hanya tersedia bagi pembuat bank, pembuat folder, atau pihak yang diberi akses." size="sm" variant="secondary" leftIcon={<Lock size={16} />} disabled>Terkunci</Button> : <Link href={`/dashboard/proktor/questions/${bank.id}`} className="shrink-0">
+                    <Button mobileIconOnly aria-label="Lihat bank soal" title="Lihat bank soal" size="sm" variant="secondary" leftIcon={<Eye size={16} />} className="w-full">
+                        Lihat
+                    </Button>
+                </Link>}
+                {(bank.canShare || bank.collaborationPermission) && <CollaborationButton mobileIconOnly className="shrink-0" type="bank" resourceId={bank.id} collaboratorCount={bank.collaboratorCount} onChanged={() => void loadData()} />}
+
+                {bank.canManage === true && (<Button mobileIconOnly aria-label="Edit bank soal" title="Edit bank soal" variant="outline" size="sm" leftIcon={<Edit3 size={16} />} disabled={bank.canManage !== true}
+                    onClick={() => handleOpenEdit(bank)} />)}
+                {bank.canManage === true && (<Button mobileIconOnly aria-label="Hapus bank soal" title="Hapus bank soal" variant="danger" size="sm" leftIcon={<Trash2 size={16} />} disabled={bank.canDelete !== true}
+                    onClick={() => { setBankToDelete(bank); setIsDeleteModalOpen(true); }} />)}
+            </div>
+        </div>
     );
 
     return (
