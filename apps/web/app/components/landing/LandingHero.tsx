@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import Script from 'next/script';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
-import { ArrowRight, ArrowDown, ShieldCheck, Sparkles, CheckCircle2, LayoutDashboard, Coins, BookOpen } from 'lucide-react';
+import { ArrowRight, ShieldCheck, Sparkles, CheckCircle2, LayoutDashboard, ChevronDown, Check, Lock } from 'lucide-react';
 import { setActiveRoleInStorage, lockActiveRole, getDashboardPath, type Role } from '@/lib/rbac';
 
 const GOOGLE_CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || '15496733034-vlkqs2ft95fgi3nnkbdm7eiq6i1ommem.apps.googleusercontent.com';
@@ -17,10 +17,10 @@ export default function LandingHero({ currentUser }: LandingHeroProps) {
     const [loading, setLoading] = useState(false);
     const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
-    const bullets = [
-        'Aplikasi CBT dan Bimbingan Belajar modern untuk mendukung proses pembelajaran serta evaluasi terstandar.',
-        'Akses materi bahan ajar terstruktur & modul ujian dengan sistem koin token yang fleksibel dan transparan.',
-        'Autentikasi tunggal akun Google resmi — akses cepat, aman, tanpa repot mengingat kata sandi tambahan.'
+    const highlights = [
+        'Ujian CBT modern & responsif dengan auto-save realtime setiap detik.',
+        'Sistem pengawasan terpadu dengan fullscreen lock & deteksi keluar jendela.',
+        'Autentikasi akun Google resmi — akses cepat, aman, tanpa perlu kata sandi terpisah.',
     ];
 
     const handleGoogleAuth = async (googleEmail: string, googleName: string, avatarUrl?: string) => {
@@ -106,130 +106,141 @@ export default function LandingHero({ currentUser }: LandingHeroProps) {
     };
 
     return (
-        <section id="home" className="relative min-h-[90vh] md:min-h-screen flex items-center overflow-hidden">
+        <section id="home" className="relative min-h-[92vh] md:min-h-screen flex items-center bg-white overflow-hidden pt-24 pb-16 md:pt-32 md:pb-20">
             <Script
                 src="https://accounts.google.com/gsi/client"
                 strategy="afterInteractive"
                 onLoad={initGoogleGsi}
             />
 
-            {/* Background Cover */}
-            <div
-                className="absolute inset-0 bg-cover bg-center bg-no-repeat"
-                style={{ backgroundImage: 'url(/layout.jpg)' }}
-            />
-            {/* Deep Navy Gradient Overlay */}
-            <div className="absolute inset-0 bg-gradient-to-r from-[#030C4D]/98 via-[#030C4D]/90 to-[#030C4D]/65" />
+            {/* Subtle elegant background radial gradient blobs */}
+            <div className="absolute top-10 left-1/2 -translate-x-1/2 w-[1000px] h-[550px] bg-gradient-to-b from-blue-50/50 via-amber-50/30 to-transparent rounded-full blur-3xl pointer-events-none -z-10" />
+            <div className="absolute -top-24 -left-24 w-96 h-96 bg-blue-100/30 rounded-full blur-3xl pointer-events-none -z-10" />
+            <div className="absolute top-1/2 -right-24 w-96 h-96 bg-amber-100/30 rounded-full blur-3xl pointer-events-none -z-10" />
 
-            <div className="container mx-auto px-4 md:px-6 relative z-10 w-full pt-28 pb-16 md:pt-36 md:pb-24">
-                <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-12 items-center">
+            <div className="container mx-auto px-4 md:px-6 relative z-10 w-full">
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-14 items-center">
                     
-                    {/* Left Column: Headlines */}
+                    {/* Left Column: Clean & Punchy Headlines */}
                     <motion.div
-                        initial={{ opacity: 0, y: 30 }}
+                        initial={{ opacity: 0, y: 24 }}
                         animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.7 }}
-                        className="lg:col-span-7 space-y-6 md:space-y-8"
+                        transition={{ duration: 0.6 }}
+                        className="lg:col-span-7 space-y-6 md:space-y-7"
                     >
-                        <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/10 border border-white/20 text-[#F8A01B] text-xs font-bold uppercase tracking-wider backdrop-blur-md">
-                            <Sparkles className="w-3.5 h-3.5" />
-                            <span>Platform Ujian CBT & Bimbingan Belajar</span>
+                        {/* Title */}
+                        <div className="space-y-3">
+                            <h1 className="text-3xl sm:text-5xl lg:text-6xl font-black text-slate-900 tracking-tight leading-[1.12]">
+                                Asesmen Digital Andal,{' '}
+                                <span className="text-[#030C4D]">Cepat</span> &{' '}
+                                <span className="text-[#F8A01B]">Berintegritas</span>
+                            </h1>
+                            <p className="text-slate-600 text-sm sm:text-base lg:text-lg leading-relaxed max-w-2xl font-normal">
+                                Solusi ujian berbasis komputer modern dari <strong className="text-[#030C4D] font-bold">Unelma Edu Indonesia</strong>. Dirancang bersih, akurat, dan stabil untuk kelancaran evaluasi pembelajaran.
+                            </p>
                         </div>
 
-                        <h1 className="text-3xl sm:text-5xl md:text-6xl font-black text-white leading-[1.15] tracking-tight">
-                            Unelma Edu <span className="text-[#F8A01B]">Indonesia</span>
-                        </h1>
-
-                        <ul className="space-y-4 max-w-2xl">
-                            {bullets.map((bullet, idx) => (
-                                <li key={idx} className="flex items-start gap-3.5 text-white/85 text-sm sm:text-base leading-relaxed">
-                                    <div className="w-2.5 h-2.5 rounded-full bg-[#F8A01B] mt-2 shrink-0 shadow-sm shadow-[#F8A01B]" />
-                                    <span>{bullet}</span>
+                        {/* Bullet Highlights */}
+                        <ul className="space-y-3 pt-1 max-w-xl">
+                            {highlights.map((item, idx) => (
+                                <li key={idx} className="flex items-start gap-3 text-slate-700 text-xs sm:text-sm leading-relaxed">
+                                    <div className="w-5 h-5 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0 mt-0.5 border border-emerald-200">
+                                        <Check size={12} strokeWidth={3} />
+                                    </div>
+                                    <span>{item}</span>
                                 </li>
                             ))}
                         </ul>
 
-                        <div className="flex flex-wrap items-center gap-4 pt-2">
-                            <a
-                                href="#paket-token"
-                                className="px-6 py-3 rounded-xl bg-[#F8A01B] hover:bg-[#e08e15] text-[#030C4D] font-bold text-sm transition-all shadow-lg shadow-[#F8A01B]/25 flex items-center gap-2 cursor-pointer"
+                        {/* Action Buttons */}
+                        <div className="flex flex-wrap items-center gap-4 pt-3">
+                            <button
+                                type="button"
+                                onClick={triggerGoogleSignIn}
+                                className="px-6 py-3.5 rounded-xl bg-[#030C4D] hover:bg-[#0a1a5c] text-white font-bold text-xs uppercase tracking-wider transition-all shadow-md hover:shadow-lg shadow-[#030C4D]/15 flex items-center gap-2.5 cursor-pointer"
                             >
-                                <Coins size={16} />
-                                <span>Lihat Paket Token</span>
-                                <ArrowRight size={16} />
-                            </a>
+                                <span>Mulai Masuk CBT</span>
+                                <ArrowRight size={15} className="text-[#F8A01B]" />
+                            </button>
+
                             <a
-                                href="#layanan"
-                                className="px-6 py-3 rounded-xl bg-white/10 hover:bg-white/20 border border-white/20 text-white font-semibold text-sm backdrop-blur-md transition-all cursor-pointer flex items-center gap-2"
+                                href="#keunggulan"
+                                className="px-6 py-3.5 rounded-xl bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 hover:text-[#030C4D] font-bold text-xs uppercase tracking-wider transition-all cursor-pointer flex items-center gap-2"
                             >
-                                <BookOpen size={16} />
-                                <span>Layanan & Program</span>
+                                <span>Lihat Keunggulan</span>
+                                <ChevronDown size={15} />
                             </a>
                         </div>
                     </motion.div>
 
-                    {/* Right Column: Google Login Box */}
+                    {/* Right Column: Clean White Authentication Card */}
                     <motion.div
-                        initial={{ opacity: 0, x: 40 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ duration: 0.7, delay: 0.2 }}
+                        initial={{ opacity: 0, scale: 0.96 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        transition={{ duration: 0.6, delay: 0.15 }}
                         className="lg:col-span-5 flex justify-center lg:justify-end"
                     >
-                        <div className="w-full max-w-md bg-white/15 backdrop-blur-2xl rounded-3xl border border-white/25 p-6 sm:p-8 shadow-2xl shadow-black/40 text-white">
-                            
+                        <div className="w-full max-w-md bg-white rounded-3xl border border-slate-200/90 p-7 sm:p-9 shadow-xl shadow-slate-200/50 relative overflow-hidden">
+                            {/* Accent top bar */}
+                            <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-[#030C4D] via-[#0a1a5c] to-[#F8A01B]" />
+
                             {currentUser ? (
-                                <div className="space-y-6 text-center">
-                                    <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-[#F8A01B] to-amber-400 text-[#030C4D] flex items-center justify-center mx-auto shadow-lg shadow-[#F8A01B]/30 font-black text-2xl">
-                                        <CheckCircle2 size={36} />
+                                /* Logged-in State Card */
+                                <div className="space-y-6 text-center py-2">
+                                    <div className="w-16 h-16 rounded-2xl bg-amber-50 border border-amber-200 text-[#030C4D] flex items-center justify-center mx-auto shadow-sm">
+                                        <CheckCircle2 size={36} className="text-[#F8A01B]" />
                                     </div>
-                                    <div>
-                                        <div className="text-xs uppercase tracking-wider text-white/70 font-semibold mb-1">
-                                            Sesi Masuk Aktif
+
+                                    <div className="space-y-1">
+                                        <div className="flex items-center justify-center gap-1.5 text-xs text-emerald-600 font-semibold mb-1">
+                                            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                                            <span>Sesi Masuk Aktif</span>
                                         </div>
-                                        <h3 className="text-xl font-bold text-white">
+                                        <h3 className="text-xl font-bold text-slate-900 truncate">
                                             {currentUser.name || currentUser.email}
                                         </h3>
-                                        <p className="text-xs text-white/80 mt-1">
-                                            Peran: <strong className="text-[#F8A01B] uppercase">{currentUser.role || 'User'}</strong>
+                                        <p className="text-xs text-slate-500">
+                                            Peran Aktif: <strong className="text-[#030C4D] font-bold uppercase">{currentUser.role || 'Pengguna'}</strong>
                                         </p>
                                     </div>
 
                                     <Link
                                         href="/dashboard"
-                                        className="w-full py-3.5 px-4 rounded-xl bg-[#F8A01B] hover:bg-[#e08e15] text-[#030C4D] font-bold text-sm transition-all shadow-lg shadow-[#F8A01B]/30 flex items-center justify-center gap-2"
+                                        className="w-full py-3.5 px-4 rounded-xl bg-[#030C4D] hover:bg-[#0a1a5c] text-white font-bold text-xs uppercase tracking-wider transition-all shadow-md flex items-center justify-center gap-2"
                                     >
-                                        <LayoutDashboard size={18} />
+                                        <LayoutDashboard size={16} className="text-[#F8A01B]" />
                                         <span>Buka Halaman Dashboard</span>
                                     </Link>
                                 </div>
                             ) : (
+                                /* Guest Login Card */
                                 <div className="space-y-5">
-                                    <div className="text-center space-y-1.5">
-                                        <div className="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-white/15 text-white mb-2 shadow-inner">
-                                            <ShieldCheck size={26} />
+                                    <div className="space-y-1.5 text-center">
+                                        <div className="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-[#030C4D]/5 text-[#030C4D] mb-2 border border-[#030C4D]/10">
+                                            <ShieldCheck size={26} className="text-[#030C4D]" />
                                         </div>
-                                        <h3 className="text-xl font-bold text-white tracking-tight">
-                                            Masuk ke Platform
+                                        <h3 className="text-xl font-bold text-slate-900 tracking-tight">
+                                            Masuk Portal CBT
                                         </h3>
-                                        <p className="text-xs text-white/75 leading-relaxed">
-                                            Gunakan akun Google resmi Anda untuk masuk atau mendaftar otomatis sebagai siswa.
+                                        <p className="text-xs text-slate-500 leading-relaxed">
+                                            Gunakan akun Google resmi Anda untuk masuk atau mendaftar otomatis sebagai peserta.
                                         </p>
                                     </div>
 
                                     {errorMsg && (
-                                        <div className="p-3 rounded-xl bg-red-500/20 border border-red-500/30 text-red-200 text-xs">
+                                        <div className="p-3 rounded-xl bg-red-50 border border-red-200 text-red-600 text-xs">
                                             {errorMsg}
                                         </div>
                                     )}
 
-                                    {/* Google Sign In Button */}
+                                    {/* Google Sign-In Button */}
                                     <button
                                         type="button"
                                         onClick={triggerGoogleSignIn}
                                         disabled={loading}
-                                        className="w-full py-3.5 px-4 rounded-xl bg-white hover:bg-slate-50 text-slate-800 font-bold transition-all shadow-xl hover:shadow-2xl flex items-center justify-center gap-3 cursor-pointer disabled:opacity-60 text-sm"
+                                        className="w-full py-3.5 px-4 rounded-xl bg-white hover:bg-slate-50 border border-slate-300 text-slate-800 font-semibold transition-all shadow-xs hover:shadow-md flex items-center justify-center gap-3 cursor-pointer disabled:opacity-60 text-xs sm:text-sm"
                                     >
-                                        <svg className="w-5 h-5 shrink-0" viewBox="0 0 24 24">
+                                        <svg className="w-4 h-4 sm:w-5 sm:h-5 shrink-0" viewBox="0 0 24 24">
                                             <path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.66-5.17 3.66-9.17z" />
                                             <path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.25v3.15C3.26 21.36 7.34 24 12 24z" />
                                             <path fill="#FBBC05" d="M5.28 14.27c-.25-.72-.38-1.49-.38-2.27s.13-1.55.38-2.27V6.58H1.25C.45 8.18 0 10.04 0 12s.45 3.82 1.25 5.42l4.03-3.15z" />
@@ -238,26 +249,24 @@ export default function LandingHero({ currentUser }: LandingHeroProps) {
                                         <span>{loading ? 'Memproses Masuk...' : 'Masuk dengan Akun Google'}</span>
                                     </button>
 
-                                    <div className="pt-2 text-center text-[11px] text-white/60 leading-relaxed">
-                                        Akun baru otomatis dibuat saat pertama kali masuk. Data foto & profil disinkronkan langsung dari akun Google Anda.
+                                    {/* Fallback to Manual Admin Login */}
+                                    <div className="pt-2 text-center border-t border-slate-100 space-y-2">
+                                        <p className="text-[11px] text-slate-500 leading-relaxed">
+                                            Akun baru dibuat otomatis saat pertama login Google.
+                                        </p>
+                                        <Link
+                                            href="/login"
+                                            className="inline-flex items-center gap-1.5 text-[11px] font-bold text-[#030C4D] hover:text-[#F8A01B] transition-colors"
+                                        >
+                                            <Lock size={12} />
+                                            <span>Opsi Masuk Manual / Proktor</span>
+                                        </Link>
                                     </div>
                                 </div>
                             )}
-
                         </div>
                     </motion.div>
 
-                </div>
-
-                {/* Bottom Scroll Indicator */}
-                <div className="flex justify-center pt-8 md:pt-14">
-                    <a
-                        href="#paket-token"
-                        className="w-10 h-10 rounded-full bg-white/10 hover:bg-[#F8A01B] text-white hover:text-[#030C4D] border border-white/20 flex items-center justify-center transition-all animate-bounce cursor-pointer shadow-lg"
-                        aria-label="Scroll down"
-                    >
-                        <ArrowDown size={18} />
-                    </a>
                 </div>
             </div>
         </section>

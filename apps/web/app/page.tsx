@@ -5,13 +5,12 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import LandingHeader from '@/app/components/landing/LandingHeader';
 import LandingHero from '@/app/components/landing/LandingHero';
-import LandingTokenPackages from '@/app/components/landing/LandingTokenPackages';
-import LandingServices from '@/app/components/landing/LandingServices';
-import LandingPosts from '@/app/components/landing/LandingPosts';
+import LandingFeatures from '@/app/components/landing/LandingFeatures';
+import LandingWorkflow from '@/app/components/landing/LandingWorkflow';
 import LandingFooter from '@/app/components/landing/LandingFooter';
 import { fetchSessionUser, clearSessionCache } from '@/lib/session';
 import { clearActiveRoleInStorage, setActiveRoleInStorage, lockActiveRole, getDashboardPath, type Role } from '@/lib/rbac';
-import { clearCbtSession, resetAndRetrySso } from '@/lib/session-reset';
+import { resetAndRetrySso } from '@/lib/session-reset';
 import { clearMemoryCache } from '@/lib/useMemoryState';
 
 type SsoFailure = { title: string; message: string; retryOnly?: boolean };
@@ -136,7 +135,7 @@ export default function Home() {
     if (failure) {
         return (
             <main className="min-h-screen bg-slate-50 flex items-center justify-center p-4 font-sans">
-                <div className="bg-white p-8 rounded-lg shadow-sm border border-slate-100 max-w-md w-full text-center">
+                <div className="bg-white p-8 rounded-2xl shadow-sm border border-slate-200/80 max-w-md w-full text-center">
                     <h1 className="text-xl font-bold text-slate-800 mb-2">{failure.title}</h1>
                     <p className="text-slate-500 mb-6 text-sm leading-relaxed">{failure.message}</p>
                     <button
@@ -149,13 +148,13 @@ export default function Home() {
                             await resetAndRetrySso();
                         }}
                         disabled={resetting}
-                        className="w-full bg-[#030C4D] hover:bg-[#020510] disabled:opacity-50 text-white font-bold py-3 rounded-lg transition-all shadow-sm"
+                        className="w-full bg-[#030C4D] hover:bg-[#020510] disabled:opacity-50 text-white font-bold py-3 rounded-xl transition-all shadow-sm cursor-pointer"
                     >
                         {failure.retryOnly ? 'Coba Lagi' : resetting ? 'Membersihkan…' : 'Bersihkan Sesi & Coba Lagi'}
                     </button>
                     <Link
                         href="/login"
-                        className="mt-3 block w-full bg-slate-100 hover:bg-slate-200 text-slate-600 font-semibold py-3 rounded-lg transition-all text-sm"
+                        className="mt-3 block w-full bg-slate-100 hover:bg-slate-200 text-slate-600 font-semibold py-3 rounded-xl transition-all text-sm"
                     >
                         Ke Halaman Login
                     </Link>
@@ -169,19 +168,16 @@ export default function Home() {
             {/* 1. Header Nav */}
             <LandingHeader currentUser={currentUser} />
 
-            {/* 2. Hero Section */}
+            {/* 2. Hero Section (White background with blue & orange accents) */}
             <LandingHero currentUser={currentUser} />
 
-            {/* 3. Paket Token CBT */}
-            <LandingTokenPackages />
+            {/* 3. Keunggulan Platform CBT */}
+            <LandingFeatures />
 
-            {/* 5. Layanan Unggulan */}
-            <LandingServices />
+            {/* 4. Alur Pelaksanaan Ujian */}
+            <LandingWorkflow />
 
-            {/* 6. Berita & Informasi */}
-            <LandingPosts />
-
-            {/* 7. Footer */}
+            {/* 5. Footer */}
             <LandingFooter />
         </main>
     );

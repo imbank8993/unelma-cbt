@@ -43,12 +43,8 @@ export async function generateMetadata(): Promise<Metadata> {
     description: "Platform CBT " + appName,
     manifest: "/manifest.webmanifest",
     icons: {
-      icon: [
-        { url: "/logo-sidebar-kecil.webp", media: "(prefers-color-scheme: light)" },
-        { url: "/logo-sidebar-kecil-dark.webp", media: "(prefers-color-scheme: dark)" },
-      ],
-      shortcut: "/logo-sidebar-kecil.webp",
-      apple: "/logo-sidebar-kecil.webp",
+      icon: [{ url: "/icon.svg", type: "image/svg+xml" }],
+      shortcut: "/icon.svg",
     },
   };
 }

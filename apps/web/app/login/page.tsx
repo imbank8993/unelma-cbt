@@ -1,12 +1,13 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import Image from 'next/image';
 import Script from 'next/script';
 import { getDashboardPath, type Role } from '@/lib/rbac';
 import { setActiveRoleInStorage, lockActiveRole } from '@/lib/rbac';
-import { LogIn, Mail, Lock, ShieldCheck, UserCheck, AlertCircle, Sparkles, School, Layers } from 'lucide-react';
+import { AlertCircle, ArrowLeft, Lock, Mail } from 'lucide-react';
 
 const GOOGLE_CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || '15496733034-vlkqs2ft95fgi3nnkbdm7eiq6i1ommem.apps.googleusercontent.com';
 
@@ -16,13 +17,6 @@ export default function LoginPage() {
     const [password, setPassword] = useState('');
     const [loading, setLoading] = useState(false);
     const [errorMsg, setErrorMsg] = useState<string | null>(null);
-
-    // Google modal simulation & fallback
-    const [showGoogleModal, setShowGoogleModal] = useState(false);
-    const [customGoogleEmail, setCustomGoogleEmail] = useState('');
-    const [customGoogleName, setCustomGoogleName] = useState('');
-    const [customGoogleSchool, setCustomGoogleSchool] = useState('');
-    const [customGoogleClass, setCustomGoogleClass] = useState('');
 
     const handleGoogleAuth = async (
         googleEmail: string,
@@ -78,8 +72,8 @@ export default function LoginPage() {
             const payload = JSON.parse(jsonPayload);
             await handleGoogleAuth(payload.email, payload.name, payload.picture);
         } catch (err) {
-            setErrorMsg('Gagal memproses autentikasi Google.');
-            setErrorMsg('Sedang memuat layanan Google. Silakan klik kembali atau muat ulang halaman.');
+            setErrorMsg('Gagal memproses autentikasi Google. Silakan klik kembali atau muat ulang halaman.');
+            setLoading(false);
         }
     };
 
@@ -148,41 +142,66 @@ export default function LoginPage() {
     };
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-indigo-950 flex items-center justify-center p-4 text-slate-100 font-sans">
+        <div className="min-h-screen bg-white flex flex-col items-center justify-center p-4 font-sans relative overflow-hidden text-slate-800">
             <Script
                 src="https://accounts.google.com/gsi/client"
                 strategy="afterInteractive"
                 onLoad={initGoogleGsi}
             />
 
-            <div className="w-full max-w-md bg-slate-900/80 backdrop-blur-xl border border-slate-700/60 rounded-2xl shadow-2xl p-8 relative overflow-hidden">
-                <div className="absolute -top-12 -right-12 w-36 h-36 bg-blue-500/20 rounded-full blur-2xl pointer-events-none" />
-                <div className="absolute -bottom-12 -left-12 w-36 h-36 bg-indigo-500/20 rounded-full blur-2xl pointer-events-none" />
+            {/* Subtle soft ambient background accents */}
+            <div className="absolute top-10 left-1/2 -translate-x-1/2 w-[700px] h-[400px] bg-gradient-to-b from-blue-50/50 via-amber-50/30 to-transparent rounded-full blur-3xl pointer-events-none -z-10" />
+            <div className="absolute -top-24 -left-24 w-80 h-80 bg-blue-100/30 rounded-full blur-3xl pointer-events-none -z-10" />
+            <div className="absolute top-1/2 -right-24 w-80 h-80 bg-amber-100/30 rounded-full blur-3xl pointer-events-none -z-10" />
+
+            {/* Card Container */}
+            <div className="w-full max-w-md bg-white rounded-3xl border border-slate-200/90 shadow-xl shadow-slate-200/50 p-8 sm:p-10 relative overflow-hidden">
+                {/* Accent top gradient bar */}
+                <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-[#030C4D] via-[#0a1a5c] to-[#F8A01B]" />
 
                 {/* Logo & Header */}
-                <div className="text-center mb-8 relative">
-                    <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-600 shadow-lg shadow-blue-500/30 mb-3">
-                        <ShieldCheck className="w-7 h-7 text-white" />
-                    </div>
-                    <h1 className="text-2xl font-bold tracking-tight text-white">Unelma CBT</h1>
-                    <p className="text-slate-400 text-sm mt-1">Platform Ujian Berbasis Komputer</p>
+                <div className="text-center mb-6">
+                    <Link href="/" className="inline-block group mb-3">
+                        <div className="w-16 h-16 mx-auto rounded-2xl bg-white border border-slate-200 shadow-xs flex items-center justify-center p-2 group-hover:scale-105 transition-transform">
+                            <Image
+                                src="/unelma.png"
+                                alt="Unelma Logo"
+                                width={56}
+                                height={56}
+                                className="object-contain"
+                                priority
+                            />
+                        </div>
+                    </Link>
+
+                    <h1 className="text-2xl font-black tracking-tight text-[#030C4D]">
+                        Unelma CBT
+                    </h1>
+                    <p className="text-xs text-slate-500 mt-1 font-medium">
+                        Platform Ujian & Asesmen Digital · <span className="text-[#F8A01B] font-bold">unelma.id</span>
+                    </p>
                 </div>
 
                 {errorMsg && (
-                    <div className="mb-6 p-3.5 rounded-xl bg-red-500/10 border border-red-500/30 text-red-400 text-sm flex items-start gap-2.5">
-                        <AlertCircle className="w-5 h-5 shrink-0 mt-0.5" />
+                    <div className="mb-5 p-3.5 rounded-xl bg-red-50 border border-red-200 text-red-600 text-xs flex items-start gap-2.5">
+                        <AlertCircle className="w-4 h-4 shrink-0 mt-0.5 text-red-500" />
                         <span>{errorMsg}</span>
                     </div>
                 )}
+
+                {/* Information text */}
+                <p className="text-xs text-slate-600 text-center leading-relaxed mb-5">
+                    Gunakan akun Google resmi Anda untuk masuk atau mendaftar otomatis sebagai peserta ujian.
+                </p>
 
                 {/* Google Sign-In Button */}
                 <button
                     type="button"
                     onClick={triggerGoogleSignIn}
                     disabled={loading}
-                    className="w-full flex items-center justify-center gap-3 py-3 px-4 rounded-xl bg-white hover:bg-slate-50 text-slate-800 font-semibold transition-all shadow-md hover:shadow-lg disabled:opacity-60 mb-6 cursor-pointer"
+                    className="w-full py-3.5 px-4 rounded-xl bg-white hover:bg-slate-50 border border-slate-300 hover:border-slate-400 text-slate-800 font-semibold transition-all shadow-xs hover:shadow-md flex items-center justify-center gap-3 cursor-pointer disabled:opacity-60 mb-2 text-xs sm:text-sm"
                 >
-                    <svg className="w-5 h-5" viewBox="0 0 24 24">
+                    <svg className="w-5 h-5 shrink-0" viewBox="0 0 24 24">
                         <path
                             fill="#4285F4"
                             d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.66-5.17 3.66-9.17z"
@@ -200,154 +219,69 @@ export default function LoginPage() {
                             d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.34 0 3.26 2.64 1.25 6.58l4.03 3.15c.95-2.83 3.6-4.98 6.72-4.98z"
                         />
                     </svg>
-                    <span>Masuk dengan Google</span>
+                    <span>{loading ? 'Menghubungkan...' : 'Masuk dengan Google'}</span>
                 </button>
 
-                {/* Informasi Akun Google Tunggal */}
-                <div className="bg-blue-500/10 border border-blue-500/20 rounded-xl p-3.5 mb-6 text-xs text-blue-300/90 leading-relaxed text-center">
-                    Masuk atau daftar baru dilakukan otomatis melalui akun Google. Foto profil & identitas utama disinkronkan langsung dari akun Google Anda.
-                </div>
+                <p className="text-[11px] text-slate-400 text-center leading-relaxed mb-6">
+                    Data nama dan foto profil disinkronkan langsung dari akun Google Anda.
+                </p>
 
                 {/* Form Darurat / Backup Admin (Opsional) */}
-                <details className="mt-4 text-center text-xs text-slate-500 cursor-pointer">
-                    <summary className="hover:text-slate-400 select-none">Opsi Masuk Manual (Khusus Administrator)</summary>
-                    <form onSubmit={handlePasswordLogin} className="mt-4 space-y-3 text-left">
-                        <div>
-                            <label className="block text-[11px] font-semibold uppercase tracking-wider text-slate-400 mb-1">
-                                Email
-                            </label>
-                            <input
-                                type="email"
-                                value={email}
-                                onChange={(e) => setEmail(e.target.value)}
-                                placeholder="admin@email.com"
-                                className="w-full bg-slate-800/80 border border-slate-700 focus:border-blue-500 text-white rounded-lg py-2 px-3 text-xs outline-none"
-                            />
-                        </div>
-                        <div>
-                            <label className="block text-[11px] font-semibold uppercase tracking-wider text-slate-400 mb-1">
-                                Password
-                            </label>
-                            <input
-                                type="password"
-                                value={password}
-                                onChange={(e) => setPassword(e.target.value)}
-                                placeholder="••••••••"
-                                className="w-full bg-slate-800/80 border border-slate-700 focus:border-blue-500 text-white rounded-lg py-2 px-3 text-xs outline-none"
-                            />
-                        </div>
-                        <button
-                            type="submit"
-                            disabled={loading}
-                            className="w-full py-2 px-3 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold border border-slate-700"
-                        >
-                            Masuk Manual
-                        </button>
-                    </form>
-                </details>
-            </div>
-
-            {/* Quick Google Test / Fallback Modal */}
-            {false && (
-                <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
-                    <div className="bg-slate-900 border border-slate-700 rounded-2xl max-w-md w-full p-6 shadow-2xl relative">
-                        <h3 className="text-lg font-bold text-white mb-1 flex items-center gap-2">
-                            <Sparkles className="w-5 h-5 text-blue-400" />
-                            Masuk Akun Google
-                        </h3>
-                        <p className="text-xs text-slate-400 mb-4">
-                            Pilih akun cepat atau masukkan akun Google untuk masuk:
-                        </p>
-
-                        {/* Quick Superadmin Button */}
-                        <div
-                            onClick={() => {
-                                setShowGoogleModal(false);
-                                handleGoogleAuth('unelma.edu@gmail.com', 'Superadmin');
-                            }}
-                            className="p-3.5 rounded-xl border border-blue-500/30 bg-blue-500/10 hover:bg-blue-500/20 cursor-pointer transition-all flex items-center justify-between mb-3 group"
-                        >
-                            <div className="flex items-center gap-3">
-                                <div className="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center text-white font-bold text-sm shadow">
-                                    UE
-                                </div>
-                                <div>
-                                    <div className="text-sm font-semibold text-white flex items-center gap-2">
-                                        unelma.edu@gmail.com
-                                        <span className="text-[10px] bg-blue-500 text-white px-2 py-0.5 rounded-full font-bold uppercase">
-                                            Superadmin
-                                        </span>
-                                    </div>
-                                    <div className="text-xs text-slate-400">Pemilik & Pengelola Utama Platform</div>
-                                </div>
-                            </div>
-                            <UserCheck className="w-5 h-5 text-blue-400 group-hover:scale-110 transition-transform" />
-                        </div>
-
-                        {/* Custom Google Account Form */}
-                        <div className="mt-4 pt-4 border-t border-slate-800">
-                            <span className="text-xs text-slate-400 block mb-2 font-medium">Atau masuk dengan akun Google lain:</span>
-                            <div className="space-y-2">
+                <div className="border-t border-slate-100 pt-5">
+                    <details className="text-center group">
+                        <summary className="text-xs font-semibold text-slate-500 hover:text-[#030C4D] cursor-pointer select-none transition-colors">
+                            Opsi Masuk Manual (Administrator & Proktor)
+                        </summary>
+                        <form onSubmit={handlePasswordLogin} className="mt-4 space-y-3 text-left">
+                            <div>
+                                <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-600 mb-1">
+                                    Email
+                                </label>
                                 <input
                                     type="email"
-                                    value={customGoogleEmail}
-                                    onChange={(e) => setCustomGoogleEmail(e.target.value)}
-                                    placeholder="contoh: siswa@gmail.com"
-                                    className="w-full bg-slate-800 border border-slate-700 text-white text-xs rounded-lg px-3 py-2 outline-none focus:border-blue-500"
+                                    value={email}
+                                    onChange={(e) => setEmail(e.target.value)}
+                                    placeholder="admin@unelma.id"
+                                    className="w-full bg-white border border-slate-300 focus:border-[#030C4D] text-slate-900 rounded-xl py-2.5 px-3 text-xs outline-none transition-colors shadow-2xs"
                                 />
-                                <input
-                                    type="text"
-                                    value={customGoogleName}
-                                    onChange={(e) => setCustomGoogleName(e.target.value)}
-                                    placeholder="Nama Lengkap Siswa"
-                                    className="w-full bg-slate-800 border border-slate-700 text-white text-xs rounded-lg px-3 py-2 outline-none focus:border-blue-500"
-                                />
-                                <div className="grid grid-cols-2 gap-2">
-                                    <input
-                                        type="text"
-                                        value={customGoogleSchool}
-                                        onChange={(e) => setCustomGoogleSchool(e.target.value)}
-                                        placeholder="Asal Sekolah"
-                                        className="w-full bg-slate-800 border border-slate-700 text-white text-xs rounded-lg px-3 py-2 outline-none focus:border-blue-500"
-                                    />
-                                    <input
-                                        type="text"
-                                        value={customGoogleClass}
-                                        onChange={(e) => setCustomGoogleClass(e.target.value)}
-                                        placeholder="Kelas (Opsional)"
-                                        className="w-full bg-slate-800 border border-slate-700 text-white text-xs rounded-lg px-3 py-2 outline-none focus:border-blue-500"
-                                    />
-                                </div>
-                                <button
-                                    type="button"
-                                    onClick={() => {
-                                        if (!customGoogleEmail) return;
-                                        setShowGoogleModal(false);
-                                        handleGoogleAuth(
-                                            customGoogleEmail,
-                                            customGoogleName || 'Pengguna Baru',
-                                            undefined,
-                                            customGoogleSchool || undefined,
-                                            customGoogleClass || undefined
-                                        );
-                                    }}
-                                    className="w-full py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-xs font-semibold transition-all cursor-pointer"
-                                >
-                                    Masuk dengan Akun Ini
-                                </button>
                             </div>
-                        </div>
-
-                        <button
-                            type="button"
-                            onClick={() => setShowGoogleModal(false)}
-                            className="mt-4 w-full py-2 text-xs text-slate-400 hover:text-white cursor-pointer"
-                        >
-                            Batal
-                        </button>
-                    </div>
+                            <div>
+                                <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-600 mb-1">
+                                    Password
+                                </label>
+                                <input
+                                    type="password"
+                                    value={password}
+                                    onChange={(e) => setPassword(e.target.value)}
+                                    placeholder="••••••••"
+                                    className="w-full bg-white border border-slate-300 focus:border-[#030C4D] text-slate-900 rounded-xl py-2.5 px-3 text-xs outline-none transition-colors shadow-2xs"
+                                />
+                            </div>
+                            <button
+                                type="submit"
+                                disabled={loading}
+                                className="w-full py-2.5 px-3 rounded-xl bg-[#030C4D] hover:bg-[#0a1a5c] text-white text-xs font-bold transition-all shadow-xs cursor-pointer disabled:opacity-50"
+                            >
+                                {loading ? 'Memproses...' : 'Masuk Manual'}
+                            </button>
+                        </form>
+                    </details>
                 </div>
-            )}
+            </div>
+
+            {/* Bottom Navigation */}
+            <div className="mt-6 text-center space-y-2">
+                <Link
+                    href="/"
+                    className="text-xs font-semibold text-slate-500 hover:text-[#030C4D] transition-colors inline-flex items-center gap-1.5"
+                >
+                    <ArrowLeft size={13} />
+                    <span>Kembali ke Beranda</span>
+                </Link>
+                <div className="text-[11px] text-slate-400">
+                    © 2026 Unelma Edu Indonesia · <a href="https://unelma.id" target="_blank" rel="noopener noreferrer" className="hover:text-[#F8A01B] underline">unelma.id</a>
+                </div>
+            </div>
         </div>
     );
 }

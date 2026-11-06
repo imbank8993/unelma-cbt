@@ -40,31 +40,46 @@ export default function LandingFooter() {
                             </div>
                         </div>
 
-                        <p className="text-xs sm:text-sm text-white/75 leading-relaxed max-w-sm">
-                            Platform Ujian Berbasis Komputer (CBT), Bimbingan Belajar, dan Pendampingan Zona Integritas Madrasah untuk mewujudkan transformasi pendidikan modern yang unggul dan berintegritas.
+                        <p className="text-xs sm:text-sm text-slate-300 leading-relaxed max-w-sm">
+                            Platform Ujian Berbasis Komputer (CBT) dan Evaluasi Belajar Digital yang bersih, andal, dan berintegritas untuk kemajuan pendidikan modern.
                         </p>
                     </div>
 
                     {/* Nav Links */}
                     <div className="md:col-span-3 space-y-3">
-                        <h4 className="text-sm font-bold text-[#F8A01B] uppercase tracking-wider">
+                        <h4 className="text-xs font-bold text-[#F8A01B] uppercase tracking-wider">
                             Navigasi Utama
                         </h4>
-                        <ul className="space-y-2 text-xs text-white/80">
-                            <li><a href="#home" className="hover:text-white transition-colors">Beranda</a></li>
-                            <li><a href="#paket-token" className="hover:text-white transition-colors">Paket Token CBT</a></li>
-                            <li><a href="#layanan" className="hover:text-white transition-colors">Layanan Unggulan</a></li>
-                            <li><a href="#posts" className="hover:text-white transition-colors">Artikel & Wawasan</a></li>
-                            <li><Link href="/login" className="hover:text-white transition-colors">Masuk Aplikasi CBT</Link></li>
+                        <ul className="space-y-2.5 text-xs text-slate-300">
+                            <li>
+                                <a href="#home" className="hover:text-white transition-colors">
+                                    Beranda
+                                </a>
+                            </li>
+                            <li>
+                                <a href="#keunggulan" className="hover:text-white transition-colors">
+                                    Keunggulan Platform
+                                </a>
+                            </li>
+                            <li>
+                                <a href="#alur" className="hover:text-white transition-colors">
+                                    Alur Pelaksanaan Ujian
+                                </a>
+                            </li>
+                            <li>
+                                <Link href="/login" className="hover:text-white transition-colors">
+                                    Masuk Aplikasi CBT
+                                </Link>
+                            </li>
                         </ul>
                     </div>
 
                     {/* Contact Info */}
                     <div className="md:col-span-4 space-y-3">
-                        <h4 className="text-sm font-bold text-[#F8A01B] uppercase tracking-wider">
+                        <h4 className="text-xs font-bold text-[#F8A01B] uppercase tracking-wider">
                             Hubungi Kami
                         </h4>
-                        <ul className="space-y-2.5 text-xs text-white/80">
+                        <ul className="space-y-2.5 text-xs text-slate-300">
                             <li className="flex items-start gap-2.5">
                                 <Mail size={15} className="text-[#F8A01B] shrink-0 mt-0.5" />
                                 <span>unelma.edu@gmail.com</span>
@@ -90,12 +105,12 @@ export default function LandingFooter() {
                 </div>
 
                 {/* Bottom Bar */}
-                <div className="pt-8 border-t border-white/10 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-white/60">
+                <div className="pt-8 border-t border-white/10 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-400">
                     <p>© 2026 Unelma Edu Indonesia. Hak cipta dilindungi undang-undang.</p>
                     
                     <button
                         onClick={scrollToTop}
-                        className="flex items-center gap-1.5 text-xs text-white/80 hover:text-[#F8A01B] transition-colors cursor-pointer"
+                        className="flex items-center gap-1.5 text-xs text-slate-300 hover:text-[#F8A01B] transition-colors cursor-pointer"
                     >
                         <span>Kembali ke atas</span>
                         <ArrowUp size={14} />
