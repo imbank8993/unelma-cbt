@@ -137,6 +137,8 @@ export default function QuestionBankDetailPage({ role }: QuestionBankDetailPageP
     const [categories, setCategories] = useMemoryState<string[]>(`${cachePrefix}_categories`, []);
     const [kisiKisi, setKisiKisi] = useState('');
     const [pembahasan, setPembahasan] = useState('');
+    const [explanationVideoUrl, setExplanationVideoUrl] = useState('');
+    const [explanationPdfUrl, setExplanationPdfUrl] = useState('');
     const [stimulusId, setStimulusId] = useState<string | null>(null);
     const [instructionId, setInstructionId] = useState<string | null>(null);
     const [dimensionId, setDimensionId] = useState<string | null>(null);
@@ -281,7 +283,9 @@ export default function QuestionBankDetailPage({ role }: QuestionBankDetailPageP
             setMetadata(q.metadata || {});
             setCategories(q.metadata?.categories || []);
             setKisiKisi(q.metadata?.kisi_kisi || '');
-            setPembahasan(q.metadata?.pembahasan || '');
+            setPembahasan(q.explanation_html || q.metadata?.pembahasan || '');
+            setExplanationVideoUrl(q.explanation_video_url || '');
+            setExplanationPdfUrl(q.explanation_pdf_url || '');
             setStimulusId(q.stimulus_id || null);
             setInstructionId(q.instruction_id || null);
             setDimensionId(q.dimension_id || null);
@@ -301,6 +305,8 @@ export default function QuestionBankDetailPage({ role }: QuestionBankDetailPageP
             setEditingQuestion(null);
             setQuestionText('');
             setPembahasan('');
+            setExplanationVideoUrl('');
+            setExplanationPdfUrl('');
             setSelectedType('mcq');
             setScoreDefault(1);
             setMetadata({});
@@ -1187,6 +1193,10 @@ export default function QuestionBankDetailPage({ role }: QuestionBankDetailPageP
                     handleOpenPreview={handleOpenView}
                     setIsEquationBuilderOpen={setIsEquationBuilderOpen}
                     pembahasan={pembahasan}
+                    explanationVideoUrl={explanationVideoUrl}
+                    setExplanationVideoUrl={setExplanationVideoUrl}
+                    explanationPdfUrl={explanationPdfUrl}
+                    setExplanationPdfUrl={setExplanationPdfUrl}
                     setPembahasan={setPembahasan}
                     pembLatexInput={pembLatexInput}
                     setPembLatexInput={setPembLatexInput}

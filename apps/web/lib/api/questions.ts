@@ -195,6 +195,9 @@ export interface QuestionRecord {
     instruction_id?: string | null;
     dimension_id?: string | null;
     kisi_kisi_id?: string | null;
+    explanation_video_url?: string | null;
+    explanation_pdf_url?: string | null;
+    explanation_html?: string | null;
     stimulus?: BankTextItem | null;
     instruction?: BankTextItem | null;
     /** Relasi dimensi seperti dikirim API (`dimension:cbt_question_dimensions`). */

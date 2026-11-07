@@ -167,32 +167,26 @@ export default function AdminTokensPage() {
     return (
         <div className="max-w-7xl mx-auto space-y-8 pb-16">
             
-            {/* Header Banner */}
-            <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-[#030C4D] via-[#071360] to-[#030C4D] text-white p-6 md:p-8 shadow-xl">
-                <div className="absolute top-0 right-0 w-80 h-80 bg-[#F8A01B]/15 rounded-full blur-3xl pointer-events-none" />
-                <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-4">
-                    <div className="space-y-2">
-                        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 text-[#F8A01B] text-xs font-bold uppercase tracking-wider">
-                            <Coins size={14} />
-                            <span>Pengaturan Monetisasi & Token</span>
-                        </div>
-                        <h1 className="text-2xl md:text-3xl font-black tracking-tight text-white">
-                            Kelola Paket Token & Gateway Midtrans
-                        </h1>
-                        <p className="text-xs md:text-sm text-white/75 max-w-2xl leading-relaxed">
-                            Atur jumlah token dan harga paket yang tampil di halaman beranda serta dashboard siswa. Hubungkan dengan akun payment gateway Midtrans untuk penerimaan otomatis.
-                        </p>
-                    </div>
-
-                    <button
-                        type="button"
-                        onClick={openAddModal}
-                        className="px-5 py-3 rounded-xl bg-[#F8A01B] hover:bg-[#e08e15] text-[#030C4D] font-bold text-sm transition-all shadow-lg shadow-[#F8A01B]/20 flex items-center gap-2 self-start md:self-auto cursor-pointer"
-                    >
-                        <Plus size={18} />
-                        <span>Tambah Paket Token</span>
-                    </button>
+            {/* Page Header (Clean & Elegan) */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div>
+                    <h1 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight flex items-center gap-2.5">
+                        <Coins className="text-[#030C4D]" size={24} />
+                        <span>Paket Token & Midtrans</span>
+                    </h1>
+                    <p className="text-xs text-slate-500 mt-0.5">
+                        Atur harga paket token siswa dan kredensial payment gateway Midtrans.
+                    </p>
                 </div>
+
+                <button
+                    type="button"
+                    onClick={openAddModal}
+                    className="px-4 py-2.5 rounded-xl bg-[#030C4D] hover:bg-[#020510] text-white font-bold text-xs transition-all shadow-xs flex items-center gap-2 self-start sm:self-auto cursor-pointer"
+                >
+                    <Plus size={16} />
+                    <span>Tambah Paket Token</span>
+                </button>
             </div>
 
             {/* Token Packages Table */}

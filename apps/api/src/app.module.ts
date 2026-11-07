@@ -23,6 +23,7 @@ import { StorageModule } from './storage/storage.module';
 import { StudentsModule } from './students/students.module';
 import { TeachersModule } from './teachers/teachers.module';
 import { TokensModule } from './tokens/tokens.module';
+import { CommissionsModule } from './commissions/commissions.module';
 
 /**
  * Modul domain ditambahkan bertahap seiring server action dipindahkan.
@@ -55,6 +56,7 @@ import { TokensModule } from './tokens/tokens.module';
     LearningModule,
     ValidationsModule,
     TokensModule,
+    CommissionsModule,
   ],
 })
 export class AppModule {}

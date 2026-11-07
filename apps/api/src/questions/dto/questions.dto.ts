@@ -146,6 +146,21 @@ export class SaveQuestionDto {
     @Type(() => QuestionOptionDto)
     @ArrayMaxSize(100, { message: 'Maksimal 100 opsi per soal.' })
     options?: QuestionOptionDto[];
+
+    @ApiPropertyOptional()
+    @IsOptional()
+    @IsString()
+    explanation_video_url?: string | null;
+
+    @ApiPropertyOptional()
+    @IsOptional()
+    @IsString()
+    explanation_pdf_url?: string | null;
+
+    @ApiPropertyOptional()
+    @IsOptional()
+    @IsString()
+    explanation_html?: string | null;
 }
 
 export class UpdateQuestionMetadataDto {

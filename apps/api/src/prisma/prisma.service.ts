@@ -8,7 +8,8 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
   async onModuleInit() {
     try {
       await this.$connect();
-      this.logger.log('Prisma Client terhubung ke PostgreSQL (acca_db)');
+      const dbName = process.env.DATABASE_URL?.split('/')?.pop()?.split('?')[0] || 'PostgreSQL';
+      this.logger.log(`Prisma Client terhubung ke PostgreSQL (${dbName})`);
     } catch (error) {
       // Koneksi tidak diputus paksa: Prisma menyambung ulang secara malas pada
       // query pertama. Membuat bootstrap gagal di sini berarti seluruh API mati

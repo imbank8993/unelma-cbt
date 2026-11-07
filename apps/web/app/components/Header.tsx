@@ -143,9 +143,9 @@ export default function Header({
                         </h1>
                         <span
                             className={`header-subtitle ${isDashboard ? 'header-subtitle--name' : ''}`}
-                            title={isDashboard ? displayName : (pageSubtitle || 'MAN Insan Cendekia Gowa')}
+                            title={isDashboard ? displayName : (pageSubtitle || 'Unelma Edu Indonesia')}
                         >
-                            {isDashboard ? displayName : (pageSubtitle || 'MAN Insan Cendekia Gowa')}
+                            {isDashboard ? displayName : (pageSubtitle || 'Unelma Edu Indonesia')}
                         </span>
                     </div>
 
@@ -178,8 +178,8 @@ export default function Header({
                                         {pageTitle || 'ACCA CBT'}
                                     </h1>
                                 </div>
-                                <span className="header-greeting-name header-pageSubtitle" title={pageSubtitle || 'MAN Insan Cendekia Gowa'}>
-                                    {pageSubtitle || 'MAN Insan Cendekia Gowa'}
+                                <span className="header-greeting-name header-pageSubtitle" title={pageSubtitle || 'Unelma Edu Indonesia'}>
+                                    {pageSubtitle || 'Unelma Edu Indonesia'}
                                 </span>
                             </div>
                         )}

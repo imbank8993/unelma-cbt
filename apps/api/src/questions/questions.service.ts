@@ -175,6 +175,9 @@ export class QuestionsService {
         // kesulitan dan memutus tautan kisi-kisi hasil impor.
         if (dto.difficulty !== undefined || !dto.id) payload.difficulty = dto.difficulty ?? 'medium';
         if (dto.kisi_kisi_id !== undefined || !dto.id) payload.kisi_kisi_id = dto.kisi_kisi_id || null;
+        if (dto.explanation_video_url !== undefined) payload.explanation_video_url = dto.explanation_video_url || null;
+        if (dto.explanation_pdf_url !== undefined) payload.explanation_pdf_url = dto.explanation_pdf_url || null;
+        if (dto.explanation_html !== undefined) payload.explanation_html = dto.explanation_html || null;
         const saved = await this.db.transaction(async db => {
             let questionId: string;
 

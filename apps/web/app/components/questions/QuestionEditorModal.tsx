@@ -95,6 +95,10 @@ interface QuestionEditorModalProps {
     setImageToCrop: (src: string | null) => void;
     setCropperContext: (ctx: { type: 'question' | 'option'; index?: number }) => void;
     pembahasan: string;
+    explanationVideoUrl?: string;
+    setExplanationVideoUrl?: (val: string) => void;
+    explanationPdfUrl?: string;
+    setExplanationPdfUrl?: (val: string) => void;
     setPembahasan: Dispatch<SetStateAction<string>>;
     pembLatexInput: string;
     setPembLatexInput: Dispatch<SetStateAction<string>>;
@@ -1173,6 +1177,66 @@ export default function QuestionEditorModal({
                                         onUpdateOption={updateOption}
                                     />
                                 )}
+                            </div>
+                        </div>
+
+                        {/* Card: Pembahasan Soal (Video, PDF, HTML) */}
+                        <div className="bg-white rounded-lg border border-slate-100 shadow-sm overflow-hidden mt-6">
+                            <div className="px-5 py-3 border-b border-slate-50 flex items-center justify-between bg-slate-50/60">
+                                <div className="flex items-center gap-2">
+                                    <div className="w-6 h-6 bg-amber-100 rounded-lg flex items-center justify-center text-amber-700">
+                                        <BookOpen size={13} />
+                                    </div>
+                                    <div>
+                                        <span className="text-xs font-bold text-slate-800 uppercase tracking-wider">Pembahasan Soal</span>
+                                        <span className="text-[11px] text-slate-400 block font-normal">Video link, file PDF, dan teks pembahasan HTML per nomor soal</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div className="p-5 space-y-4">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div>
+                                        <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
+                                            Link Video Pembahasan (URL)
+                                        </label>
+                                        <input
+                                            type="url"
+                                            placeholder="https://youtube.com/watch?v=... atau link video"
+                                            value={explanationVideoUrl || ''}
+                                            onChange={(e) => setExplanationVideoUrl && setExplanationVideoUrl(e.target.value)}
+                                            className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-[#030C4D]/20 focus:border-[#030C4D]"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
+                                            Link Dokumen PDF Pembahasan (URL)
+                                        </label>
+                                        <input
+                                            type="url"
+                                            placeholder="https://.../pembahasan.pdf"
+                                            value={explanationPdfUrl || ''}
+                                            onChange={(e) => setExplanationPdfUrl && setExplanationPdfUrl(e.target.value)}
+                                            className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-[#030C4D]/20 focus:border-[#030C4D]"
+                                        />
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
+                                        Teks Pembahasan / HTML
+                                    </label>
+                                    <TipTapEditor
+                                        content={pembahasan || ''}
+                                        onChange={setPembahasan}
+                                        placeholder="Tuliskan pembahasan dan solusi nomor soal ini di sini..."
+                                        minHeight="140px"
+                                        onImageUpload={async (file) => {
+                                            const res = await uploadToHosting(file, 'questions');
+                                            if (res.success && res.url) return res.url;
+                                            throw new Error('Gagal unggah gambar pembahasan');
+                                        }}
+                                    />
+                                </div>
                             </div>
                         </div>
                     </div>

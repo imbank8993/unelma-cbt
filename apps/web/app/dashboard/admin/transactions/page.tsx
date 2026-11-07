@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from 'react';
-import { CreditCard, Search, Coins, RefreshCw, CheckCircle2, Clock, XCircle, ArrowUpRight, BookOpen, ClipboardCheck } from 'lucide-react';
+import { CreditCard, Search, Coins, RefreshCw, CheckCircle2, Clock, XCircle, ArrowUpRight, BookOpen, ClipboardCheck, Receipt } from 'lucide-react';
 import { getAdminPurchasesTracker, getAdminUsagesTracker, type PaymentTransaction, type TokenTransaction } from '@/lib/api/tokens';
 
 export default function AdminTransactionsTrackerPage() {
@@ -52,21 +52,15 @@ export default function AdminTransactionsTrackerPage() {
     return (
         <div className="max-w-7xl mx-auto space-y-8 pb-16">
             
-            {/* Header Banner */}
-            <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-[#030C4D] via-[#071360] to-[#030C4D] text-white p-6 md:p-8 shadow-xl">
-                <div className="absolute top-0 right-0 w-80 h-80 bg-[#F8A01B]/15 rounded-full blur-3xl pointer-events-none" />
-                <div className="relative z-10 space-y-2">
-                    <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 text-[#F8A01B] text-xs font-bold uppercase tracking-wider">
-                        <CreditCard size={14} />
-                        <span>Audit & Pelacakan Keuangan</span>
-                    </div>
-                    <h1 className="text-2xl md:text-3xl font-black tracking-tight text-white">
-                        Tracker Transaksi & Pemakaian Token
-                    </h1>
-                    <p className="text-xs md:text-sm text-white/75 max-w-2xl leading-relaxed">
-                        Pantau seluruh aliran pembelian token via Midtrans serta histori debit token ketika siswa membuka ujian dan bahan ajar berbayar.
-                    </p>
-                </div>
+            {/* Page Header (Clean & Elegan) */}
+            <div>
+                <h1 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight flex items-center gap-2.5">
+                    <Receipt className="text-[#030C4D]" size={24} />
+                    <span>Tracker Transaksi & Pemakaian Token</span>
+                </h1>
+                <p className="text-xs text-slate-500 mt-0.5">
+                    Pantau transaksi pembelian token Midtrans dan riwayat pemakaian token siswa saat membuka ujian dan materi.
+                </p>
             </div>
 
             {/* Navigation Tabs */}
