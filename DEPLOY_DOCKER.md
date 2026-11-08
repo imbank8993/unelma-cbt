@@ -182,7 +182,7 @@ Rilis ini membuat penilaian submit berjalan paralel dan menambah pool koneksi Pr
 (`DB_CONNECTION_LIMIT`, bawaan 30). Setelah rilis ter-deploy, jalankan di VPS:
 
 ```bash
-cd /www/wwwroot/acca-cbt-new
+cd /www/wwwroot/unelma-cbt
 bash tools/vps/cbt-kapasitas.sh cek        # hanya membaca: kode, PostgreSQL, pool, rekomendasi
 bash tools/vps/cbt-kapasitas.sh terapkan   # tulis DB_CONNECTION_LIMIT ke .env (dengan cadangan) lalu buat ulang cbt-api
 bash tools/vps/cbt-kapasitas.sh pantau     # pantauan langsung koneksi, lock, dan error saat ujian
@@ -192,3 +192,5 @@ bash tools/vps/cbt-kapasitas.sh pantau     # pantauan langsung koneksi, lock, da
 melebihi sisa `max_connections`, dan hanya membangun ulang image bila API yang berjalan
 masih versi lama. Jangan menjalankannya saat ujian sedang berlangsung: cbt-api dinyalakan
 ulang (sekitar 10–30 detik). Tidak ada migrasi database.
+
+unelma-cbt dan acca-cbt-new memakai server PostgreSQL yang sama, sehingga pool keduanya (masing-masing bawaan 30) berbagi satu `max_connections`. Jalankan `terapkan` di salah satu proyek setelah proyek lainnya sudah diterapkan: rekomendasinya dihitung dari koneksi yang sedang dipakai. Bila sisa koneksi tipis, naikkan `max_connections` PostgreSQL (mis. 200) di luar jam ujian.
