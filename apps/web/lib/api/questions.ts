@@ -358,6 +358,9 @@ export async function saveQuestionAction(data: {
     instructionId?: string | null;
     dimensionId?: string | null;
     kisi_kisi_id?: string | null;
+    explanation_video_url?: string | null;
+    explanation_pdf_url?: string | null;
+    explanation_html?: string | null;
     options?: {
         id?: string;
         text: string;

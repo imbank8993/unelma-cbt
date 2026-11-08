@@ -163,6 +163,11 @@ export default function QuestionEditorModal({
     isSubmitting,
     setIsSubmitting,
     pembahasan,
+    setPembahasan,
+    explanationVideoUrl = '',
+    setExplanationVideoUrl,
+    explanationPdfUrl = '',
+    setExplanationPdfUrl,
     stimulusId,
     setStimulusId,
     instructionId,
@@ -367,6 +372,9 @@ export default function QuestionEditorModal({
             // Dulu tidak dikirim, sehingga pilihan kisi-kisi di editor tidak pernah
             // tersimpan dan tautan kisi-kisi hasil impor terhapus saat disunting.
             kisi_kisi_id: kisiKisiId || null,
+            explanation_video_url: explanationVideoUrl || null,
+            explanation_pdf_url: explanationPdfUrl || null,
+            explanation_html: pembahasan || null,
             metadata: {
                 ...metadata,
                 categories: selectedType === 'categorization' ? categories : [],
