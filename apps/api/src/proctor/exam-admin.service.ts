@@ -68,7 +68,7 @@ export class ExamAdminService {
         const sharedClause = sharedIds.length ? `,id.in.(${sharedIds.join(',')})` : '';
         const restrictedProctor = !user.isPlatformAdmin && !user.resolved?.superadmin &&
             await this.roles.hasOrgRole(user.id, organizationId, ['Proktor']) && !await this.roles.hasOrgRole(user.id, organizationId, ['Admin']);
-        if (restrictedProctor) query = sharedClause ? query.or(`created_by.eq.${user.id}${sharedClause}`) : query.eq('created_by', user.id);
+        if (restrictedProctor) query = query.or(`created_by.eq.${user.id},is_published.eq.true,exam_type.in.(pas,pat,pts,pkn,am)${sharedClause}`);
         else if (!canSeeAll) {
             // Cari bank soal milik guru ini
             const { data: ownedBanks } = await this.db

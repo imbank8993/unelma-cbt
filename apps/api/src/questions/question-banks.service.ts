@@ -108,7 +108,7 @@ export class QuestionBanksService {
                 }
             }
         }
-        if (restrictedProctor) query = query.eq('created_by', user.id);
+        if (restrictedProctor) query = query.or(`created_by.eq.${user.id},is_published.eq.true`);
         else if (!elevated) {
             const clauses = [`created_by.eq.${user.id}`];
             if (sharedIds.length) clauses.push(`id.in.(${sharedIds.join(',')})`);
