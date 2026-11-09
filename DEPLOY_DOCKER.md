@@ -194,3 +194,16 @@ masih versi lama. Jangan menjalankannya saat ujian sedang berlangsung: cbt-api d
 ulang (sekitar 10–30 detik). Tidak ada migrasi database.
 
 unelma-cbt dan acca-cbt-new memakai server PostgreSQL yang sama, sehingga pool keduanya (masing-masing bawaan 30) berbagi satu `max_connections`. Jalankan `terapkan` di salah satu proyek setelah proyek lainnya sudah diterapkan: rekomendasinya dihitung dari koneksi yang sedang dipakai. Bila sisa koneksi tipis, naikkan `max_connections` PostgreSQL (mis. 200) di luar jam ujian.
+
+## Memindahkan gambar base64 soal lama (9 November 2026)
+
+Soal yang dulu diimpor dari Word bisa menyimpan gambar sebagai base64 di dalam teks soal. Data itu memperberat database, setiap pemuatan soal, dan setiap pengumpulan ujian. Impor baru sudah mengunggah gambar sebagai berkas; soal lama dipindahkan dengan:
+
+```bash
+cd /www/wwwroot/unelma-cbt
+bash tools/vps/pindahkan-gambar-base64.sh cek        # hanya membaca: lokasi dan ukuran base64
+bash tools/vps/pindahkan-gambar-base64.sh jalankan   # unggah gambar, ganti dengan URL (minta konfirmasi)
+bash tools/vps/pindahkan-gambar-base64.sh pulihkan /var/backups/unelma-cbt/gambar-base64-<waktu>.ndjson
+```
+
+Yang dipindahkan: bank soal, opsi, stimulus, petunjuk, dan salinan soal ujian (wajib ikut agar siswa berhak membuka gambarnya). Nilai asli tiap baris dicadangkan ke `/var/backups/<proyek>/` sebelum diubah. Skrip menolak berjalan bila ada ujian yang sedang dikerjakan, memegang kunci deployment yang sama dengan GitHub Actions, dan aman dijalankan ulang. Gambar EMF/WMF dibiarkan karena tidak dapat ditampilkan browser.
