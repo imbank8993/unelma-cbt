@@ -49,6 +49,9 @@ export class SettingsController {
     @Get(':key')
     @ApiOperation({ summary: 'Satu pengaturan berdasarkan key' })
     async findOne(@CurrentUser() user: AuthUser, @Param('key') key: string) {
+        if (SettingsService.isDedicated(key)) {
+            throw new ForbiddenException('Pengaturan ini hanya dapat diakses melalui menu khususnya.');
+        }
         if (SettingsService.isSensitive(key)) {
             const elevated =
                 user.isPlatformAdmin ||
@@ -71,6 +74,9 @@ export class SettingsController {
     @Roles('ADMIN', 'PROKTOR')
     @ApiOperation({ summary: 'Simpan satu pengaturan' })
     async upsert(@Body() dto: UpsertSettingDto) {
+        if (SettingsService.isDedicated(dto.key)) {
+            throw new ForbiddenException('Pengaturan ini hanya dapat diubah melalui menu khususnya.');
+        }
         await this.settings.upsert(dto.key, dto.value);
         return { key: dto.key };
     }

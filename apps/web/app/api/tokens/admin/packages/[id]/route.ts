@@ -6,7 +6,7 @@ export async function PUT(
   context: { params: Promise<{ id: string }> },
 ) {
   const { id } = await context.params;
-  return proxyJson(request, `/tokens/admin/packages/${id}`, 'PUT');
+  return proxyJson(request, `/tokens/admin/packages/${encodeURIComponent(id)}`, 'PUT');
 }
 
 export async function DELETE(
@@ -14,5 +14,5 @@ export async function DELETE(
   context: { params: Promise<{ id: string }> },
 ) {
   const { id } = await context.params;
-  return proxyJson(request, `/tokens/admin/packages/${id}`, 'DELETE');
+  return proxyJson(request, `/tokens/admin/packages/${encodeURIComponent(id)}`, 'DELETE');
 }

@@ -252,3 +252,20 @@ Fitur ini memerlukan migrasi berikut (tanpa migrasi, tombol menampilkan pesan da
 ```bash
 psql "$DATABASE_URL_HOST" -f database/migrations/20261110_01_exam_cancellations.sql
 ```
+
+## Keamanan paket token & Midtrans (11 November 2026)
+
+Perbaikan celah pada pembelian token dan halaman **Paket Token & Midtrans**:
+
+- Webhook Midtrans wajib bertanda tangan sah (`signature_key`) dan status pembayaran dikonfirmasi ulang ke API Status Midtrans, termasuk nominalnya; notifikasi ganda hanya mengkredit token sekali. Server API harus bisa menjangkau `api.midtrans.com` dan `api.sandbox.midtrans.com` (bila gagal, webhook membalas 503 dan Midtrans mengirim ulang).
+- `midtrans_config` dan `commission_config` tidak lagi dikembalikan oleh `/settings` dan tidak bisa ditulis lewat `/settings` (termasuk oleh Proktor); keduanya hanya lewat menu khususnya.
+- Pembelian token wajib login (maks. 5 pesanan belum dibayar per 10 menit); membuka item dengan token memotong saldo secara atomik.
+- Halaman admin mengunci form Midtrans sampai konfigurasi termuat; mode Production menolak disimpan tanpa kunci atau dengan kunci `SB-`.
+
+**Wajib setelah deploy:** ganti (rotate) **Server Key** di dashboard Midtrans lalu simpan kunci baru lewat halaman Paket Token & Midtrans, karena kunci lama sempat terkirim ke browser pengguna.
+
+Migrasi pagar saldo (saldo token ditolak database bila minus; aman dijalankan ulang, gagal tanpa perubahan bila sudah ada saldo minus):
+
+```bash
+psql "$DATABASE_URL_HOST" -f database/migrations/20261111_01_token_balance_non_negative.sql
+```

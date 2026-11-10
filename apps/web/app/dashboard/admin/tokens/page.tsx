@@ -20,39 +20,68 @@ export default function AdminTokensPage() {
 
     // Form package state
     const [pkgName, setPkgName] = useState('');
-    const [pkgAmount, setPkgAmount] = useState(1);
-    const [pkgPrice, setPkgPrice] = useState(10000);
+    // Disimpan sebagai string agar field angka bisa dikosongkan saat diketik ulang.
+    const [pkgAmount, setPkgAmount] = useState('1');
+    const [pkgPrice, setPkgPrice] = useState('10000');
     const [pkgDesc, setPkgDesc] = useState('');
     const [pkgActive, setPkgActive] = useState(true);
     const [submitting, setSubmitting] = useState(false);
+    const [togglingId, setTogglingId] = useState<string | null>(null);
 
     // Midtrans config state
     const [isProduction, setIsProduction] = useState(false);
     const [sandboxClientKey, setSandboxClientKey] = useState('');
+    // Server key tidak pernah diisi dari server: input kosong = pertahankan kunci tersimpan.
     const [sandboxServerKey, setSandboxServerKey] = useState('');
     const [prodClientKey, setProdClientKey] = useState('');
     const [prodServerKey, setProdServerKey] = useState('');
+    const [savedSandboxServerMask, setSavedSandboxServerMask] = useState('');
+    const [savedProdServerMask, setSavedProdServerMask] = useState('');
+    const [clearSandboxServerKey, setClearSandboxServerKey] = useState(false);
+    const [clearProdServerKey, setClearProdServerKey] = useState(false);
+    // Form Midtrans hanya boleh disimpan setelah konfigurasi tersimpan berhasil dimuat;
+    // menyimpan nilai default akan mematikan mode produksi dan menghapus client key.
+    const [midtransStatus, setMidtransStatus] = useState<'loading' | 'ready' | 'error'>('loading');
+    const [midtransLoadError, setMidtransLoadError] = useState<string | null>(null);
     const [savingMidtrans, setSavingMidtrans] = useState(false);
-    const [midtransFeedback, setMidtransFeedback] = useState<string | null>(null);
+    const [midtransFeedback, setMidtransFeedback] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+    const [packagesError, setPackagesError] = useState<string | null>(null);
+
+    const loadPackages = async () => {
+        const pkgRes = await getAdminTokenPackages();
+        if (pkgRes.success && pkgRes.packages) {
+            setPackages(pkgRes.packages);
+            setPackagesError(null);
+        } else {
+            setPackagesError(!pkgRes.success ? pkgRes.error : 'Data paket tidak valid.');
+        }
+    };
+
+    const loadMidtrans = async () => {
+        setMidtransStatus('loading');
+        setMidtransLoadError(null);
+        const midtransRes = await getMidtransConfig();
+        if (!midtransRes.success) {
+            setMidtransStatus('error');
+            setMidtransLoadError(midtransRes.error || 'Konfigurasi Midtrans gagal dimuat.');
+            return;
+        }
+        setIsProduction(Boolean(midtransRes.is_production));
+        setSandboxClientKey(midtransRes.sandbox_client_key || '');
+        setProdClientKey(midtransRes.production_client_key || '');
+        setSavedSandboxServerMask(midtransRes.sandbox_server_key || '');
+        setSavedProdServerMask(midtransRes.production_server_key || '');
+        setSandboxServerKey('');
+        setProdServerKey('');
+        setClearSandboxServerKey(false);
+        setClearProdServerKey(false);
+        setMidtransStatus('ready');
+    };
 
     const loadData = async () => {
         setLoading(true);
         try {
-            const [pkgRes, midtransRes] = await Promise.all([
-                getAdminTokenPackages(),
-                getMidtransConfig()
-            ]);
-
-            if (pkgRes.success && pkgRes.packages) {
-                setPackages(pkgRes.packages);
-            }
-            if (midtransRes.success) {
-                setIsProduction(Boolean(midtransRes.is_production));
-                setSandboxClientKey(midtransRes.sandbox_client_key || '');
-                setSandboxServerKey(midtransRes.sandbox_server_key || '');
-                setProdClientKey(midtransRes.production_client_key || '');
-                setProdServerKey(midtransRes.production_server_key || '');
-            }
+            await Promise.all([loadPackages(), loadMidtrans()]);
         } catch (err) {
             console.error('Error loading token data:', err);
         } finally {
@@ -67,8 +96,8 @@ export default function AdminTokensPage() {
     const openAddModal = () => {
         setEditingPkg(null);
         setPkgName('');
-        setPkgAmount(5);
-        setPkgPrice(25000);
+        setPkgAmount('5');
+        setPkgPrice('25000');
         setPkgDesc('');
         setPkgActive(true);
         setModalOpen(true);
@@ -77,8 +106,8 @@ export default function AdminTokensPage() {
     const openEditModal = (pkg: TokenPackage) => {
         setEditingPkg(pkg);
         setPkgName(pkg.name);
-        setPkgAmount(pkg.token_amount);
-        setPkgPrice(pkg.price_idr);
+        setPkgAmount(String(pkg.token_amount));
+        setPkgPrice(String(Math.round(Number(pkg.price_idr))));
         setPkgDesc(pkg.description || '');
         setPkgActive(pkg.is_active);
         setModalOpen(true);
@@ -86,25 +115,35 @@ export default function AdminTokensPage() {
 
     const handleSavePackage = async (e: React.FormEvent) => {
         e.preventDefault();
+        const name = pkgName.trim();
+        const tokenAmount = Number(pkgAmount);
+        const priceIdr = Number(pkgPrice);
+        if (!name) {
+            alert('Nama paket wajib diisi.');
+            return;
+        }
+        if (!Number.isInteger(tokenAmount) || tokenAmount < 1 || tokenAmount > 100000) {
+            alert('Jumlah token harus bilangan bulat antara 1 dan 100.000.');
+            return;
+        }
+        if (!Number.isInteger(priceIdr) || priceIdr < 1 || priceIdr > 100000000) {
+            alert('Harga paket harus bilangan bulat rupiah antara 1 dan 100.000.000.');
+            return;
+        }
+        const payload = {
+            name,
+            token_amount: tokenAmount,
+            price_idr: priceIdr,
+            description: pkgDesc.trim(),
+            is_active: pkgActive,
+        };
         setSubmitting(true);
         try {
             if (editingPkg) {
-                const res = await updateTokenPackage(editingPkg.id, {
-                    name: pkgName,
-                    token_amount: pkgAmount,
-                    price_idr: pkgPrice,
-                    description: pkgDesc,
-                    is_active: pkgActive,
-                });
+                const res = await updateTokenPackage(editingPkg.id, payload);
                 if (!res.success) throw new Error(res.error || 'Gagal mengubah paket.');
             } else {
-                const res = await createTokenPackage({
-                    name: pkgName,
-                    token_amount: pkgAmount,
-                    price_idr: pkgPrice,
-                    description: pkgDesc,
-                    is_active: pkgActive,
-                });
+                const res = await createTokenPackage(payload);
                 if (!res.success) throw new Error(res.error || 'Gagal membuat paket.');
             }
             setModalOpen(false);
@@ -131,34 +170,44 @@ export default function AdminTokensPage() {
     };
 
     const handleToggleActive = async (pkg: TokenPackage) => {
+        if (togglingId) return;
+        setTogglingId(pkg.id);
         try {
-            await updateTokenPackage(pkg.id, { is_active: !pkg.is_active });
-            await loadData();
-        } catch (err) {
-            console.error('Toggle active error:', err);
+            const res = await updateTokenPackage(pkg.id, { is_active: !pkg.is_active });
+            if (!res.success) {
+                alert(res.error || 'Gagal mengubah status paket.');
+                return;
+            }
+            await loadPackages();
+        } finally {
+            setTogglingId(null);
         }
     };
 
     const handleSaveMidtrans = async (e: React.FormEvent) => {
         e.preventDefault();
+        if (midtransStatus !== 'ready') return;
         setSavingMidtrans(true);
         setMidtransFeedback(null);
         try {
             const res = await saveMidtransConfig({
                 is_production: isProduction,
-                sandbox_client_key: sandboxClientKey,
-                sandbox_server_key: sandboxServerKey,
-                production_client_key: prodClientKey,
-                production_server_key: prodServerKey,
+                sandbox_client_key: sandboxClientKey.trim(),
+                sandbox_server_key: sandboxServerKey.trim() || undefined,
+                production_client_key: prodClientKey.trim(),
+                production_server_key: prodServerKey.trim() || undefined,
+                clear_sandbox_server_key: clearSandboxServerKey,
+                clear_production_server_key: clearProdServerKey,
             });
             if (res.success) {
-                setMidtransFeedback('Konfigurasi Midtrans berhasil disimpan!');
+                await loadMidtrans();
+                setMidtransFeedback({ type: 'success', text: 'Konfigurasi Midtrans berhasil disimpan!' });
                 setTimeout(() => setMidtransFeedback(null), 4000);
             } else {
-                setMidtransFeedback(res.error || 'Gagal menyimpan konfigurasi.');
+                setMidtransFeedback({ type: 'error', text: String(res.error || 'Gagal menyimpan konfigurasi.') });
             }
         } catch (err: any) {
-            setMidtransFeedback(err.message || 'Terjadi kesalahan.');
+            setMidtransFeedback({ type: 'error', text: err.message || 'Terjadi kesalahan.' });
         } finally {
             setSavingMidtrans(false);
         }
@@ -230,6 +279,12 @@ export default function AdminTokensPage() {
                                         Memuat daftar paket token...
                                     </td>
                                 </tr>
+                            ) : packagesError ? (
+                                <tr>
+                                    <td colSpan={6} className="py-10 text-center text-red-600">
+                                        Gagal memuat paket token: {packagesError}
+                                    </td>
+                                </tr>
                             ) : packages.length === 0 ? (
                                 <tr>
                                     <td colSpan={6} className="py-12 text-center text-slate-400">
@@ -258,7 +313,8 @@ export default function AdminTokensPage() {
                                             <button
                                                 type="button"
                                                 onClick={() => handleToggleActive(pkg)}
-                                                className={`px-3 py-1 rounded-full text-xs font-bold transition-all cursor-pointer ${
+                                                disabled={togglingId !== null}
+                                                className={`px-3 py-1 disabled:opacity-60 disabled:cursor-wait rounded-full text-xs font-bold transition-all cursor-pointer ${
                                                     pkg.is_active
                                                         ? 'bg-emerald-100 text-emerald-800 hover:bg-emerald-200'
                                                         : 'bg-slate-100 text-slate-500 hover:bg-slate-200'
@@ -310,6 +366,23 @@ export default function AdminTokensPage() {
                 </div>
 
                 <form onSubmit={handleSaveMidtrans} className="space-y-6 max-w-4xl">
+                    {midtransStatus === 'loading' && (
+                        <div className="p-3.5 rounded-xl bg-slate-50 text-slate-600 border border-slate-200 text-sm">
+                            Memuat konfigurasi Midtrans...
+                        </div>
+                    )}
+                    {midtransStatus === 'error' && (
+                        <div className="p-3.5 rounded-xl bg-red-50 text-red-800 border border-red-200 text-sm font-semibold flex items-center justify-between gap-3">
+                            <span className="flex items-center gap-2">
+                                <AlertCircle size={16} />
+                                Konfigurasi gagal dimuat, sehingga form dikunci agar pengaturan tersimpan tidak tertimpa. {midtransLoadError}
+                            </span>
+                            <button type="button" onClick={loadMidtrans} className="px-3 py-1.5 rounded-lg bg-white border border-red-300 text-xs cursor-pointer">
+                                Coba lagi
+                            </button>
+                        </div>
+                    )}
+                    <fieldset disabled={midtransStatus !== 'ready' || savingMidtrans} className="space-y-6 disabled:opacity-60">
                     
                     {/* Toggle Production Mode */}
                     <div className="flex items-center gap-4 p-4 rounded-xl bg-slate-50 border border-slate-200">
@@ -354,11 +427,23 @@ export default function AdminTokensPage() {
                                 </label>
                                 <input
                                     type="password"
+                                    autoComplete="new-password"
                                     value={sandboxServerKey}
                                     onChange={(e) => setSandboxServerKey(e.target.value)}
-                                    placeholder="SB-Mid-server-..."
-                                    className="w-full text-xs font-mono px-3.5 py-2.5 rounded-lg border border-slate-300 bg-white focus:border-[#030C4D] outline-none"
+                                    disabled={clearSandboxServerKey}
+                                    placeholder={savedSandboxServerMask ? `Tersimpan (${savedSandboxServerMask}) — kosongkan untuk mempertahankan` : 'SB-Mid-server-...'}
+                                    className="w-full text-xs font-mono px-3.5 py-2.5 rounded-lg border border-slate-300 bg-white focus:border-[#030C4D] outline-none disabled:bg-slate-100"
                                 />
+                                {savedSandboxServerMask && (
+                                    <label className="mt-1.5 flex items-center gap-1.5 text-[11px] text-slate-600 cursor-pointer">
+                                        <input
+                                            type="checkbox"
+                                            checked={clearSandboxServerKey}
+                                            onChange={(e) => { setClearSandboxServerKey(e.target.checked); if (e.target.checked) setSandboxServerKey(''); }}
+                                        />
+                                        Hapus server key Sandbox yang tersimpan
+                                    </label>
+                                )}
                             </div>
                         </div>
 
@@ -385,11 +470,23 @@ export default function AdminTokensPage() {
                                 </label>
                                 <input
                                     type="password"
+                                    autoComplete="new-password"
                                     value={prodServerKey}
                                     onChange={(e) => setProdServerKey(e.target.value)}
-                                    placeholder="Mid-server-..."
-                                    className="w-full text-xs font-mono px-3.5 py-2.5 rounded-lg border border-slate-300 bg-white focus:border-[#030C4D] outline-none"
+                                    disabled={clearProdServerKey}
+                                    placeholder={savedProdServerMask ? `Tersimpan (${savedProdServerMask}) — kosongkan untuk mempertahankan` : 'Mid-server-...'}
+                                    className="w-full text-xs font-mono px-3.5 py-2.5 rounded-lg border border-slate-300 bg-white focus:border-[#030C4D] outline-none disabled:bg-slate-100"
                                 />
+                                {savedProdServerMask && (
+                                    <label className="mt-1.5 flex items-center gap-1.5 text-[11px] text-slate-600 cursor-pointer">
+                                        <input
+                                            type="checkbox"
+                                            checked={clearProdServerKey}
+                                            onChange={(e) => { setClearProdServerKey(e.target.checked); if (e.target.checked) setProdServerKey(''); }}
+                                        />
+                                        Hapus server key Production yang tersimpan
+                                    </label>
+                                )}
                             </div>
                         </div>
 
@@ -406,15 +503,21 @@ export default function AdminTokensPage() {
                         </p>
                     </div>
 
+                    </fieldset>
+
                     {midtransFeedback && (
-                        <div className="p-3.5 rounded-xl bg-emerald-50 text-emerald-800 border border-emerald-200 text-sm font-semibold">
-                            {midtransFeedback}
+                        <div className={`p-3.5 rounded-xl border text-sm font-semibold ${
+                            midtransFeedback.type === 'success'
+                                ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
+                                : 'bg-red-50 text-red-800 border-red-200'
+                        }`}>
+                            {midtransFeedback.text}
                         </div>
                     )}
 
                     <button
                         type="submit"
-                        disabled={savingMidtrans}
+                        disabled={savingMidtrans || midtransStatus !== 'ready'}
                         className="px-6 py-3 bg-[#030C4D] hover:bg-[#020510] text-white font-bold text-sm rounded-xl transition-all shadow-md disabled:opacity-60 cursor-pointer"
                     >
                         {savingMidtrans ? 'Menyimpan...' : 'Simpan Pengaturan Midtrans'}
@@ -447,6 +550,7 @@ export default function AdminTokensPage() {
                                 <input
                                     type="text"
                                     required
+                                    maxLength={100}
                                     value={pkgName}
                                     onChange={(e) => setPkgName(e.target.value)}
                                     placeholder="contoh: Paket Hemat 10 Token"
@@ -464,7 +568,9 @@ export default function AdminTokensPage() {
                                         min="1"
                                         required
                                         value={pkgAmount}
-                                        onChange={(e) => setPkgAmount(parseInt(e.target.value) || 1)}
+                                        max="100000"
+                                        step="1"
+                                        onChange={(e) => setPkgAmount(e.target.value)}
                                         className="w-full px-3.5 py-2.5 rounded-lg border border-slate-300 focus:border-[#030C4D] outline-none text-slate-800 font-bold"
                                     />
                                 </div>
@@ -474,11 +580,12 @@ export default function AdminTokensPage() {
                                     </label>
                                     <input
                                         type="number"
-                                        min="0"
-                                        step="1000"
+                                        min="1"
+                                        max="100000000"
+                                        step="1"
                                         required
                                         value={pkgPrice}
-                                        onChange={(e) => setPkgPrice(parseFloat(e.target.value) || 0)}
+                                        onChange={(e) => setPkgPrice(e.target.value)}
                                         className="w-full px-3.5 py-2.5 rounded-lg border border-slate-300 focus:border-[#030C4D] outline-none text-slate-800 font-bold"
                                     />
                                 </div>
@@ -490,6 +597,7 @@ export default function AdminTokensPage() {
                                 </label>
                                 <textarea
                                     rows={2}
+                                    maxLength={500}
                                     value={pkgDesc}
                                     onChange={(e) => setPkgDesc(e.target.value)}
                                     placeholder="Keterangan manfaat atau rincian paket"

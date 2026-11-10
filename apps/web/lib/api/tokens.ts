@@ -72,11 +72,11 @@ export async function updateTokenPackage(
   id: string,
   data: Partial<TokenPackage>,
 ): Promise<ApiResult<{ package: TokenPackage }>> {
-  return apiSend<{ package: TokenPackage }>(`/api/tokens/admin/packages/${id}`, data, 'PUT');
+  return apiSend<{ package: TokenPackage }>(`/api/tokens/admin/packages/${encodeURIComponent(id)}`, data, 'PUT');
 }
 
 export async function deleteTokenPackage(id: string): Promise<ApiResult<{ message: string }>> {
-  return apiSend<{ message: string }>(`/api/tokens/admin/packages/${id}`, undefined, 'DELETE');
+  return apiSend<{ message: string }>(`/api/tokens/admin/packages/${encodeURIComponent(id)}`, undefined, 'DELETE');
 }
 
 // ── 2. Midtrans Config ──
@@ -99,6 +99,8 @@ export async function saveMidtransConfig(data: {
   sandbox_server_key?: string;
   production_client_key?: string;
   production_server_key?: string;
+  clear_sandbox_server_key?: boolean;
+  clear_production_server_key?: boolean;
 }): Promise<ApiResult<{ message: string }>> {
   return apiSend('/api/tokens/admin/midtrans-config', data, 'POST');
 }
@@ -134,7 +136,7 @@ export async function checkItemAccess(
   type: 'exam' | 'material',
   id: string,
 ): Promise<ApiResult<ItemAccessStatus>> {
-  return apiGet<ItemAccessStatus>(`/api/tokens/check-access?type=${type}&id=${id}`);
+  return apiGet<ItemAccessStatus>(`/api/tokens/check-access?type=${encodeURIComponent(type)}&id=${encodeURIComponent(id)}`);
 }
 
 export async function unlockItemWithTokens(

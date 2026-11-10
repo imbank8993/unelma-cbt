@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, ForbiddenException, Get, HttpCode, HttpStatus, Param, ParseUUIDPipe, Post, Put, Query, UseGuards } from '@nestjs/common';
+import { BadRequestException, Body, Controller, Delete, ForbiddenException, Get, HttpCode, HttpStatus, Param, ParseUUIDPipe, Post, Put, Query, UseGuards } from '@nestjs/common';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import type { AuthUser } from '@acca-cbt/shared';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
@@ -81,8 +81,9 @@ export class TokensController {
 
   // ── 3. Transaksi & Midtrans Snap / Webhook ──
   @Post('payments/create')
-  @ApiOperation({ summary: 'Buat transaksi Midtrans Snap token' })
-  createPayment(@CurrentUser() user: AuthUser | null, @Body() dto: CreatePaymentDto) {
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: 'Buat transaksi Midtrans Snap token (wajib login)' })
+  createPayment(@CurrentUser() user: AuthUser, @Body() dto: CreatePaymentDto) {
     return this.tokens.createPayment(user, dto);
   }
 
@@ -116,8 +117,11 @@ export class TokensController {
   checkAccess(
     @CurrentUser() user: AuthUser,
     @Query('type') type: 'exam' | 'material',
-    @Query('id') id: string,
+    @Query('id', ParseUUIDPipe) id: string,
   ) {
+    if (type !== 'exam' && type !== 'material') {
+      throw new BadRequestException("Parameter 'type' harus 'exam' atau 'material'.");
+    }
     return this.tokens.checkAccess(user.id, type, id);
   }
 

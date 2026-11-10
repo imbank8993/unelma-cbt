@@ -19,7 +19,17 @@ export interface SettingRow {
  * SETIAP pengguna, termasuk siswa — sehingga kredensial R2 ikut terkirim ke
  * browser semua orang.
  */
-const SENSITIVE_KEYS = new Set(['storage_config']);
+const SENSITIVE_KEYS = new Set(['storage_config', 'midtrans_config', 'commission_config']);
+
+/**
+ * Key yang hanya boleh dibaca/ditulis lewat endpoint khususnya sendiri, yang
+ * memeriksa peran Admin dan memvalidasi isinya:
+ *  - `midtrans_config`  → /tokens/admin/midtrans-config (memuat server key Midtrans)
+ *  - `commission_config` → /commissions
+ * Endpoint generik /settings tidak pernah mengembalikan atau menimpanya, bahkan
+ * untuk Proktor: menimpa server key berarti mengalihkan uang pembayaran.
+ */
+const DEDICATED_KEYS = new Set(['midtrans_config', 'commission_config']);
 
 /**
  * Pengaturan aplikasi (tabel `acca_settings`), key/value berisi JSON.
@@ -34,6 +44,10 @@ export class SettingsService {
 
     static isSensitive(key: string): boolean {
         return SENSITIVE_KEYS.has(key);
+    }
+
+    static isDedicated(key: string): boolean {
+        return DEDICATED_KEYS.has(key);
     }
 
     /**
