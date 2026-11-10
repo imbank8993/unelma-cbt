@@ -120,7 +120,7 @@ export interface LockedExam {
  * kunci mulai (siswa baru tidak dapat membuat attempt), kunci koreksi/penilaian
  * (menunggu pengumpulan yang sedang dinilai), lalu baris ujian.
  */
-export async function lockExamForCancellation(db: RawDb, examId: string): Promise<LockedExam | null> {
+export async function lockExamForCancellation(db: DbSession, examId: string): Promise<LockedExam | null> {
     for (const key of [examStartLockKey(examId), `exam-key-correction:${examId}`]) {
         await advisoryTransactionLock(db, key);
     }
