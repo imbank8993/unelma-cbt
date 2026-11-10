@@ -436,9 +436,10 @@ export default function ProktorQuestionBankPage() {
     const totalPages = Math.max(1, Math.ceil(visibleBanks.length / PAGE_SIZE));
     const safePage = Math.min(currentPage, totalPages);
     const pagedBanks = visibleBanks.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
-    const draftCount = banks.filter(bank => !bank.is_published).length;
-    const publishedCount = banks.filter(bank => bank.is_published).length;
-    const allCount = banks.length;
+    const summaryBanks = activeFolder ? banks.filter(bank => bank.folder_id === activeFolder.id) : banks;
+    const draftCount = summaryBanks.filter(bank => !bank.is_published).length;
+    const publishedCount = summaryBanks.filter(bank => bank.is_published).length;
+    const allCount = summaryBanks.length;
 
     const getLabelColor = (name: string) => labels.find(l => l.name === name)?.color || '#6366f1';
 
@@ -663,7 +664,7 @@ export default function ProktorQuestionBankPage() {
                     />
 
                     <FilterActions>
-                        <Button
+                        {!activeFolder && <Button
                             variant="outline"
                             className="ftb-btn-icon-mobile rounded-full"
                             leftIcon={<Folder size={18} className="text-[#030C4D] dark:text-[#60a5fa]" />}
@@ -672,7 +673,7 @@ export default function ProktorQuestionBankPage() {
                             aria-label="Folder"
                         >
                             Folder
-                        </Button>
+                        </Button>}
                         <Button
                             variant="primary"
                             icon="add"
