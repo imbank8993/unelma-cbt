@@ -1,5 +1,6 @@
 import { ServiceUnavailableException } from '@nestjs/common';
 import type { DbSession } from '../prisma/prisma-db-adapter';
+import { advisoryTransactionLock } from './transaction-lock';
 
 /**
  * Pembatalan ujian: seluruh pengerjaan sebuah ujian dipindahkan ke arsip
@@ -121,7 +122,7 @@ export interface LockedExam {
  */
 export async function lockExamForCancellation(db: RawDb, examId: string): Promise<LockedExam | null> {
     for (const key of [examStartLockKey(examId), `exam-key-correction:${examId}`]) {
-        await db.raw('SELECT pg_advisory_xact_lock(hashtextextended($1::text, 0))::text AS locked', key);
+        await advisoryTransactionLock(db, key);
     }
     const rows = await db.raw<LockedExam[]>(
         'SELECT id::text AS id, title, is_published, status FROM public.cbt_exams WHERE id = $1::uuid FOR UPDATE',

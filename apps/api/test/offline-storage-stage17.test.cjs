@@ -381,6 +381,7 @@ test('the exam page stops before sending or deleting data when freezing detects 
         navigator: { onLine: true }, submitExamAction: async () => { state.sent++; return { success: true }; },
         removeExamSnapshot: async () => { state.removed++; }, setIsCompleted: value => { state.completed = value; },
         router: {}, toast: {}, scheduleAutoRetry: () => {},
+        handleExamCancelled: () => {},
     };
     vm.runInNewContext(ts.transpileModule(source.slice(start, end) + '; globalThis.submit = handleSubmitExam;', {
         compilerOptions: { target: ts.ScriptTarget.ES2020 },
@@ -478,6 +479,7 @@ for (const scenario of ['online', 'offline', 'lost-response', 'recovery-required
             localStorage: { removeItem: () => {} },
             setIsCompleted: value => { state.completed = value; }, router: { push: () => {} },
             toast: { success: () => {}, error: () => {}, warning: () => {} }, scheduleAutoRetry: () => { state.retries++; },
+            handleExamCancelled: () => {},
             getExamSubmissionStatus: async () => ({ success: true, startedAt: attempt.started_at, remainingSeconds: 0 }),
             window: { location: { reload: () => { throw new Error('Timer lama tidak boleh memuat ulang saat waktu server habis.'); } } },
         };
@@ -538,6 +540,7 @@ test('an offline device-clock expiry neither freezes nor submits until the serve
         removeExamSnapshot: async () => {}, removeExamSubmissionRegistration: async () => {}, removeExamRecoverySession: async () => {},
         removeExamOfflineShell: async () => {}, removeExamAttemptCaches: () => {}, setIsCompleted: () => {}, router: { push: () => {} },
         toast: { success: () => {}, error: () => {}, warning: () => {} }, scheduleAutoRetry: () => {},
+        handleExamCancelled: () => {},
         getExamSubmissionStatus: async () => { state.statusCalls++;
             return { success: true, status: 'in_progress', startedAt: attempt.started_at, remainingSeconds: serverRemaining, submissionOnly: false }; },
         window: { location: { reload: () => { state.reloads++; } } },

@@ -8,7 +8,7 @@ import type { DbSession } from '../prisma/prisma-db-adapter';
  * dicast ke text. Nilai hasil tidak dipakai; selesainya query berarti lock
  * sudah diperoleh.
  */
-export async function advisoryTransactionLock(db: DbSession, key: string): Promise<void> {
+export async function advisoryTransactionLock(db: Pick<DbSession, 'raw'>, key: string): Promise<void> {
     await db.raw(
         'SELECT pg_advisory_xact_lock(hashtextextended($1::text, 0))::text AS locked',
         key,
@@ -25,7 +25,7 @@ export async function advisoryTransactionLock(db: DbSession, key: string): Promi
  * tidak boleh bertabrakan dengan koreksi kunci/regrade yang memakai
  * `advisoryTransactionLock` (eksklusif) pada kunci yang sama.
  */
-export async function sharedAdvisoryTransactionLock(db: DbSession, key: string): Promise<void> {
+export async function sharedAdvisoryTransactionLock(db: Pick<DbSession, 'raw'>, key: string): Promise<void> {
     await db.raw(
         'SELECT pg_advisory_xact_lock_shared(hashtextextended($1::text, 0))::text AS locked',
         key,
