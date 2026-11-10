@@ -14,6 +14,9 @@ export interface MidtransConfig {
 }
 
 const MAX_PENDING_ORDERS_PER_10_MIN = 5;
+const TRACKER_PAGE_SIZE = 50;
+const TRACKER_PAGE_SIZE_MAX = 200;
+const TRACKER_SEARCH_MAX = 100;
 
 function basicAuth(serverKey: string) {
   return 'Basic ' + Buffer.from(serverKey + ':').toString('base64');
@@ -198,8 +201,11 @@ export class TokensService {
       );
     }
 
-    const customerEmail = (user.email || dto.email || '').trim();
-    const customerName = (dto.customer_name || (user as any)?.nama || (user as any)?.name || user.email?.split('@')[0] || 'Siswa').trim();
+    // Identitas pembeli diambil dari akun yang login, BUKAN dari isi request:
+    // siswa tidak boleh bisa mengisi email/nama orang lain yang lalu tampil di
+    // tracker admin atau dikirim ke Midtrans.
+    const customerEmail = (user.email || '').trim();
+    const customerName = (user.fullName || user.email?.split('@')[0] || 'Siswa').trim().slice(0, 100);
     const orderId = `TOKEN-${Date.now()}-${crypto.randomUUID().slice(0, 8)}`;
 
     const cfg = await this.getMidtransConfig(false);
@@ -548,75 +554,115 @@ export class TokensService {
   // 6. ADMIN TRACKERS
   // ─────────────────────────────────────────────────────────────
 
-  async getPurchasesTracker(search = '') {
-    const s = `%${search.trim().toLowerCase()}%`;
-    const rows = await this.prisma.$queryRawUnsafe<any[]>(`
-      SELECT 
-        pt.id, pt.order_id, pt.user_id, pt.email, pt.customer_name,
-        pt.package_name, pt.token_amount, pt.amount, pt.status,
-        pt.payment_type, pt.paid_at, pt.created_at,
-        COALESCE(p.full_name, pt.customer_name, 'Pengguna') as user_name
+  /**
+   * Pola LIKE dari kata kunci admin. `%`, `_`, dan `\` di-escape agar dicari
+   * apa adanya (dipasangkan dengan `ESCAPE '\'`), bukan sebagai wildcard.
+   * Mengembalikan null bila kata kunci kosong (tanpa filter).
+   */
+  static likePattern(search: string | undefined | null): string | null {
+    const term = String(search ?? '').trim().toLowerCase().slice(0, TRACKER_SEARCH_MAX);
+    if (!term) return null;
+    return `%${term.replace(/[\\%_]/g, (c) => `\\${c}`)}%`;
+  }
+
+  static trackerPaging(page?: number, pageSize?: number) {
+    const size = Math.min(Math.max(Math.trunc(Number(pageSize)) || TRACKER_PAGE_SIZE, 1), TRACKER_PAGE_SIZE_MAX);
+    const current = Math.max(Math.trunc(Number(page)) || 1, 1);
+    return { page: current, page_size: size, offset: (current - 1) * size };
+  }
+
+  async getPurchasesTracker(search = '', page?: number, pageSize?: number) {
+    const pattern = TokensService.likePattern(search);
+    const paging = TokensService.trackerPaging(page, pageSize);
+    // Satu klausa filter dipakai untuk baris, jumlah, DAN statistik, sehingga
+    // kartu ringkasan selalu sesuai dengan tabel yang sedang dicari.
+    const from = `
       FROM public.payment_transactions pt
       LEFT JOIN public.cbt_profiles p ON p.id = pt.user_id
-      WHERE $1 = '%%' 
-         OR lower(pt.order_id) LIKE $1 
-         OR lower(pt.email) LIKE $1 
-         OR lower(COALESCE(pt.customer_name, '')) LIKE $1
-         OR lower(COALESCE(p.full_name, '')) LIKE $1
-      ORDER BY pt.created_at DESC
-      LIMIT 200
-    `, s);
+      WHERE $1::text IS NULL
+         OR lower(pt.order_id) LIKE $1 ESCAPE '\\'
+         OR lower(COALESCE(NULLIF(p.email, ''), pt.email, '')) LIKE $1 ESCAPE '\\'
+         OR lower(COALESCE(pt.customer_name, '')) LIKE $1 ESCAPE '\\'
+         OR lower(COALESCE(p.full_name, '')) LIKE $1 ESCAPE '\\'
+    `;
+    const rows = await this.prisma.$queryRawUnsafe<any[]>(`
+      SELECT
+        pt.id, pt.order_id, pt.user_id,
+        COALESCE(NULLIF(p.email, ''), pt.email) AS email,
+        pt.customer_name, pt.package_name, pt.token_amount, pt.amount, pt.status,
+        pt.payment_type, pt.paid_at, pt.created_at,
+        COALESCE(p.full_name, pt.customer_name, 'Pengguna') AS user_name
+      ${from}
+      ORDER BY pt.created_at DESC, pt.id DESC
+      LIMIT $2::int OFFSET $3::int
+    `, pattern, paging.page_size, paging.offset);
 
-    // Hitung statistik
     const stats = await this.prisma.$queryRawUnsafe<any[]>(`
-      SELECT 
-        COUNT(*)::int as total_orders,
-        COUNT(CASE WHEN status = 'success' THEN 1 END)::int as success_orders,
-        COALESCE(SUM(CASE WHEN status = 'success' THEN amount ELSE 0 END), 0)::numeric as total_revenue,
-        COALESCE(SUM(CASE WHEN status = 'success' THEN token_amount ELSE 0 END), 0)::int as total_tokens_sold
-      FROM public.payment_transactions
-    `);
+      SELECT
+        COUNT(*)::int AS total_orders,
+        COUNT(CASE WHEN pt.status = 'success' THEN 1 END)::int AS success_orders,
+        COALESCE(SUM(CASE WHEN pt.status = 'success' THEN pt.amount ELSE 0 END), 0)::float8 AS total_revenue,
+        COALESCE(SUM(CASE WHEN pt.status = 'success' THEN pt.token_amount ELSE 0 END), 0)::int AS total_tokens_sold
+      ${from}
+    `, pattern);
 
+    const summary = stats[0] || { total_orders: 0, success_orders: 0, total_revenue: 0, total_tokens_sold: 0 };
     return {
       transactions: rows,
-      stats: stats[0] || { total_orders: 0, success_orders: 0, total_revenue: 0, total_tokens_sold: 0 },
+      stats: summary,
+      total: Number(summary.total_orders || 0),
+      page: paging.page,
+      page_size: paging.page_size,
+      filtered: pattern !== null,
     };
   }
 
-  async getUsagesTracker(search = '') {
-    const s = `%${search.trim().toLowerCase()}%`;
-    const rows = await this.prisma.$queryRawUnsafe<any[]>(`
-      SELECT 
-        tt.id, tt.user_id, tt.amount, tt.type, tt.description,
-        tt.reference_id, tt.created_at,
-        p.email as user_email,
-        COALESCE(p.full_name, 'Siswa') as user_name,
-        ui.item_type
+  async getUsagesTracker(search = '', page?: number, pageSize?: number) {
+    const pattern = TokensService.likePattern(search);
+    const paging = TokensService.trackerPaging(page, pageSize);
+    const from = `
       FROM public.token_transactions tt
       LEFT JOIN public.cbt_profiles p ON p.id = tt.user_id
-      LEFT JOIN public.unlocked_items ui ON ui.user_id = tt.user_id AND ui.item_id = tt.reference_id
       WHERE tt.amount < 0 AND (
-        $1 = '%%'
-        OR lower(tt.description) LIKE $1
-        OR lower(COALESCE(p.email, '')) LIKE $1
-        OR lower(COALESCE(p.full_name, '')) LIKE $1
+        $1::text IS NULL
+        OR lower(tt.description) LIKE $1 ESCAPE '\\'
+        OR lower(COALESCE(p.email, '')) LIKE $1 ESCAPE '\\'
+        OR lower(COALESCE(p.full_name, '')) LIKE $1 ESCAPE '\\'
       )
-      ORDER BY tt.created_at DESC
-      LIMIT 200
-    `, s);
+    `;
+    const rows = await this.prisma.$queryRawUnsafe<any[]>(`
+      SELECT
+        tt.id, tt.user_id, tt.amount, tt.type, tt.description,
+        tt.reference_id, tt.created_at,
+        p.email AS user_email,
+        COALESCE(p.full_name, 'Siswa') AS user_name,
+        (
+          SELECT ui.item_type FROM public.unlocked_items ui
+          WHERE ui.user_id = tt.user_id AND ui.item_id = tt.reference_id
+          ORDER BY ui.created_at
+          LIMIT 1
+        ) AS item_type
+      ${from}
+      ORDER BY tt.created_at DESC, tt.id DESC
+      LIMIT $2::int OFFSET $3::int
+    `, pattern, paging.page_size, paging.offset);
 
     const stats = await this.prisma.$queryRawUnsafe<any[]>(`
-      SELECT 
-        COUNT(*)::int as total_unlocks,
-        ABS(COALESCE(SUM(amount), 0))::int as total_tokens_spent,
-        COUNT(DISTINCT user_id)::int as active_students
-      FROM public.token_transactions
-      WHERE amount < 0
-    `);
+      SELECT
+        COUNT(*)::int AS total_unlocks,
+        ABS(COALESCE(SUM(tt.amount), 0))::int AS total_tokens_spent,
+        COUNT(DISTINCT tt.user_id)::int AS active_students
+      ${from}
+    `, pattern);
 
+    const summary = stats[0] || { total_unlocks: 0, total_tokens_spent: 0, active_students: 0 };
     return {
       usages: rows,
-      stats: stats[0] || { total_unlocks: 0, total_tokens_spent: 0, active_students: 0 },
+      stats: summary,
+      total: Number(summary.total_unlocks || 0),
+      page: paging.page,
+      page_size: paging.page_size,
+      filtered: pattern !== null,
     };
   }
 }

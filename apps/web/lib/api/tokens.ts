@@ -20,7 +20,7 @@ export interface PaymentTransaction {
   package_name?: string;
   token_amount: number;
   amount: number;
-  status: 'pending' | 'success' | 'failed';
+  status: 'pending' | 'success' | 'failed' | (string & {});
   payment_type?: string;
   paid_at?: string;
   created_at: string;
@@ -108,8 +108,6 @@ export async function saveMidtransConfig(data: {
 // ── 3. Pembayaran & Checkout ──
 export async function createPayment(data: {
   package_id: string;
-  customer_name?: string;
-  email?: string;
 }): Promise<
   ApiResult<{
     order_id: string;
@@ -147,10 +145,30 @@ export async function unlockItemWithTokens(
 }
 
 // ── 6. Admin Trackers ──
+export interface TrackerQuery {
+  search?: string;
+  page?: number;
+  pageSize?: number;
+}
+
+export interface TrackerPage {
+  total: number;
+  page: number;
+  page_size: number;
+  /** true bila hasil (dan statistiknya) dibatasi kata kunci pencarian. */
+  filtered: boolean;
+}
+
+function trackerParams({ search = '', page = 1, pageSize = 50 }: TrackerQuery) {
+  const params = new URLSearchParams({ page: String(page), page_size: String(pageSize) });
+  if (search.trim()) params.set('search', search.trim());
+  return params.toString();
+}
+
 export async function getAdminPurchasesTracker(
-  search = '',
+  query: TrackerQuery = {},
 ): Promise<
-  ApiResult<{
+  ApiResult<TrackerPage & {
     transactions: PaymentTransaction[];
     stats: {
       total_orders: number;
@@ -160,13 +178,13 @@ export async function getAdminPurchasesTracker(
     };
   }>
 > {
-  return apiGet(`/api/tokens/admin/tracker/purchases?search=${encodeURIComponent(search)}`);
+  return apiGet(`/api/tokens/admin/tracker/purchases?${trackerParams(query)}`);
 }
 
 export async function getAdminUsagesTracker(
-  search = '',
+  query: TrackerQuery = {},
 ): Promise<
-  ApiResult<{
+  ApiResult<TrackerPage & {
     usages: TokenTransaction[];
     stats: {
       total_unlocks: number;
@@ -175,5 +193,5 @@ export async function getAdminUsagesTracker(
     };
   }>
 > {
-  return apiGet(`/api/tokens/admin/tracker/usages?search=${encodeURIComponent(search)}`);
+  return apiGet(`/api/tokens/admin/tracker/usages?${trackerParams(query)}`);
 }

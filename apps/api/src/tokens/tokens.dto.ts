@@ -76,20 +76,9 @@ export class UpdateTokenPackageDto {
 }
 
 export class CreatePaymentDto {
+  /** Identitas pembeli selalu diambil dari akun yang login; tidak diterima dari request. */
   @IsUUID()
   package_id!: string;
-
-  @IsOptional()
-  @Transform(trim)
-  @IsString()
-  @MaxLength(100)
-  customer_name?: string;
-
-  @IsOptional()
-  @Transform(trim)
-  @IsString()
-  @MaxLength(254)
-  email?: string;
 }
 
 export class UnlockItemDto {

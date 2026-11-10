@@ -1,57 +1,146 @@
 "use client";
 
-import React, { useEffect, useState } from 'react';
-import { CreditCard, Search, Coins, RefreshCw, CheckCircle2, Clock, XCircle, ArrowUpRight, BookOpen, ClipboardCheck, Receipt } from 'lucide-react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { CreditCard, Search, Coins, RefreshCw, CheckCircle2, Clock, XCircle, BookOpen, ClipboardCheck, Receipt, AlertCircle, ChevronLeft, ChevronRight, HelpCircle } from 'lucide-react';
 import { getAdminPurchasesTracker, getAdminUsagesTracker, type PaymentTransaction, type TokenTransaction } from '@/lib/api/tokens';
+import { formatSchoolDateTime } from '@/lib/school-time';
+import { useSchoolTimeZone } from '@/lib/useSchoolTimeZone';
+
+type Tab = 'purchases' | 'usages';
+
+const PAGE_SIZE = 50;
+const SEARCH_MAX = 100;
+const EMPTY_PURCHASE_STATS = { total_orders: 0, success_orders: 0, total_revenue: 0, total_tokens_sold: 0 };
+const EMPTY_USAGE_STATS = { total_unlocks: 0, total_tokens_spent: 0, active_students: 0 };
+
+/** Jenis item dari data unlock; deskripsi hanya cadangan untuk data lama tanpa unlocked_items. */
+function usageItemType(u: TokenTransaction): 'material' | 'exam' {
+    if (u.item_type === 'material' || u.item_type === 'exam') return u.item_type;
+    return (u.description || '').startsWith('Membuka akses Bahan Ajar') ? 'material' : 'exam';
+}
+
+function PaymentStatusBadge({ status }: { status: string }) {
+    if (status === 'success') {
+        return (
+            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-800 font-bold text-[11px]">
+                <CheckCircle2 size={12} />
+                Sukses
+            </span>
+        );
+    }
+    if (status === 'pending') {
+        return (
+            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-amber-100 text-amber-800 font-bold text-[11px]">
+                <Clock size={12} />
+                Menunggu
+            </span>
+        );
+    }
+    if (status === 'failed') {
+        return (
+            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-red-100 text-red-800 font-bold text-[11px]">
+                <XCircle size={12} />
+                Gagal
+            </span>
+        );
+    }
+    return (
+        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-slate-100 text-slate-700 font-bold text-[11px]">
+            <HelpCircle size={12} />
+            {status || 'Tidak diketahui'}
+        </span>
+    );
+}
 
 export default function AdminTransactionsTrackerPage() {
-    const [activeTab, setActiveTab] = useState<'purchases' | 'usages'>('purchases');
-    const [searchQuery, setSearchQuery] = useState('');
+    const { timeZone } = useSchoolTimeZone();
+    const [activeTab, setActiveTab] = useState<Tab>('purchases');
+    // `searchInput` = isi kotak cari; `appliedSearch` = kata kunci yang sedang ditampilkan.
+    const [searchInput, setSearchInput] = useState('');
+    const [appliedSearch, setAppliedSearch] = useState('');
+    const [page, setPage] = useState(1);
+    const [reloadKey, setReloadKey] = useState(0);
     const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+    const [total, setTotal] = useState(0);
+    const [filtered, setFiltered] = useState(false);
 
-    // Purchases data
     const [purchases, setPurchases] = useState<PaymentTransaction[]>([]);
-    const [purchaseStats, setPurchaseStats] = useState({ total_orders: 0, success_orders: 0, total_revenue: 0, total_tokens_sold: 0 });
-
-    // Usages data
+    const [purchaseStats, setPurchaseStats] = useState(EMPTY_PURCHASE_STATS);
     const [usages, setUsages] = useState<TokenTransaction[]>([]);
-    const [usageStats, setUsageStats] = useState({ total_unlocks: 0, total_tokens_spent: 0, active_students: 0 });
+    const [usageStats, setUsageStats] = useState(EMPTY_USAGE_STATS);
 
-    const loadData = async () => {
+    // Nomor request terbaru: balasan dari request yang sudah usang diabaikan,
+    // sehingga hasil pencarian lama tidak menimpa hasil yang baru.
+    const requestSeq = useRef(0);
+
+    const load = useCallback(async (tab: Tab, search: string, pageNumber: number) => {
+        const seq = ++requestSeq.current;
         setLoading(true);
+        setError(null);
         try {
-            if (activeTab === 'purchases') {
-                const res = await getAdminPurchasesTracker(searchQuery);
-                if (res.success) {
-                    setPurchases(res.transactions || []);
-                    setPurchaseStats(res.stats || { total_orders: 0, success_orders: 0, total_revenue: 0, total_tokens_sold: 0 });
-                }
+            const query = { search, page: pageNumber, pageSize: PAGE_SIZE };
+            if (tab === 'purchases') {
+                const res = await getAdminPurchasesTracker(query);
+                if (seq !== requestSeq.current) return;
+                if (!res.success) throw new Error(res.error);
+                setPurchases(res.transactions || []);
+                setPurchaseStats(res.stats || EMPTY_PURCHASE_STATS);
+                setTotal(Number(res.total || 0));
+                setFiltered(Boolean(res.filtered));
             } else {
-                const res = await getAdminUsagesTracker(searchQuery);
-                if (res.success) {
-                    setUsages(res.usages || []);
-                    setUsageStats(res.stats || { total_unlocks: 0, total_tokens_spent: 0, active_students: 0 });
-                }
+                const res = await getAdminUsagesTracker(query);
+                if (seq !== requestSeq.current) return;
+                if (!res.success) throw new Error(res.error);
+                setUsages(res.usages || []);
+                setUsageStats(res.stats || EMPTY_USAGE_STATS);
+                setTotal(Number(res.total || 0));
+                setFiltered(Boolean(res.filtered));
             }
         } catch (err) {
-            console.error('Error loading tracker data:', err);
+            if (seq !== requestSeq.current) return;
+            // Data lama dikosongkan agar tidak disangka hasil yang berlaku.
+            setPurchases([]);
+            setUsages([]);
+            setPurchaseStats(EMPTY_PURCHASE_STATS);
+            setUsageStats(EMPTY_USAGE_STATS);
+            setTotal(0);
+            setError(String((err as Error)?.message || 'Data tracker gagal dimuat.'));
         } finally {
-            setLoading(false);
+            if (seq === requestSeq.current) setLoading(false);
         }
-    };
+    }, []);
 
     useEffect(() => {
-        loadData();
-    }, [activeTab]);
+        // Memuat data dari server saat tab, kata kunci, atau halaman berubah.
+        // eslint-disable-next-line react-hooks/set-state-in-effect
+        void load(activeTab, appliedSearch, page);
+    }, [activeTab, appliedSearch, page, reloadKey, load]);
+
+    const switchTab = (tab: Tab) => {
+        if (tab === activeTab) return;
+        setActiveTab(tab);
+        setSearchInput('');
+        setAppliedSearch('');
+        setPage(1);
+    };
 
     const handleSearch = (e: React.FormEvent) => {
         e.preventDefault();
-        loadData();
+        setAppliedSearch(searchInput.trim());
+        setPage(1);
+        setReloadKey((k) => k + 1);
     };
+
+    const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+    const rowCount = activeTab === 'purchases' ? purchases.length : usages.length;
+    const firstRow = rowCount ? (page - 1) * PAGE_SIZE + 1 : 0;
+    const lastRow = (page - 1) * PAGE_SIZE + rowCount;
+    const formatTime = (value: string) => formatSchoolDateTime(value, timeZone);
 
     return (
         <div className="max-w-7xl mx-auto space-y-8 pb-16">
-            
+
             {/* Page Header (Clean & Elegan) */}
             <div>
                 <h1 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight flex items-center gap-2.5">
@@ -68,7 +157,7 @@ export default function AdminTransactionsTrackerPage() {
                 <div className="inline-flex p-1.5 rounded-xl bg-slate-200/70 border border-slate-300/60 max-w-fit">
                     <button
                         type="button"
-                        onClick={() => { setActiveTab('purchases'); setSearchQuery(''); }}
+                        onClick={() => switchTab('purchases')}
                         className={`px-5 py-2.5 rounded-lg text-xs md:text-sm font-bold transition-all cursor-pointer flex items-center gap-2 ${
                             activeTab === 'purchases'
                                 ? 'bg-white text-[#030C4D] shadow-sm'
@@ -80,7 +169,7 @@ export default function AdminTransactionsTrackerPage() {
                     </button>
                     <button
                         type="button"
-                        onClick={() => { setActiveTab('usages'); setSearchQuery(''); }}
+                        onClick={() => switchTab('usages')}
                         className={`px-5 py-2.5 rounded-lg text-xs md:text-sm font-bold transition-all cursor-pointer flex items-center gap-2 ${
                             activeTab === 'usages'
                                 ? 'bg-white text-[#030C4D] shadow-sm'
@@ -98,9 +187,10 @@ export default function AdminTransactionsTrackerPage() {
                         <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" size={15} />
                         <input
                             type="text"
-                            placeholder="Cari order, siswa, email..."
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
+                            maxLength={SEARCH_MAX}
+                            placeholder={activeTab === 'purchases' ? 'Cari order, siswa, email...' : 'Cari siswa, email, judul item...'}
+                            value={searchInput}
+                            onChange={(e) => setSearchInput(e.target.value)}
                             className="w-full text-xs py-2.5 pl-9 pr-3 rounded-xl border border-slate-300 bg-white focus:border-[#030C4D] outline-none shadow-xs"
                         />
                     </div>
@@ -112,6 +202,19 @@ export default function AdminTransactionsTrackerPage() {
                     </button>
                 </form>
             </div>
+
+            {filtered && !error && (
+                <p className="-mt-4 text-xs text-slate-600">
+                    Ringkasan dan tabel di bawah hanya mencakup data yang cocok dengan pencarian <strong>&ldquo;{appliedSearch}&rdquo;</strong>.{' '}
+                    <button
+                        type="button"
+                        onClick={() => { setSearchInput(''); setAppliedSearch(''); setPage(1); }}
+                        className="font-semibold text-[#030C4D] underline cursor-pointer"
+                    >
+                        Hapus pencarian
+                    </button>
+                </p>
+            )}
 
             {/* Metrics Row */}
             {activeTab === 'purchases' ? (
@@ -171,13 +274,31 @@ export default function AdminTransactionsTrackerPage() {
                         {activeTab === 'purchases' ? 'Data Transaksi Pembelian Token' : 'Data Pemakaian Token Ujian & Bahan Ajar'}
                     </h2>
                     <button
-                        onClick={loadData}
-                        className="p-1.5 text-slate-500 hover:text-slate-800 rounded-lg hover:bg-slate-100 transition-colors"
+                        type="button"
+                        onClick={() => setReloadKey((k) => k + 1)}
+                        disabled={loading}
+                        className="p-1.5 text-slate-500 hover:text-slate-800 rounded-lg hover:bg-slate-100 transition-colors disabled:cursor-wait"
                         title="Segarkan"
                     >
                         <RefreshCw size={15} className={loading ? 'animate-spin' : ''} />
                     </button>
                 </div>
+
+                {error && (
+                    <div className="m-5 p-3.5 rounded-xl bg-red-50 text-red-800 border border-red-200 text-sm font-semibold flex items-center justify-between gap-3">
+                        <span className="flex items-center gap-2">
+                            <AlertCircle size={16} />
+                            Data gagal dimuat: {error}
+                        </span>
+                        <button
+                            type="button"
+                            onClick={() => setReloadKey((k) => k + 1)}
+                            className="px-3 py-1.5 rounded-lg bg-white border border-red-300 text-xs cursor-pointer"
+                        >
+                            Coba lagi
+                        </button>
+                    </div>
+                )}
 
                 <div className="overflow-x-auto">
                     {activeTab === 'purchases' ? (
@@ -200,10 +321,10 @@ export default function AdminTransactionsTrackerPage() {
                                             Memuat data transaksi...
                                         </td>
                                     </tr>
-                                ) : purchases.length === 0 ? (
+                                ) : error ? null : purchases.length === 0 ? (
                                     <tr>
                                         <td colSpan={7} className="py-12 text-center text-slate-400">
-                                            Belum ada transaksi pembelian token.
+                                            {filtered ? 'Tidak ada transaksi yang cocok dengan pencarian.' : 'Belum ada transaksi pembelian token.'}
                                         </td>
                                     </tr>
                                 ) : (
@@ -212,12 +333,12 @@ export default function AdminTransactionsTrackerPage() {
                                             <td className="py-3.5 px-5 font-mono font-bold text-slate-900">
                                                 {tx.order_id}
                                             </td>
-                                            <td className="py-3.5 px-5 text-slate-500">
-                                                {new Date(tx.created_at).toLocaleString('id-ID', { dateStyle: 'medium', timeStyle: 'short' })}
+                                            <td className="py-3.5 px-5 text-slate-500 whitespace-nowrap">
+                                                {formatTime(tx.created_at)}
                                             </td>
                                             <td className="py-3.5 px-5">
                                                 <div className="font-semibold text-slate-800">{tx.user_name || tx.customer_name || 'Siswa'}</div>
-                                                <div className="text-[11px] text-slate-500">{tx.email}</div>
+                                                <div className="text-[11px] text-slate-500">{tx.email || '-'}</div>
                                             </td>
                                             <td className="py-3.5 px-5">
                                                 <span className="inline-flex items-center gap-1 font-bold text-slate-800">
@@ -233,22 +354,7 @@ export default function AdminTransactionsTrackerPage() {
                                                 {tx.payment_type || 'Midtrans'}
                                             </td>
                                             <td className="py-3.5 px-5 text-right">
-                                                {tx.status === 'success' ? (
-                                                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-800 font-bold text-[11px]">
-                                                        <CheckCircle2 size={12} />
-                                                        Sukses
-                                                    </span>
-                                                ) : tx.status === 'pending' ? (
-                                                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-amber-100 text-amber-800 font-bold text-[11px]">
-                                                        <Clock size={12} />
-                                                        Menunggu
-                                                    </span>
-                                                ) : (
-                                                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-red-100 text-red-800 font-bold text-[11px]">
-                                                        <XCircle size={12} />
-                                                        Gagal
-                                                    </span>
-                                                )}
+                                                <PaymentStatusBadge status={tx.status} />
                                             </td>
                                         </tr>
                                     ))
@@ -273,24 +379,24 @@ export default function AdminTransactionsTrackerPage() {
                                             Memuat data pemakaian token...
                                         </td>
                                     </tr>
-                                ) : usages.length === 0 ? (
+                                ) : error ? null : usages.length === 0 ? (
                                     <tr>
                                         <td colSpan={5} className="py-12 text-center text-slate-400">
-                                            Belum ada transaksi pemakaian token untuk membuka bahan ajar atau ujian.
+                                            {filtered ? 'Tidak ada pemakaian token yang cocok dengan pencarian.' : 'Belum ada transaksi pemakaian token untuk membuka bahan ajar atau ujian.'}
                                         </td>
                                     </tr>
                                 ) : (
                                     usages.map((u) => (
                                         <tr key={u.id} className="hover:bg-slate-50/80 transition-colors">
-                                            <td className="py-3.5 px-5 text-slate-500">
-                                                {new Date(u.created_at).toLocaleString('id-ID', { dateStyle: 'medium', timeStyle: 'short' })}
+                                            <td className="py-3.5 px-5 text-slate-500 whitespace-nowrap">
+                                                {formatTime(u.created_at)}
                                             </td>
                                             <td className="py-3.5 px-5">
                                                 <div className="font-semibold text-slate-800">{u.user_name || 'Siswa'}</div>
                                                 <div className="text-[11px] text-slate-500">{u.user_email || '-'}</div>
                                             </td>
                                             <td className="py-3.5 px-5">
-                                                {u.description.toLowerCase().includes('bahan ajar') || u.item_type === 'material' ? (
+                                                {usageItemType(u) === 'material' ? (
                                                     <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md bg-blue-50 text-blue-800 font-semibold text-[11px] border border-blue-200">
                                                         <BookOpen size={12} />
                                                         Bahan Ajar
@@ -306,7 +412,7 @@ export default function AdminTransactionsTrackerPage() {
                                                 {u.description}
                                             </td>
                                             <td className="py-3.5 px-5 text-right font-black text-rose-600">
-                                                {u.amount} Token
+                                                {Math.abs(Number(u.amount) || 0).toLocaleString('id-ID')} Token
                                             </td>
                                         </tr>
                                     ))
@@ -315,6 +421,35 @@ export default function AdminTransactionsTrackerPage() {
                         </table>
                     )}
                 </div>
+
+                {!error && total > 0 && (
+                    <div className="px-5 py-3.5 border-t border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs text-slate-600">
+                        <span>
+                            Menampilkan {firstRow.toLocaleString('id-ID')}–{lastRow.toLocaleString('id-ID')} dari {total.toLocaleString('id-ID')} data terbaru
+                        </span>
+                        <div className="flex items-center gap-2">
+                            <button
+                                type="button"
+                                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                                disabled={loading || page <= 1}
+                                className="p-1.5 rounded-lg border border-slate-200 hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+                                title="Halaman sebelumnya"
+                            >
+                                <ChevronLeft size={15} />
+                            </button>
+                            <span className="font-semibold">Halaman {page} / {totalPages}</span>
+                            <button
+                                type="button"
+                                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                                disabled={loading || page >= totalPages}
+                                className="p-1.5 rounded-lg border border-slate-200 hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+                                title="Halaman berikutnya"
+                            >
+                                <ChevronRight size={15} />
+                            </button>
+                        </div>
+                    </div>
+                )}
             </div>
 
         </div>

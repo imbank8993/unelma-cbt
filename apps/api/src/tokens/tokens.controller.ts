@@ -136,16 +136,26 @@ export class TokensController {
   @Get('admin/tracker/purchases')
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Tracker pembelian paket token untuk Admin' })
-  getPurchasesTracker(@CurrentUser() user: AuthUser, @Query('search') search?: string) {
+  getPurchasesTracker(
+    @CurrentUser() user: AuthUser,
+    @Query('search') search?: string,
+    @Query('page') page?: string,
+    @Query('page_size') pageSize?: string,
+  ) {
     assertAdmin(user);
-    return this.tokens.getPurchasesTracker(search || '');
+    return this.tokens.getPurchasesTracker(search || '', Number(page), Number(pageSize));
   }
 
   @Get('admin/tracker/usages')
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Tracker pemakaian token saat buka item untuk Admin' })
-  getUsagesTracker(@CurrentUser() user: AuthUser, @Query('search') search?: string) {
+  getUsagesTracker(
+    @CurrentUser() user: AuthUser,
+    @Query('search') search?: string,
+    @Query('page') page?: string,
+    @Query('page_size') pageSize?: string,
+  ) {
     assertAdmin(user);
-    return this.tokens.getUsagesTracker(search || '');
+    return this.tokens.getUsagesTracker(search || '', Number(page), Number(pageSize));
   }
 }

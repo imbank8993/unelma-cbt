@@ -269,3 +269,19 @@ Migrasi pagar saldo (saldo token ditolak database bila minus; aman dijalankan ul
 ```bash
 psql "$DATABASE_URL_HOST" -f database/migrations/20261111_01_token_balance_non_negative.sql
 ```
+
+## Tracker transaksi & pemakaian token (11 November 2026)
+
+Halaman **Tracker Transaksi & Pemakaian Token** (`/dashboard/admin/transactions`):
+
+- Kartu ringkasan kini mengikuti kata kunci pencarian (sebelumnya selalu total seluruh data), dan ada keterangan saat pencarian aktif.
+- Tabel berpaginasi 50 baris dengan keterangan "Menampilkan X–Y dari N"; sebelumnya diam-diam dipotong di 200 baris.
+- Gagal memuat ditampilkan sebagai pesan error dengan tombol **Coba lagi**, bukan "Belum ada transaksi"; hasil pencarian lama tidak lagi menimpa yang baru.
+- `%` dan `_` di kotak cari dicari apa adanya; jenis item memakai data unlock; waktu memakai zona waktu sekolah.
+- Pembelian token memakai email/nama dari akun yang login; email/nama dari request tidak lagi diterima.
+
+Migrasi index (opsional, mempercepat tracker saat data besar; aman dijalankan ulang):
+
+```bash
+psql "$DATABASE_URL_HOST" -f database/migrations/20261111_02_token_tracker_indexes.sql
+```
