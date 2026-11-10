@@ -9,10 +9,10 @@ import { StorageService } from './storage.service';
  * berkas bisa dipakai banyak tempat (bank hasil salin/impor ulang, salinan soal
  * ujian, materi). Layanan ini mencari gambar yang benar-benar yatim:
  *
- *  1. Hanya folder gambar ACCA CBT yang dibuka dan dipertimbangkan:
+ *  1. Hanya folder gambar CBT yang dibuka dan dipertimbangkan:
  *     `users/<id>/questions/…`, `users/<id>/banks/…` (sampul bank), dan
  *     `banks/<id>/equations/…` (SVG persamaan). Bucket R2 dipakai bersama
- *     aplikasi lain (acca-new) di subfolder berbeda; folder selain ketiga jenis
+ *     aplikasi lain di subfolder berbeda; folder selain ketiga jenis
  *     ini tidak didaftar, apalagi dihapus. Avatar, logo, lampiran jawaban,
  *     bukti ujian, audio, dan dokumen juga tidak disentuh.
  *  2. Nama berkasnya dicari di SELURUH kolom teks/JSON di semua tabel database.

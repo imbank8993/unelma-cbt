@@ -1024,7 +1024,7 @@ export default function AdminPASDetailPage() {
                                 min="1"
                                 value={scheduleForm.duration_minutes}
                                 onChange={e => setScheduleForm(p => ({ ...p, duration_minutes: parseInt(e.target.value) || 0 }))}
-                                className="w-full h-[40px] px-3.5 bg-white border border-slate-200 rounded-xl text-sm text-slate-800 focus:outline-none focus:border-[#3083FF] focus:ring-1 focus:ring-[#3083FF]/20 transition-all"
+                                className="w-full h-[40px] px-3.5 bg-white border border-slate-200 rounded-xl text-sm text-slate-800 focus:outline-none focus:border-[#030C4D] focus:ring-1 focus:ring-[#030C4D]/20 transition-all"
                             />
                         </ModalField>
                     </ModalBody>

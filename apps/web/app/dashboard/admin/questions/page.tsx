@@ -693,18 +693,18 @@ export default function ProktorQuestionBankPage() {
             {activeFolder && (
                 <nav aria-label="Lokasi bank soal" className="mb-4 flex flex-wrap items-center gap-2 text-sm">
                     <button type="button" onClick={closeFolder}
-                        className="inline-flex items-center gap-1.5 rounded-lg px-2 py-1.5 font-semibold text-[#3083FF] hover:bg-[#3083FF]/10">
+                        className="inline-flex items-center gap-1.5 rounded-lg px-2 py-1.5 font-semibold text-[#030C4D] hover:bg-[#030C4D]/10">
                         <ArrowLeft size={16} /> Semua Bank Soal
                     </button>
                     <ChevronRight size={15} className="text-slate-400" />
                     <span className="inline-flex items-center gap-2 font-semibold text-slate-700">
-                        <Folder size={16} className="text-[#3083FF]" /> {activeFolder.name}
+                        <Folder size={16} className="text-[#030C4D]" /> {activeFolder.name}
                     </span>
                 </nav>
             )}
 
             {activeFolder && (
-                <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-[#3083FF]/30 bg-[#3083FF]/5 px-4 py-3">
+                <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-[#030C4D]/30 bg-[#030C4D]/5 px-4 py-3">
                     <span className="text-sm font-semibold text-slate-700">{activeFolder.name} <span className="font-normal text-slate-500">· {visibleBanks.length} bank soal</span></span>
                     <Button size="sm" variant="outline" leftIcon={<Plus size={15} />} onClick={() => handleOpenAddToFolder(activeFolder)}>
                         Tambah Bank yang Ada
@@ -746,8 +746,8 @@ export default function ProktorQuestionBankPage() {
                     <>
                         {!activeFolder && folders.map(folder => (
                             <button key={folder.id} type="button" onClick={() => openFolder(folder.id)}
-                                className="flex w-full items-center gap-2 rounded-lg border border-[#3083FF]/30 bg-[#3083FF]/5 px-3 py-3 text-left hover:border-[#3083FF]">
-                                <Folder size={18} className="shrink-0 text-[#3083FF]" />
+                                className="flex w-full items-center gap-2 rounded-lg border border-[#030C4D]/30 bg-[#030C4D]/5 px-3 py-3 text-left hover:border-[#030C4D]">
+                                <Folder size={18} className="shrink-0 text-[#030C4D]" />
                                 <span className="min-w-0 flex-1 truncate text-sm font-semibold text-slate-700">{folder.name}</span>
                                 <span className="text-xs text-slate-500">{(banksByFolder.folderMap.get(folder.id) || []).length}</span>
                                 <ChevronRight size={16} className="shrink-0 text-slate-500" />
@@ -781,22 +781,22 @@ export default function ProktorQuestionBankPage() {
                             return (
                                 <div key={folder.id} className="bank-folder-group">
                                     {/* Folder header */}
-                                    <div className="bank-folder-row flex items-center gap-2 px-4 py-3 bg-[#3083FF]/5 border border-[#3083FF]/30 rounded-lg mb-2">
+                                    <div className="bank-folder-row flex items-center gap-2 px-4 py-3 bg-[#030C4D]/5 border border-[#030C4D]/30 rounded-lg mb-2">
                                         <input
                                             type="checkbox"
                                             aria-label={`Pilih semua bank soal di folder ${folder.name}`}
                                             disabled={movableBanks.length === 0}
                                             checked={movableBanks.length > 0 && movableBanks.every(b => selectedBankIds.has(b.id))}
                                             onChange={() => toggleSelectAllInFolder(folderBanks)}
-                                            className="bank-checkbox bg-transparent w-4 h-4 text-[#3083FF] border-[#3083FF]/30 rounded focus:ring-2 focus:ring-[#3083FF]/20 cursor-pointer shrink-0"
+                                            className="bank-checkbox bg-transparent w-4 h-4 text-[#030C4D] border-[#030C4D]/30 rounded focus:ring-2 focus:ring-[#030C4D]/20 cursor-pointer shrink-0"
                                         />
                                         <button
                                             type="button"
                                             onClick={() => openFolder(folder.id)}
-                                            className="bank-folder-toggle flex items-center gap-2 flex-1 min-w-0 text-left hover:text-[#3083FF] transition-all"
+                                            className="bank-folder-toggle flex items-center gap-2 flex-1 min-w-0 text-left hover:text-[#030C4D] transition-all"
                                         >
                                             <ChevronRight size={16} className="text-slate-400" />
-                                            <Folder size={16} className="text-[#3083FF]" />
+                                            <Folder size={16} className="text-[#030C4D]" />
                                             <span className="bank-folder-identity">
                                                 <span className="bank-folder-title">
                                                     <span className="font-semibold text-slate-700">{folder.name}</span>
@@ -894,7 +894,7 @@ export default function ProktorQuestionBankPage() {
                         {/* Banks in the current Explorer location */}
                         {activeFolder && pagedBanks.length === 0 && (
                             <div className="rounded-lg border border-dashed border-slate-200 bg-white px-4 py-12 text-center text-sm text-slate-500">
-                                <Folder size={24} className="mx-auto mb-2 text-[#3083FF]/60" />
+                                <Folder size={24} className="mx-auto mb-2 text-[#030C4D]/60" />
                                 {hasBankFilters ? 'Tidak ada bank soal yang cocok di folder ini.' : 'Folder ini belum berisi bank soal.'}
                             </div>
                         )}

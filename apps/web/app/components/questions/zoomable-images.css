@@ -4,7 +4,7 @@ html body img[data-zoomable-image="direct"] {
 }
 
 html body img[data-zoomable-image="direct"]:focus-visible {
-    outline: 2px solid #3083ff;
+    outline: 2px solid #030C4D;
     outline-offset: 4px;
 }
 
@@ -27,7 +27,7 @@ html body img[data-zoomable-image="direct"]:focus-visible {
 
 .cbt-image-zoom-trigger:hover,
 .cbt-image-zoom-trigger:focus-visible {
-    background: #3083ff;
+    background: #030C4D;
     outline: none;
 }
 

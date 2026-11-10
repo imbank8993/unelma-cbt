@@ -28,15 +28,15 @@ const variantStyles = {
     icon: 'warning' as SweetAlertIcon,
   },
   info: {
-    confirmBtn: '#3083FF',
+    confirmBtn: '#030C4D',
     icon: 'info' as SweetAlertIcon,
   },
   primary: {
-    confirmBtn: '#3083FF',
+    confirmBtn: '#030C4D',
     icon: 'question' as SweetAlertIcon,
   },
   success: {
-    confirmBtn: '#3083FF',
+    confirmBtn: '#030C4D',
     icon: 'success' as SweetAlertIcon,
   },
 };
@@ -56,7 +56,7 @@ export async function confirmDialog({
     text,
     icon: icon || style.icon,
     showCancelButton: true,
-    confirmButtonColor: '#3083FF',
+    confirmButtonColor: '#030C4D',
     cancelButtonColor: '#ffffff',
     confirmButtonText: confirmText,
     cancelButtonText: cancelText,
@@ -65,7 +65,7 @@ export async function confirmDialog({
     width: 440,
     padding: 0,
     buttonsStyling: false,
-    iconColor: '#3083FF',
+    iconColor: '#030C4D',
     customClass: {
       container: 'acca-confirm-overlay',
       popup: 'acca-confirm',
@@ -119,7 +119,7 @@ export async function alertDialog({
     text,
     icon: icon || style.icon,
     confirmButtonColor: style.confirmBtn,
-    iconColor: (icon || style.icon) === 'success' ? '#3083FF' : undefined,
+    iconColor: (icon || style.icon) === 'success' ? '#030C4D' : undefined,
     confirmButtonText: confirmText,
     buttonsStyling: false,
     width: 440,
