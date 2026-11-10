@@ -32,17 +32,17 @@ const config = { get: () => '' };
 const sign = (body, key = SERVER_KEY) =>
     crypto.createHash('sha512').update(`${body.order_id}${body.status_code}${body.gross_amount}${key}`).digest('hex');
 
-function webhookFixture({ cfg = { is_production: false, sandbox_server_key: SERVER_KEY, sandbox_client_key: 'SB-c' }, txStatus = 'pending', amount = 25000 } = {}) {
+function webhookFixture({ cfg = { is_production: false, sandbox_server_key: SERVER_KEY, sandbox_client_key: 'SB-c' }, txStatus = 'pending', amount = 25000, userId = 'user-1', profileExists = true, orderExists = true } = {}) {
     const state = { status: txStatus, balance: 0 };
     const prisma = fakePrisma([
         midtransRow(cfg),
-        [/FROM public.payment_transactions WHERE order_id/, () => [{ id: 'tx-1', order_id: ORDER, user_id: 'user-1', email: 'a@b.c', token_amount: 10, amount, package_name: 'Paket', status: state.status }]],
+        [/FROM public.payment_transactions WHERE order_id/, () => orderExists ? [{ id: 'tx-1', order_id: ORDER, user_id: userId, email: 'a@b.c', token_amount: 10, amount, package_name: 'Paket', status: state.status }] : []],
         [/UPDATE public.payment_transactions\s+SET status = 'success'/, () => {
             if (state.status === 'success') return [];
             state.status = 'success';
             return [{ id: 'tx-1' }];
         }],
-        [/SET token_balance = COALESCE\(token_balance, 0\) \+/, (args) => { state.balance += args[0]; return []; }],
+        [/SET token_balance = COALESCE\(token_balance, 0\) \+/, (args) => { if (!profileExists) return []; state.balance += args[0]; return [{ id: userId }]; }],
     ]);
     return { service: new TokensService(prisma, config), prisma, state };
 }
@@ -99,6 +99,43 @@ test('webhook memakai status resmi Midtrans dan menolak nominal yang tidak cocok
     try {
         await assert.rejects(cheap.service.handleWebhook({ ...settlement, signature_key: sign(settlement) }), /Amount mismatch/);
         assert.equal(cheap.state.balance, 0);
+    } finally { net.restore(); }
+});
+
+test('webhook meminta retry jika notifikasi mendahului transaksi lokal', async () => {
+    const f = webhookFixture({ orderExists: false });
+    const net = mockMidtransStatus({ ...settlement });
+    try {
+        await assert.rejects(f.service.handleWebhook({ ...settlement, signature_key: sign(settlement) }), /Transaksi pembayaran belum tersedia/);
+        assert.equal(f.state.balance, 0);
+        assert.equal(net.calls, 0);
+    } finally { net.restore(); }
+});
+
+test('capture tanpa fraud_status yang sah dikredit, tetapi challenge tetap menunggu', async () => {
+    const capture = { ...settlement, transaction_status: 'capture' };
+    const accepted = webhookFixture();
+    let net = mockMidtransStatus(capture);
+    try {
+        assert.equal((await accepted.service.handleWebhook({ ...capture, signature_key: sign(capture) })).status, 'settled');
+        assert.equal(accepted.state.balance, 10);
+    } finally { net.restore(); }
+
+    const challenged = webhookFixture();
+    net = mockMidtransStatus({ ...capture, fraud_status: 'challenge' });
+    try {
+        assert.equal((await challenged.service.handleWebhook({ ...capture, signature_key: sign(capture) })).status, 'pending');
+        assert.equal(challenged.state.balance, 0);
+    } finally { net.restore(); }
+});
+
+test('webhook tidak mengakui lunas bila profil penerima tidak ada', async () => {
+    const f = webhookFixture({ profileExists: false });
+    const net = mockMidtransStatus({ ...settlement });
+    try {
+        await assert.rejects(f.service.handleWebhook({ ...settlement, signature_key: sign(settlement) }), /Profil penerima token belum tersedia/);
+        assert.equal(f.state.balance, 0);
+        assert.equal(f.prisma.calls.filter((c) => /'topup'/.test(c.sql)).length, 0);
     } finally { net.restore(); }
 });
 

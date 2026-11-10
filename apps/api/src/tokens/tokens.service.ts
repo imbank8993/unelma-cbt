@@ -309,7 +309,7 @@ export class TokensService {
       if (!json || json.order_id !== orderId || !json.transaction_status) {
         throw new Error(`status_code ${json?.status_code ?? res.status}`);
       }
-      return json as { transaction_status: string; fraud_status?: string; gross_amount: string; payment_type?: string };
+      return json as { status_code?: string; transaction_status: string; fraud_status?: string; gross_amount: string; payment_type?: string };
     } catch (err) {
       this.logger.error(`Gagal memeriksa status Midtrans untuk ${orderId}: ${(err as Error).message}`);
       // 503 membuat Midtrans mengirim ulang notifikasi nanti.
@@ -333,7 +333,9 @@ export class TokensService {
     `, orderId);
     if (!txs.length) {
       this.logger.warn(`Transaction ${orderId} not found in database.`);
-      return { status: 'not_found' };
+      // Snap dibuat sebelum baris lokal tersimpan. Jangan balas 200 jika
+      // notifikasi mendahului INSERT: Midtrans perlu mengirimnya ulang.
+      throw new ServiceUnavailableException('Transaksi pembayaran belum tersedia.');
     }
     const tx = txs[0];
     if (tx.status === 'success') return { status: 'already_success' };
@@ -346,15 +348,14 @@ export class TokensService {
     }
 
     const txStatus = official.transaction_status;
-    const isSettled =
+    const isSettled = official.status_code === '200' && (
       txStatus === 'settlement' ||
-      (txStatus === 'capture' && official.fraud_status === 'accept');
+      (txStatus === 'capture' && (!official.fraud_status || official.fraud_status.toLowerCase() === 'accept'))
+    );
     const isFailed = txStatus === 'cancel' || txStatus === 'deny' || txStatus === 'expire' || txStatus === 'failure';
 
     if (isSettled) {
-      let credited = false as boolean;
-      let targetUserId = null as string | null;
-      await this.prisma.$transaction(async (prisma) => {
+      const credited = await this.prisma.$transaction(async (prisma) => {
         // Klaim atomik: hanya satu notifikasi (dari banyak yang mungkin datang
         // bersamaan) yang berhasil mengubah status, dan hanya ia yang memberi kredit.
         const claimed = await prisma.$queryRawUnsafe<any[]>(`
@@ -363,9 +364,9 @@ export class TokensService {
           WHERE id = $2::uuid AND status <> 'success'
           RETURNING id
         `, official.payment_type || 'midtrans', tx.id);
-        if (!claimed.length) return;
+        if (!claimed.length) return false;
 
-        targetUserId = tx.user_id;
+        let targetUserId = tx.user_id as string | null;
         if (!targetUserId && tx.email) {
           // Transaksi lama (sebelum pembelian wajib login) belum menyimpan user_id.
           const u = await prisma.$queryRawUnsafe<any[]>(`
@@ -373,26 +374,29 @@ export class TokensService {
           `, tx.email);
           if (u.length) targetUserId = u[0].id;
         }
-        if (!targetUserId) return;
+        if (!targetUserId) {
+          // Melempar membatalkan klaim status di atas. Balasan 503 menjaga
+          // notifikasi tetap dapat dicoba lagi setelah akun dipulihkan.
+          throw new ServiceUnavailableException('Pemilik transaksi belum dapat ditemukan.');
+        }
 
-        await prisma.$executeRawUnsafe(`
+        const profiles = await prisma.$queryRawUnsafe<Array<{ id: string }>>(`
           UPDATE public.cbt_profiles
           SET token_balance = COALESCE(token_balance, 0) + $1
           WHERE id = $2::uuid
+          RETURNING id
         `, tx.token_amount, targetUserId);
+        if (!profiles.length) {
+          throw new ServiceUnavailableException('Profil penerima token belum tersedia.');
+        }
         await prisma.$executeRawUnsafe(`
           INSERT INTO public.token_transactions (user_id, amount, type, description, reference_id)
           VALUES ($1::uuid, $2, 'topup', $3, $4)
         `, targetUserId, tx.token_amount, `Top up token: ${tx.package_name || 'Paket Token'}`, orderId);
-        credited = true;
+        return true;
       });
 
-      if (!credited) {
-        if (!targetUserId) {
-          this.logger.warn(`[Token Webhook] Order ${orderId} lunas tetapi pemiliknya tidak ditemukan; token belum dikreditkan.`);
-        }
-        return { status: 'already_success' };
-      }
+      if (!credited) return { status: 'already_success' };
       this.logger.log(`[Token Webhook] Order ${orderId} settled. User credited with ${tx.token_amount} tokens.`);
       return { status: 'settled', tokens_credited: tx.token_amount };
     }
