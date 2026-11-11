@@ -141,5 +141,11 @@ test('peran Guru dihapus: bahan ajar dikelola Proktor/Admin, halaman lama milik 
     assert.match(migration, /ADD COLUMN IF NOT EXISTS submitted_at timestamptz/);
     const sidebar = read('../../web/app/components/Sidebar.tsx');
     assert.match(sidebar, /\/dashboard\/admin\/proctor-requests/);
-    assert.match(sidebar, /\/dashboard\/siswa\/ajukan-proktor/);
+    // Halaman ajukan-proktor dipindah keluar sidebar siswa ke /dashboard/ajukan-proktor
+    // dan ditampilkan sebagai banner CTA di halaman utama siswa.
+    assert.doesNotMatch(sidebar, /\/dashboard\/siswa\/ajukan-proktor/);
+    const siswaPage = read('../../web/app/dashboard/siswa/page.tsx');
+    assert.match(siswaPage, /\/dashboard\/ajukan-proktor/);
+    const newPage = read('../../web/app/dashboard/ajukan-proktor/page.tsx');
+    assert.match(newPage, /ApplyProctorPage/);
 });
