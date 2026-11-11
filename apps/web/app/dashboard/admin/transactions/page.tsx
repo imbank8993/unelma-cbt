@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { CreditCard, Search, Coins, RefreshCw, CheckCircle2, Clock, XCircle, BookOpen, ClipboardCheck, Receipt, AlertCircle, ChevronLeft, ChevronRight, HelpCircle } from 'lucide-react';
+import { Search, RefreshCw, AlertCircle, ChevronLeft, ChevronRight } from 'lucide-react';
 import { getAdminPurchasesTracker, getAdminUsagesTracker, type PaymentTransaction, type TokenTransaction } from '@/lib/api/tokens';
 import { formatSchoolDateTime } from '@/lib/school-time';
 import { useSchoolTimeZone } from '@/lib/useSchoolTimeZone';
@@ -22,31 +22,27 @@ function usageItemType(u: TokenTransaction): 'material' | 'exam' {
 function PaymentStatusBadge({ status }: { status: string }) {
     if (status === 'success') {
         return (
-            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-800 font-bold text-[11px]">
-                <CheckCircle2 size={12} />
+            <span className="inline-flex px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 font-medium text-[11px]">
                 Sukses
             </span>
         );
     }
     if (status === 'pending') {
         return (
-            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-amber-100 text-amber-800 font-bold text-[11px]">
-                <Clock size={12} />
+            <span className="inline-flex px-2.5 py-1 rounded-full bg-amber-50 text-amber-700 font-medium text-[11px]">
                 Menunggu
             </span>
         );
     }
     if (status === 'failed') {
         return (
-            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-red-100 text-red-800 font-bold text-[11px]">
-                <XCircle size={12} />
+            <span className="inline-flex px-2.5 py-1 rounded-full bg-red-50 text-red-700 font-medium text-[11px]">
                 Gagal
             </span>
         );
     }
     return (
-        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-slate-100 text-slate-700 font-bold text-[11px]">
-            <HelpCircle size={12} />
+        <span className="inline-flex px-2.5 py-1 rounded-full bg-slate-100 text-slate-600 font-medium text-[11px]">
             {status || 'Tidak diketahui'}
         </span>
     );
@@ -143,41 +139,38 @@ export default function AdminTransactionsTrackerPage() {
 
             {/* Page Header (Clean & Elegan) */}
             <div>
-                <h1 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight flex items-center gap-2.5">
-                    <Receipt className="text-[#030C4D]" size={24} />
+                <h1 className="text-xl font-semibold text-slate-900">
                     <span>Tracker Transaksi & Pemakaian Token</span>
                 </h1>
-                <p className="text-xs text-slate-500 mt-0.5">
+                <p className="text-sm text-slate-500 mt-1">
                     Pantau transaksi pembelian token Midtrans dan riwayat pemakaian token siswa saat membuka ujian dan materi.
                 </p>
             </div>
 
             {/* Navigation Tabs */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <div className="inline-flex p-1.5 rounded-xl bg-slate-200/70 border border-slate-300/60 max-w-fit">
+                <div className="inline-flex p-1 rounded-lg bg-slate-100 max-w-fit">
                     <button
                         type="button"
                         onClick={() => switchTab('purchases')}
-                        className={`px-5 py-2.5 rounded-lg text-xs md:text-sm font-bold transition-all cursor-pointer flex items-center gap-2 ${
+                        className={`px-4 py-2 rounded-md text-xs md:text-sm font-medium transition-colors cursor-pointer ${
                             activeTab === 'purchases'
-                                ? 'bg-white text-[#030C4D] shadow-sm'
-                                : 'text-slate-600 hover:text-slate-900'
+                                ? 'bg-white text-slate-900 ring-1 ring-slate-200'
+                                : 'text-slate-500 hover:text-slate-900'
                         }`}
                     >
-                        <CreditCard size={16} />
-                        <span>Tracker Pembelian Token (Midtrans)</span>
+                        Pembelian Token
                     </button>
                     <button
                         type="button"
                         onClick={() => switchTab('usages')}
-                        className={`px-5 py-2.5 rounded-lg text-xs md:text-sm font-bold transition-all cursor-pointer flex items-center gap-2 ${
+                        className={`px-4 py-2 rounded-md text-xs md:text-sm font-medium transition-colors cursor-pointer ${
                             activeTab === 'usages'
-                                ? 'bg-white text-[#030C4D] shadow-sm'
-                                : 'text-slate-600 hover:text-slate-900'
+                                ? 'bg-white text-slate-900 ring-1 ring-slate-200'
+                                : 'text-slate-500 hover:text-slate-900'
                         }`}
                     >
-                        <Coins size={16} />
-                        <span>Tracker Pemakaian (Ujian & Bahan Ajar)</span>
+                        Pemakaian Token
                     </button>
                 </div>
 
@@ -191,12 +184,12 @@ export default function AdminTransactionsTrackerPage() {
                             placeholder={activeTab === 'purchases' ? 'Cari order, siswa, email...' : 'Cari siswa, email, judul item...'}
                             value={searchInput}
                             onChange={(e) => setSearchInput(e.target.value)}
-                            className="w-full text-xs py-2.5 pl-9 pr-3 rounded-xl border border-slate-300 bg-white focus:border-[#030C4D] outline-none shadow-xs"
+                            className="w-full text-xs py-2.5 pl-9 pr-3 rounded-lg border border-slate-300 bg-white focus:border-[#030C4D] outline-none"
                         />
                     </div>
                     <button
                         type="submit"
-                        className="px-4 py-2.5 bg-[#030C4D] hover:bg-[#020510] text-white text-xs font-bold rounded-xl shadow-xs cursor-pointer"
+                        className="px-4 py-2.5 bg-[#030C4D] hover:bg-[#030C4D]/90 text-white text-xs font-medium rounded-lg cursor-pointer"
                     >
                         Cari
                     </button>
@@ -219,48 +212,48 @@ export default function AdminTransactionsTrackerPage() {
             {/* Metrics Row */}
             {activeTab === 'purchases' ? (
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    <div className="bg-white p-5 rounded-2xl border border-slate-200/90 shadow-xs space-y-1">
-                        <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Total Pendapatan</p>
-                        <p className="text-xl md:text-2xl font-black text-[#030C4D]">
+                    <div className="bg-white p-5 rounded-xl border border-slate-200 space-y-1">
+                        <p className="text-xs text-slate-500">Total Pendapatan</p>
+                        <p className="text-xl md:text-2xl font-semibold text-slate-900">
                             Rp {Number(purchaseStats.total_revenue || 0).toLocaleString('id-ID')}
                         </p>
                     </div>
-                    <div className="bg-white p-5 rounded-2xl border border-slate-200/90 shadow-xs space-y-1">
-                        <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Token Terjual</p>
-                        <p className="text-xl md:text-2xl font-black text-[#F8A01B]">
+                    <div className="bg-white p-5 rounded-xl border border-slate-200 space-y-1">
+                        <p className="text-xs text-slate-500">Token Terjual</p>
+                        <p className="text-xl md:text-2xl font-semibold text-slate-900">
                             {Number(purchaseStats.total_tokens_sold || 0).toLocaleString('id-ID')} Token
                         </p>
                     </div>
-                    <div className="bg-white p-5 rounded-2xl border border-slate-200/90 shadow-xs space-y-1">
-                        <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Transaksi Sukses</p>
-                        <p className="text-xl md:text-2xl font-black text-emerald-600">
+                    <div className="bg-white p-5 rounded-xl border border-slate-200 space-y-1">
+                        <p className="text-xs text-slate-500">Transaksi Sukses</p>
+                        <p className="text-xl md:text-2xl font-semibold text-slate-900">
                             {Number(purchaseStats.success_orders || 0).toLocaleString('id-ID')}
                         </p>
                     </div>
-                    <div className="bg-white p-5 rounded-2xl border border-slate-200/90 shadow-xs space-y-1">
-                        <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Total Pesanan</p>
-                        <p className="text-xl md:text-2xl font-black text-slate-700">
+                    <div className="bg-white p-5 rounded-xl border border-slate-200 space-y-1">
+                        <p className="text-xs text-slate-500">Total Pesanan</p>
+                        <p className="text-xl md:text-2xl font-semibold text-slate-900">
                             {Number(purchaseStats.total_orders || 0).toLocaleString('id-ID')}
                         </p>
                     </div>
                 </div>
             ) : (
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div className="bg-white p-5 rounded-2xl border border-slate-200/90 shadow-xs space-y-1">
-                        <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Total Token Terpakai</p>
-                        <p className="text-2xl font-black text-[#F8A01B]">
+                    <div className="bg-white p-5 rounded-xl border border-slate-200 space-y-1">
+                        <p className="text-xs text-slate-500">Total Token Terpakai</p>
+                        <p className="text-2xl font-semibold text-slate-900">
                             {Number(usageStats.total_tokens_spent || 0).toLocaleString('id-ID')} Token
                         </p>
                     </div>
-                    <div className="bg-white p-5 rounded-2xl border border-slate-200/90 shadow-xs space-y-1">
-                        <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Total Item Dibuka</p>
-                        <p className="text-2xl font-black text-[#030C4D]">
+                    <div className="bg-white p-5 rounded-xl border border-slate-200 space-y-1">
+                        <p className="text-xs text-slate-500">Total Item Dibuka</p>
+                        <p className="text-2xl font-semibold text-slate-900">
                             {Number(usageStats.total_unlocks || 0).toLocaleString('id-ID')} Akses
                         </p>
                     </div>
-                    <div className="bg-white p-5 rounded-2xl border border-slate-200/90 shadow-xs space-y-1">
-                        <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Siswa Aktif Bertransaksi</p>
-                        <p className="text-2xl font-black text-blue-600">
+                    <div className="bg-white p-5 rounded-xl border border-slate-200 space-y-1">
+                        <p className="text-xs text-slate-500">Siswa Aktif Bertransaksi</p>
+                        <p className="text-2xl font-semibold text-slate-900">
                             {Number(usageStats.active_students || 0).toLocaleString('id-ID')} Siswa
                         </p>
                     </div>
@@ -268,9 +261,9 @@ export default function AdminTransactionsTrackerPage() {
             )}
 
             {/* Table Area */}
-            <div className="bg-white rounded-2xl border border-slate-200/90 shadow-sm overflow-hidden">
+            <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
                 <div className="p-5 border-b border-slate-100 flex items-center justify-between">
-                    <h2 className="text-base font-bold text-slate-900">
+                    <h2 className="text-base font-semibold text-slate-900">
                         {activeTab === 'purchases' ? 'Data Transaksi Pembelian Token' : 'Data Pemakaian Token Ujian & Bahan Ajar'}
                     </h2>
                     <button
@@ -285,7 +278,7 @@ export default function AdminTransactionsTrackerPage() {
                 </div>
 
                 {error && (
-                    <div className="m-5 p-3.5 rounded-xl bg-red-50 text-red-800 border border-red-200 text-sm font-semibold flex items-center justify-between gap-3">
+                    <div className="m-5 p-3.5 rounded-xl bg-red-50 text-red-700 border border-red-200 text-sm font-medium flex items-center justify-between gap-3">
                         <span className="flex items-center gap-2">
                             <AlertCircle size={16} />
                             Data gagal dimuat: {error}
@@ -303,7 +296,7 @@ export default function AdminTransactionsTrackerPage() {
                 <div className="overflow-x-auto">
                     {activeTab === 'purchases' ? (
                         <table className="w-full text-left text-xs">
-                            <thead className="bg-slate-50 text-slate-500 font-bold uppercase tracking-wider border-b border-slate-200/60">
+                            <thead className="bg-slate-50 text-slate-500 font-medium border-b border-slate-200">
                                 <tr>
                                     <th className="py-3 px-5">Order ID</th>
                                     <th className="py-3 px-5">Waktu</th>
@@ -330,7 +323,7 @@ export default function AdminTransactionsTrackerPage() {
                                 ) : (
                                     purchases.map((tx) => (
                                         <tr key={tx.id} className="hover:bg-slate-50/80 transition-colors">
-                                            <td className="py-3.5 px-5 font-mono font-bold text-slate-900">
+                                            <td className="py-3.5 px-5 font-mono text-slate-900">
                                                 {tx.order_id}
                                             </td>
                                             <td className="py-3.5 px-5 text-slate-500 whitespace-nowrap">
@@ -341,13 +334,10 @@ export default function AdminTransactionsTrackerPage() {
                                                 <div className="text-[11px] text-slate-500">{tx.email || '-'}</div>
                                             </td>
                                             <td className="py-3.5 px-5">
-                                                <span className="inline-flex items-center gap-1 font-bold text-slate-800">
-                                                    <Coins size={13} className="text-[#F8A01B]" />
-                                                    {tx.token_amount} Token
-                                                </span>
+                                                <span className="font-medium text-slate-800">{tx.token_amount} token</span>
                                                 <div className="text-[11px] text-slate-400">{tx.package_name || 'Top Up'}</div>
                                             </td>
-                                            <td className="py-3.5 px-5 font-extrabold text-[#030C4D]">
+                                            <td className="py-3.5 px-5 font-medium text-slate-900">
                                                 Rp {Number(tx.amount).toLocaleString('id-ID')}
                                             </td>
                                             <td className="py-3.5 px-5 uppercase text-[11px] text-slate-600 font-semibold">
@@ -363,7 +353,7 @@ export default function AdminTransactionsTrackerPage() {
                         </table>
                     ) : (
                         <table className="w-full text-left text-xs">
-                            <thead className="bg-slate-50 text-slate-500 font-bold uppercase tracking-wider border-b border-slate-200/60">
+                            <thead className="bg-slate-50 text-slate-500 font-medium border-b border-slate-200">
                                 <tr>
                                     <th className="py-3 px-5">Waktu Akses</th>
                                     <th className="py-3 px-5">Siswa</th>
@@ -397,13 +387,11 @@ export default function AdminTransactionsTrackerPage() {
                                             </td>
                                             <td className="py-3.5 px-5">
                                                 {usageItemType(u) === 'material' ? (
-                                                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md bg-blue-50 text-blue-800 font-semibold text-[11px] border border-blue-200">
-                                                        <BookOpen size={12} />
+                                                    <span className="inline-flex px-2 py-0.5 rounded-md bg-slate-100 text-slate-600 font-medium text-[11px]">
                                                         Bahan Ajar
                                                     </span>
                                                 ) : (
-                                                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md bg-purple-50 text-purple-800 font-semibold text-[11px] border border-purple-200">
-                                                        <ClipboardCheck size={12} />
+                                                    <span className="inline-flex px-2 py-0.5 rounded-md bg-slate-100 text-slate-600 font-medium text-[11px]">
                                                         Ujian CBT
                                                     </span>
                                                 )}
@@ -411,7 +399,7 @@ export default function AdminTransactionsTrackerPage() {
                                             <td className="py-3.5 px-5 font-medium text-slate-800 max-w-sm">
                                                 {u.description}
                                             </td>
-                                            <td className="py-3.5 px-5 text-right font-black text-rose-600">
+                                            <td className="py-3.5 px-5 text-right font-medium text-slate-900">
                                                 {Math.abs(Number(u.amount) || 0).toLocaleString('id-ID')} Token
                                             </td>
                                         </tr>

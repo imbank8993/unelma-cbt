@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from 'react';
-import { Coins, Plus, Edit2, Trash2, Check, X, Shield, Settings, AlertCircle, RefreshCw, Eye, EyeOff } from 'lucide-react';
+import { Plus, Edit2, Trash2, X, AlertCircle, RefreshCw } from 'lucide-react';
 import {
     getAdminTokenPackages,
     createTokenPackage,
@@ -219,11 +219,10 @@ export default function AdminTokensPage() {
             {/* Page Header (Clean & Elegan) */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
-                    <h1 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight flex items-center gap-2.5">
-                        <Coins className="text-[#030C4D]" size={24} />
+                    <h1 className="text-xl font-semibold text-slate-900">
                         <span>Paket Token & Midtrans</span>
                     </h1>
-                    <p className="text-xs text-slate-500 mt-0.5">
+                    <p className="text-sm text-slate-500 mt-1">
                         Atur harga paket token siswa dan kredensial payment gateway Midtrans.
                     </p>
                 </div>
@@ -231,7 +230,7 @@ export default function AdminTokensPage() {
                 <button
                     type="button"
                     onClick={openAddModal}
-                    className="px-4 py-2.5 rounded-xl bg-[#030C4D] hover:bg-[#020510] text-white font-bold text-xs transition-all shadow-xs flex items-center gap-2 self-start sm:self-auto cursor-pointer"
+                    className="px-4 py-2.5 rounded-xl bg-[#030C4D] hover:bg-[#030C4D]/90 text-white font-semibold text-xs transition-all flex items-center gap-2 self-start sm:self-auto cursor-pointer"
                 >
                     <Plus size={16} />
                     <span>Tambah Paket Token</span>
@@ -239,14 +238,13 @@ export default function AdminTokensPage() {
             </div>
 
             {/* Token Packages Table */}
-            <div className="bg-white rounded-2xl border border-slate-200/90 shadow-sm overflow-hidden">
+            <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
                 <div className="p-5 md:p-6 border-b border-slate-100 flex items-center justify-between">
                     <div>
-                        <h2 className="text-lg font-bold text-slate-900 flex items-center gap-2">
-                            <Coins className="text-[#F8A01B]" size={20} />
-                            <span>Daftar Paket Token ({packages.length})</span>
+                        <h2 className="text-base font-semibold text-slate-900">
+                            Daftar Paket Token ({packages.length})
                         </h2>
-                        <p className="text-xs text-slate-500 mt-0.5">
+                        <p className="text-sm text-slate-500 mt-1">
                             Paket yang berstatus aktif akan langsung muncul di katalog pembelian siswa
                         </p>
                     </div>
@@ -262,7 +260,7 @@ export default function AdminTokensPage() {
 
                 <div className="overflow-x-auto">
                     <table className="w-full text-left text-sm">
-                        <thead className="bg-slate-50 text-slate-500 text-xs font-bold uppercase tracking-wider border-b border-slate-200/60">
+                        <thead className="bg-slate-50 text-slate-500 text-xs font-medium border-b border-slate-200">
                             <tr>
                                 <th className="py-3.5 px-6">Nama Paket</th>
                                 <th className="py-3.5 px-6">Jumlah Token</th>
@@ -294,16 +292,13 @@ export default function AdminTokensPage() {
                             ) : (
                                 packages.map((pkg) => (
                                     <tr key={pkg.id} className="hover:bg-slate-50/80 transition-colors">
-                                        <td className="py-4 px-6 font-bold text-slate-900">
+                                        <td className="py-4 px-6 font-medium text-slate-900">
                                             {pkg.name}
                                         </td>
                                         <td className="py-4 px-6">
-                                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-50 text-amber-800 font-bold text-xs border border-amber-200">
-                                                <Coins size={13} className="text-[#F8A01B]" />
-                                                {pkg.token_amount} Token
-                                            </span>
+                                            <span className="text-slate-700">{pkg.token_amount} token</span>
                                         </td>
-                                        <td className="py-4 px-6 font-extrabold text-[#030C4D]">
+                                        <td className="py-4 px-6 font-medium text-slate-900">
                                             Rp {Number(pkg.price_idr).toLocaleString('id-ID')}
                                         </td>
                                         <td className="py-4 px-6 text-xs text-slate-600 max-w-xs truncate">
@@ -314,9 +309,9 @@ export default function AdminTokensPage() {
                                                 type="button"
                                                 onClick={() => handleToggleActive(pkg)}
                                                 disabled={togglingId !== null}
-                                                className={`px-3 py-1 disabled:opacity-60 disabled:cursor-wait rounded-full text-xs font-bold transition-all cursor-pointer ${
+                                                className={`px-3 py-1 disabled:opacity-60 disabled:cursor-wait rounded-full text-xs font-semibold transition-all cursor-pointer ${
                                                     pkg.is_active
-                                                        ? 'bg-emerald-100 text-emerald-800 hover:bg-emerald-200'
+                                                        ? 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100'
                                                         : 'bg-slate-100 text-slate-500 hover:bg-slate-200'
                                                 }`}
                                             >
@@ -326,14 +321,14 @@ export default function AdminTokensPage() {
                                         <td className="py-4 px-6 text-right space-x-2">
                                             <button
                                                 onClick={() => openEditModal(pkg)}
-                                                className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors cursor-pointer"
+                                                className="p-2 text-slate-500 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
                                                 title="Edit Paket"
                                             >
                                                 <Edit2 size={16} />
                                             </button>
                                             <button
                                                 onClick={() => handleDeletePackage(pkg.id, pkg.name)}
-                                                className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
+                                                className="p-2 text-slate-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
                                                 title="Hapus Paket"
                                             >
                                                 <Trash2 size={16} />
@@ -348,19 +343,18 @@ export default function AdminTokensPage() {
             </div>
 
             {/* Midtrans Settings Card */}
-            <div className="bg-white rounded-2xl border border-slate-200/90 shadow-sm p-6 md:p-8">
+            <div className="bg-white rounded-xl border border-slate-200 p-6 md:p-8">
                 <div className="flex items-center justify-between pb-6 border-b border-slate-100 mb-6">
                     <div className="space-y-1">
-                        <h2 className="text-lg font-bold text-slate-900 flex items-center gap-2">
-                            <Shield className="text-[#030C4D]" size={20} />
-                            <span>Konfigurasi Midtrans Payment Gateway</span>
+                        <h2 className="text-base font-semibold text-slate-900">
+                            Konfigurasi Midtrans Payment Gateway
                         </h2>
-                        <p className="text-xs text-slate-500">
+                        <p className="text-sm text-slate-500">
                             Masukkan kunci akses API dari dashboard resmi Midtrans Snap Anda
                         </p>
                     </div>
 
-                    <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${isProduction ? 'bg-emerald-100 text-emerald-800 border border-emerald-300' : 'bg-amber-100 text-amber-800 border border-amber-300'}`}>
+                    <span className={`px-2.5 py-1 rounded-full text-xs font-medium ${isProduction ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'}`}>
                         {isProduction ? 'Mode Produksi' : 'Mode Sandbox'}
                     </span>
                 </div>
@@ -372,7 +366,7 @@ export default function AdminTokensPage() {
                         </div>
                     )}
                     {midtransStatus === 'error' && (
-                        <div className="p-3.5 rounded-xl bg-red-50 text-red-800 border border-red-200 text-sm font-semibold flex items-center justify-between gap-3">
+                        <div className="p-3.5 rounded-xl bg-red-50 text-red-700 border border-red-200 text-sm font-medium flex items-center justify-between gap-3">
                             <span className="flex items-center gap-2">
                                 <AlertCircle size={16} />
                                 Konfigurasi gagal dimuat, sehingga form dikunci agar pengaturan tersimpan tidak tertimpa. {midtransLoadError}
@@ -393,7 +387,7 @@ export default function AdminTokensPage() {
                             onChange={(e) => setIsProduction(e.target.checked)}
                             className="w-5 h-5 text-[#030C4D] rounded cursor-pointer"
                         />
-                        <label htmlFor="midtrans-mode" className="text-sm font-bold text-slate-800 cursor-pointer">
+                        <label htmlFor="midtrans-mode" className="text-sm font-semibold text-slate-800 cursor-pointer">
                             Aktifkan Mode Produksi (Live)
                             <span className="block text-xs font-normal text-slate-500 mt-0.5">
                                 Jika dinonaktifkan, sistem akan berjalan dalam mode Sandbox (Uji Coba dengan kartu dummy).
@@ -406,7 +400,7 @@ export default function AdminTokensPage() {
                         
                         {/* Sandbox */}
                         <div className="space-y-4 p-5 rounded-xl border border-slate-200 bg-slate-50/50">
-                            <h3 className="text-xs font-bold uppercase tracking-wider text-amber-800">
+                            <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-500">
                                 Kunci Sandbox (Pengujian)
                             </h3>
                             <div>
@@ -449,7 +443,7 @@ export default function AdminTokensPage() {
 
                         {/* Production */}
                         <div className="space-y-4 p-5 rounded-xl border border-slate-200 bg-slate-50/50">
-                            <h3 className="text-xs font-bold uppercase tracking-wider text-emerald-800">
+                            <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-500">
                                 Kunci Production (Live)
                             </h3>
                             <div>
@@ -493,12 +487,12 @@ export default function AdminTokensPage() {
                     </div>
 
                     {/* Webhook Instruction Box */}
-                    <div className="p-4 rounded-xl bg-blue-50 border border-blue-200 text-xs text-blue-900 space-y-1">
+                    <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-700 space-y-1">
                         <strong>URL Notifikasi Webhook Midtrans:</strong>
-                        <p className="font-mono bg-white p-2 rounded border border-blue-200 text-blue-800 select-all">
+                        <p className="font-mono bg-white p-2 rounded border border-slate-200 text-slate-800 select-all">
                             {typeof window !== 'undefined' ? `${window.location.origin}/api/webhook/midtrans` : 'https://unelma.id/api/webhook/midtrans'}
                         </p>
-                        <p className="text-[11px] text-blue-700">
+                        <p className="text-[11px] text-slate-500">
                             Salin URL di atas ke menu <em>Settings → Configuration → Payment Notification URL</em> di dashboard Midtrans Anda.
                         </p>
                     </div>
@@ -508,8 +502,8 @@ export default function AdminTokensPage() {
                     {midtransFeedback && (
                         <div className={`p-3.5 rounded-xl border text-sm font-semibold ${
                             midtransFeedback.type === 'success'
-                                ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
-                                : 'bg-red-50 text-red-800 border-red-200'
+                                ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                                : 'bg-red-50 text-red-700 border-red-200'
                         }`}>
                             {midtransFeedback.text}
                         </div>
@@ -518,7 +512,7 @@ export default function AdminTokensPage() {
                     <button
                         type="submit"
                         disabled={savingMidtrans || midtransStatus !== 'ready'}
-                        className="px-6 py-3 bg-[#030C4D] hover:bg-[#020510] text-white font-bold text-sm rounded-xl transition-all shadow-md disabled:opacity-60 cursor-pointer"
+                        className="px-6 py-3 bg-[#030C4D] hover:bg-[#030C4D]/90 text-white font-semibold text-sm rounded-xl transition-all disabled:opacity-60 cursor-pointer"
                     >
                         {savingMidtrans ? 'Menyimpan...' : 'Simpan Pengaturan Midtrans'}
                     </button>
@@ -527,12 +521,11 @@ export default function AdminTokensPage() {
 
             {/* Modal Tambah / Edit Paket Token */}
             {modalOpen && (
-                <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
-                    <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl relative border border-slate-100">
+                <div className="fixed inset-0 z-50 bg-slate-900/40 flex items-center justify-center p-4">
+                    <div className="bg-white rounded-xl max-w-md w-full p-6 shadow-lg relative border border-slate-100">
                         <div className="flex items-center justify-between pb-4 border-b border-slate-100 mb-4">
-                            <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
-                                <Coins className="text-[#F8A01B]" size={18} />
-                                <span>{editingPkg ? 'Edit Paket Token' : 'Tambah Paket Token Baru'}</span>
+                            <h3 className="text-base font-semibold text-slate-900">
+                                {editingPkg ? 'Edit Paket Token' : 'Tambah Paket Token Baru'}
                             </h3>
                             <button
                                 onClick={() => setModalOpen(false)}
@@ -571,7 +564,7 @@ export default function AdminTokensPage() {
                                         max="100000"
                                         step="1"
                                         onChange={(e) => setPkgAmount(e.target.value)}
-                                        className="w-full px-3.5 py-2.5 rounded-lg border border-slate-300 focus:border-[#030C4D] outline-none text-slate-800 font-bold"
+                                        className="w-full px-3.5 py-2.5 rounded-lg border border-slate-300 focus:border-[#030C4D] outline-none text-slate-800 font-semibold"
                                     />
                                 </div>
                                 <div>
@@ -586,7 +579,7 @@ export default function AdminTokensPage() {
                                         required
                                         value={pkgPrice}
                                         onChange={(e) => setPkgPrice(e.target.value)}
-                                        className="w-full px-3.5 py-2.5 rounded-lg border border-slate-300 focus:border-[#030C4D] outline-none text-slate-800 font-bold"
+                                        className="w-full px-3.5 py-2.5 rounded-lg border border-slate-300 focus:border-[#030C4D] outline-none text-slate-800 font-semibold"
                                     />
                                 </div>
                             </div>
@@ -622,14 +615,14 @@ export default function AdminTokensPage() {
                                 <button
                                     type="button"
                                     onClick={() => setModalOpen(false)}
-                                    className="px-4 py-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold"
+                                    className="px-4 py-2 rounded-lg border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 font-medium"
                                 >
                                     Batal
                                 </button>
                                 <button
                                     type="submit"
                                     disabled={submitting}
-                                    className="px-5 py-2 rounded-lg bg-[#030C4D] hover:bg-[#020510] text-white font-bold disabled:opacity-60"
+                                    className="px-5 py-2 rounded-lg bg-[#030C4D] hover:bg-[#030C4D]/90 text-white font-semibold disabled:opacity-60"
                                 >
                                     {submitting ? 'Menyimpan...' : 'Simpan Paket'}
                                 </button>

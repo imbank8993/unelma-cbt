@@ -1,19 +1,13 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from 'react';
-import Link from 'next/link';
-import { 
-    Users, 
+import {
+    Users,
     School,
-    Shield, 
-    UserCheck, 
-    Search, 
-    RefreshCw, 
-    CheckCircle2, 
-    AlertCircle, 
-    ArrowLeft,
-    Sparkles,
-    GraduationCap,
+    Search,
+    RefreshCw,
+    CheckCircle2,
+    AlertCircle,
     Trash2,
     UserPlus,
     X,
@@ -185,58 +179,26 @@ export default function AdminUsersPage() {
     };
 
     const getRoleBadge = (role: string) => {
-        switch (role.toUpperCase()) {
-            case 'SUPERADMIN':
-                return (
-                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-purple-500/10 text-purple-600 border border-purple-500/20">
-                        <Sparkles className="w-3.5 h-3.5" /> Superadmin
-                    </span>
-                );
-            case 'ADMIN':
-                return (
-                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-blue-500/10 text-blue-600 border border-blue-500/20">
-                        <Shield className="w-3.5 h-3.5" /> Admin
-                    </span>
-                );
-            case 'PENGAWAS':
-                return (
-                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-sky-500/10 text-sky-700 border border-sky-500/20">
-                        <Layers className="w-3.5 h-3.5" /> Pengawas
-                    </span>
-                );
-            case 'PROKTOR':
-                return (
-                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-amber-500/10 text-amber-600 border border-amber-500/20">
-                        <UserCheck className="w-3.5 h-3.5" /> Proktor
-                    </span>
-                );
-            default:
-                return (
-                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-slate-100 text-slate-600 border border-slate-200">
-                        <GraduationCap className="w-3.5 h-3.5" /> Siswa
-                    </span>
-                );
-        }
+        // Satu gaya netral; Admin/Superadmin cukup dibedakan dengan aksen navy.
+        const elevated = ['SUPERADMIN', 'ADMIN'].includes(role.toUpperCase());
+        return (
+            <span className={`inline-flex px-2.5 py-1 rounded-full text-xs font-medium ${
+                elevated ? 'bg-[#030C4D]/10 text-[#030C4D]' : 'bg-slate-100 text-slate-600'
+            }`}>
+                {role}
+            </span>
+        );
     };
 
     return (
-        <div className="min-h-screen bg-slate-50 p-6 md:p-10 font-sans text-slate-800">
-            <div className="max-w-6xl mx-auto space-y-6">
+        <div className="max-w-7xl mx-auto pb-16 text-slate-800">
+            <div className="space-y-6">
                 {/* Back button & Page Title */}
                 <div>
-                    <Link
-                        href="/dashboard/admin"
-                        className="inline-flex items-center gap-2 text-sm font-semibold text-slate-500 hover:text-slate-800 transition-colors mb-4"
-                    >
-                        <ArrowLeft className="w-4 h-4" />
-                        Kembali ke Dashboard Admin
-                    </Link>
-
                     <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                         <div>
-                            <h1 className="text-2xl font-bold tracking-tight text-slate-900 flex items-center gap-2.5">
-                                <Users className="w-7 h-7 text-blue-600" />
-                                Manajemen Pengguna & Penunjukan Peran
+                            <h1 className="text-xl font-semibold text-slate-900">
+                                Kelola Pengguna
                             </h1>
                             <p className="text-sm text-slate-500 mt-1">
                                 Kelola hak akses aplikasi: <strong>Admin</strong>, <strong>Proktor</strong>, dan <strong>Siswa</strong>.
@@ -249,19 +211,19 @@ export default function AdminUsersPage() {
                                     setAddError(null);
                                     setShowAddModal(true);
                                 }}
-                                className="inline-flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white text-sm font-semibold rounded-xl shadow-md shadow-blue-500/20 transition-all cursor-pointer"
+                                className="inline-flex items-center gap-2 px-4 py-2.5 bg-[#030C4D] hover:bg-[#030C4D]/90 text-white text-sm font-medium rounded-lg transition-colors cursor-pointer"
                             >
                                 <UserPlus className="w-4 h-4" />
-                                Tambah Pengguna / Admin Baru
+                                Tambah Pengguna
                             </button>
 
                             <button
                                 onClick={loadUsers}
                                 disabled={loading}
-                                className="inline-flex items-center gap-2 px-4 py-2.5 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-sm font-semibold rounded-xl shadow-sm transition-all cursor-pointer disabled:opacity-50"
+                                className="inline-flex items-center gap-2 px-4 py-2.5 bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 text-sm font-medium rounded-lg transition-colors cursor-pointer disabled:opacity-50"
                             >
                                 <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-                                Segarkan Data
+                                Segarkan
                             </button>
                         </div>
                     </div>
@@ -270,10 +232,10 @@ export default function AdminUsersPage() {
                 {/* Toast Notification */}
                 {toastMsg && (
                     <div
-                        className={`p-4 rounded-xl text-sm flex items-start gap-3 border shadow-sm transition-all ${
+                        className={`p-4 rounded-xl text-sm flex items-start gap-3 border transition-all ${
                             toastMsg.type === 'success'
-                                ? 'bg-emerald-50 border-emerald-200 text-emerald-800'
-                                : 'bg-red-50 border-red-200 text-red-800'
+                                ? 'bg-emerald-50 border-emerald-200 text-emerald-700'
+                                : 'bg-red-50 border-red-200 text-red-700'
                         }`}
                     >
                         {toastMsg.type === 'success' ? (
@@ -287,32 +249,32 @@ export default function AdminUsersPage() {
 
                 {/* Stats Summary */}
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                    <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
-                        <span className="text-xs uppercase tracking-wider text-slate-400 font-semibold">Total Pengguna</span>
-                        <div className="text-2xl font-bold text-slate-900 mt-1">{users.length}</div>
+                    <div className="bg-white p-5 rounded-xl border border-slate-200">
+                        <span className="text-xs text-slate-500">Total Pengguna</span>
+                        <div className="text-2xl font-semibold text-slate-900 mt-1">{users.length}</div>
                     </div>
-                    <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
-                        <span className="text-xs uppercase tracking-wider text-blue-500 font-semibold">Admin</span>
-                        <div className="text-2xl font-bold text-blue-600 mt-1">
+                    <div className="bg-white p-5 rounded-xl border border-slate-200">
+                        <span className="text-xs text-slate-500">Admin</span>
+                        <div className="text-2xl font-semibold text-slate-900 mt-1">
                             {users.filter(u => u.isPlatformAdmin || u.roles.some(r => r.toUpperCase() === 'ADMIN')).length}
                         </div>
                     </div>
-                    <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
-                        <span className="text-xs uppercase tracking-wider text-amber-500 font-semibold">Proktor</span>
-                        <div className="text-2xl font-bold text-amber-600 mt-1">
+                    <div className="bg-white p-5 rounded-xl border border-slate-200">
+                        <span className="text-xs text-slate-500">Proktor</span>
+                        <div className="text-2xl font-semibold text-slate-900 mt-1">
                             {users.filter(u => u.roles.some(r => r.toUpperCase() === 'PROKTOR')).length}
                         </div>
                     </div>
-                    <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
-                        <span className="text-xs uppercase tracking-wider text-slate-500 font-semibold">Siswa</span>
-                        <div className="text-2xl font-bold text-slate-700 mt-1">
+                    <div className="bg-white p-5 rounded-xl border border-slate-200">
+                        <span className="text-xs text-slate-500">Siswa</span>
+                        <div className="text-2xl font-semibold text-slate-900 mt-1">
                             {users.filter(u => !u.isPlatformAdmin && !u.roles.some(r => ['ADMIN', 'PROKTOR'].includes(r.toUpperCase()))).length}
                         </div>
                     </div>
                 </div>
 
                 {/* Search & Table Card */}
-                <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+                <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
                     <div className="p-4 sm:p-5 border-b border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-3">
                         <div className="relative w-full sm:w-80">
                             <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
@@ -321,7 +283,7 @@ export default function AdminUsersPage() {
                                 value={search}
                                 onChange={(e) => setSearch(e.target.value)}
                                 placeholder="Cari nama, email, sekolah..."
-                                className="w-full bg-slate-50 border border-slate-200 focus:border-blue-500 focus:bg-white text-slate-800 rounded-xl py-2 pl-10 pr-4 text-sm outline-none transition-all placeholder:text-slate-400"
+                                className="w-full bg-white border border-slate-300 focus:border-[#030C4D] text-slate-800 rounded-lg py-2 pl-10 pr-4 text-sm outline-none placeholder:text-slate-400"
                             />
                         </div>
                         <div className="text-xs text-slate-500 font-medium">
@@ -343,7 +305,7 @@ export default function AdminUsersPage() {
                         <div className="overflow-x-auto">
                             <table className="w-full text-left border-collapse">
                                 <thead>
-                                    <tr className="bg-slate-50/70 border-b border-slate-200 text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                                    <tr className="bg-slate-50 border-b border-slate-200 text-xs font-medium text-slate-500">
                                         <th className="py-3.5 px-6">Pengguna</th>
                                         <th className="py-3.5 px-6">Asal Sekolah</th>
                                         <th className="py-3.5 px-6">Peran Saat Ini</th>
@@ -365,7 +327,7 @@ export default function AdminUsersPage() {
                                                                 // eslint-disable-next-line @next/next/no-img-element
                                                                 <img src={u.avatarUrl} alt="" className="w-full h-full object-cover" />
                                                             ) : (
-                                                                <span className="font-bold text-sm text-slate-600">
+                                                                <span className="font-semibold text-sm text-slate-600">
                                                                     {(u.fullName || u.email || '?')[0].toUpperCase()}
                                                                 </span>
                                                             )}
@@ -374,7 +336,7 @@ export default function AdminUsersPage() {
                                                             <div className="font-semibold text-slate-900 flex items-center gap-1.5">
                                                                 {u.fullName || 'Pengguna Tanpa Nama'}
                                                                 {u.isSuperadmin && (
-                                                                    <span className="text-[10px] bg-purple-600 text-white px-2 py-0.5 rounded-full font-bold uppercase">
+                                                                    <span className="text-[10px] bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full font-medium">
                                                                         Superadmin
                                                                     </span>
                                                                 )}
@@ -410,12 +372,12 @@ export default function AdminUsersPage() {
 
                                                 <td className="py-4 px-6 text-right">
                                                     {u.isSuperadmin ? (
-                                                        <span className="text-xs font-semibold text-purple-700 bg-purple-100/80 px-3 py-1.5 rounded-lg border border-purple-200">
+                                                        <span className="text-xs text-slate-500">
                                                             Pemilik Utama (Kebal)
                                                         </span>
                                                     ) : (
                                                         <div className="inline-flex items-center justify-end gap-2">
-                                                            {isActionLoading && <div className="w-4 h-4 border-2 border-blue-600/30 border-t-blue-600 rounded-full animate-spin" />}
+                                                            {isActionLoading && <div className="w-4 h-4 border-2 border-slate-300 border-t-slate-600 rounded-full animate-spin" />}
                                                             <select
                                                                 disabled={isActionLoading}
                                                                 value={primaryRole === 'Superadmin' ? 'Admin' : MANAGED_ROLES.includes(primaryRole) ? primaryRole : ''}
@@ -427,7 +389,7 @@ export default function AdminUsersPage() {
                                                                     }
                                                                     void handleRoleChange(u.id, u.email, next);
                                                                 }}
-                                                                className="bg-white border border-slate-300 hover:border-blue-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 text-slate-700 font-medium text-xs rounded-xl px-3 py-1.5 outline-none transition-all cursor-pointer shadow-sm"
+                                                                className="bg-white border border-slate-300 focus:border-[#030C4D] text-slate-700 text-xs rounded-lg px-3 py-1.5 outline-none cursor-pointer"
                                                             >
                                                                 {!MANAGED_ROLES.includes(primaryRole) && primaryRole !== 'Superadmin' && (
                                                                     <option value="" disabled>{primaryRole} (pilih untuk mengubah)</option>
@@ -442,7 +404,7 @@ export default function AdminUsersPage() {
                                                                 disabled={isActionLoading}
                                                                 onClick={() => handleDeleteUser(u.id, u.email)}
                                                                 title={`Hapus pengguna ${u.email}`}
-                                                                className="p-1.5 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 border border-transparent hover:border-red-200 transition-all cursor-pointer disabled:opacity-40"
+                                                                className="p-1.5 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 transition-colors cursor-pointer disabled:opacity-40"
                                                             >
                                                                 <Trash2 className="w-4 h-4" />
                                                             </button>
@@ -461,8 +423,8 @@ export default function AdminUsersPage() {
 
             {/* Modal Tambah Pengguna Baru */}
             {showAddModal && (
-                <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-                    <div className="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-md w-full p-6 relative animate-in fade-in zoom-in-95 duration-150">
+                <div className="fixed inset-0 z-50 bg-slate-900/40 flex items-center justify-center p-4">
+                    <div className="bg-white rounded-xl border border-slate-200 shadow-lg max-w-md w-full p-6 relative animate-in fade-in zoom-in-95 duration-150">
                         <button
                             type="button"
                             onClick={() => setShowAddModal(false)}
@@ -471,14 +433,9 @@ export default function AdminUsersPage() {
                             <X className="w-5 h-5" />
                         </button>
 
-                        <div className="flex items-center gap-3 mb-5">
-                            <div className="w-10 h-10 rounded-xl bg-blue-100 text-blue-600 flex items-center justify-center">
-                                <UserPlus className="w-5 h-5" />
-                            </div>
-                            <div>
-                                <h3 className="text-lg font-bold text-slate-900">Tambah Akun Pengguna</h3>
-                                <p className="text-xs text-slate-500">Buat akun Admin, Proktor, atau Siswa secara manual.</p>
-                            </div>
+                        <div className="mb-5">
+                            <h3 className="text-base font-semibold text-slate-900">Tambah Akun Pengguna</h3>
+                            <p className="text-sm text-slate-500 mt-1">Buat akun Admin, Proktor, atau Siswa secara manual.</p>
                         </div>
 
                         {addError && (
@@ -491,7 +448,7 @@ export default function AdminUsersPage() {
                         <form onSubmit={handleAddUserSubmit} className="space-y-3.5">
                             <div>
                                 <label className="block text-xs font-semibold text-slate-600 mb-1">
-                                    Nama Lengkap <span className="text-red-500">*</span>
+                                    Nama Lengkap <span className="text-slate-400">*</span>
                                 </label>
                                 <div className="relative">
                                     <User className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
@@ -501,14 +458,14 @@ export default function AdminUsersPage() {
                                         placeholder="Nama Pengguna"
                                         value={addForm.name}
                                         onChange={(e) => setAddForm({ ...addForm, name: e.target.value })}
-                                        className="w-full bg-slate-50 border border-slate-200 focus:border-blue-500 focus:bg-white text-slate-900 text-xs rounded-xl py-2 pl-9 pr-3 outline-none"
+                                        className="w-full bg-white border border-slate-300 focus:border-[#030C4D] text-slate-900 text-xs rounded-lg py-2 pl-9 pr-3 outline-none"
                                     />
                                 </div>
                             </div>
 
                             <div>
                                 <label className="block text-xs font-semibold text-slate-600 mb-1">
-                                    Email Akun <span className="text-red-500">*</span>
+                                    Email Akun <span className="text-slate-400">*</span>
                                 </label>
                                 <div className="relative">
                                     <Mail className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
@@ -518,7 +475,7 @@ export default function AdminUsersPage() {
                                         placeholder="nama@email.com"
                                         value={addForm.email}
                                         onChange={(e) => setAddForm({ ...addForm, email: e.target.value })}
-                                        className="w-full bg-slate-50 border border-slate-200 focus:border-blue-500 focus:bg-white text-slate-900 text-xs rounded-xl py-2 pl-9 pr-3 outline-none"
+                                        className="w-full bg-white border border-slate-300 focus:border-[#030C4D] text-slate-900 text-xs rounded-lg py-2 pl-9 pr-3 outline-none"
                                     />
                                 </div>
                             </div>
@@ -530,15 +487,15 @@ export default function AdminUsersPage() {
 
                             <div>
                                 <label className="block text-xs font-semibold text-slate-600 mb-1">
-                                    Peran / Role <span className="text-red-500">*</span>
+                                    Peran / Role <span className="text-slate-400">*</span>
                                 </label>
                                 <select
                                     value={addForm.role}
                                     onChange={(e) => setAddForm({ ...addForm, role: e.target.value })}
-                                    className="w-full bg-slate-50 border border-slate-200 focus:border-blue-500 focus:bg-white text-slate-900 text-xs rounded-xl py-2 px-3 outline-none cursor-pointer"
+                                    className="w-full bg-white border border-slate-300 focus:border-[#030C4D] text-slate-900 text-xs rounded-lg py-2 px-3 outline-none cursor-pointer"
                                 >
                                     <option value="Admin">Admin (khusus Superadmin) — Hak Akses Penuh Kelola Ujian & Sekolah</option>
-                                    <option value="Proktor">Proktor (Pengawas & Penyelenggara Ujian)</option>
+                                    <option value="Proktor">Proktor (Pembuat Soal & Bahan Ajar)</option>
                                     <option value="Siswa">Siswa (Peserta Ujian)</option>
                                 </select>
                             </div>
@@ -555,7 +512,7 @@ export default function AdminUsersPage() {
                                             placeholder="Nama Sekolah"
                                             value={addForm.schoolName}
                                             onChange={(e) => setAddForm({ ...addForm, schoolName: e.target.value })}
-                                            className="w-full bg-slate-50 border border-slate-200 focus:border-blue-500 focus:bg-white text-slate-900 text-xs rounded-xl py-2 pl-9 pr-3 outline-none"
+                                            className="w-full bg-white border border-slate-300 focus:border-[#030C4D] text-slate-900 text-xs rounded-lg py-2 pl-9 pr-3 outline-none"
                                         />
                                     </div>
                                 </div>
@@ -571,7 +528,7 @@ export default function AdminUsersPage() {
                                             placeholder="Mis: XII MIPA 1"
                                             value={addForm.className}
                                             onChange={(e) => setAddForm({ ...addForm, className: e.target.value })}
-                                            className="w-full bg-slate-50 border border-slate-200 focus:border-blue-500 focus:bg-white text-slate-900 text-xs rounded-xl py-2 pl-9 pr-3 outline-none"
+                                            className="w-full bg-white border border-slate-300 focus:border-[#030C4D] text-slate-900 text-xs rounded-lg py-2 pl-9 pr-3 outline-none"
                                         />
                                     </div>
                                 </div>
@@ -581,14 +538,14 @@ export default function AdminUsersPage() {
                                 <button
                                     type="button"
                                     onClick={() => setShowAddModal(false)}
-                                    className="px-4 py-2 border border-slate-200 text-slate-600 text-xs font-semibold rounded-xl hover:bg-slate-50"
+                                    className="px-4 py-2 border border-slate-300 text-slate-700 text-xs font-medium rounded-lg hover:bg-slate-50"
                                 >
                                     Batal
                                 </button>
                                 <button
                                     type="submit"
                                     disabled={addLoading}
-                                    className="px-5 py-2 bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold rounded-xl shadow-sm transition-all disabled:opacity-50 cursor-pointer flex items-center gap-2"
+                                    className="px-5 py-2 bg-[#030C4D] hover:bg-[#030C4D]/90 text-white text-xs font-medium rounded-lg transition-colors disabled:opacity-50 cursor-pointer flex items-center gap-2"
                                 >
                                     {addLoading ? (
                                         <div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />

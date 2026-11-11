@@ -5,7 +5,7 @@ import {
     type UnusedImagesCleanupResult, type UnusedImagesPreview,
 } from '@/lib/api/storage-cleanup';
 import { motion } from 'framer-motion';
-import { CheckCircle2, ImageOff, Loader2, ScanSearch, Trash2, XCircle } from 'lucide-react';
+import { CheckCircle2, Loader2, ScanSearch, Trash2, XCircle } from 'lucide-react';
 import { useState } from 'react';
 
 const MIN_AGE_DAYS = 30;
@@ -74,15 +74,12 @@ export default function UnusedImagesCleanupCard() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2 }}
-            className="md:col-span-2 bg-white border border-amber-200 rounded-lg p-6 shadow-sm"
+            className="md:col-span-2 bg-white border border-slate-200 rounded-xl p-6"
         >
-            <div className="flex items-center gap-4 mb-4">
-                <div className="w-12 h-12 shrink-0 bg-amber-50 text-amber-600 border border-amber-200 rounded-lg flex items-center justify-center">
-                    <ImageOff size={24} />
-                </div>
+            <div className="mb-4">
                 <div>
-                    <h2 className="text-xl font-bold text-slate-800">Bersihkan Gambar Tak Terpakai</h2>
-                    <p className="text-sm text-slate-500">Hapus gambar soal yang tertinggal di penyimpanan setelah soal atau bank soalnya dihapus.</p>
+                    <h2 className="text-base font-semibold text-slate-900">Bersihkan Gambar Tak Terpakai</h2>
+                    <p className="text-sm text-slate-500 mt-1">Hapus gambar soal yang tertinggal di penyimpanan setelah soal atau bank soalnya dihapus.</p>
                 </div>
             </div>
 
@@ -97,7 +94,7 @@ export default function UnusedImagesCleanupCard() {
                 <button
                     onClick={scan}
                     disabled={busy !== null}
-                    className="flex items-center gap-2 bg-[#030C4D] hover:bg-[#030C4D]/90 text-white px-5 py-2.5 rounded-lg font-bold text-sm transition-all disabled:opacity-50"
+                    className="flex items-center gap-2 bg-[#030C4D] hover:bg-[#030C4D]/90 text-white px-5 py-2.5 rounded-lg font-medium text-sm transition-colors disabled:opacity-50"
                 >
                     {busy === 'scan' ? <Loader2 className="animate-spin" size={16} /> : <ScanSearch size={16} />}
                     {busy === 'scan' ? 'Memindai penyimpanan & database...' : 'Pindai Gambar'}
@@ -106,7 +103,7 @@ export default function UnusedImagesCleanupCard() {
                     <button
                         onClick={remove}
                         disabled={busy !== null}
-                        className="flex items-center gap-2 bg-red-600 hover:bg-red-700 text-white px-5 py-2.5 rounded-lg font-bold text-sm transition-all disabled:opacity-50"
+                        className="flex items-center gap-2 bg-red-600 hover:bg-red-700 text-white px-5 py-2.5 rounded-lg font-medium text-sm transition-colors disabled:opacity-50"
                     >
                         {busy === 'delete' ? <Loader2 className="animate-spin" size={16} /> : <Trash2 size={16} />}
                         {busy === 'delete'
@@ -120,9 +117,9 @@ export default function UnusedImagesCleanupCard() {
                 <div className="mt-5">
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
                         <Stat label="Gambar soal diperiksa" value={preview.imageObjects} />
-                        <Stat label="Masih dipakai" value={preview.referencedCount} tone="emerald" />
+                        <Stat label="Masih dipakai" value={preview.referencedCount} />
                         <Stat label={`Baru (< ${preview.minAgeDays} hari)`} value={preview.recentCount} />
-                        <Stat label="Tak terpakai" value={preview.unusedCount} tone="amber" extra={formatBytes(preview.unusedBytes)} />
+                        <Stat label="Tak terpakai" value={preview.unusedCount} extra={formatBytes(preview.unusedBytes)} />
                     </div>
                     {preview.truncated && (
                         <p className="text-xs text-amber-700 mb-3">
@@ -189,12 +186,11 @@ export default function UnusedImagesCleanupCard() {
     );
 }
 
-function Stat({ label, value, tone, extra }: { label: string; value: number; tone?: 'emerald' | 'amber'; extra?: string }) {
-    const color = tone === 'emerald' ? 'text-emerald-700' : tone === 'amber' ? 'text-amber-700' : 'text-slate-800';
+function Stat({ label, value, extra }: { label: string; value: number; extra?: string }) {
     return (
         <div className="border border-slate-200 rounded-lg p-3">
-            <p className="text-[11px] uppercase tracking-wide text-slate-500 font-semibold">{label}</p>
-            <p className={`text-xl font-bold ${color}`}>{value.toLocaleString('id-ID')}</p>
+            <p className="text-[11px] text-slate-500">{label}</p>
+            <p className="text-xl font-semibold text-slate-900">{value.toLocaleString('id-ID')}</p>
             {extra && <p className="text-xs text-slate-500">{extra}</p>}
         </div>
     );

@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { AlertCircle, BadgeCheck, Clock, RefreshCw, UserCheck, X, XCircle } from 'lucide-react';
+import { AlertCircle, RefreshCw, X } from 'lucide-react';
 import {
     approveProctorApplication,
     listProctorApplications,
@@ -21,12 +21,12 @@ const TABS: { key: Filter; label: string }[] = [
 
 function StatusBadge({ status }: { status: ProctorApplicationStatus }) {
     if (status === 'approved') {
-        return <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200 text-[11px] font-bold"><BadgeCheck size={12} /> Disetujui</span>;
+        return <span className="inline-flex px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 text-[11px] font-medium">Disetujui</span>;
     }
     if (status === 'rejected') {
-        return <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-red-50 text-red-800 border border-red-200 text-[11px] font-bold"><XCircle size={12} /> Ditolak</span>;
+        return <span className="inline-flex px-2.5 py-1 rounded-full bg-red-50 text-red-700 text-[11px] font-medium">Ditolak</span>;
     }
-    return <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-amber-50 text-amber-800 border border-amber-200 text-[11px] font-bold"><Clock size={12} /> Menunggu</span>;
+    return <span className="inline-flex px-2.5 py-1 rounded-full bg-amber-50 text-amber-700 text-[11px] font-medium">Menunggu</span>;
 }
 
 const formatDate = (value?: string | null) =>
@@ -107,11 +107,10 @@ export default function ProctorRequestsPage() {
         <div className="max-w-7xl mx-auto space-y-6 pb-16">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
-                    <h1 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight flex items-center gap-2.5">
-                        <UserCheck className="text-[#030C4D]" size={24} />
+                    <h1 className="text-xl font-semibold text-slate-900">
                         <span>Permintaan Proktor</span>
                     </h1>
-                    <p className="text-xs text-slate-500 mt-0.5">
+                    <p className="text-sm text-slate-500 mt-1">
                         Tinjau pengajuan pengguna (akun Google) yang ingin menjadi Proktor pembuat soal & bahan ajar.
                     </p>
                 </div>
@@ -122,32 +121,32 @@ export default function ProctorRequestsPage() {
             </div>
 
             {toast && (
-                <div className={`p-3.5 rounded-xl border text-sm font-semibold flex items-center justify-between ${toast.type === 'success' ? 'bg-emerald-50 text-emerald-800 border-emerald-200' : 'bg-red-50 text-red-800 border-red-200'}`}>
+                <div className={`p-3.5 rounded-xl border text-sm font-medium flex items-center justify-between ${toast.type === 'success' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-red-50 text-red-700 border-red-200'}`}>
                     <span>{toast.text}</span>
                     <button type="button" onClick={() => setToast(null)} className="text-xs underline cursor-pointer">Tutup</button>
                 </div>
             )}
 
-            <div className="inline-flex p-1.5 rounded-xl bg-slate-200/70 border border-slate-300/60 max-w-fit">
+            <div className="inline-flex p-1 rounded-lg bg-slate-100 max-w-fit">
                 {TABS.map((tab) => (
                     <button key={tab.key} type="button" onClick={() => setFilter(tab.key)}
-                        className={`px-4 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${filter === tab.key ? 'bg-white text-[#030C4D] shadow-sm' : 'text-slate-600 hover:text-slate-900'}`}>
+                        className={`px-4 py-2 rounded-md text-xs font-medium transition-colors cursor-pointer ${filter === tab.key ? 'bg-white text-slate-900 ring-1 ring-slate-200' : 'text-slate-500 hover:text-slate-900'}`}>
                         {tab.label}
-                        {tab.key !== 'all' && <span className="ml-1.5 text-[10px] px-1.5 py-0.5 rounded-full bg-slate-100">{counts[tab.key as ProctorApplicationStatus] ?? 0}</span>}
+                        {tab.key !== 'all' && <span className="ml-1.5 text-[10px] text-slate-400">{counts[tab.key as ProctorApplicationStatus] ?? 0}</span>}
                     </button>
                 ))}
             </div>
 
-            <div className="bg-white rounded-2xl border border-slate-200/90 shadow-sm overflow-hidden">
+            <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
                 {error ? (
-                    <div className="m-5 p-3.5 rounded-xl bg-red-50 text-red-800 border border-red-200 text-sm font-semibold flex items-center justify-between gap-3">
+                    <div className="m-5 p-3.5 rounded-xl bg-red-50 text-red-700 border border-red-200 text-sm font-medium flex items-center justify-between gap-3">
                         <span className="flex items-center gap-2"><AlertCircle size={16} /> {error}</span>
                         <button type="button" onClick={() => void load(filter)} className="px-3 py-1.5 rounded-lg bg-white border border-red-300 text-xs cursor-pointer">Coba lagi</button>
                     </div>
                 ) : (
                     <div className="overflow-x-auto">
                         <table className="w-full text-left text-xs">
-                            <thead className="bg-slate-50 text-slate-500 font-bold uppercase tracking-wider border-b border-slate-200/60">
+                            <thead className="bg-slate-50 text-slate-500 font-medium border-b border-slate-200">
                                 <tr>
                                     <th className="py-3 px-5">Pengaju</th>
                                     <th className="py-3 px-5">Keahlian</th>
@@ -172,7 +171,7 @@ export default function ProctorRequestsPage() {
                                         <td className="py-3.5 px-5"><StatusBadge status={app.status} /></td>
                                         <td className="py-3.5 px-5 text-right">
                                             <button type="button" onClick={() => openDetail(app)}
-                                                className="px-3 py-1.5 rounded-lg bg-[#030C4D] hover:bg-[#020510] text-white text-xs font-bold cursor-pointer">
+                                                className="px-3 py-1.5 rounded-lg border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 text-xs font-medium cursor-pointer">
                                                 {app.status === 'pending' ? 'Tinjau' : 'Detail'}
                                             </button>
                                         </td>
@@ -185,10 +184,10 @@ export default function ProctorRequestsPage() {
             </div>
 
             {selected && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs">
-                    <div className="bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto p-6 shadow-2xl border border-slate-100 space-y-5">
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40">
+                    <div className="bg-white rounded-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto p-6 shadow-lg border border-slate-100 space-y-5">
                         <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-                            <h3 className="font-extrabold text-base text-slate-900">Pengajuan Proktor</h3>
+                            <h3 className="font-semibold text-base text-slate-900">Pengajuan Proktor</h3>
                             <button type="button" onClick={() => setSelected(null)} className="text-slate-400 hover:text-slate-600 p-1"><X size={20} /></button>
                         </div>
 
@@ -203,8 +202,8 @@ export default function ProctorRequestsPage() {
                                 ['Dikirim', formatDate(selected.submitted_at)],
                                 ['Status', ''],
                             ].map(([label, value]) => (
-                                <div key={label} className="bg-slate-50 rounded-xl p-3">
-                                    <div className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">{label}</div>
+                                <div key={label} className="border border-slate-200 rounded-lg p-3">
+                                    <div className="text-[11px] font-medium text-slate-500">{label}</div>
                                     <div className="font-semibold text-slate-800 mt-0.5 break-words">
                                         {label === 'Status' ? <StatusBadge status={selected.status} /> : value}
                                     </div>
@@ -214,11 +213,11 @@ export default function ProctorRequestsPage() {
 
                         <div className="space-y-3 text-xs">
                             <div>
-                                <div className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Bidang Keahlian</div>
+                                <div className="text-[11px] font-medium text-slate-500">Bidang Keahlian</div>
                                 <p className="text-slate-800 mt-1 whitespace-pre-wrap">{selected.expertise || '-'}</p>
                             </div>
                             <div>
-                                <div className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Pengalaman & Alasan</div>
+                                <div className="text-[11px] font-medium text-slate-500">Pengalaman & Alasan</div>
                                 <p className="text-slate-800 mt-1 whitespace-pre-wrap">{selected.motivation || '-'}</p>
                             </div>
                             {selected.status !== 'pending' && (
@@ -232,18 +231,18 @@ export default function ProctorRequestsPage() {
                         {selected.status === 'pending' && (
                             <div className="space-y-3 border-t border-slate-100 pt-4">
                                 <div>
-                                    <label className="block text-xs font-bold text-slate-700 mb-1.5">Alasan penolakan (wajib bila menolak)</label>
+                                    <label className="block text-xs font-medium text-slate-700 mb-1.5">Alasan penolakan (wajib bila menolak)</label>
                                     <textarea rows={2} maxLength={1000} value={rejectReason} onChange={(e) => setRejectReason(e.target.value)}
-                                        className="w-full px-3.5 py-2 rounded-xl border border-slate-200 text-xs text-slate-800"
+                                        className="w-full px-3.5 py-2 rounded-lg border border-slate-300 text-xs text-slate-900 outline-none focus:border-[#030C4D]"
                                         placeholder="Contoh: NIK tidak sesuai nama, mohon perbaiki." />
                                 </div>
                                 <div className="flex items-center justify-end gap-3">
                                     <button type="button" onClick={() => void reject()} disabled={busy}
-                                        className="px-4 py-2 rounded-xl border border-red-200 text-red-700 hover:bg-red-50 text-xs font-bold disabled:opacity-60 cursor-pointer">
+                                        className="px-4 py-2 rounded-lg border border-slate-300 text-red-600 hover:bg-red-50 text-xs font-medium disabled:opacity-60 cursor-pointer">
                                         Tolak
                                     </button>
                                     <button type="button" onClick={() => void approve()} disabled={busy}
-                                        className="px-5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold disabled:opacity-60 cursor-pointer">
+                                        className="px-5 py-2 rounded-lg bg-[#030C4D] hover:bg-[#030C4D]/90 text-white text-xs font-medium disabled:opacity-60 cursor-pointer">
                                         {busy ? 'Memproses...' : 'Setujui jadi Proktor'}
                                     </button>
                                 </div>
