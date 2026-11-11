@@ -98,7 +98,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         ) {
             return 'Dashboard';
         }
+        if (pathname.startsWith('/dashboard/siswa/exam/')) return 'Ujian';
         const lastSeg = pathname.split('/').filter(Boolean).pop() || '';
+        // Segmen ID (UUID) bukan judul: dulu halaman ujian berjudul "B0feab12-52a0-...".
+        if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(lastSeg)) return 'Detail';
         return lastSeg ? lastSeg.charAt(0).toUpperCase() + lastSeg.slice(1) : 'Dashboard';
     }, [pathname]);
 

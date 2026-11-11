@@ -21,6 +21,13 @@ Lock,RefreshCw,
 import { useRouter } from 'next/navigation';
 import { useCallback,useEffect,useRef,useState } from 'react';
 
+import { needsTokenUnlock, unlockPaidExamBeforeStart } from '@/lib/paid-exam-gate';
+
+/** Waktu server terkini dari jangkar jam (dibaca saat diklik, bukan saat render). */
+function clockNow(clock: { time: number; tick: number } | null): number {
+    return clock ? clock.time + performance.now() - clock.tick : NaN;
+}
+
 const SchedulePage = () => {
     const { timeZone, error: timeZoneError } = useSchoolTimeZone();
     const [exams, setExams] = useState<StudentScheduledExam[]>([]);
@@ -31,6 +38,7 @@ const SchedulePage = () => {
     const generation = useRef(0);
     const inFlight = useRef(false);
     const clock = useRef<{ time: number; tick: number } | null>(null);
+    const opening = useRef(false);
     const [historyLimit, setHistoryLimit] = useState(10);
 
     const loadData = useCallback(async () => {
@@ -55,6 +63,22 @@ const SchedulePage = () => {
             if (request === generation.current) { inFlight.current = false; setLoading(false); }
         }
     }, []);
+
+    // Ujian berbayar dibayar dan disetujui DI SINI, sebelum halaman ujian dibuka.
+    const openExam = useCallback(async (exam: StudentScheduledExam) => {
+        if (opening.current) return;
+        const time = clockNow(clock.current);
+        if (scheduleState(exam, time) === 'open' && !inFlight.current) {
+            opening.current = true;
+            try {
+                if (await unlockPaidExamBeforeStart(exam, () => router.push('/dashboard/siswa/tokens'))) {
+                    router.push(`/dashboard/siswa/exam/${exam.id}`);
+                }
+            } finally {
+                opening.current = false;
+            }
+        } else void loadData();
+    }, [loadData, router]);
 
     useEffect(() => {
         const initialLoad = window.setTimeout(() => void loadData(), 0);
@@ -160,7 +184,7 @@ const SchedulePage = () => {
                                     className="p-5 bg-white border border-slate-100 rounded-2xl flex flex-col md:flex-row items-center justify-between gap-4 group cursor-pointer transition-all shadow-sm hover:shadow-lg relative overflow-hidden"
                                     role="link" tabIndex={0}
                                     onKeyDown={event => { if (event.key === 'Enter') event.currentTarget.click(); }}
-                                    onClick={() => { const time = clock.current ? clock.current.time + performance.now() - clock.current.tick : NaN; if (scheduleState(exam, time) === 'open' && !inFlight.current) router.push(`/dashboard/siswa/exam/${exam.id}`); else void loadData(); }}
+                                    onClick={() => { void openExam(exam); }}
                                 >
                                     <div className="absolute left-0 top-0 h-full w-1 bg-[#6B9FE8]" />
                                     
@@ -198,7 +222,7 @@ const SchedulePage = () => {
                                     </div>
                                     <div className="w-full md:w-auto">
                                         <div className="bg-[#030C4D] text-white font-bold text-xs px-5 py-2.5 rounded-xl flex items-center justify-center gap-1.5 shadow-md shadow-[#030C4D]/10 group-hover:bg-[#2563EB] group-hover:shadow-lg group-hover:shadow-[#030C4D]/20 transition-all active:scale-95">
-                                            {recoveryActive(exam, now.getTime()) ? recoveryLabel(exam).button : exam.isInProgress ? 'Lanjutkan Ujian' : 'Kerjakan'} <ArrowRight size={14} />
+                                            {recoveryActive(exam, now.getTime()) ? recoveryLabel(exam).button : exam.isInProgress ? 'Lanjutkan Ujian' : needsTokenUnlock(exam) ? 'Bayar & Kerjakan' : 'Kerjakan'} <ArrowRight size={14} />
                                         </div>
                                     </div>
                                 </motion.div>

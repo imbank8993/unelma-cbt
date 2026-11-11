@@ -286,6 +286,7 @@ export async function startExamAttemptAction(examId: string, deviceId?: string, 
         attempt?: StudentExamAttempt;
         answers?: StudentSavedAnswer[];
         remainingSeconds?: number;
+        paymentRequired?: boolean;
     }>(`/api/students/exams/${encodeURIComponent(examId)}/attempts`, { deviceId, screenCaptureReady });
 
     // Permintaannya sendiri gagal — sesi habis, jaringan putus, backend mati.
@@ -303,6 +304,8 @@ export async function startExamAttemptAction(examId: string, deviceId?: string, 
             success: false as const,
             error: res.error || 'Ujian tidak dapat dimulai.',
             expiredAttemptId: res.expiredAttemptId,
+            /** Ujian berbayar belum dibuka: tampilkan langkah buka-akses, bukan jalan buntu. */
+            paymentRequired: res.paymentRequired === true,
             retryable: false as const,
         };
     }

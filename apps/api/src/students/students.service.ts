@@ -325,7 +325,7 @@ export class StudentsService {
             .from('cbt_exams')
             .select(
                 `id, organization_id, title, description, exam_type, duration_minutes, question_bank_id,
-                 start_time, end_time, is_published, status, show_results, metadata,
+                 start_time, end_time, is_published, status, show_results, metadata, is_paid, token_price,
                  question_banks:cbt_question_banks(id, title)`,
             )
             .eq('id', examId)

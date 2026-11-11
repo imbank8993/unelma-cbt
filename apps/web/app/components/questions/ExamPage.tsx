@@ -678,6 +678,15 @@ export default function ExamPage() {
                 clockRef.current.anchor(Math.max(0, (result.success ? result.remainingSeconds : 0) - (performance.now() - startRequestedAt) / 1000));
                 clockFromDeviceRef.current = false;
                 if (!result.success) {
+                    // Ujian berbayar belum dibuka (mis. harga berubah atau halaman
+                    // dibuka langsung lewat URL): tampilkan langkah buka-akses di
+                    // layar persiapan, bukan jalan buntu "Ujian Belum Dapat Dibuka".
+                    if ('paymentRequired' in result && result.paymentRequired) {
+                        confirmedStartExamIdRef.current = null;
+                        setAwaitingStart(true);
+                        setLoading(false);
+                        return;
+                    }
                     if (result.retryable && await restoreOfflineSession(authUser.id)) return;
                     const pendingSession = await readExamRecoverySession(examId).catch(() => null);
                     if (cancelled) return;
