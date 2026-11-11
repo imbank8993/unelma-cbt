@@ -156,7 +156,7 @@ test('co-editors of a bank cannot be assigned as its validators', async () => {
     const f = fixture();
     await f.service.save(user('a'), 'bank', 'bank', 'b', { permission: 'editor' });
     await f.service.save(user('a'), 'bank', 'bank', 'c', { permission: 'viewer' });
-    const authz = { assertProktor: async () => {}, assertBankAccess: async () => 'school', hasOrgStaffRole: async () => true };
+    const authz = { assertProktor: async () => {}, assertOrgRole: async () => {}, assertBankAccess: async () => 'school', hasOrgStaffRole: async () => true };
     const validations = new ValidationsService(f.db, authz);
     await assert.rejects(validations.create(user('admin'), { bankId: 'bank', validatorIds: ['b'] }), /Editor atau pengelola bank soal ini/);
     // A reader is not a co-author and stays eligible.

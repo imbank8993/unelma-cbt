@@ -31,7 +31,7 @@ export class PasRoomsService {
     ) {}
 
     async listMasterRooms(user: AuthUser, organizationId: string) {
-        await this.authz.assertOrgStaff(user, organizationId);
+        await this.authz.assertProktor(user, organizationId);
         // ACCA-new master data is shared by this single-school installation.
         const { data, error } = await this.db.from('master_ruangan')
             .select('id, kode, nama, lokasi, kapasitas')
@@ -44,7 +44,7 @@ export class PasRoomsService {
     }
 
     async listRooms(user: AuthUser, periodId: string) {
-        await this.authz.assertStaffByRecord(user, 'cbt_pas_periods', periodId);
+        await this.authz.assertProktorByRecord(user, 'cbt_pas_periods', periodId);
 
         const { data, error } = await this.db
             .from('cbt_pas_rooms')
@@ -69,7 +69,7 @@ export class PasRoomsService {
      * tercatat di lebih dari satu kelas.
      */
     async listRoomParticipants(user: AuthUser, periodId: string) {
-        await this.authz.assertStaffByRecord(user, 'cbt_pas_periods', periodId);
+        await this.authz.assertProktorByRecord(user, 'cbt_pas_periods', periodId);
 
         const [roomsRes, placementsRes, schedulesRes] = await Promise.all([
             this.db.from('cbt_pas_rooms').select('id, name, capacity').eq('pas_period_id', periodId).order('name'),

@@ -90,7 +90,11 @@ test('#6 limiter blocks past the limit and recovers after the window', () => {
     assert.equal(limiter.hit('k', 3, 1000), 0);
 });
 
-test('#6 repeated failed logins lock the account temporarily; success resets', async () => {
+test('#6 repeated failed logins lock the account temporarily; success resets', async (t) => {
+    // Login password hanya aktif bila diaktifkan eksplisit (default: Google saja).
+    const previousFlag = process.env.PASSWORD_LOGIN_ENABLED;
+    process.env.PASSWORD_LOGIN_ENABLED = 'true';
+    t.after(() => { if (previousFlag === undefined) delete process.env.PASSWORD_LOGIN_ENABLED; else process.env.PASSWORD_LOGIN_ENABLED = previousFlag; });
     loginFailures.reset('account:victim@x.test');
     let password = 'wrong';
     const controller = new AuthController({ login: async (_e, p) => {

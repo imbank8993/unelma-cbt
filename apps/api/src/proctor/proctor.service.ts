@@ -122,7 +122,7 @@ export class ProctorService {
                       AND e.scoring_type LIKE '%' || (e.metadata->>'student_score_type') || '%'
                     THEN e.metadata->>'student_score_type' ELSE defaults.score_type END AS score_type) chosen
                  WHERE e.organization_id = $1::uuid
-                   AND (NOT $4::boolean OR e.created_by = $5::uuid OR e.is_published IS TRUE)
+                   AND (NOT $4::boolean OR e.created_by = $5::uuid)
                    AND COALESCE(e.metadata->>'archived_at', '') = ''
                    AND COALESCE(e.exam_type, '') <> 'assignment'
                    AND a.status IN ('submitted', 'auto_submitted')
@@ -204,15 +204,28 @@ export class ProctorService {
         return [...byExam.values()];
     }
 
+    /** Jumlah peserta di kelas tambahan milik seorang Proktor. */
+    private async ownClassMemberCount(userId: string, organizationId: string): Promise<{ count: number }> {
+        const { data: classes, error } = await this.db.from('cbt_additional_classes')
+            .select('id').eq('organization_id', organizationId).eq('created_by', userId);
+        if (error) return { count: 0 };
+        const ids = ((classes as Array<{ id: string }>) || []).map((row) => row.id);
+        if (!ids.length) return { count: 0 };
+        const { data: members } = await this.db.from('cbt_additional_class_members')
+            .select('user_id').in('class_id', ids);
+        return { count: new Set(((members as Array<{ user_id: string }>) || []).map((row) => row.user_id)).size };
+    }
+
     /** Angka ringkas untuk kartu dasbor. */
     async getStats(user: AuthUser, organizationId: string) {
         await this.authz.assertOrgStaff(user, organizationId);
         const restrictedProctor = await this.authz.isRestrictedProctor(user, organizationId);
         let bankQuery = this.db.from('cbt_question_banks').select('id', { count: 'exact', head: true }).eq('organization_id', organizationId);
         let examQuery = this.db.from('cbt_exams').select('is_published, status, start_time, end_time').eq('organization_id', organizationId);
+        // Proktor (pembuat konten) hanya melihat angka miliknya sendiri.
         if (restrictedProctor) {
-            bankQuery = bankQuery.or(`created_by.eq.${user.id},is_published.eq.true`);
-            examQuery = examQuery.or(`created_by.eq.${user.id},is_published.eq.true`);
+            bankQuery = bankQuery.eq('created_by', user.id);
+            examQuery = examQuery.eq('created_by', user.id);
         }
 
         const empty = {
@@ -224,10 +237,12 @@ export class ProctorService {
         };
 
         const [members, banks, exams] = await Promise.all([
-            this.db
-                .from('cbt_organization_members')
-                .select('id', { count: 'exact', head: true })
-                .eq('organization_id', organizationId),
+            restrictedProctor
+                ? this.ownClassMemberCount(user.id, organizationId)
+                : this.db
+                    .from('cbt_organization_members')
+                    .select('id', { count: 'exact', head: true })
+                    .eq('organization_id', organizationId),
             bankQuery,
             examQuery,
         ]);
@@ -307,7 +322,8 @@ export class ProctorService {
      * daftarnya dibaca dari sini lalu diperkaya dari sana.
      */
     async getRecentLogins(user: AuthUser, organizationId: string, limit: number) {
-        await this.authz.assertOrgStaff(user, organizationId);
+        // Data login seluruh anggota sekolah: khusus Admin.
+        await this.authz.assertProktor(user, organizationId);
 
         const { data, error } = await this.db
             .from('cbt_organization_members')

@@ -61,7 +61,8 @@ test('the Pengawas workspace (menu) exists for upcoming and recent duties, then 
 
 function adminFixture(now) {
     const db = fixtureDb(createFixtures(), [], { now });
-    const roleByUser = { 'proctor-creator-1': 'Proktor', 'pengawas-1': 'Pengawas' };
+    // Pengelola ASAS/ASAT/AM adalah Admin sekolah.
+    const roleByUser = { 'proctor-creator-1': 'Admin', 'pengawas-1': 'Pengawas' };
     const roles = { hasOrgRole: async (user, org, allowed) => org === 'org-1' && allowed.includes(roleByUser[user]) };
     const auth = new AuthorizationService(db, roles, { assertSchoolId: async id => id });
     return new PasAdministrationService(db, auth);
@@ -69,7 +70,7 @@ function adminFixture(now) {
 const guard = { id: 'pengawas-1' }, manager = { id: 'proctor-creator-1' };
 const params = { periodId: 'period-1', roomId: 'room-1', sessionId: 'session-1', examDate: DUTY };
 
-test('berita acara: view from H-1, save from H through H+3; Proktor is never limited', async () => {
+test('berita acara: view from H-1, save from H through H+3; Admin is never limited', async () => {
     await assert.rejects(adminFixture(at('2026-10-15')).getAdministrationSlot(guard, params), /sehari sebelum hari tugas/);
 
     const dayBefore = adminFixture(at('2026-10-16'));

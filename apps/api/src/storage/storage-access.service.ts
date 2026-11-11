@@ -65,7 +65,6 @@ export class StorageAccessService {
                 try { await this.authz.assertBankAccess(user, bank.id, 'read'); }
                 catch (error) {
                     if (!(error instanceof ForbiddenException)) throw error;
-                    if ((user.roles || []).some(role => role.toUpperCase() === 'PROKTOR')) continue;
                     await this.authz.assertOrgStaff(user, audience.organizationId);
                     const { data: sessions, error: sessionError } = await this.db.from('cbt_question_bank_validations')
                         .select('id').eq('bank_id', bank.id).eq('organization_id', audience.organizationId);

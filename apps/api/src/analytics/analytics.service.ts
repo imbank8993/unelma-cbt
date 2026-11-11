@@ -34,13 +34,13 @@ export class AnalyticsService {
     ) {}
 
     /**
-     * Guru (bukan Proktor/Admin) hanya melihat ujian buatannya sendiri.
+     * Selain Admin (termasuk Proktor) hanya melihat ujian buatannya sendiri.
      * Dipakai daftar ujian; analisis per-ujian memakai `assertExamStaff` yang
      * sudah memuat aturan yang sama plus aturan khusus PAS/PAT.
      */
     private async isElevated(user: AuthUser, organizationId: string): Promise<boolean> {
         if (user.isPlatformAdmin || user.resolved?.superadmin === true) return true;
-        return this.roles.hasOrgRole(user.id, organizationId, ['Proktor', 'Admin']);
+        return this.roles.hasOrgRole(user.id, organizationId, ['Admin']);
     }
 
     async examsWithStats(user: AuthUser, organizationId: string) {
@@ -55,16 +55,14 @@ export class AnalyticsService {
             )
             .eq('organization_id', organizationId);
 
-        const restrictedProctor = !user.isPlatformAdmin && !user.resolved?.superadmin &&
-            await this.roles.hasOrgRole(user.id, organizationId, ['Proktor']) && !await this.roles.hasOrgRole(user.id, organizationId, ['Admin']);
-        if (restrictedProctor) query = query.or(`created_by.eq.${user.id},is_published.eq.true`);
-        else if (!(await this.isElevated(user, organizationId))) {
+        // Selain Admin (termasuk Proktor) hanya melihat analisis ujian buatannya sendiri.
+        if (!(await this.isElevated(user, organizationId))) {
             query = query.eq('created_by', user.id);
         }
 
         const { data } = await query.order('created_at', { ascending: false });
 
-        return ((data as any[]) || []).filter(exam => !restrictedProctor || exam.created_by === user.id || exam.is_published === true).map((exam) => {
+        return ((data as any[]) || []).map((exam) => {
             const attempts = exam.exam_attempts ?? [];
             const completed = attempts.filter((a: any) => FINISHED_STATUSES.includes(a.status));
             const scores = completed

@@ -90,7 +90,7 @@ test('PAS readiness cannot become green when a source read fails, including room
 
 test('PAS period returns computed readiness; frontend uses it for schedule rows, count and filters', async () => {
  const f = fixture(); const service = new PasService(f.db, {
-  assertStaffByRecord: async () => {},
+  assertProktorByRecord: async () => {},
   collaborationPermissions: async () => ({ owner: false, admin: false, grant: null, canShare: false, canDelete: false }),
  });
  assert.equal((await service.getPeriod({ id: 'staff' }, 'p')).pas_class_schedules[0].readiness.ready, true);

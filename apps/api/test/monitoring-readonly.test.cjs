@@ -33,7 +33,9 @@ for (const examType of ['quiz', 'pas', 'pat']) {
   await assert.rejects(service.startMakeupAttempt(user, 'attempt', 'Alasan susulan', 30), forbidden);
   await assert.rejects(new GradingService(db, auth, {}).calculateIrt(user, 'exam'), forbidden);
   await assert.rejects(new TeachersService(db, auth, {}).submitEssayGrades(user, 'attempt', { answer: 100 }), forbidden);
-  await auth.assertExamStaff({ id: 'proctor' }, 'exam');
+  // ASAS/ASAT/AM hanya dikelola Admin: Proktor pembuat pun bukan staf ujian semester.
+  if (examType === 'quiz') await auth.assertExamStaff({ id: 'proctor' }, 'exam');
+  else await assert.rejects(auth.assertExamStaff({ id: 'proctor' }, 'exam'), forbidden);
   exam.created_by = user.id;
   assert.equal(await auth.canManageExam(user, exam), examType === 'quiz');
  });

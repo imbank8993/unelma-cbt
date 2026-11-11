@@ -9,13 +9,14 @@ const { ValidationsService } = require('../src/validations/validations.service.t
 const { CreateValidationDto, UpdateValidationDto, SaveValidationFolderDto } = require('../src/validations/dto/validations.dto.ts');
 const user = id => ({ id, organizationId: 'school' });
 function setup(failedTables = []) {
-    const session = { id: 'session', organization_id: 'school', bank_id: 'bank', created_by: 'proctor', folder_id: null, status: 'approved', round: 2, bank: { created_by: 'owner', is_published: true } };
+    const session = { id: 'session', organization_id: 'school', bank_id: 'bank', created_by: 'proctor', folder_id: null, status: 'approved', round: 2, bank: { created_by: 'proctor', is_published: true } };
     const db = fixtureDb({
         cbt_validation_folders: [
             { id: 'folder', organization_id: 'school', created_by: 'proctor', name: 'ASAS 2026' },
             { id: 'foreign', organization_id: 'other', created_by: 'admin', name: 'Sekolah Lain' },
         ],
-        cbt_question_banks: [{ id: 'bank', organization_id: 'school', created_by: 'owner', title: 'Matematika', is_published: true }],
+        // Proktor hanya memvalidasi bank miliknya sendiri.
+        cbt_question_banks: [{ id: 'bank', organization_id: 'school', created_by: 'proctor', title: 'Matematika', is_published: true }],
         cbt_question_bank_validations: [session],
         cbt_question_bank_validators: [{ id: 'assignment', validation_id: 'session', validator_id: 'teacher', status: 'submitted', validation: session }],
         cbt_question_validation_notes: [{ id: 'note', validation_id: 'session', comment: 'Catatan lama', is_resolved: true }],
@@ -95,12 +96,13 @@ test('teachers receive folder names only through their assigned tasks, without b
     assert.equal((await service.listMyAssignedTasks(user('stranger'))).length, 0);
 });
 
-test('unreadable contents prevent folder deletion and unpublished banks remain restricted for proctors', async () => {
+test('unreadable contents prevent folder deletion and foreign banks remain restricted for proctors', async () => {
     const failed = setup(['cbt_question_bank_validations']);
     await assert.rejects(failed.service.removeFolder(user('admin'), 'folder'), /belum dapat diperiksa/);
     assert.equal(failed.db.writes.length, 0);
     const { db, service } = setup();
-    db.tables.cbt_question_banks[0].is_published = false;
+    // Bank milik pembuat lain — walau sudah dipublikasikan — bukan wilayah Proktor.
+    db.tables.cbt_question_banks[0].created_by = 'owner';
     await assert.rejects(service.updateSession(user('proctor'), 'session', { folderId: 'folder' }), error => error.getStatus?.() === 403);
     assert.equal(db.writes.length, 0);
 });

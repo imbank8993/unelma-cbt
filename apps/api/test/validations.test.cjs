@@ -245,13 +245,15 @@ test('Unanimous rule does not settle on an early rejection or revision', async (
     assert.equal(db.tables.cbt_question_bank_validations[0].status, 'revision_needed');
 });
 
-test('Restricted proctor cannot decide on an unpublished bank owned by someone else', async () => {
+test('Restricted proctor cannot decide on a bank owned by someone else, even once published', async () => {
     const { db, authz, service } = setup('admin_decides');
     withRoles(authz, (id, org, roles) => (id === 'proktor' ? org === 'school' && roles.includes('Proktor') : undefined));
     db.tables.cbt_question_bank_validators.forEach(row => { row.status = 'submitted'; });
     const proktor = { id: 'proktor', organizationId: 'school', roles: ['PROKTOR'], isPlatformAdmin: false };
     await assert.rejects(service.decide(proktor, 'session', 'approved'), ForbiddenException);
     db.tables.cbt_question_banks[0].is_published = true;
+    await assert.rejects(service.decide(proktor, 'session', 'approved'), ForbiddenException);
+    db.tables.cbt_question_banks[0].created_by = 'proktor';
     await service.decide(proktor, 'session', 'approved');
     assert.equal(db.tables.cbt_question_bank_validations[0].status, 'approved');
 });

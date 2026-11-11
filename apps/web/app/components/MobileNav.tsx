@@ -8,7 +8,8 @@ Calendar,
 ClipboardCheck,
 LayoutDashboard,
 Settings,
-Users
+Users,
+Wallet
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import Link from 'next/link';
@@ -46,7 +47,7 @@ const MobileNav = () => {
             { icon: Activity, label: 'Monitor', href: '/dashboard/proktor/monitoring' },
             { icon: BookOpen, label: 'Bank', href: '/dashboard/proktor/questions' },
             { icon: Users, label: 'Kelas', href: '/dashboard/proktor/classes' },
-            { icon: Settings, label: 'Set', href: '/dashboard/proktor/settings' },
+            { icon: Wallet, label: 'Komisi', href: '/dashboard/proktor/commissions' },
         ],
         'Guru': [
             { icon: LayoutDashboard, label: 'Dash', href: '/dashboard/guru' },

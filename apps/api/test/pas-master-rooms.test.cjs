@@ -12,23 +12,23 @@ test('master room catalog returns active rooms with string IDs and capacity with
         { id: 12, nama: 'Lab', kode: 'L1', lokasi: 'Lantai 2', kapasitas: 24, aktif: true },
         { id: 13, nama: 'Tutup', aktif: false },
     ] });
-    const service = new PasRoomsService(db, { assertOrgStaff: async (_, school) => assert.equal(school, 'school') });
+    const service = new PasRoomsService(db, { assertProktor: async (_, school) => assert.equal(school, 'school') });
     assert.deepEqual(await service.listMasterRooms({ id: 'staff' }, 'school'), [
         { id: '12', name: 'Lab', code: 'L1', location: 'Lantai 2', capacity: 24 },
     ]);
     assert.equal(db.writes.length, 0);
 });
 
-test('master room catalog checks staff scope before reading master', async () => {
+test('master room catalog checks the admin scope before reading master', async () => {
     const db = fixtureDb();
-    const service = new PasRoomsService(db, { assertOrgStaff: async () => { throw new Error('Forbidden'); } });
+    const service = new PasRoomsService(db, { assertProktor: async () => { throw new Error('Forbidden'); } });
     await assert.rejects(service.listMasterRooms({ id: 'student' }, 'school'), /Forbidden/);
     assert.equal(db.queries.length, 0);
 });
 
 test('master catalog failure is distinguished from an empty catalog and manual room creation still works', async () => {
     const db = fixtureDb({ cbt_pas_periods: [{ id: 'period', is_locked: false }] }, ['master_ruangan']);
-    const service = new PasRoomsService(db, { assertOrgStaff: async () => {}, assertProktorByRecord: async () => {} });
+    const service = new PasRoomsService(db, { assertProktor: async () => {}, assertProktorByRecord: async () => {} });
     await assert.rejects(service.listMasterRooms({ id: 'staff' }, 'school'), /manual/);
     await service.createRoom({ id: 'staff' }, 'period', { name: 'Ruang tambahan', capacity: 18, clientRequestId: 'request-manual' });
     assert.equal(db.tables.cbt_pas_rooms[0].name, 'Ruang tambahan');
@@ -89,7 +89,7 @@ test('single room field offers master suggestions, copies capacity and still acc
 
 test('room-list failures are reported instead of appearing as an empty catalog', async () => {
     const db = fixtureDb({}, ['cbt_pas_rooms']);
-    const service = new PasRoomsService(db, { assertStaffByRecord: async () => {} });
+    const service = new PasRoomsService(db, { assertProktorByRecord: async () => {} });
     await assert.rejects(service.listRooms({ id: 'staff' }, 'period'), /Daftar ruang ujian belum dapat dimuat/);
 });
 
@@ -97,7 +97,7 @@ test('room loading explicitly joins students by their room FK despite the additi
     const { RelationRegistry } = require('../src/prisma/relation-registry.ts');
     const { parseSelect, compileSelect } = require('../src/prisma/postgrest-select.ts');
     const db = fixtureDb();
-    const service = new PasRoomsService(db, { assertStaffByRecord: async () => {} });
+    const service = new PasRoomsService(db, { assertProktorByRecord: async () => {} });
     await service.listRooms({ id: 'staff' }, 'period');
     const select = db.queries.find(q => q.table === 'cbt_pas_rooms').calls.find(call => call[0] === 'select')[1];
     const registry = new RelationRegistry({});

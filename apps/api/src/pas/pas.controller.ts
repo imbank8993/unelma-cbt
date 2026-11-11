@@ -106,7 +106,7 @@ export class PasController {
     }
 
     @Patch('periods/:periodId')
-    @Roles('ADMIN', 'PROKTOR')
+    @Roles('ADMIN')
     @ApiOperation({ summary: 'Perbarui folder ujian (nama, tanggal, ketua panitia, dll)' })
     updatePeriod(
         @CurrentUser() user: AuthUser,
@@ -117,7 +117,7 @@ export class PasController {
     }
 
     @Put('periods/:periodId/exam-settings')
-    @Roles('ADMIN', 'PROKTOR')
+    @Roles('ADMIN')
     @ApiOperation({ summary: 'Pengaturan ujian folder (bawaan + per bank soal), diterapkan ke ujian yang sudah dibangkitkan' })
     updateExamSettings(
         @CurrentUser() user: AuthUser,
@@ -128,7 +128,7 @@ export class PasController {
     }
 
     @Patch('periods/:periodId/committee-chair')
-    @Roles('ADMIN', 'PROKTOR')
+    @Roles('ADMIN')
     @ApiOperation({ summary: 'Perbarui nama & NIP Ketua Panitia pada folder ujian' })
     updateCommitteeChair(
         @CurrentUser() user: AuthUser,
@@ -253,7 +253,7 @@ export class PasController {
 
     // ── Ruang ────────────────────────────────────────────────────────────────
     @Post('periods/:periodId/merge-exams')
-    @Roles('ADMIN', 'PROKTOR')
+    @Roles('ADMIN')
     @HttpCode(HttpStatus.OK)
     @ApiOperation({ summary: 'Gabungkan ujian per kelas yang belum dikerjakan menjadi satu ujian per bank soal × sesi' })
     mergeExams(@CurrentUser() user: AuthUser, @Param('periodId', ParseUUIDPipe) periodId: string) {

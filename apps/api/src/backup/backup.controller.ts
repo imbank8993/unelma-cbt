@@ -39,7 +39,7 @@ class ImportBackupDto {
 @ApiBearerAuth()
 @Controller('backup')
 @UseGuards(JwtAuthGuard, RolesGuard)
-@Roles('ADMIN', 'PROKTOR')
+@Roles('ADMIN')
 export class BackupController {
     constructor(private readonly backup: BackupService) {}
 

@@ -83,8 +83,6 @@ export class QuestionBanksService {
         if (onlyPublished) query = query.eq('is_published', true);
 
         const elevated = await this.isElevated(user, organizationId);
-        const restrictedProctor = await this.roles.hasOrgRole(user.id, organizationId, ['Proktor']) &&
-            !user.isPlatformAdmin && !user.resolved?.superadmin && !await this.roles.hasOrgRole(user.id, organizationId, ['Admin']);
         const grants = await collaborationGrants(this.db, 'bank', user.id);
         const sharedIds = [...grants.keys()];
         const collaboration = await this.authz.collaborationListContext(user, organizationId, 'bank');
@@ -114,12 +112,9 @@ export class QuestionBanksService {
                 }
             }
         }
-        if (restrictedProctor) {
-            const clauses = [`created_by.eq.${user.id}`, 'is_published.eq.true'];
-            if (publicFolderIds.length) clauses.push(`folder_id.in.(${publicFolderIds.join(',')})`);
-            query = query.or(clauses.join(','));
-        }
-        else if (!elevated) {
+        // Selain Admin (termasuk Proktor): bank sendiri, bank yang dibagikan,
+        // kartu folder publik, dan bank yang ditugaskan untuk divalidasi.
+        if (!elevated) {
             const clauses = [`created_by.eq.${user.id}`];
             if (sharedIds.length) clauses.push(`id.in.(${sharedIds.join(',')})`);
             if (publicFolderIds.length) clauses.push(`folder_id.in.(${publicFolderIds.join(',')})`);
@@ -134,10 +129,8 @@ export class QuestionBanksService {
             return [];
         }
 
-        const banks = ((data as any[]) || []).filter(bank => restrictedProctor
-            ? bank.created_by === user.id || bank.is_published === true || publicFolderIds.includes(bank.folder_id)
-            : elevated || bank.created_by === user.id || grants.has(bank.id) ||
-                publicFolderIds.includes(bank.folder_id) || validationByBank.has(bank.id));
+        const banks = ((data as any[]) || []).filter(bank => elevated || bank.created_by === user.id || grants.has(bank.id) ||
+            publicFolderIds.includes(bank.folder_id) || validationByBank.has(bank.id));
         const counts = await collaboratorCounts(this.db, 'bank', banks.map(bank => bank.id));
         const validationSummaries = await this.validationSummaries(banks.map(bank => bank.id));
 
@@ -157,11 +150,10 @@ export class QuestionBanksService {
 
             const questionCount = (bank.bank_questions || []).filter((q: any) => !q.metadata?._deleted).length;
 
-            const access = collaboration.access(bank,
-                restrictedProctor && bank.created_by !== user.id ? undefined : grants.get(bank.id));
+            const access = collaboration.access(bank, grants.get(bank.id));
             const grant = access.grant;
             const canRead = access.owner || access.admin || !!grant ||
-                publicFolders.get(bank.folder_id) === user.id || restrictedProctor && bank.is_published === true;
+                publicFolders.get(bank.folder_id) === user.id;
             // Kartu folder publik terlihat oleh staf; isi soal hanya bagi pembuat bank/folder atau akses lain yang sah.
             const visibleBank = canRead ? bank : {
                 id: bank.id, title: bank.title, subject: bank.subject, class_level: bank.class_level,
@@ -550,9 +542,10 @@ export class QuestionBanksService {
 
     // ── Pembantu ─────────────────────────────────────────────────────────────
 
+    /** Hanya Admin melihat seluruh bank; Proktor melihat miliknya dan yang dibagikan. */
     private async isElevated(user: AuthUser, organizationId: string): Promise<boolean> {
         if (user.isPlatformAdmin || user.resolved?.superadmin === true) return true;
-        return this.roles.hasOrgRole(user.id, organizationId, ['Proktor', 'Admin']);
+        return this.roles.hasOrgRole(user.id, organizationId, ['Admin']);
     }
 
     /**

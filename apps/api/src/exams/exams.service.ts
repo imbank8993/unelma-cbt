@@ -124,12 +124,12 @@ export class ExamsService {
 
     /**
      * Jalur eksplisit untuk membersihkan ujian uji coba beserta hasilnya.
-     * Hanya Proktor/Admin, wajib sudah tidak dipublikasikan, dan judul harus
+     * Hanya pembuat ujian atau Admin, wajib sudah tidak dipublikasikan, dan judul harus
      * diketik ulang. Jalur hapus biasa tidak pernah menghapus rekam siswa.
      */
     async purgeTrial(user: AuthUser, examId: string, confirmationTitle: string) {
+        // Pembuat ujian (Proktor) atau Admin.
         await this.authz.assertResourceOwner(user, 'exam', examId);
-        await this.authz.assertProktorByRecord(user, 'cbt_exams', examId);
 
         return this.db.transaction(async (db) => {
             await advisoryTransactionLock(db, `exam-delete:${examId}`);

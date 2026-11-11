@@ -87,8 +87,8 @@ export class TeachersService {
     }
 
     /**
-     * Hapus kelas tambahan. Proktor/Admin boleh menghapus kelas siapa pun;
-     * Guru hanya kelas yang ia buat sendiri.
+     * Hapus kelas tambahan. Admin boleh menghapus kelas siapa pun; Proktor hanya
+     * kelas yang ia buat sendiri.
      */
     async removeClass(user: AuthUser, classId: string) {
         const { data: cls } = await this.db
@@ -130,7 +130,7 @@ export class TeachersService {
 
     private async authzHasElevatedRole(user: AuthUser, organizationId: string) {
         try {
-            await this.authz.assertOrgRole(user, organizationId, ['Proktor', 'Admin']);
+            await this.authz.assertOrgRole(user, organizationId, ['Admin']);
             return true;
         } catch {
             return false;
@@ -146,13 +146,17 @@ export class TeachersService {
     async addStudentToClass(user: AuthUser, classId: string, studentId: string) {
         const { data: cls } = await this.db
             .from('cbt_additional_classes')
-            .select('organization_id')
+            .select('organization_id, created_by')
             .eq('id', classId)
             .maybeSingle();
 
         if (!cls) throw new NotFoundException('Kelas tidak ditemukan.');
         const orgId = (cls as { organization_id: string }).organization_id;
         await this.authz.assertOrgStaff(user, orgId);
+        // Peserta hanya boleh ditambahkan ke kelas milik sendiri (Admin: semua kelas).
+        if ((cls as { created_by: string | null }).created_by !== user.id && !(await this.authzHasElevatedRole(user, orgId))) {
+            throw new ForbiddenException('Anda hanya dapat menambah peserta ke kelas yang Anda buat sendiri.');
+        }
 
         // Pastikan studentId yang didaftarkan adalah anggota aktif di sekolah yang sama
         const { data: studentMember } = await this.db
@@ -179,8 +183,9 @@ export class TeachersService {
 
     /** Daftar siswa satu organisasi, untuk dipilih saat menambah anggota kelas. */
     async listStudents(user: AuthUser, organizationId: string) {
-        // Versi lama sama sekali tidak memeriksa apa pun di sini.
-        await this.authz.assertOrgStaff(user, organizationId);
+        // Daftar seluruh siswa sekolah: khusus Admin. Proktor mengundang peserta
+        // ke kelasnya lewat kode gabung kelas.
+        await this.authz.assertProktor(user, organizationId);
 
         const { data, error } = await this.db
             .from('cbt_organization_members')

@@ -40,7 +40,7 @@ export class PasSchedulesService {
     // ── Sesi ─────────────────────────────────────────────────────────────────
 
     async listSessions(user: AuthUser, periodId: string) {
-        await this.authz.assertStaffByRecord(user, 'cbt_pas_periods', periodId);
+        await this.authz.assertProktorByRecord(user, 'cbt_pas_periods', periodId);
 
         const { data, error } = await this.db
             .from('cbt_pas_sessions')

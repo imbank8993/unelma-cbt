@@ -14,7 +14,7 @@ import { FilterActions, FilterSearch, FilterSelect, FilterToolbar } from '@/app/
 import { Button } from '@/app/components/ui/button';
 import { setExamArchived } from '@/lib/api/exams';
 import type { PASPeriod } from '@/app/types/pas';
-import { deletePASPeriodAction, listPASPeriods, listSubjects } from '@/lib/api/pas';
+import { deletePASPeriodAction, listSubjects } from '@/lib/api/pas';
 import {
 getProctorOrganization,
 listClassStudents,
@@ -122,7 +122,8 @@ const ExamsPage = () => {
                         listOrganizationExams(),
                         listQuestionBanks(true),
                         listOrganizationClasses({ activeYearOnly: true }),
-                        listPASPeriods(),
+                        // Folder ASAS/ASAT/AM adalah urusan sekolah (khusus Admin).
+                        Promise.resolve([] as PASPeriod[]),
                         listOrganizationLabels(),
                         listSubjects(),
                     ]);
@@ -426,8 +427,6 @@ const ExamsPage = () => {
                             options={[
                                 { value: 'all', label: 'Semua Jenis Ujian' },
                                 { value: 'daily', label: 'Ulangan Harian' },
-                                { value: 'asas_asat', label: 'ASAS/ASAT' },
-                                { value: 'am', label: 'Asesmen Madrasah' },
                                 { value: 'tryout', label: 'Try Out' },
                                 { value: 'assignment', label: 'Tugas' },
                                 { value: 'lainnya', label: 'Lainnya' },

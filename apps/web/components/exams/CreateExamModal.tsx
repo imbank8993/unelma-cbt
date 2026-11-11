@@ -246,8 +246,8 @@ export const CreateExamModal: React.FC<CreateExamModalProps> = ({
                 pasSchoolYear: '',
                 pasStartDate: todayDate,
                 pasEndDate: todayDate,
-                isPaid: Boolean((exam as any)?.is_paid),
-                tokenPrice: Number((exam as any)?.token_price) || 1,
+                isPaid: Boolean((exam as { is_paid?: boolean } | null | undefined)?.is_paid),
+                tokenPrice: Number((exam as { token_price?: number } | null | undefined)?.token_price) || 1,
             };
             setFormData(initFormData);
 
@@ -356,7 +356,8 @@ export const CreateExamModal: React.FC<CreateExamModalProps> = ({
     }, [isOpen, formData.selectedClassIds, localClassStudents]);
 
     const examTypeOptions = useMemo(() => {
-        if (role === 'guru') {
+        // ASAS/ASAT & Asesmen Madrasah adalah urusan sekolah: hanya Admin yang membuat foldernya.
+        if (role === 'guru' || role === 'proktor') {
             return [
                 { value: 'daily', label: 'Ulangan Harian' },
                 { value: 'tryout', label: 'Try Out' },

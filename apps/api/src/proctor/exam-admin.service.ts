@@ -16,7 +16,7 @@ import { insertIdempotently } from '../common/idempotent-create';
 import { localDateTimeToUtc } from '../common/school-time';
 import { DbService } from '../prisma/prisma-db-adapter';
 import { SettingsService } from '../settings/settings.service';
-import { assignedPasExamStudents, isPasMonitoringExam } from '../common/pas-monitoring-access';
+import { assignedPasExamStudents } from '../common/pas-monitoring-access';
 import { isSemesterAssessmentExam, semesterAssessmentSourceLabel } from '../common/exam-types';
 import { resolveExamBankIds } from '../common/exam-question-sources';
 import { assertNoActiveAttempts } from '../common/exam-active-attempts';
@@ -67,12 +67,12 @@ export class ExamAdminService {
         const grants = await collaborationGrants(this.db, 'exam', user.id);
         const sharedIds = [...grants.keys()];
         const collaboration = await this.authz.collaborationListContext(user, organizationId);
-        const sharedClause = sharedIds.length ? `,id.in.(${sharedIds.join(',')})` : '';
         const restrictedProctor = !user.isPlatformAdmin && !user.resolved?.superadmin &&
             await this.roles.hasOrgRole(user.id, organizationId, ['Proktor']) && !await this.roles.hasOrgRole(user.id, organizationId, ['Admin']);
-        if (restrictedProctor) query = query.or(`created_by.eq.${user.id},is_published.eq.true,exam_type.in.(pas,pat,pts,pkn,am)${sharedClause}`);
-        else if (!canSeeAll) {
-            // Cari bank soal milik guru ini
+        // Selain Admin (termasuk Proktor): ujian buatannya, yang dibagikan, yang
+        // memakai bank soal miliknya, dan ujian ASAS/AM tempat ia ditugaskan mengawas.
+        if (!canSeeAll) {
+            // Cari bank soal milik pengguna ini
             const { data: ownedBanks } = await this.db
                 .from('cbt_question_banks')
                 .select('id')
@@ -101,11 +101,11 @@ export class ExamAdminService {
             return [];
         }
 
-        let exams = ((data as any[]) || []).filter(exam => !restrictedProctor || exam.created_by === user.id || exam.is_published === true || isPasMonitoringExam(exam) || sharedIds.includes(exam.id));
+        let exams = (data as any[]) || [];
         if (isInvigilator && !elevated) {
             assignedStudents = await assignedPasExamStudents(this.db, user.id, organizationId);
             const assignedIds = new Set(assignedStudents.keys());
-            const teacher = await this.roles.hasOrgRole(user.id, organizationId, ['Guru']);
+            const teacher = await this.roles.hasOrgRole(user.id, organizationId, ['Proktor', 'Guru']);
             const { data: banks, error: bankError } = teacher
                 ? await this.db.from('cbt_question_banks').select('id').eq('organization_id', organizationId).eq('created_by', user.id)
                 : { data: [], error: null };
@@ -870,9 +870,10 @@ export class ExamAdminService {
         );
     }
 
+    /** Admin melihat & mengelola seluruh ujian, termasuk ASAS/ASAT/AM. */
     private async isElevated(user: AuthUser, organizationId: string): Promise<boolean> {
         if (user.isPlatformAdmin || user.resolved?.superadmin === true) return true;
-        return this.roles.hasOrgRole(user.id, organizationId, ['Proktor', 'Admin']);
+        return this.roles.hasOrgRole(user.id, organizationId, ['Admin']);
     }
 
     /** Penilaian resmi madrasah (ASAS/ASAT/AM) wajib diikuti semua siswa: tidak boleh berbayar. */
@@ -891,7 +892,7 @@ export class ExamAdminService {
 
         if (!(await this.isElevated(user, organizationId))) {
             throw new ForbiddenException(
-                'Hanya Proktor/Admin yang dapat membuat atau mengubah ujian ASAS/ASAT dan Asesmen Madrasah.',
+                'Hanya Admin yang dapat membuat atau mengubah ujian ASAS/ASAT dan Asesmen Madrasah.',
             );
         }
     }

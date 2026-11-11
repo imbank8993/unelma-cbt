@@ -89,9 +89,17 @@ export class ValidationsService {
         private readonly authz: AuthorizationService,
     ) {}
 
+    /**
+     * Pengelola sesi validasi: Admin (semua) dan Proktor (untuk bank miliknya;
+     * pembatasan per bank/folder dilakukan oleh pemeriksaan kepemilikan berikutnya).
+     */
+    private assertValidationManager(user: AuthUser, organizationId: string | null | undefined) {
+        return this.authz.assertOrgRole(user, organizationId, ['Proktor', 'Admin'], 'Proktor/Admin');
+    }
+
     /** School-wide containers; they do not grant access to the validations inside. */
     async listFolders(user: AuthUser) {
-        await this.authz.assertProktor(user, user.organizationId);
+        await this.assertValidationManager(user, user.organizationId);
         const { data, error } = await this.db.from('cbt_validation_folders').select('*')
             .eq('organization_id', user.organizationId).order('name', { ascending: true });
         if (error) throw new BadRequestException('Folder validasi belum dapat dimuat.');
@@ -115,7 +123,7 @@ export class ValidationsService {
     }
 
     async createFolder(user: AuthUser, name: string) {
-        await this.authz.assertProktor(user, user.organizationId);
+        await this.assertValidationManager(user, user.organizationId);
         const { data, error } = await this.db.from('cbt_validation_folders').insert({
             organization_id: user.organizationId, created_by: user.id, name: this.folderName(name),
         }).select('id').single();
@@ -125,7 +133,7 @@ export class ValidationsService {
     }
 
     private async managedFolder(tx: DbSession, user: AuthUser, folderId: string) {
-        await this.authz.assertProktor(user, user.organizationId);
+        await this.assertValidationManager(user, user.organizationId);
         await tx.raw('SELECT id FROM public.cbt_validation_folders WHERE id = $1::uuid AND organization_id = $2::uuid FOR UPDATE', folderId, user.organizationId);
         const { data: folder, error } = await tx.from('cbt_validation_folders').select('*')
             .eq('id', folderId).eq('organization_id', user.organizationId).maybeSingle();
@@ -339,7 +347,7 @@ export class ValidationsService {
         }
 
         const organizationId = (bank as { organization_id: string }).organization_id;
-        await this.authz.assertProktor(user, organizationId);
+        await this.assertValidationManager(user, organizationId);
         await this.authz.assertBankAccess(user, dto.bankId, 'read');
 
         const validatorIds = Array.from(new Set(dto.validatorIds || []));
@@ -416,10 +424,10 @@ export class ValidationsService {
     }
 
     /**
-     * Daftar seluruh penugasan validasi di sekolah (Admin & Proktor).
+     * Daftar penugasan validasi: Admin melihat semua, Proktor hanya bank miliknya.
      */
     async list(user: AuthUser, bankId?: string) {
-        await this.authz.assertProktor(user, user.organizationId);
+        await this.assertValidationManager(user, user.organizationId);
         if (bankId && !isUUID(bankId)) {
             throw new BadRequestException('ID bank soal tidak valid.');
         }
@@ -447,7 +455,7 @@ export class ValidationsService {
 
         const rows = (data as any[]) || [];
         const visible = await this.authz.isRestrictedProctor(user, user.organizationId!)
-            ? rows.filter(row => row.bank?.created_by === user.id || row.bank?.is_published === true) : rows;
+            ? rows.filter(row => row.bank?.created_by === user.id) : rows;
         return this.withFolders(visible, user.organizationId!);
     }
 
@@ -488,9 +496,7 @@ export class ValidationsService {
         if (!assignment) {
             await this.authz.assertBankAccess(user, (val as any).bank_id, 'read');
             const permission = await this.authz.collaborationPermissions(user, 'bank', (val as any).bank_id);
-            const publishedProctor = (val as any).bank?.is_published === true &&
-                await this.authz.isRestrictedProctor(user, (val as any).organization_id);
-            if (!permission.owner && !permission.admin && !permission.grant && !publishedProctor) {
+            if (!permission.owner && !permission.admin && !permission.grant) {
                 throw new ForbiddenException('Sesi validasi hanya tersedia bagi pembuat, kolaborator, atau validator yang ditugaskan.');
             }
             return val;
@@ -523,9 +529,9 @@ export class ValidationsService {
         // Hanya tugas dari sekolah user sendiri; penugasan lintas sekolah tidak ditampilkan.
         const rows = ((data as any[]) || [])
             .filter(row => user.isPlatformAdmin || row.validation?.organization_id === user.organizationId);
-        const visible = await this.authz.isRestrictedProctor(user, user.organizationId!)
-            ? rows.filter(row => row.validation?.bank?.created_by === user.id || row.validation?.bank?.is_published === true) : rows;
-        return this.withFolders(visible, user.organizationId!, true);
+        // Penugasan sebagai validator adalah izinnya: tugas tetap tampil walau
+        // bank milik pembuat lain.
+        return this.withFolders(rows, user.organizationId!, true);
     }
 
     /**
@@ -929,7 +935,7 @@ export class ValidationsService {
         await this.db.transaction(async (tx) => {
             await advisoryTransactionLock(tx, `validation:${validationId}`);
             const session = await this.readSession(tx, validationId);
-            await this.authz.assertProktor(user, session.organization_id);
+            await this.assertValidationManager(user, session.organization_id);
             if (await this.authz.isRestrictedProctor(user, session.organization_id)) {
                 await this.authz.assertBankAccess(user, session.bank_id, 'read', tx);
             }
@@ -1015,7 +1021,7 @@ export class ValidationsService {
         await this.db.transaction(async (tx) => {
             await advisoryTransactionLock(tx, `validation:${validationId}`);
             const session = await this.readSession(tx, validationId);
-            await this.authz.assertProktor(user, session.organization_id);
+            await this.assertValidationManager(user, session.organization_id);
             const restricted = await this.authz.isRestrictedProctor(user, session.organization_id);
             if (restricted && session.created_by !== user.id) {
                 throw new ForbiddenException('Sesi validasi hanya dapat dihapus oleh pembuat sesi atau Admin.');
@@ -1032,7 +1038,7 @@ export class ValidationsService {
             const { data: session, error } = await tx.from('cbt_question_bank_validations')
                 .select('organization_id, approval_rule, status, bank_id').eq('id', validationId).single();
             if (error || !session) throw new NotFoundException('Sesi validasi tidak ditemukan.');
-            await this.authz.assertProktor(user, session.organization_id);
+            await this.assertValidationManager(user, session.organization_id);
             // Proktor terbatas hanya boleh memutuskan bank yang boleh ia baca
             // (miliknya atau yang sudah dipublikasikan), sama seperti getDetail.
             if (await this.authz.isRestrictedProctor(user, session.organization_id)) {

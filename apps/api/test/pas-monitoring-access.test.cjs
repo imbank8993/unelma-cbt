@@ -93,17 +93,20 @@ function roomFixture(failedTables = []) {
  return { db, auth, roles, service };
 }
 
-test('proctors retain monitoring of inactive PAS exams while ordinary foreign drafts stay private', async () => {
+test('admins monitor inactive PAS exams; proctors see neither school PAS exams nor foreign drafts', async () => {
  const { db, auth, roles, service } = roomFixture();
  for (const exam of db.tables.cbt_exams) exam.is_published = false;
  db.tables.cbt_exams.push({ id: 'private-draft', organization_id: 'school', created_by: 'teacher', exam_type: 'daily', is_published: false });
- assert.equal(await auth.assertExamMonitoring({ id: 'proctor' }, 'e1'), undefined);
- assert.deepEqual((await service.listAttempts({ id: 'proctor' }, 'e1')).map(row => row.user_id), ['u1', 'u2', 'u5']);
- await assert.rejects(auth.assertExamMonitoring({ id: 'proctor' }, 'private-draft'), /belum dipublikasikan/);
+ assert.equal(await auth.assertExamMonitoring({ id: 'admin' }, 'e1'), undefined);
+ assert.deepEqual((await service.listAttempts({ id: 'admin' }, 'e1')).map(row => row.user_id), ['u1', 'u2', 'u5']);
+ // Proktor = pembuat konten: ASAS/ASAT/AM sekolah dan draf orang lain bukan urusannya.
+ await assert.rejects(auth.assertExamMonitoring({ id: 'proctor' }, 'e1'), /izin/);
+ await assert.rejects(auth.assertExamMonitoring({ id: 'proctor' }, 'private-draft'), /izin/);
  const admin = new ExamAdminService(db, auth, roles);
- assert.deepEqual((await admin.list({ id: 'proctor' }, 'school')).map(row => row.id), ['e1', 'e2', 'e3']);
+ await admin.list({ id: 'proctor' }, 'school');
+ // Penyaringan dilakukan di basis data: hanya ujian buatannya sendiri.
  const query = db.queries.filter(query => query.table === 'cbt_exams').find(query => query.calls.some(call => call[0] === 'or'));
- assert.deepEqual(query.calls.find(call => call[0] === 'or'), ['or', 'created_by.eq.proctor,is_published.eq.true,exam_type.in.(pas,pat,pts,pkn,am)']);
+ assert.deepEqual(query.calls.find(call => call[0] === 'or'), ['or', 'created_by.eq.proctor']);
 });
 
 test('room monitoring discovers exams across class/room boundaries but never another session', async () => {

@@ -871,21 +871,22 @@ export class ProctoringService {
      * Hentikan paksa pengerjaan seorang siswa.
      *
      * Ada DUA pemanggil yang sah: siswa yang menghentikan dirinya sendiri setelah
-     * melewati batas pelanggaran, dan Proktor/Admin yang menghentikan siswa.
+     * melewati batas pelanggaran, dan Admin/pengelola ujian yang menghentikan siswa.
      * Keduanya diizinkan; siswa menghentikan pengerjaan ORANG LAIN tidak.
      */
     async forceTerminate(user: AuthUser, attemptId: string, reason: string, respectSubmitIntent = false): Promise<boolean> {
         const { data: target } = await this.db
             .from('cbt_exam_attempts')
-            .select('user_id, organization_id')
+            .select('user_id, organization_id, exam_id')
             .eq('id', attemptId)
             .maybeSingle();
 
         if (!target) throw new NotFoundException('Pengerjaan tidak ditemukan.');
-        const row = target as { user_id: string; organization_id: string | null };
+        const row = target as { user_id: string; organization_id: string | null; exam_id: string };
 
+        // Menghentikan peserta lain: Admin, atau pembuat/pengelola ujian itu sendiri.
         if (row.user_id !== user.id) {
-            await this.authz.assertProktor(user, row.organization_id);
+            await this.authz.assertExamStaff(user, row.exam_id);
         }
 
         const now = await this.databaseNow(this.db);

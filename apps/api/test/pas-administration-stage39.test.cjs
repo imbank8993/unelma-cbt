@@ -288,14 +288,14 @@ test('ADMIN-11: legacy signatures require explicit reapproval for full-content v
     assert.equal((await service.verifyDocumentByCode(row.verification_code)).valid, true);
 });
 
-test('ADMIN-12: chair settings validate text, preserve optional NIP and remain restricted to Admin/Proktor', async () => {
+test('ADMIN-12: chair settings validate text, preserve optional NIP and remain restricted to Admin', async () => {
     const db = fixtureDb({ acca_settings: [] }); const settings = new SettingsService(db);
     await settings.upsert('exam_administration', { committee_chair_name: '  Ketua Panitia  ', committee_chair_nip: '  123  ' });
     assert.deepEqual(db.tables.acca_settings[0].value, { committee_chair_name: 'Ketua Panitia', committee_chair_nip: '123' });
     for (const invalid of [null, [], {}, { committee_chair_name: ' ' }, { committee_chair_name: 12 }, { committee_chair_name: 'Nama', committee_chair_nip: {} }]) {
         await assert.rejects(settings.upsert('exam_administration', invalid));
     }
-    assert.deepEqual(Reflect.getMetadata('roles', SettingsController.prototype.upsert), ['ADMIN', 'PROKTOR']);
+    assert.deepEqual(Reflect.getMetadata('roles', SettingsController.prototype.upsert), ['ADMIN']);
 });
 
 test('ADMIN-13: PDF footer wraps long names and moves all three signers together onto a new page', () => {
@@ -354,7 +354,7 @@ test('ADMIN-14: period-level committee chair can be configured and updated direc
     assert.equal(slot.committee_chair.committee_chair_nip, '198001012005011001');
 
     // Check roles for updateCommitteeChair on PasController
-    assert.deepEqual(Reflect.getMetadata('roles', PasController.prototype.updateCommitteeChair), ['ADMIN', 'PROKTOR']);
+    assert.deepEqual(Reflect.getMetadata('roles', PasController.prototype.updateCommitteeChair), ['ADMIN']);
 
     // Check updateCommitteeChair in PasService
     const pasService = new PasService(db, createAuthzMock());

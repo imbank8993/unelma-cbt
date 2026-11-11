@@ -56,10 +56,10 @@ export class SettingsController {
             const elevated =
                 user.isPlatformAdmin ||
                 user.resolved?.superadmin === true ||
-                user.roles.some((r) => r === 'ADMIN' || r === 'PROKTOR');
+                user.roles.some((r) => r === 'ADMIN');
             if (!elevated) {
                 throw new ForbiddenException(
-                    'Pengaturan ini hanya dapat dibaca Admin atau Proktor.',
+                    'Pengaturan ini hanya dapat dibaca Admin.',
                 );
             }
         }
@@ -71,7 +71,7 @@ export class SettingsController {
 
     @Put()
     @UseGuards(RolesGuard)
-    @Roles('ADMIN', 'PROKTOR')
+    @Roles('ADMIN')
     @ApiOperation({ summary: 'Simpan satu pengaturan' })
     async upsert(@Body() dto: UpsertSettingDto) {
         if (SettingsService.isDedicated(dto.key)) {

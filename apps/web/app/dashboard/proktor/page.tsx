@@ -5,12 +5,9 @@ import { ExamSourceSummary } from '@/app/components/exams/ExamSourceSummary';
 import {
     getOrganizationStats,
     getProctorOrganization,
-    getRecentLogins,
     listOrganizationExams,
     type OrganizationExam,
     type OrganizationStats,
-    type ProctorOrganization,
-    type RecentLogin,
 } from '@/lib/api/proctor';
 import { getSetting,pickAnnouncements,type Announcement } from '@/lib/api/settings';
 import { getSessionUser } from '@/lib/session';
@@ -27,20 +24,15 @@ ClipboardCheck,
 Clock,
 Eye,
 Layers,
-Plus,
-Users
+Plus
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useCallback,useEffect,useState } from 'react';
-import { RecentLoginsCard } from './RecentLoginsCard';
 import { TopScorersCard } from '../admin/TopScorersCard';
 
-type LoggedInUser = RecentLogin & { lastLoginAt: string };
-const hasLoginTime = (login: RecentLogin): login is LoggedInUser => typeof login.lastLoginAt === 'string';
 
 export default function ProktorDashboard() {
     const router = useRouter();
-    const [org, setOrg] = useState<ProctorOrganization | null>(null);
     const [stats, setStats] = useMemoryState<OrganizationStats>('proktor_stats', {
         totalMembers: 0,
         totalBanks: 0,
@@ -49,14 +41,10 @@ export default function ProktorDashboard() {
         finishedExams: 0
     });
     const [exams, setExams] = useMemoryState<OrganizationExam[]>('proktor_exams', []);
-    const [logins, setLogins] = useMemoryState<LoggedInUser[]>('proktor_logins', []);
     const [loading, setLoading] = useMemoryState('proktor_loading', true);
     const [errorMsg, setErrorMsg] = useState<string | null>(null);
     const [announcements, setAnnouncements] = useMemoryState<Announcement[]>('proktor_announcements', []);
     const [showAnnouncementsPopup, setShowAnnouncementsPopup] = useState(false);
-    const [showMembersModal, setShowMembersModal] = useState(false);
-    const [membersList, setMembersList] = useState<LoggedInUser[]>([]);
-    const [membersLoading, setMembersLoading] = useState(false);
 
     const loadData = useCallback(async () => {
         try {
@@ -73,17 +61,16 @@ export default function ProktorDashboard() {
                 return;
             }
 
-            setOrg({ id: organization.id, name: organization.name });
 
-            const [statData, examData, loginData, announcementConfig] = await Promise.all([
+            // Riwayat login seluruh anggota adalah data sekolah (khusus Admin);
+            // dasbor Proktor hanya memuat angka & ujian miliknya sendiri.
+            const [statData, examData, announcementConfig] = await Promise.all([
                 getOrganizationStats(),
                 listOrganizationExams(),
-                getRecentLogins(10),
                 getSetting<Announcement | Announcement[]>('announcement_config')
             ]);
             setStats(statData);
             setExams(examData);
-            setLogins(loginData.filter(hasLoginTime));
             
             setAnnouncements(pickAnnouncements(announcementConfig, 'show_proktor'));
         } catch (error) {
@@ -92,7 +79,7 @@ export default function ProktorDashboard() {
         } finally {
             setLoading(false);
         }
-    }, [setAnnouncements, setExams, setLoading, setLogins, setStats]);
+    }, [setAnnouncements, setExams, setLoading, setStats]);
 
     useAutoRefresh(loadData, REFRESH_INTERVAL.dashboard);
 
@@ -102,29 +89,6 @@ export default function ProktorDashboard() {
     }, [loadData]);
 
 
-
-    // Buka daftar anggota yang sudah pernah login (punya last_login_at).
-    const openMembers = async () => {
-        if (!org?.id) return;
-        setShowMembersModal(true);
-        setMembersLoading(true);
-        try {
-            const all = await getRecentLogins(500);
-            setMembersList(all.filter(hasLoginTime));
-        } catch (e) {
-            console.error('Load members error:', e);
-            setMembersList([]);
-        } finally {
-            setMembersLoading(false);
-        }
-    };
-
-    const formatLoginTime = (iso: string | null) => {
-        if (!iso) return '-';
-        try {
-            return new Date(iso).toLocaleString('id-ID', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
-        } catch { return '-'; }
-    };
 
     const statCards = [
         {
@@ -408,11 +372,6 @@ export default function ProktorDashboard() {
                 </div>
             </div>
 
-            {/* ── Aktivitas Login Pengguna (di bagian bawah) ── */}
-            <div className="mt-4">
-                <RecentLoginsCard initialLogins={logins} />
-            </div>
-
             {/* Popup Modal Informasi */}
             {showAnnouncementsPopup && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm transition-opacity">
@@ -470,59 +429,6 @@ export default function ProktorDashboard() {
                 </div>
             )}
 
-            {/* Modal: Anggota yang sudah pernah login */}
-            {showMembersModal && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm" onClick={() => setShowMembersModal(false)}>
-                    <motion.div
-                        initial={{ opacity: 0, scale: 0.95 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        onClick={(e) => e.stopPropagation()}
-                        className="bg-white rounded-2xl shadow-xl w-full max-w-lg max-h-[85vh] flex flex-col overflow-hidden"
-                    >
-                        <div className="px-6 py-5 border-b border-slate-100 flex justify-between items-center bg-[#f8fafc]">
-                            <div>
-                                <h2 className="text-lg font-bold text-[#030C4D] flex items-center gap-2">
-                                    <Users size={20} className="text-[#030C4D]" /> Anggota Pernah Login
-                                </h2>
-                                <p className="text-xs text-slate-500 mt-0.5">{membersList.length} anggota sudah pernah masuk ke ACCA CBT.</p>
-                            </div>
-                            <button
-                                onClick={() => setShowMembersModal(false)}
-                                className="w-8 h-8 flex items-center justify-center rounded-full bg-slate-100 text-slate-500 hover:bg-slate-200 hover:text-slate-700 transition-colors"
-                            >
-                                ✕
-                            </button>
-                        </div>
-                        <div className="p-4 overflow-y-auto bg-slate-50 flex-1">
-                            {membersLoading ? (
-                                <div className="py-12 flex justify-center">
-                                    <Spinner variant="buble" size={32} />
-                                </div>
-                            ) : membersList.length === 0 ? (
-                                <div className="py-12 text-center text-sm text-slate-400">Belum ada anggota yang login.</div>
-                            ) : (
-                                <div className="space-y-2">
-                                    {membersList.map((m) => (
-                                        <div key={m.id} className="flex items-center gap-3 bg-white border border-slate-100 rounded-xl p-3">
-                                            <div className="w-9 h-9 rounded-full bg-[#030C4D]/10 text-[#030C4D] flex items-center justify-center font-bold shrink-0 uppercase">
-                                                {(m.fullName?.[0] || 'U')}
-                                            </div>
-                                            <div className="flex-1 min-w-0">
-                                                <p className="text-sm font-semibold text-slate-800 truncate">{m.fullName}</p>
-                                                <p className="text-[11px] text-slate-400">{m.role}</p>
-                                            </div>
-                                            <div className="text-right shrink-0">
-                                                <p className="text-[10px] text-slate-400 uppercase tracking-wider">Login terakhir</p>
-                                                <p className="text-xs font-medium text-slate-600">{formatLoginTime(m.lastLoginAt)}</p>
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-                            )}
-                        </div>
-                    </motion.div>
-                </div>
-            )}
         </div>
     );
 }

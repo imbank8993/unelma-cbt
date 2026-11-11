@@ -32,44 +32,47 @@ function fixture(){
  const users={emailMap:async()=>new Map()};
  return {db,auth,roles,banks:new QuestionBanksService(db,auth,roles,users),exams:new ExamAdminService(db,auth,roles)};
 }
-test('proctor reads published foreign banks but only edits owned banks; admins retain all access',async()=>{
- const f=fixture();await f.auth.assertBankAccess(user('proctor'),'public','read');
- await assert.rejects(f.auth.assertBankAccess(user('proctor'),'draft','read'),denied);
- for(const bank of ['draft','public'])await assert.rejects(f.auth.assertBankAccess(user('proctor'),bank),denied);
- await f.auth.assertBankAccess(user('proctor'),'own');
+// Proktor adalah pembuat konten mandiri: bank dan ujian milik pembuat lain —
+// termasuk yang sudah dipublikasikan — tidak terbaca kecuali dibagikan lewat
+// kolaborasi. Hanya Admin yang melihat seluruh konten sekolah.
+test('proctors read and edit only their own banks; publication grants nothing; admins retain all access',async()=>{
+ const f=fixture();
+ for(const bank of ['draft','public'])for(const access of ['read','write'])await assert.rejects(f.auth.assertBankAccess(user('proctor'),bank,access),denied);
+ await f.auth.assertBankAccess(user('proctor'),'own');await f.auth.assertBankAccess(user('proctor'),'own','read');
  for(const bank of ['draft','public'])for(const access of ['read','write'])await f.auth.assertBankAccess(user('admin'),bank,access);
  await assert.rejects(f.auth.assertBankAccess(user('admin'),'foreign','read'),denied);
  await f.auth.assertBankAccess(user('teacher'),'draft');
  await assert.rejects(f.auth.assertBankAccess(user('otherTeacher'),'public','read'),denied);
 });
-test('foreign bank reads work across questions/content while direct mutations are denied without writes',async()=>{
+test('foreign published bank questions and content stay closed to proctors, without writes',async()=>{
  const f=fixture(),q=new QuestionsService(f.db,f.auth,{}),content=new BankContentService(f.db,f.auth);
- assert.equal((await q.listByBank(user('proctor'),'public')).length,1);
- await content.listStimuli(user('proctor'),'public');
+ await assert.rejects(q.listByBank(user('proctor'),'public'),denied);
+ await assert.rejects(content.listStimuli(user('proctor'),'public'),denied);
+ await assert.rejects(f.banks.get(user('proctor'),'public'),denied);
  for(const action of [()=>q.save(user('proctor'),{bankId:'public'}),()=>q.updateMetadata(user('proctor'),'q',{}),
   ()=>q.remove(user('proctor'),'q','public'),()=>q.reorder(user('proctor'),'public',['q']),
   ()=>f.banks.setPublished(user('proctor'),'public',false),()=>f.banks.remove(user('proctor'),'public'),
   ()=>content.createStimulus(user('proctor'),'public','title','text','request')])await assert.rejects(action,denied);
  assert.equal(f.db.writes.length,0);
- assert.equal((await f.banks.get(user('proctor'),'public')).canManage,false);
  assert.equal((await f.banks.get(user('admin'),'public')).canManage,true);
 });
-test('bank and exam listings hide foreign drafts for proctors and preserve administrator access',async()=>{
+test('bank and exam listings show proctors only their own content and preserve administrator access',async()=>{
  const f=fixture();
- assert.deepEqual((await f.banks.list(user('proctor'),'school')).map(b=>b.id),['own','public']);
- const proctorExams=await f.exams.list(user('proctor'),'school');
- assert.deepEqual(proctorExams.map(e=>e.id),['own-exam','public-exam']);
- assert.equal(proctorExams.find(e=>e.id==='public-exam').canCorrectKeys,false);
+ assert.deepEqual((await f.banks.list(user('proctor'),'school')).map(b=>b.id),['own']);
+ await f.exams.list(user('proctor'),'school');
+ const query=f.db.queries.filter(query=>query.table==='cbt_exams').find(query=>query.calls.some(call=>call[0]==='or'));
+ assert.deepEqual(query.calls.find(call=>call[0]==='or'),['or','created_by.eq.proctor,question_bank_id.in.(own)']);
  assert.equal((await f.banks.list(user('admin'),'school')).length,3);
  assert.equal((await f.exams.list(user('admin'),'school')).length,3);
 });
-test('direct monitoring and management of foreign draft exams are denied for proctors only',async()=>{
+test('direct monitoring and management of foreign exams are denied for proctors, published or not',async()=>{
  const f=fixture();
- await assert.rejects(f.auth.assertExamMonitoring(user('proctor'),'draft-exam'),denied);
- await assert.rejects(f.auth.assertExamStaff(user('proctor'),'draft-exam'),denied);
- for(const id of ['own-exam','public-exam']) await f.auth.assertExamMonitoring(user('proctor'),id);
+ for(const id of ['draft-exam','public-exam']){
+  await assert.rejects(f.auth.assertExamMonitoring(user('proctor'),id),denied);
+  await assert.rejects(f.auth.assertExamStaff(user('proctor'),id),denied);
+ }
+ await f.auth.assertExamMonitoring(user('proctor'),'own-exam');
  await f.auth.assertExamStaff(user('proctor'),'own-exam');
- await assert.rejects(f.auth.assertExamStaff(user('proctor'),'public-exam'),denied);
  await f.auth.assertExamMonitoring(user('admin'),'draft-exam');await f.auth.assertExamStaff(user('admin'),'draft-exam');
  await f.auth.assertExamStaff(user('teacher'),'draft-exam');
 });
@@ -102,37 +105,20 @@ test('direct recovery and makeup endpoints deny foreign exam resets without touc
 });
 
 
-for (const permission of ['viewer', 'editor', 'manager']) test(`bank collaborator ${permission} cannot expose private banks or grant a proctor edit rights`, async () => {
+for (const permission of ['viewer', 'editor', 'manager']) test(`a bank ${permission} grant gives a proctor exactly that access`, async () => {
  const f=fixture();
- f.db.tables.cbt_bank_collaborators=['draft','public'].map(bank_id=>({bank_id,user_id:'proctor',permission}));
- const banks=await f.banks.list(user('proctor'),'school');
- assert.deepEqual(banks.map(bank=>bank.id),['own','public']);
- const publicBank=banks.find(bank=>bank.id==='public');
- assert.deepEqual([publicBank.canManage,publicBank.canShare,publicBank.canDelete,publicBank.collaborationPermission],[false,false,false,null]);
- assert.equal((await f.banks.get(user('proctor'),'public')).canManage,false);
- await assert.rejects(f.banks.get(user('proctor'),'draft'),denied);
- const questions=new QuestionsService(f.db,f.auth,{}),content=new BankContentService(f.db,f.auth);
- await assert.rejects(questions.listByBank(user('proctor'),'draft'),denied);
- for(const action of [()=>f.banks.update(user('proctor'),'public',{title:'Unauthorized'}),
-  ()=>f.banks.setPublished(user('proctor'),'public',false),()=>f.banks.remove(user('proctor'),'public'),
-  ()=>f.banks.moveToFolder(user('proctor'),['public'],null),()=>questions.save(user('proctor'),{bankId:'public'}),
-  ()=>questions.updateMetadata(user('proctor'),'q',{}),()=>questions.reorder(user('proctor'),'public',['q']),
-  ()=>questions.remove(user('proctor'),'q','public'),()=>content.createStimulus(user('proctor'),'public','title','text','request')]) await assert.rejects(action,denied);
- const {CollaborationService}=require('../src/auth/collaboration.service.ts');
- const shares=new CollaborationService(f.db,f.auth);
- await assert.rejects(shares.list(user('proctor'),'bank','draft'),denied);
- await assert.rejects(shares.save(user('proctor'),'bank','public','otherTeacher',{permission:'editor'}),denied);
- assert.equal(f.db.writes.length,0);
-});
-
-test('withdrawing a published bank immediately removes proctor access despite a legacy manager grant',async()=>{
- const f=fixture();f.db.tables.cbt_bank_collaborators=[{bank_id:'public',user_id:'proctor',permission:'manager'}];
- await f.auth.assertBankAccess(user('proctor'),'public','read');
- f.db.tables.cbt_question_banks.find(bank=>bank.id==='public').is_published=false;
- assert.deepEqual((await f.banks.list(user('proctor'),'school')).map(bank=>bank.id),['own']);
- await assert.rejects(f.banks.get(user('proctor'),'public'),denied);
- const {CollaborationService}=require('../src/auth/collaboration.service.ts');
- await assert.rejects(new CollaborationService(f.db,f.auth).list(user('proctor'),'bank','public'),denied);
+ f.db.tables.cbt_bank_collaborators=[{bank_id:'draft',user_id:'proctor',permission}];
+ const canEdit=permission!=='viewer';
+ await f.auth.assertBankAccess(user('proctor'),'draft','read');
+ if(canEdit)await f.auth.assertBankAccess(user('proctor'),'draft','write');
+ else await assert.rejects(f.auth.assertBankAccess(user('proctor'),'draft','write'),denied);
+ await assert.rejects(f.auth.assertBankAccess(user('proctor'),'draft','delete'),denied);
+ const bank=await f.banks.get(user('proctor'),'draft');
+ assert.deepEqual([bank.canManage,bank.canShare,bank.canDelete],[canEdit,permission==='manager',false]);
+ // Bank lain yang tidak dibagikan tetap tertutup.
+ await assert.rejects(f.auth.assertBankAccess(user('proctor'),'public','read'),denied);
+ f.db.tables.cbt_bank_collaborators[0].revoked_at='2026-01-01T00:00:00Z';
+ await assert.rejects(f.auth.assertBankAccess(user('proctor'),'draft','read'),denied);
 });
 
 test('proctors keep their own draft banks and administrators retain full school access',async()=>{
@@ -140,7 +126,7 @@ test('proctors keep their own draft banks and administrators retain full school 
  for(const id of ['proctor','admin']){
   const own=await f.banks.get(user(id),'own');assert.equal(own.canManage,true);assert.equal(own.canShare,true);
  }
- assert.deepEqual((await f.banks.list(user('proctor'),'school',true)).map(bank=>bank.id),['public']);
+ assert.deepEqual((await f.banks.list(user('proctor'),'school',true)).map(bank=>bank.id),[]);
  const own=await f.banks.get(user('proctor'),'own');assert.equal(own.is_published,false);
  const original=f.roles.hasOrgRole;
  f.roles.hasOrgRole=async(id,school,allowed)=>id==='proctor'&&school==='school'&&allowed.includes('Guru')||await original(id,school,allowed);

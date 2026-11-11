@@ -60,7 +60,8 @@ export class PasService {
     // ── Periode ──────────────────────────────────────────────────────────────
 
     async listPeriods(user: AuthUser, organizationId: string) {
-        await this.authz.assertOrgStaff(user, organizationId);
+        // ASAS/ASAT/AM adalah urusan sekolah: khusus Admin.
+        await this.authz.assertProktor(user, organizationId);
 
         const { data, error } = await this.db
             .from('cbt_pas_periods')
@@ -99,7 +100,8 @@ export class PasService {
     }
 
     async getPeriod(user: AuthUser, periodId: string) {
-        await this.authz.assertStaffByRecord(user, 'cbt_pas_periods', periodId);
+        // Folder ASAS/ASAT/AM beserta isinya: khusus Admin.
+        await this.authz.assertProktorByRecord(user, 'cbt_pas_periods', periodId);
 
         const { data: period } = await this.db
             .from('cbt_pas_periods')
@@ -362,7 +364,7 @@ export class PasService {
      * ditempelkan ke nama supaya tetap bisa dibedakan.
      */
     async listClasses(user: AuthUser, organizationId: string, activeYearOnly: boolean) {
-        await this.authz.assertOrgStaff(user, organizationId);
+        await this.authz.assertProktor(user, organizationId);
 
         let activeYears: string[] = [];
         if (activeYearOnly) {
@@ -435,7 +437,8 @@ export class PasService {
      * dalam ratusan.
      */
     async listStaff(user: AuthUser, organizationId: string) {
-        await this.authz.assertProktor(user, organizationId);
+        // Juga dipakai Proktor untuk memilih validator bank soalnya (nama + NIP saja).
+        await this.authz.assertOrgRole(user, organizationId, ['Proktor', 'Admin'], 'Proktor/Admin');
 
         const { data, error } = await this.db
             .from('cbt_organization_members')

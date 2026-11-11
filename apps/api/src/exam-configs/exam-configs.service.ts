@@ -59,7 +59,8 @@ export class ExamConfigsService {
     // ── Konfigurasi ──────────────────────────────────────────────────────────
 
     async list(user: AuthUser, organizationId: string) {
-        await this.authz.assertOrgStaff(user, organizationId);
+        // Konfigurasi ujian sekolah (multi-bank): khusus Admin.
+        await this.authz.assertProktor(user, organizationId);
 
         const { data, error } = await this.db
             .from('exam_configs')

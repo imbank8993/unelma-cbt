@@ -71,8 +71,15 @@ export class ClassesService {
             regularQuery = regularQuery.in('school_year', activeYears);
         }
 
+        // Kelas utama/reguler adalah data sekolah (Admin). Proktor hanya melihat
+        // dan mengelola kelas tambahan buatannya sendiri beserta pesertanya.
+        const admin = await this.authz.isSchoolAdmin(user, organizationId);
+        if (!admin) additionalQuery = additionalQuery.eq('created_by', user.id);
+
         const [regular, additional] = await Promise.all([
-            regularQuery.order('created_at', { ascending: false }),
+            admin
+                ? regularQuery.order('created_at', { ascending: false })
+                : Promise.resolve({ data: [], error: null }),
             additionalQuery.order('created_at', { ascending: false }),
         ]);
 
@@ -97,22 +104,15 @@ export class ClassesService {
         }));
 
         const additionalRows = (additional.data as any[]) || [];
-        const elevatedCreators = await this.creatorsWithElevatedRole(
-            additionalRows,
-            organizationId,
-        );
-
         const additionalClasses = additionalRows.map((cls) => {
-            // Kelas tanpa pembuat berarti buatan sistem, jadi dianggap milik
-            // proktor dan tetap bisa dikelola.
-            const managedByStaff = cls.created_by ? elevatedCreators.has(cls.created_by) : true;
-
+            // Kelas tanpa pembuat berarti buatan sistem: hanya Admin yang mengelolanya.
+            const manageable = admin || (!!cls.created_by && cls.created_by === user.id);
             return {
                 ...cls,
                 type: 'tambahan',
                 studentCount: cls.class_members?.[0]?.count || 0,
-                canEdit: managedByStaff,
-                canDelete: managedByStaff,
+                canEdit: manageable,
+                canDelete: manageable,
             };
         });
 
@@ -124,35 +124,6 @@ export class ClassesService {
         return activeYearOnly ? combined.filter((c) => c.studentCount > 0) : combined;
     }
 
-    private async creatorsWithElevatedRole(
-        rows: any[],
-        organizationId: string,
-    ): Promise<Set<string>> {
-        const creatorIds = [
-            ...new Set(rows.map((c) => c.created_by).filter(Boolean) as string[]),
-        ];
-        if (creatorIds.length === 0) return new Set();
-
-        let query = this.db
-            .from('cbt_organization_members')
-            .select('user_id, member_roles:cbt_member_roles(roles:cbt_roles(name))')
-            .in('user_id', creatorIds)
-            .eq('is_active', true);
-
-        query = query.eq('organization_id', organizationId);
-
-        const { data } = await query;
-
-        const elevated = new Set<string>();
-        for (const member of (data as any[]) || []) {
-            const names = (member.member_roles || []).map((mr: any) => mr?.roles?.name);
-            if (names.includes('Proktor') || names.includes('Admin')) {
-                elevated.add(member.user_id);
-            }
-        }
-        return elevated;
-    }
-
     /** Siswa per kelas untuk sekumpulan id, dalam bentuk peta classId → siswa. */
     async listMembers(
         user: AuthUser,
@@ -162,8 +133,9 @@ export class ClassesService {
 
         // Diperiksa per kelas: satu permintaan bisa memuat kelas dari organisasi
         // lain di antara kelas milik pemanggil.
+        // Anggota kelas utama adalah data sekolah: khusus Admin.
         for (const classId of classIds) {
-            await this.authz.assertStaffByRecord(user, 'cbt_classes', classId);
+            await this.authz.assertProktorByRecord(user, 'cbt_classes', classId);
         }
 
         const { data, error } = await this.db
@@ -187,7 +159,12 @@ export class ClassesService {
     /** Siswa satu kelas, reguler maupun tambahan. */
     async listStudents(user: AuthUser, classId: string, isAdditional: boolean) {
         const table = isAdditional ? 'cbt_additional_classes' : 'cbt_classes';
-        await this.authz.assertStaffByRecord(user, table, classId);
+        if (isAdditional) {
+            const { organizationId, createdBy } = await this.locate(classId);
+            await this.assertAdditionalClassOwner(user, organizationId, createdBy);
+        } else {
+            await this.authz.assertProktorByRecord(user, table, classId);
+        }
 
         const memberTable = isAdditional
             ? 'cbt_additional_class_members'
@@ -215,7 +192,12 @@ export class ClassesService {
         organizationId: string,
         input: { name: string; type: 'reguler' | 'tambahan'; schoolYear?: string; clientRequestId: string },
     ) {
-        await this.authz.assertProktor(user, organizationId);
+        // Kelas tambahan: Proktor/Admin (milik pembuatnya). Kelas utama: khusus Admin.
+        if (input.type === 'tambahan') {
+            await this.authz.assertOrgRole(user, organizationId, ['Proktor', 'Admin'], 'Proktor/Admin');
+        } else {
+            await this.authz.assertProktor(user, organizationId);
+        }
 
         if (input.type === 'tambahan') {
             const data = await insertIdempotently<any>(this.db, {
@@ -264,7 +246,8 @@ export class ClassesService {
         classes: Array<{ name: string; type: 'reguler' | 'tambahan'; schoolYear?: string }>,
         clientRequestId: string,
     ) {
-        await this.authz.assertProktor(user, organizationId);
+        // Tiap baris diperiksa oleh create(): kelas utama tetap khusus Admin.
+        await this.authz.assertOrgRole(user, organizationId, ['Proktor', 'Admin'], 'Proktor/Admin');
 
         let successCount = 0;
         const errors: Array<{ name: string; error: string }> = [];
@@ -332,7 +315,8 @@ export class ClassesService {
             );
         }
 
-        await this.authz.assertProktorByRecord(user, table, classId);
+        const located = await this.locate(classId);
+        await this.assertAdditionalClassOwner(user, located.organizationId, located.createdBy);
 
         // Bersihkan data relasi terlebih dahulu agar tidak memicu foreign key violation.
         await this.db.from('cbt_additional_class_members').delete().eq('class_id', classId);
@@ -382,7 +366,7 @@ export class ClassesService {
         throw new NotFoundException('Kelas tidak ditemukan.');
     }
 
-    /** Guru hanya boleh mengubah kelas tambahan yang ia buat sendiri. */
+    /** Proktor hanya boleh mengelola kelas tambahan yang ia buat sendiri; Admin bebas. */
     private async assertAdditionalClassOwner(
         user: AuthUser,
         organizationId: string | null,
@@ -390,10 +374,7 @@ export class ClassesService {
     ): Promise<void> {
         await this.authz.assertOrgStaff(user, organizationId);
 
-        const elevated =
-            user.isPlatformAdmin ||
-            user.resolved?.superadmin === true ||
-            (await this.roles.hasOrgRole(user.id, organizationId, ['Proktor', 'Admin']));
+        const elevated = await this.authz.isSchoolAdmin(user, organizationId);
 
         if (!elevated && createdBy !== user.id) {
             throw new ForbiddenException(

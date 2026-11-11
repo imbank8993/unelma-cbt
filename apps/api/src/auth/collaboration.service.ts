@@ -40,7 +40,7 @@ export class CollaborationService {
             .eq('organization_id', context.resource.organization_id).eq('is_active', true);
         if (error) throw new ServiceUnavailableException('Daftar guru belum dapat dibaca.');
         return (data || []).filter((member: any) => member.user_id !== context.resource.created_by &&
-            (member.member_roles || []).some((role: any) => (type === 'period' ? ['PROKTOR', 'ADMIN'] : ['GURU', 'PROKTOR', 'ADMIN']).includes(String(role.roles?.name).toUpperCase())))
+            (member.member_roles || []).some((role: any) => (type === 'period' ? ['ADMIN'] : ['GURU', 'PROKTOR', 'ADMIN']).includes(String(role.roles?.name).toUpperCase())))
             .map((member: any) => ({ id: member.user_id, name: member.profiles?.full_name || 'Tanpa nama', nip: member.profiles?.identity_number || '' }))
             .sort((a: { name: string }, b: { name: string }) => a.name.localeCompare(b.name, 'id'));
     }
