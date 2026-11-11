@@ -22,7 +22,7 @@ test('class checkbox toggles once, preview does not select, and all students rep
  const classes=[regular('a','X A'),regular('b','XI B'),regular('old','XII D','2025/2026'),{...regular('extra','XI Kimia 1'),type:'tambahan'}];
  const props={isOpen:true,onClose(){},classes,classStudents:Object.fromEntries(classes.map(c=>[c.id,[]])),
   initialSelectedClassIds:['extra'],initialClassAssignments:{a:{mode:'selected',studentIds:['one']},extra:{mode:'all',studentIds:[]}},
-  onSaveAssignments:(ids,assignments)=>{saved={ids,assignments}}};
+  onSaveAssignments:(ids,assignments,isPublic)=>{saved={ids,assignments,isPublic}}};
  const source=fs.readFileSync(path.resolve(__dirname,'../../web/components/exams/AssignExamModal.tsx'),'utf8');
  const code=ts.transpileModule(source,{compilerOptions:{jsx:ts.JsxEmit.React,module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022,esModuleInterop:true}}).outputText;
  const mod={exports:{}};
@@ -45,7 +45,14 @@ test('class checkbox toggles once, preview does not select, and all students rep
  check().props.onClick(event);check().props.onChange(event);tree=render();assert.equal(check().props.checked,false);
  find(tree,n=>n.type==='div'&&n.props.key==='b').props.onClick();tree=render();
  assert.equal(find(tree,n=>n.type==='input'&&n.props['aria-label']==='Pilih kelas XI B').props.checked,false);
- find(tree,n=>n.type==='button'&&text(n)==='Semua siswa').props.onClick();tree=render();
+ find(tree,n=>n.type==='button'&&text(n)==='Semua kelas').props.onClick();tree=render();
  find(tree,n=>n.type==='Button'&&text(n)==='Terapkan Peserta').props.onClick();
  assert.deepEqual(saved.ids,['a','b']);assert.deepEqual(saved.assignments.a,{mode:'all',studentIds:[]});assert.deepEqual(saved.assignments.b,{mode:'all',studentIds:[]});
+ assert.equal(saved.isPublic,false);
+ assert.ok(!nodes(tree).some(n=>n.type==='button'&&text(n)==='Semua siswa (Umum)'),'tanpa izin Umum, tombol Umum tidak tampil');
+ // Semua siswa (Umum): tanpa kelas maupun tahun ajaran; kelas terpilih tidak ikut dikirim.
+ props.allowPublic=true;tree=render();
+ find(tree,n=>n.type==='button'&&text(n)==='Semua siswa (Umum)').props.onClick();tree=render();
+ find(tree,n=>n.type==='Button'&&text(n)==='Terapkan Peserta').props.onClick();
+ assert.equal(saved.isPublic,true);assert.deepEqual(saved.ids,[]);
 });

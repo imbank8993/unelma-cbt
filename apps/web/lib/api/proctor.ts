@@ -615,10 +615,12 @@ export function assignExamAction(
     classIds: string[],
     participantAssignments: { userId: string; classId: string }[],
     activate = true,
+    /** true = Ujian Umum (semua siswa); false = per kelas; undefined = tidak diubah. */
+    isPublic?: boolean,
 ) {
     return apiSend<{ examId: string }>(
         `/api/proctor/exams/${encodeURIComponent(examId)}/assignments`,
-        { classIds, participantAssignments, activate },
+        { classIds, participantAssignments, activate, isPublic },
         'PUT',
     );
 }

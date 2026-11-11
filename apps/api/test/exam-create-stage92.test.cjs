@@ -198,3 +198,37 @@ test('siswa tanpa kelas tetap bisa melihat ujian umum, tetapi tidak ujian per ke
     assert.equal(canAccessExam({ ...exam, metadata: { is_public: true } }, audience), true);
     assert.equal(canAccessExam({ ...exam, metadata: {} }, audience), false);
 });
+
+test('Tetapkan Peserta "Semua siswa (Umum)": tanpa kelas dan tanpa tahun ajaran aktif', async () => {
+    // Belum ada kelas maupun tahun ajaran aktif sama sekali.
+    const { s, db } = service({
+        cbt_exams: [{ id: EXAM, organization_id: ORG, status: 'draft', exam_type: 'daily', metadata: {} }],
+        cbt_exam_targets: [{ exam_id: EXAM, class_id: 'lama' }], cbt_exam_participants: [],
+    });
+    await s.assign({ id: 'staff' }, EXAM, [], [], true, true);
+    assert.equal(db.tables.cbt_exams[0].metadata.is_public, true);
+    assert.equal(db.tables.cbt_exams[0].status, 'active');
+    assert.equal(db.tables.cbt_exam_targets.length, 0);
+
+    await assert.rejects(s.assign({ id: 'staff' }, EXAM, ['kelas-a'], [], false, true), /jangan sertakan kelas/);
+});
+
+test('Semua siswa (Umum) ditolak untuk ujian ASAS/ASAT/AM', async () => {
+    for (const exam of [{ exam_type: 'pas' }, { exam_type: 'am' }, { exam_type: 'daily', metadata: { is_pas_exam: true } }]) {
+        const { s, db } = service({ cbt_exams: [{ id: EXAM, organization_id: ORG, status: 'draft', metadata: {}, ...exam }], cbt_exam_targets: [], cbt_exam_participants: [] });
+        await assert.rejects(s.assign({ id: 'staff' }, EXAM, [], [], false, true), /tidak (tersedia|dapat)/);
+        assert.notEqual(db.tables.cbt_exams[0].metadata.is_public, true);
+    }
+});
+
+test('Umum -> per kelas lewat Tetapkan Peserta tetap menjaga siswa yang sedang mengerjakan', async () => {
+    const pub = { cbt_exams: [{ id: EXAM, organization_id: ORG, status: 'active', metadata: { is_public: true } }], cbt_exam_targets: [] };
+    const blocked = assignFixture(pub);
+    await assert.rejects(blocked.s.assign({ id: 'staff' }, EXAM, ['kelas-b'], [], false, false), /sedang mengerjakan/);
+    assert.equal(blocked.db.tables.cbt_exams[0].metadata.is_public, true);
+
+    const ok = assignFixture(pub);
+    await ok.s.assign({ id: 'staff' }, EXAM, ['kelas-a'], [], false, false);
+    assert.equal(ok.db.tables.cbt_exams[0].metadata.is_public, false);
+    assert.deepEqual(ok.db.tables.cbt_exam_targets.map(t => t.class_id), ['kelas-a']);
+});

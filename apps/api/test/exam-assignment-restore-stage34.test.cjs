@@ -81,7 +81,7 @@ test('RESTORE-03: peserta wajib benar-benar menjadi anggota kelas sumber', async
 test('RESTORE-04: kontrak browser mengirim pasangan siswa dan kelas pada tiga peran', () => {
     const helper = fs.readFileSync(path.join(root, 'apps/web/lib/api/proctor.ts'), 'utf8');
     assert.match(helper, /participantAssignments: \{ userId: string; classId: string \}\[\]/);
-    assert.match(helper, /\{ classIds, participantAssignments, activate \}/);
+    assert.match(helper, /\{ classIds, participantAssignments, activate, isPublic \}/);
     assert.doesNotMatch(helper, /\{ classIds, userIds, activate \}/);
 
     for (const role of ['admin', 'guru', 'proktor']) {

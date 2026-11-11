@@ -340,6 +340,7 @@ export class ProctorController {
             dto.classIds,
             dto.participantAssignments,
             dto.activate ?? true,
+            dto.isPublic,
         );
     }
 

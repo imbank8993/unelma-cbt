@@ -39,10 +39,17 @@ export interface AssignExamModalProps {
     examTitle?: string;
     onSaveAssignments?: (
         selectedClassIds: string[],
-        classAssignments: Record<string, { mode: 'all' | 'selected'; studentIds: string[] }>
+        classAssignments: Record<string, { mode: 'all' | 'selected'; studentIds: string[] }>,
+        isPublic: boolean,
     ) => void;
     overlayClassName?: string;
+    /** Boleh dijadikan Ujian Umum. Bawaan: semua jenis kecuali ASAS/ASAT/AM. */
+    allowPublic?: boolean;
+    /** Status Umum awal untuk mode pemilih (onSaveAssignments). */
+    initialIsPublic?: boolean;
 }
+
+const SEMESTER_EXAM_TYPES = ['pas', 'pat', 'am'];
 
 interface SelectedStudentItem {
     studentId: string;
@@ -65,7 +72,15 @@ export const AssignExamModal: React.FC<AssignExamModalProps> = ({
     examTitle,
     onSaveAssignments,
     overlayClassName = '',
+    allowPublic,
+    initialIsPublic = false,
 }) => {
+    // "Semua siswa" = Ujian Umum: semua siswa aktif sekolah, termasuk yang belum
+    // punya kelas. Tidak bergantung pada kelas maupun tahun ajaran aktif.
+    const canUsePublic = allowPublic ?? Boolean(
+        exam && !SEMESTER_EXAM_TYPES.includes(exam.exam_type || '') && exam.metadata?.is_pas_exam !== true,
+    );
+    const [isPublicMode, setIsPublicMode] = useState(false);
     const [isLoadingExisting, setIsLoadingExisting] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [activeSchoolYear, setActiveSchoolYear] = useState<string | null>(null);
@@ -135,8 +150,11 @@ export const AssignExamModal: React.FC<AssignExamModalProps> = ({
                 setSearchAllSelected('');
                 setError(null);
                 setRightView('class_detail');
+                setIsPublicMode(false);
                 return;
             }
+
+            setIsPublicMode(onSaveAssignments ? initialIsPublic : exam?.metadata?.is_public === true);
 
             // Mode pemilih in-memory (misal dipanggil dari CreateExamModal)
             if (onSaveAssignments) {
@@ -429,7 +447,7 @@ export const AssignExamModal: React.FC<AssignExamModalProps> = ({
 
     const handleSubmit = async () => {
         if (onSaveAssignments) {
-            onSaveAssignments(selectedClassIds, classAssignments);
+            onSaveAssignments(isPublicMode ? [] : selectedClassIds, classAssignments, isPublicMode);
             onClose();
             return;
         }
@@ -458,9 +476,10 @@ export const AssignExamModal: React.FC<AssignExamModalProps> = ({
         const activate = !exam.is_published;
         const result = await assignExamAction(
             exam.id,
-            targetClassIds,
-            participantAssignments,
-            activate
+            isPublicMode ? [] : targetClassIds,
+            isPublicMode ? [] : participantAssignments,
+            activate,
+            canUsePublic ? isPublicMode : undefined,
         );
 
         setIsSubmitting(false);
@@ -500,7 +519,7 @@ export const AssignExamModal: React.FC<AssignExamModalProps> = ({
                 style={{ padding: 0, gap: 0, overflow: 'hidden' }}
                 className="flex-1 flex flex-col min-h-0"
             >
-                {exam?.metadata?.is_public ? (
+                {isPublicMode ? (
                     <div className="flex-1 flex flex-col items-center justify-center p-8 text-center my-auto">
                         <div className="w-14 h-14 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center mb-3 border border-emerald-200">
                             <Globe size={28} />
@@ -509,11 +528,14 @@ export const AssignExamModal: React.FC<AssignExamModalProps> = ({
                             Ujian Umum (Publik)
                         </h4>
                         <p className="text-xs text-slate-500 max-w-sm mb-6">
-                            Ujian ini terbuka secara otomatis untuk seluruh siswa aktif di sekolah ini.
+                            Terbuka untuk seluruh siswa aktif di sekolah ini, termasuk siswa yang belum
+                            memiliki kelas. Tidak memerlukan kelas maupun tahun ajaran aktif.
                         </p>
-                        <Button type="button" variant="cancel" onClick={onClose}>
-                            Tutup
-                        </Button>
+                        {canUsePublic && (
+                            <Button type="button" variant="cancel" onClick={() => setIsPublicMode(false)}>
+                                Pilih kelas / siswa tertentu
+                            </Button>
+                        )}
                     </div>
                 ) : isLoadingExisting ? (
                     <div className="flex-1 flex flex-col items-center justify-center text-slate-400 gap-2">
@@ -528,18 +550,30 @@ export const AssignExamModal: React.FC<AssignExamModalProps> = ({
                                 <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
                                     Pilih Kelas ({classes.length})
                                 </span>
-                                <button
-                                    type="button"
-                                    onClick={handleToggleAllClasses}
-                                    disabled={loadingSchoolYear || !regularClasses.length}
-                                    title="Pilih semua siswa dari kelas reguler tahun ajaran aktif"
-                                    className="text-[11px] font-semibold text-[#3083FF] hover:underline disabled:opacity-40 disabled:cursor-not-allowed"
-                                >
-                                    Semua siswa
-                                </button>
-                                {selectedClassIds.length > 0 && <button type="button" onClick={() => setSelectedClassIds([])} className="text-[11px] text-slate-500 hover:underline">Kosongkan</button>}
+                                <span className="flex items-center gap-3">
+                                    {canUsePublic && (
+                                        <button
+                                            type="button"
+                                            onClick={() => setIsPublicMode(true)}
+                                            title="Ujian Umum: semua siswa aktif sekolah, termasuk yang belum punya kelas"
+                                            className="text-[11px] font-semibold text-emerald-600 hover:underline"
+                                        >
+                                            Semua siswa (Umum)
+                                        </button>
+                                    )}
+                                    {!loadingSchoolYear && activeSchoolYear && regularClasses.length > 0 && (
+                                        <button
+                                            type="button"
+                                            onClick={handleToggleAllClasses}
+                                            title={`Pilih semua kelas reguler tahun ajaran ${activeSchoolYear}`}
+                                            className="text-[11px] font-semibold text-[#3083FF] hover:underline"
+                                        >
+                                            Semua kelas
+                                        </button>
+                                    )}
+                                    {selectedClassIds.length > 0 && <button type="button" onClick={() => setSelectedClassIds([])} className="text-[11px] text-slate-500 hover:underline">Kosongkan</button>}
+                                </span>
                             </div>
-                            <p className="mb-2 text-[11px] text-slate-500">{loadingSchoolYear ? 'Memuat tahun ajaran aktif...' : activeSchoolYear ? `Semua siswa: kelas reguler ${activeSchoolYear}` : 'Tahun ajaran aktif belum tersedia; pilih kelas satu per satu.'}</p>
                             <p className="mb-2 text-[11px] text-slate-500">Centang untuk memilih kelas. Klik kartu untuk melihat siswa.</p>
 
                             {/* Class Search */}
@@ -986,16 +1020,21 @@ export const AssignExamModal: React.FC<AssignExamModalProps> = ({
             </ModalBody>
 
             {/* ─── Standard Modal Footer ──────────────────────────── */}
-            {!exam?.metadata?.is_public && (
+            {(canUsePublic || !isPublicMode) && (
                 <ModalFooter align="between">
                     <div className="flex items-center gap-2">
                         <span
                             className={`w-2 h-2 rounded-full shrink-0 ${
-                                allSelectedStudents.length > 0
+                                isPublicMode || allSelectedStudents.length > 0
                                     ? 'bg-emerald-500'
                                     : 'bg-amber-400'
                             }`}
                         />
+                        {isPublicMode ? (
+                            <span className="text-xs font-semibold text-emerald-700">
+                                Semua siswa aktif sekolah (Umum)
+                            </span>
+                        ) : (
                         <span className="text-xs text-slate-600 font-medium">
                             <strong className="text-slate-900">
                                 {selectedClassIds.length} Kelas
@@ -1005,6 +1044,7 @@ export const AssignExamModal: React.FC<AssignExamModalProps> = ({
                                 {allSelectedStudents.length} Siswa Terpilih
                             </strong>
                         </span>
+                        )}
                         {error && (
                             <span className="text-xs text-red-600 font-medium ml-2">
                                 {error}
@@ -1025,7 +1065,7 @@ export const AssignExamModal: React.FC<AssignExamModalProps> = ({
                             type="button"
                             variant="primary"
                             onClick={handleSubmit}
-                            disabled={isSubmitting || isLoadingExisting || (!onSaveAssignments && selectedClassIds.length === 0)}
+                            disabled={isSubmitting || isLoadingExisting || (!onSaveAssignments && !isPublicMode && selectedClassIds.length === 0)}
                             isLoading={isSubmitting}
                             icon={onSaveAssignments ? 'check' : 'save'}
                         >

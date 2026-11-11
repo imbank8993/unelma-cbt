@@ -1441,10 +1441,13 @@ export const CreateExamModal: React.FC<CreateExamModalProps> = ({
             classStudents={localClassStudents}
             initialSelectedClassIds={formData.selectedClassIds}
             initialClassAssignments={formData.classAssignments}
-            onSaveAssignments={(newClassIds, newAssignments) => {
+            allowPublic={!isFolderExamCategory(formData.examType)}
+            initialIsPublic={formData.isPublic}
+            onSaveAssignments={(newClassIds, newAssignments, isPublic) => {
                 setFormData((prev) => ({
                     ...prev,
-                    selectedClassIds: newClassIds,
+                    isPublic,
+                    selectedClassIds: isPublic ? [] : newClassIds,
                     classAssignments: newAssignments,
                 }));
                 setIsAssignPickerOpen(false);

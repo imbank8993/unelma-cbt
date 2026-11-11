@@ -592,8 +592,12 @@ export class ExamAdminService {
         classIds: string[],
         participantAssignments: Array<{ userId: string; classId: string }>,
         activate: boolean,
+        isPublic?: boolean,
     ) {
         await this.authz.assertExamStaff(user, examId);
+        if (isPublic === true) {
+            return this.assignPublic(examId, classIds, participantAssignments, activate);
+        }
         const uniqueClassIds = [...new Set(classIds)];
         const uniqueParticipantAssignments = [
             ...new Map(
@@ -634,6 +638,11 @@ export class ExamAdminService {
                 throw new ConflictException('Pulihkan ujian dari arsip sebelum mengubah penugasan.');
             }
             const organizationId = (exam as { organization_id: string }).organization_id;
+            const examMetadata = (exam as { metadata?: Record<string, any> | null }).metadata || {};
+            // Umum -> per kelas: setelah langkah ini akses siswa bergantung pada
+            // penugasan baru, jadi pemeriksaan siswa aktif harus memperlakukan
+            // ujian ini sebagai privat.
+            const leavingPublic = isPublic === false && examMetadata.is_public === true;
 
             const [
                 regular,
@@ -740,7 +749,7 @@ export class ExamAdminService {
                 );
             }
 
-            await this.assertActiveParticipantsKept(db, examId, exam as { metadata?: Record<string, any> | null }, {
+            await this.assertActiveParticipantsKept(db, examId, { metadata: leavingPublic ? { ...examMetadata, is_public: false } : examMetadata }, {
                 regularClassIds: uniqueClassIds.filter((id) => regularIds.has(id)),
                 additionalClassIds: uniqueClassIds.filter((id) => additionalIds.has(id)),
                 participantIds: uniqueUserIds,
@@ -778,10 +787,13 @@ export class ExamAdminService {
                 if (error) throw new BadRequestException(error.message);
             }
 
-            if (activate) {
+            if (activate || leavingPublic) {
                 const { error } = await db
                     .from('cbt_exams')
-                    .update({ status: 'active' })
+                    .update({
+                        ...(activate ? { status: 'active' } : {}),
+                        ...(leavingPublic ? { metadata: { ...examMetadata, is_public: false } } : {}),
+                    })
                     .eq('id', examId);
                 if (error) throw new BadRequestException(error.message);
             }
@@ -791,6 +803,53 @@ export class ExamAdminService {
                 classes: uniqueClassIds.length,
                 participants: uniqueParticipantAssignments.length,
             };
+        });
+    }
+
+    /**
+     * Jadikan ujian Umum: terbuka untuk semua siswa aktif sekolah, termasuk yang
+     * belum punya kelas. Tidak memakai kelas maupun tahun ajaran, jadi sasaran
+     * kelas/peserta lama dikosongkan. Siswa yang sedang mengerjakan tetap
+     * tercakup karena ujian umum tidak bergantung pada penugasan.
+     */
+    private async assignPublic(
+        examId: string,
+        classIds: string[],
+        participantAssignments: Array<{ userId: string; classId: string }>,
+        activate: boolean,
+    ) {
+        if (classIds.length || participantAssignments.length) {
+            throw new BadRequestException('Ujian Umum berlaku untuk semua siswa; jangan sertakan kelas atau siswa tertentu.');
+        }
+        return this.db.transaction(async (db) => {
+            await db.raw('SELECT id FROM public.cbt_exams WHERE id = $1::uuid FOR UPDATE', examId);
+            const { data: exam, error: examError } = await db
+                .from('cbt_exams')
+                .select('id, status, exam_type, metadata')
+                .eq('id', examId)
+                .maybeSingle();
+            if (examError) throw new BadRequestException(examError.message);
+            if (!exam) throw new NotFoundException('Ujian tidak ditemukan.');
+            const row = exam as { status?: string; exam_type?: string | null; metadata?: Record<string, any> | null };
+            if (row.status === 'archived') {
+                throw new ConflictException('Pulihkan ujian dari arsip sebelum mengubah penugasan.');
+            }
+            this.assertPublicAllowedForType(row.exam_type || '', true);
+            if (row.metadata?.is_pas_exam === true) {
+                throw new BadRequestException('Ujian dari folder ASAS/ASAT/AM tidak dapat dijadikan Ujian Umum.');
+            }
+
+            for (const table of ['cbt_exam_targets', 'cbt_exam_participants']) {
+                const { error } = await db.from(table).delete().eq('exam_id', examId);
+                if (error) throw new BadRequestException(error.message);
+            }
+            const { error } = await db.from('cbt_exams').update({
+                metadata: { ...(row.metadata || {}), is_public: true },
+                ...(activate ? { status: 'active' } : {}),
+            }).eq('id', examId);
+            if (error) throw new BadRequestException(error.message);
+
+            return { examId, classes: 0, participants: 0, isPublic: true };
         });
     }
 

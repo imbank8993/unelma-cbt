@@ -239,6 +239,14 @@ export class AssignExamDto {
     @IsOptional()
     @IsBoolean()
     activate?: boolean;
+
+    @ApiPropertyOptional({
+        description: 'true = Ujian Umum (semua siswa aktif sekolah, tanpa kelas/tahun ajaran); '
+            + 'false = per kelas/siswa; tidak dikirim = status umum tidak diubah.',
+    })
+    @IsOptional()
+    @IsBoolean()
+    isPublic?: boolean;
 }
 
 export class ExamIdsDto {
