@@ -637,7 +637,7 @@ export class CommissionsService {
         await this.prisma.$executeRawUnsafe(
           `DELETE FROM public.cbt_member_roles mr
            USING public.cbt_roles r
-           WHERE mr.organization_member_id = $1 AND r.id = mr.role_id AND lower(r.name) = 'siswa'`,
+           WHERE mr.organization_member_id = $1::uuid AND r.id = mr.role_id AND lower(r.name) = 'siswa'`,
           member.id,
         );
       }
@@ -701,15 +701,15 @@ export class CommissionsService {
       );
       if (!proktorRole) throw new BadRequestException('Peran Proktor tidak ditemukan di database.');
 
-      await tx.$executeRawUnsafe(`UPDATE public.cbt_organization_members SET is_active = true WHERE id = $1`, member.id);
+      await tx.$executeRawUnsafe(`UPDATE public.cbt_organization_members SET is_active = true WHERE id = $1::uuid`, member.id);
       await tx.$executeRawUnsafe(`
         DELETE FROM public.cbt_member_roles mr
         USING public.cbt_roles r
-        WHERE mr.organization_member_id = $1 AND r.id = mr.role_id AND lower(r.name) = 'siswa'
+        WHERE mr.organization_member_id = $1::uuid AND r.id = mr.role_id AND lower(r.name) = 'siswa'
       `, member.id);
       await tx.$executeRawUnsafe(`
         INSERT INTO public.cbt_member_roles (organization_member_id, role_id)
-        VALUES ($1, $2)
+        VALUES ($1::uuid, $2::uuid)
         ON CONFLICT DO NOTHING
       `, member.id, proktorRole.id);
 

@@ -635,7 +635,7 @@ export class AuthService {
       await tx.$executeRawUnsafe(
         `DELETE FROM public.cbt_member_roles mr
          USING public.cbt_roles r
-         WHERE mr.organization_member_id = $1
+         WHERE mr.organization_member_id = $1::uuid
            AND r.id = mr.role_id
            AND lower(r.name) = ANY($2::text[])`,
         (member as any).id,
@@ -643,7 +643,7 @@ export class AuthService {
       );
       await tx.$executeRawUnsafe(
         `INSERT INTO public.cbt_member_roles (organization_member_id, role_id)
-         VALUES ($1, $2)
+         VALUES ($1::uuid, $2::uuid)
          ON CONFLICT DO NOTHING`,
         (member as any).id,
         (roleRow as any).id,
