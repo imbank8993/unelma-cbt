@@ -477,7 +477,8 @@ export class AuthService {
         );
       }
     } else {
-      // Normal user: if no role yet, assign Siswa role
+      // Normal user: jika belum memiliki peran dan bukan pemohon Proktor, tetapkan peran Siswa.
+      // Role tidak boleh ganda: pemohon Proktor yang sedang ditinjau tidak diberi peran Siswa.
       if (member) {
         const { data: existingRoles } = await this.db
           .from('cbt_member_roles')
@@ -485,12 +486,19 @@ export class AuthService {
           .eq('organization_member_id', (member as any).id);
 
         if (!existingRoles || (existingRoles as any[]).length === 0) {
-          const { data: siswaRole } = await this.db.from('cbt_roles').select('id').eq('name', 'Siswa').maybeSingle();
-          if (siswaRole) {
-            await this.db.from('cbt_member_roles').insert({
-              organization_member_id: (member as any).id,
-              role_id: (siswaRole as any).id,
-            });
+          const [proctorProfile] = await this.prisma.$queryRawUnsafe<any[]>(
+            `SELECT status FROM public.proctor_profiles WHERE user_id = $1::uuid LIMIT 1`,
+            authUser.id,
+          );
+
+          if (!proctorProfile) {
+            const { data: siswaRole } = await this.db.from('cbt_roles').select('id').eq('name', 'Siswa').maybeSingle();
+            if (siswaRole) {
+              await this.db.from('cbt_member_roles').insert({
+                organization_member_id: (member as any).id,
+                role_id: (siswaRole as any).id,
+              });
+            }
           }
         }
       }

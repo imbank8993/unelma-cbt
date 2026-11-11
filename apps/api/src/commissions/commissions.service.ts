@@ -627,6 +627,21 @@ export class CommissionsService {
         dto.bank2_name || null, dto.bank2_account_name || null, dto.bank2_account_number || null,
         dto.expertise, dto.motivation,
       );
+
+      // Role tidak boleh ganda: cabut peran Siswa jika ada agar akun murni berstatus pemohon Proktor.
+      const [member] = await this.prisma.$queryRawUnsafe<any[]>(
+        `SELECT id FROM public.cbt_organization_members WHERE user_id = $1::uuid LIMIT 1`,
+        user.id,
+      );
+      if (member) {
+        await this.prisma.$executeRawUnsafe(
+          `DELETE FROM public.cbt_member_roles mr
+           USING public.cbt_roles r
+           WHERE mr.organization_member_id = $1 AND r.id = mr.role_id AND lower(r.name) = 'siswa'`,
+          member.id,
+        );
+      }
+
       return { success: true, application: rows[0] };
     } catch (error) {
       if (isMissingColumn(error)) throw new BadRequestException(APPLICATION_MIGRATION_MESSAGE);

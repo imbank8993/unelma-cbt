@@ -7,7 +7,7 @@ import Image from 'next/image';
 import Script from 'next/script';
 import { getDashboardPath, type Role } from '@/lib/rbac';
 import { setActiveRoleInStorage, lockActiveRole } from '@/lib/rbac';
-import { AlertCircle, ArrowLeft, Loader2, RefreshCw } from 'lucide-react';
+import { AlertCircle, ArrowLeft, FileSignature, Loader2, RefreshCw } from 'lucide-react';
 
 const GOOGLE_CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || '15496733034-vlkqs2ft95fgi3nnkbdm7eiq6i1ommem.apps.googleusercontent.com';
 
@@ -230,13 +230,21 @@ export default function LoginPage() {
                     Data nama dan foto profil disinkronkan langsung dari akun Google Anda.
                 </p>
 
-                {/* Semua akun (Siswa, Proktor, Admin) masuk dengan Google. */}
-                <div className="border-t border-slate-100 pt-5 text-center space-y-1.5">
-                    <p className="text-xs font-semibold text-slate-700">Ingin menjadi Proktor (pembuat soal & bahan ajar)?</p>
-                    <p className="text-[11px] text-slate-500 leading-relaxed">
-                        Masuk dengan akun Google Anda, lalu buka menu <strong>Ajukan Jadi Proktor</strong> dan lengkapi formulirnya.
-                        Admin akan meninjau dan menyetujui pengajuan Anda.
-                    </p>
+                {/* Pengajuan Proktor di luar aplikasi (role tunggal / tidak ganda) */}
+                <div className="border-t border-slate-100 pt-5 text-center space-y-2.5">
+                    <div className="space-y-1">
+                        <p className="text-xs font-bold text-slate-800">Ingin Menjadi Proktor?</p>
+                        <p className="text-[11px] text-slate-500 leading-relaxed">
+                            Proktor adalah peran mandiri (tidak merangkap Siswa) untuk membuat bank soal & ujian. Pendaftaran dilakukan di luar aplikasi dan ditinjau oleh Admin.
+                        </p>
+                    </div>
+                    <Link
+                        href="/ajukan-proktor"
+                        className="inline-flex items-center justify-center gap-2 w-full py-2.5 px-4 rounded-xl bg-slate-50 hover:bg-blue-50 border border-slate-200 hover:border-blue-200 text-[#030C4D] text-xs font-bold transition-all shadow-2xs hover:shadow-xs active:scale-98"
+                    >
+                        <FileSignature size={14} className="text-[#030C4D]" />
+                        <span>Formulir Pengajuan Proktor</span>
+                    </Link>
                 </div>
             </div>
 

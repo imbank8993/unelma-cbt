@@ -141,11 +141,14 @@ test('peran Guru dihapus: bahan ajar dikelola Proktor/Admin, halaman lama milik 
     assert.match(migration, /ADD COLUMN IF NOT EXISTS submitted_at timestamptz/);
     const sidebar = read('../../web/app/components/Sidebar.tsx');
     assert.match(sidebar, /\/dashboard\/admin\/proctor-requests/);
-    // Halaman ajukan-proktor dipindah keluar sidebar siswa ke /dashboard/ajukan-proktor
-    // dan ditampilkan sebagai banner CTA di halaman utama siswa.
-    assert.doesNotMatch(sidebar, /\/dashboard\/siswa\/ajukan-proktor/);
+    // Permintaan proktor tidak boleh ada di dalam aplikasi (sidebar maupun dasbor siswa)
+    assert.doesNotMatch(sidebar, /ajukan-proktor/);
     const siswaPage = read('../../web/app/dashboard/siswa/page.tsx');
-    assert.match(siswaPage, /\/dashboard\/ajukan-proktor/);
-    const newPage = read('../../web/app/dashboard/ajukan-proktor/page.tsx');
-    assert.match(newPage, /ApplyProctorPage/);
+    assert.doesNotMatch(siswaPage, /ajukan-proktor/);
+
+    // Pengajuan proktor berada di luar aplikasi: form publik /ajukan-proktor dan jendela login
+    const publicPage = read('../../web/app/ajukan-proktor/page.tsx');
+    assert.match(publicPage, /PublicApplyProctorPage/);
+    const loginPage = read('../../web/app/login/page.tsx');
+    assert.match(loginPage, /\/ajukan-proktor/);
 });

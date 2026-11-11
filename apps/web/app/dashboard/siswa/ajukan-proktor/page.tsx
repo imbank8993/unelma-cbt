@@ -4,13 +4,13 @@ import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 
 /**
- * Halaman lama — dialihkan ke URL baru yang lebih umum.
- * URL baru: /dashboard/ajukan-proktor
+ * Pengajuan proktor berada di luar aplikasi.
+ * Redirect ke halaman luar /ajukan-proktor.
  */
-export default function AjukanProktorRedirect() {
+export default function SiswaAjukanProktorRedirect() {
     const router = useRouter();
     useEffect(() => {
-        router.replace('/dashboard/ajukan-proktor');
+        router.replace('/ajukan-proktor');
     }, [router]);
     return null;
 }

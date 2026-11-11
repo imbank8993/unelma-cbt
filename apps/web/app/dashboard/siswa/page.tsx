@@ -28,7 +28,6 @@ Timer,
 TrendingUp,
 Zap,
 Coins,
-FileSignature,
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useCallback,useEffect,useRef,useState } from 'react';
@@ -268,31 +267,6 @@ export default function SiswaDashboard() {
                     </button>
                 </div>
             </div>
-
-
-            {/* ── Banner: Ajukan Jadi Proktor ── */}
-            <div
-                className="relative overflow-hidden rounded-2xl border border-indigo-100 bg-gradient-to-r from-[#030C4D] to-[#1a2a8f] p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-sm cursor-pointer group"
-                onClick={() => router.push('/dashboard/ajukan-proktor')}
-            >
-                <div className="flex items-center gap-3.5">
-                    <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center shrink-0 group-hover:bg-white/20 transition-colors">
-                        <FileSignature size={20} className="text-white" />
-                    </div>
-                    <div className="text-left">
-                        <p className="text-sm font-bold text-white leading-snug">Ingin jadi Proktor?</p>
-                        <p className="text-xs text-indigo-200 mt-0.5">Buat soal, ujian, dan raih komisi dari konten berbayar. Ajukan sekarang!</p>
-                    </div>
-                </div>
-                <button
-                    type="button"
-                    onClick={(e) => { e.stopPropagation(); router.push('/dashboard/ajukan-proktor'); }}
-                    className="shrink-0 inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-white text-[#030C4D] text-xs font-bold hover:bg-indigo-50 transition-colors active:scale-95"
-                >
-                    Ajukan Sekarang <ArrowRight size={13} />
-                </button>
-            </div>
-
             {/* ── Layout: Ujian dan Riwayat ── */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {/* ── Left: Exam List ── */}
