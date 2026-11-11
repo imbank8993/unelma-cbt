@@ -50,7 +50,7 @@ test('dashboard rejection returns HTTPS even with HTTP proxy headers', async () 
     assert.equal(response.headers.get('location'), `${env.NEXT_PUBLIC_SITE_URL}/?error=cbt-session-unavailable`);
 });
 test('logout clears both current and legacy cookies', async () => {
-    const route = load('app/api/auth/logout/route.ts', env, { '@/lib/app-jwt': jwt });
+    const route = load('app/api/auth/logout/route.ts', env, { '@/lib/app-jwt': jwt, '@/lib/public-origin': origin });
     const response = await route.POST();
     const cookies = response.headers.get('set-cookie');
     assert.match(cookies, /__Host-cbt_session=;/); assert.match(cookies, /cbt_session=;/); assert.match(cookies, /Max-Age=0/);

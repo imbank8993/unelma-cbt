@@ -115,10 +115,21 @@ export async function updateCommissionConfig(
   return apiSend<{ config: CommissionConfig }>('/api/commissions/config', data, 'PUT');
 }
 
+/** Satu versi aturan komisi; berlaku untuk transaksi sejak `effective_from` (null = sejak awal). */
+export interface CommissionRuleHistoryItem {
+  id: string;
+  admin_share_pct: number;
+  proctor_share_pct: number;
+  token_idr_rate: number;
+  effective_from: string | null;
+  created_at: string;
+  created_by_name?: string | null;
+}
+
 export async function getAdminCommissionsSummary(): Promise<
-  ApiResult<{ config: CommissionConfig; proctors: ProctorSummaryItem[] }>
+  ApiResult<{ config: CommissionConfig; proctors: ProctorSummaryItem[]; rule_history?: CommissionRuleHistoryItem[] }>
 > {
-  return apiGet<{ config: CommissionConfig; proctors: ProctorSummaryItem[] }>(
+  return apiGet<{ config: CommissionConfig; proctors: ProctorSummaryItem[]; rule_history?: CommissionRuleHistoryItem[] }>(
     '/api/commissions/admin/summary'
   );
 }
@@ -165,4 +176,72 @@ export async function registerProctorProfile(data: {
   bank2_account_number?: string;
 }): Promise<ApiResult<{ profile: any }>> {
   return apiSend<{ profile: any }>('/api/commissions/proctor/register', data, 'POST');
+}
+
+// ── Pengajuan menjadi Proktor ──
+export type ProctorApplicationStatus = 'pending' | 'approved' | 'rejected';
+
+export interface ProctorApplication {
+  id: string;
+  user_id: string;
+  full_name: string;
+  nik: string;
+  whatsapp: string;
+  email: string;
+  bank1_name: string;
+  bank1_account_name: string;
+  bank1_account_number: string;
+  bank2_name?: string | null;
+  bank2_account_name?: string | null;
+  bank2_account_number?: string | null;
+  status: ProctorApplicationStatus;
+  expertise?: string | null;
+  motivation?: string | null;
+  submitted_at?: string | null;
+  reviewed_at?: string | null;
+  rejection_reason?: string | null;
+  account_name?: string | null;
+  account_email?: string | null;
+  avatar_url?: string | null;
+  reviewed_by_name?: string | null;
+}
+
+export interface ProctorApplicationInput {
+  full_name: string;
+  nik: string;
+  whatsapp: string;
+  expertise: string;
+  motivation: string;
+  bank1_name: string;
+  bank1_account_name: string;
+  bank1_account_number: string;
+  bank2_name?: string;
+  bank2_account_name?: string;
+  bank2_account_number?: string;
+}
+
+export async function getMyProctorApplication(): Promise<
+  ApiResult<{ application: ProctorApplication | null; is_proctor: boolean; email: string }>
+> {
+  return apiGet('/api/commissions/proctor/application');
+}
+
+export async function applyAsProctor(
+  data: ProctorApplicationInput,
+): Promise<ApiResult<{ application: { id: string; status: ProctorApplicationStatus } }>> {
+  return apiSend('/api/commissions/proctor/apply', data, 'POST');
+}
+
+export async function listProctorApplications(
+  status: ProctorApplicationStatus | 'all' = 'pending',
+): Promise<ApiResult<{ applications: ProctorApplication[]; counts: Record<ProctorApplicationStatus, number> }>> {
+  return apiGet(`/api/commissions/admin/applications?status=${encodeURIComponent(status)}`);
+}
+
+export async function approveProctorApplication(id: string): Promise<ApiResult<{ application: ProctorApplication }>> {
+  return apiSend(`/api/commissions/admin/applications/${encodeURIComponent(id)}/approve`, {}, 'POST');
+}
+
+export async function rejectProctorApplication(id: string, reason: string): Promise<ApiResult<{ application: ProctorApplication }>> {
+  return apiSend(`/api/commissions/admin/applications/${encodeURIComponent(id)}/reject`, { reason }, 'POST');
 }

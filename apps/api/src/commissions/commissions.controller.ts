@@ -7,6 +7,7 @@ import {
   ParseUUIDPipe,
   Post,
   Put,
+  Query,
   UseGuards,
 } from '@nestjs/common';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
@@ -14,7 +15,9 @@ import type { AuthUser } from '@acca-cbt/shared';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
 import {
+  ApplyProctorDto,
   ProcessPayoutDto,
+  RejectProctorApplicationDto,
   RegisterProctorDto,
   UpdateCommissionConfigDto,
   UpdateProctorPermissionsDto,
@@ -46,7 +49,7 @@ export class CommissionsController {
   @ApiOperation({ summary: 'Ubah konfigurasi komisi oleh Admin' })
   updateConfig(@CurrentUser() user: AuthUser, @Body() dto: UpdateCommissionConfigDto) {
     assertAdmin(user);
-    return this.commissions.updateConfig(dto);
+    return this.commissions.updateConfig(dto, user.id);
   }
 
   // ── 2. Admin: Rekap Komisi & Pencairan ──
@@ -86,5 +89,43 @@ export class CommissionsController {
   @ApiOperation({ summary: 'Pendaftaran dan perbaruan data rekening/NIK proktor' })
   registerProctor(@CurrentUser() user: AuthUser, @Body() dto: RegisterProctorDto) {
     return this.commissions.registerOrUpdateProfile(user, dto);
+  }
+
+  // ── 4. Pengajuan menjadi Proktor ──
+  @Get('proctor/application')
+  @ApiOperation({ summary: 'Status pengajuan Proktor milik pengguna yang login' })
+  getMyApplication(@CurrentUser() user: AuthUser) {
+    return this.commissions.getMyApplication(user);
+  }
+
+  @Post('proctor/apply')
+  @ApiOperation({ summary: 'Ajukan diri menjadi Proktor (akun Google yang login)' })
+  applyAsProctor(@CurrentUser() user: AuthUser, @Body() dto: ApplyProctorDto) {
+    return this.commissions.applyAsProctor(user, dto);
+  }
+
+  @Get('admin/applications')
+  @ApiOperation({ summary: 'Daftar pengajuan Proktor untuk Admin' })
+  listApplications(@CurrentUser() user: AuthUser, @Query('status') status?: string) {
+    assertAdmin(user);
+    return this.commissions.listApplications(status || 'pending');
+  }
+
+  @Post('admin/applications/:id/approve')
+  @ApiOperation({ summary: 'Setujui pengajuan Proktor' })
+  approveApplication(@CurrentUser() user: AuthUser, @Param('id', ParseUUIDPipe) id: string) {
+    assertAdmin(user);
+    return this.commissions.approveApplication(user, id);
+  }
+
+  @Post('admin/applications/:id/reject')
+  @ApiOperation({ summary: 'Tolak pengajuan Proktor dengan alasan' })
+  rejectApplication(
+    @CurrentUser() user: AuthUser,
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: RejectProctorApplicationDto,
+  ) {
+    assertAdmin(user);
+    return this.commissions.rejectApplication(user, id, dto.reason);
   }
 }

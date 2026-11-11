@@ -1,4 +1,4 @@
-import { IsBoolean, IsEmail, IsIn, IsInt, IsNotEmpty, IsOptional, IsString, IsUUID, Matches, Max, MaxLength, Min } from 'class-validator';
+import { IsBoolean, IsEmail, IsIn, IsInt, IsNotEmpty, IsOptional, IsString, IsUUID, Matches, Max, MaxLength, Min, MinLength } from 'class-validator';
 import { Transform, Type } from 'class-transformer';
 
 const trim = ({ value }: { value: unknown }) => (typeof value === 'string' ? value.trim() : value);
@@ -141,4 +141,80 @@ export class UpdateProctorPermissionsDto {
   @IsOptional()
   @IsIn(['pending', 'approved', 'rejected'])
   status?: 'pending' | 'approved' | 'rejected';
+}
+
+/**
+ * Formulir pengajuan menjadi Proktor. Email TIDAK diterima dari formulir:
+ * selalu email akun Google yang sedang login.
+ */
+export class ApplyProctorDto {
+  @Transform(trim)
+  @IsString()
+  @IsNotEmpty({ message: 'Nama lengkap wajib diisi.' })
+  @MaxLength(150)
+  full_name!: string;
+
+  @Transform(digitsOnly)
+  @Matches(/^\d{16}$/, { message: 'NIK harus 16 digit angka.' })
+  nik!: string;
+
+  @Transform(digitsOnly)
+  @Matches(/^\+?\d{8,15}$/, { message: 'Nomor WhatsApp tidak valid.' })
+  whatsapp!: string;
+
+  @Transform(trim)
+  @IsString()
+  @MinLength(3, { message: 'Bidang keahlian wajib diisi.' })
+  @MaxLength(200)
+  expertise!: string;
+
+  @Transform(trim)
+  @IsString()
+  @MinLength(20, { message: 'Ceritakan pengalaman/alasan Anda minimal 20 karakter.' })
+  @MaxLength(2000)
+  motivation!: string;
+
+  @Transform(trim)
+  @IsString()
+  @IsNotEmpty({ message: 'Nama bank wajib diisi.' })
+  @MaxLength(100)
+  bank1_name!: string;
+
+  @Transform(trim)
+  @IsString()
+  @IsNotEmpty({ message: 'Nama pemilik rekening wajib diisi.' })
+  @MaxLength(150)
+  bank1_account_name!: string;
+
+  @Transform(digitsOnly)
+  @Matches(/^\d{5,30}$/, { message: 'Nomor rekening 1 harus 5–30 digit angka.' })
+  bank1_account_number!: string;
+
+  @IsOptional()
+  @Transform(emptyToUndefined)
+  @IsString()
+  @MaxLength(100)
+  bank2_name?: string;
+
+  @IsOptional()
+  @Transform(emptyToUndefined)
+  @IsString()
+  @MaxLength(150)
+  bank2_account_name?: string;
+
+  @IsOptional()
+  @Transform(({ value }) => {
+    const cleaned = digitsOnly({ value });
+    return cleaned === '' ? undefined : cleaned;
+  })
+  @Matches(/^\d{5,30}$/, { message: 'Nomor rekening 2 harus 5–30 digit angka.' })
+  bank2_account_number?: string;
+}
+
+export class RejectProctorApplicationDto {
+  @Transform(trim)
+  @IsString()
+  @MinLength(5, { message: 'Alasan penolakan minimal 5 karakter.' })
+  @MaxLength(1000)
+  reason!: string;
 }

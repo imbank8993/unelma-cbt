@@ -8,7 +8,7 @@ const { StorageController } = require('../src/storage/storage.controller.ts');
 const { convertLearningLatex } = require('../../web/lib/learning-latex.ts');
 const { fixtureDb } = require('./fixture-db.cjs');
 
-const teacher = { id: 'teacher', roles: ['Guru'] }, student = { id: 'student', roles: ['Siswa'] }, admin = { id: 'admin', roles: ['Admin'] };
+const teacher = { id: 'teacher', roles: ['Proktor'] }, student = { id: 'student', roles: ['Siswa'] }, admin = { id: 'admin', roles: ['Admin'] };
 const material = (overrides = {}) => ({ id: 'material', organization_id: 'school', created_by: 'teacher', title: 'Aljabar', description: '', subject: 'Matematika', status: 'draft', format: 'word', content_html: '<h1>Belajar</h1>', conversion_notes: '', file_key: 'lms-private/school/material/source.bin', file_name: 'materi.docx', file_size: 123, revision: 1, ...overrides });
 const authz = { async assertOrgRole(user, org, roles) { if (org !== 'school' || !user.roles.some(role => roles.includes(role))) throw new ForbiddenException(); } };
 function setup(rows = [material()], failed = []) {
@@ -86,7 +86,7 @@ test('LMS: berkas terbit dapat diperbarui dengan mengunggah berkas baru', async 
 test('LMS: pemilik atau admin dapat menghapus bahan ajar dan membersihkan penyimpanan', async () => {
     const { service, storage, db } = setup([material()]);
     await assert.rejects(service.delete(student, 'school', 'material'), ForbiddenException);
-    const otherTeacher = { id: 'other-teacher', roles: ['Guru'] };
+    const otherTeacher = { id: 'other-teacher', roles: ['Proktor'] };
     await assert.rejects(service.delete(otherTeacher, 'school', 'material'), ForbiddenException);
     const result = await service.delete(teacher, 'school', 'material');
     assert.equal(result.success, true);

@@ -6,7 +6,7 @@ const { ForbiddenException } = require('@nestjs/common');
 const { LearningService } = require('../src/learning/learning.service.ts');
 const { fixtureDb } = require('./fixture-db.cjs');
 const { learningStateKey } = require('../../web/lib/learning-state.ts');
-const teacher = { id: 'teacher', roles: ['Guru'] }, student = { id: 'student', roles: ['Siswa'] };
+const teacher = { id: 'teacher', roles: ['Proktor'] }, student = { id: 'student', roles: ['Siswa'] };
 const row = { id: 'material', organization_id: 'school', created_by: 'teacher', title: 'Materi', status: 'published', format: 'html', content_html: '<input>', content_version: 1, revision: 1, file_key: 'old' };
 const dto = { revision: 1, title: 'Materi', description: '', subject: '', status: 'published', format: 'html', contentHtml: '<input>', conversionNotes: '' };
 function fixture(extra = {}, options = {}) {

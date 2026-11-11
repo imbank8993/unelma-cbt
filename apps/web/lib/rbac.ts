@@ -51,7 +51,9 @@ export const ROLE_NAME_CANON: Record<string, DashboardRole> = {
 export const PATH_TO_DEFAULT_ROLE: { prefix: string; role: DashboardRole }[] = [
     { prefix: '/dashboard/admin', role: 'Admin' },
     { prefix: '/dashboard/proktor', role: 'Proktor' },
-    { prefix: '/dashboard/guru', role: 'Guru' },
+    // Peran Guru sudah dihapus (dilebur ke Proktor). Halaman lama di /dashboard/guru
+    // (tugas validasi, penilaian) tetap dipakai dan kini milik Proktor.
+    { prefix: '/dashboard/guru', role: 'Proktor' },
     { prefix: '/dashboard/pengawas', role: 'Pengawas' },
     { prefix: '/dashboard/siswa', role: 'Siswa' },
 ];

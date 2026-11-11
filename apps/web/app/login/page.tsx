@@ -7,14 +7,12 @@ import Image from 'next/image';
 import Script from 'next/script';
 import { getDashboardPath, type Role } from '@/lib/rbac';
 import { setActiveRoleInStorage, lockActiveRole } from '@/lib/rbac';
-import { AlertCircle, ArrowLeft, Lock, Mail } from 'lucide-react';
+import { AlertCircle, ArrowLeft } from 'lucide-react';
 
 const GOOGLE_CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || '15496733034-vlkqs2ft95fgi3nnkbdm7eiq6i1ommem.apps.googleusercontent.com';
 
 export default function LoginPage() {
     const router = useRouter();
-    const [email, setEmail] = useState('');
-    const [password, setPassword] = useState('');
     const [loading, setLoading] = useState(false);
     const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
@@ -95,39 +93,6 @@ export default function LoginPage() {
         }
     };
 
-    const handlePasswordLogin = async (e: React.FormEvent) => {
-        e.preventDefault();
-        if (!email || !password) {
-            setErrorMsg('Email dan password wajib diisi.');
-            return;
-        }
-
-        setLoading(true);
-        setErrorMsg(null);
-
-        try {
-            const res = await fetch('/api/auth/login', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email, password }),
-            });
-
-            const data = await res.json();
-            if (!res.ok || !data.success) {
-                throw new Error(data.error || 'Email atau password salah.');
-            }
-
-            const user = data.user;
-            const role = (user?.bestRole || (user?.roles && user.roles[0]) || 'Siswa') as Role;
-            setActiveRoleInStorage(role === 'Superadmin' ? 'Admin' : role);
-            lockActiveRole();
-
-            window.location.href = getDashboardPath(role);
-        } catch (err) {
-            setErrorMsg((err as Error).message);
-            setLoading(false);
-        }
-    };
 
     return (
         <div className="min-h-screen bg-white flex flex-col items-center justify-center p-4 font-sans relative overflow-hidden text-slate-800">
@@ -214,46 +179,13 @@ export default function LoginPage() {
                     Data nama dan foto profil disinkronkan langsung dari akun Google Anda.
                 </p>
 
-                {/* Form Darurat / Backup Admin (Opsional) */}
-                <div className="border-t border-slate-100 pt-5">
-                    <details className="text-center group">
-                        <summary className="text-xs font-semibold text-slate-500 hover:text-[#030C4D] cursor-pointer select-none transition-colors">
-                            Opsi Masuk Manual (Administrator & Proktor)
-                        </summary>
-                        <form onSubmit={handlePasswordLogin} className="mt-4 space-y-3 text-left">
-                            <div>
-                                <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-600 mb-1">
-                                    Email
-                                </label>
-                                <input
-                                    type="email"
-                                    value={email}
-                                    onChange={(e) => setEmail(e.target.value)}
-                                    placeholder="admin@unelma.id"
-                                    className="w-full bg-white border border-slate-300 focus:border-[#030C4D] text-slate-900 rounded-xl py-2.5 px-3 text-xs outline-none transition-colors shadow-2xs"
-                                />
-                            </div>
-                            <div>
-                                <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-600 mb-1">
-                                    Password
-                                </label>
-                                <input
-                                    type="password"
-                                    value={password}
-                                    onChange={(e) => setPassword(e.target.value)}
-                                    placeholder="••••••••"
-                                    className="w-full bg-white border border-slate-300 focus:border-[#030C4D] text-slate-900 rounded-xl py-2.5 px-3 text-xs outline-none transition-colors shadow-2xs"
-                                />
-                            </div>
-                            <button
-                                type="submit"
-                                disabled={loading}
-                                className="w-full py-2.5 px-3 rounded-xl bg-[#030C4D] hover:bg-[#0a1a5c] text-white text-xs font-bold transition-all shadow-xs cursor-pointer disabled:opacity-50"
-                            >
-                                {loading ? 'Memproses...' : 'Masuk Manual'}
-                            </button>
-                        </form>
-                    </details>
+                {/* Semua akun (Siswa, Proktor, Admin) masuk dengan Google. */}
+                <div className="border-t border-slate-100 pt-5 text-center space-y-1.5">
+                    <p className="text-xs font-semibold text-slate-700">Ingin menjadi Proktor (pembuat soal & bahan ajar)?</p>
+                    <p className="text-[11px] text-slate-500 leading-relaxed">
+                        Masuk dengan akun Google Anda, lalu buka menu <strong>Ajukan Jadi Proktor</strong> dan lengkapi formulirnya.
+                        Admin akan meninjau dan menyetujui pengajuan Anda.
+                    </p>
                 </div>
             </div>
 

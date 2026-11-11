@@ -61,7 +61,7 @@ test('login & daftar Google tidak lagi menerima email dari isi permintaan', () =
     assert.match(login, /verifyGoogleIdToken\(body\.credential\)/);
     assert.doesNotMatch(login, /payload\.email|body\.email/);
     const signup = service.slice(service.indexOf('async signup('));
-    assert.match(signup, /if \(!dto\.password\) \{[\s\S]*verifyGoogleIdToken\(dto\.credential\)/);
+    assert.match(signup, /if \(!dto\.credential\) \{[\s\S]*verifyGoogleIdToken\(dto\.credential\)/);
 
     const route = read('../../web/app/api/auth/google/route.ts');
     assert.match(route, /JSON\.stringify\(\{ credential, schoolName, className \}\)/);
@@ -95,7 +95,7 @@ function payoutFixture({ gross, paid = 0, insertError = null }) {
     return fakePrisma([
         [/key = 'commission_config'/, () => [{ value: CONFIG }]],
         [/FROM public\.cbt_profiles WHERE id = \$1::uuid/, () => [{ id: PROCTOR }]],
-        [/AS unlock_count/, () => [{ owner_id: PROCTOR, unlock_count: 9, gross_tokens: gross }]],
+        [/AS unlock_count/, () => [{ owner_id: PROCTOR, unlock_count: 9, gross_tokens: gross, weighted_tokens: gross * 60 }]],
         [/AS paid_tokens/, () => [{ proctor_id: PROCTOR, paid_tokens: paid, paid_idr: paid * 5000 }]],
         [/INSERT INTO public\.proctor_payouts/, (args) => {
             if (insertError) throw insertError;
@@ -126,7 +126,7 @@ test('pencairan: jumlah dihitung server, bukti harus http(s), tidak menimpa penc
 test('komisi dihitung dari token yang benar-benar dibayar, bukan harga item saat ini', async () => {
     const prisma = fakePrisma([
         [/key = 'commission_config'/, () => [{ value: CONFIG }]],
-        [/WITH earnings AS/, () => [{ user_id: PROCTOR, full_name: 'P', gross_tokens: 333, total_unlocks: 7, paid_tokens: 0, paid_idr: 0, nik: '••••••••••••1234' }]],
+        [/WITH earnings AS/, () => [{ user_id: PROCTOR, full_name: 'P', gross_tokens: 333, weighted_tokens: 333 * 60, total_unlocks: 7, paid_tokens: 0, paid_idr: 0, nik: '••••••••••••1234' }]],
     ]);
     const summary = await new CommissionsService(prisma).getAdminSummary();
     const sql = prisma.calls.find((c) => /WITH earnings AS/.test(c.sql)).sql;
@@ -134,7 +134,8 @@ test('komisi dihitung dari token yang benar-benar dibayar, bukan harga item saat
     assert.match(sql, /tt\.type = 'usage'/);
     assert.doesNotMatch(sql, /SUM\(e\.token_price\)|cbt_user_roles/);
     assert.equal(summary.proctors[0].proctor_tokens_earned, Math.floor(333 * 60 / 100));
-    assert.equal(prisma.calls.length, 2, 'satu query rekap, bukan 3 query per proktor');
+    assert.equal(prisma.calls.filter((c) => /WITH earnings AS/.test(c.sql)).length, 1, 'satu query rekap, bukan 3 query per proktor');
+    assert.equal('weighted_tokens' in summary.proctors[0], false);
 });
 
 test('validasi DTO komisi & pendaftaran rekening hanya untuk staf', async () => {
@@ -152,7 +153,7 @@ test('validasi DTO komisi & pendaftaran rekening hanya untuk staf', async () => 
     assert.ok((await validate(badNik)).some((e) => e.property === 'nik'));
 
     const service = new CommissionsService(fakePrisma([]));
-    await assert.rejects(service.registerOrUpdateProfile({ id: PROCTOR, roles: ['SISWA'], isPlatformAdmin: false }, reg), /Hanya Proktor, Guru, atau Admin/);
+    await assert.rejects(service.registerOrUpdateProfile({ id: PROCTOR, roles: ['SISWA'], isPlatformAdmin: false }, reg), /Hanya Proktor atau Admin/);
     await service.registerOrUpdateProfile({ id: PROCTOR, roles: ['PROKTOR'], isPlatformAdmin: false }, reg);
 
     assert.equal(normalizeProofUrl(' https://x.example/a.pdf '), 'https://x.example/a.pdf');
@@ -196,10 +197,8 @@ test('konten berbayar: harga minimal Admin & izin per pembuat ditegakkan', async
 
 // ── Manajemen pengguna ───────────────────────────────────────────────────────
 
-test('manajemen pengguna: tanpa password bawaan, peran tervalidasi, hapus menjaga catatan keuangan', async () => {
-    const noPassword = plainToInstance(AdminCreateUserDto, { email: 'a@b.co', name: 'A', role: 'proktor' });
-    assert.ok((await validate(noPassword)).some((e) => e.property === 'password'));
-    const ok = plainToInstance(AdminCreateUserDto, { email: ' A@B.co ', name: ' A ', role: 'proktor', password: 'rahasia123' });
+test('manajemen pengguna: akun tanpa password (Google), peran tervalidasi, hapus menjaga catatan keuangan', async () => {
+    const ok = plainToInstance(AdminCreateUserDto, { email: ' A@B.co ', name: ' A ', role: 'proktor', password: 'diabaikan' });
     assert.deepEqual(await validate(ok), []);
     assert.equal(ok.role, 'Proktor');
     assert.equal(ok.email, 'a@b.co');
@@ -213,5 +212,6 @@ test('manajemen pengguna: tanpa password bawaan, peran tervalidasi, hapus menjag
     const page = read('../../web/app/dashboard/admin/users/page.tsx');
     assert.doesNotMatch(page, /Admin123!/);
     assert.match(page, /role: 'Siswa',/);
-    assert.match(page, /return 'Guru';/);
+    assert.doesNotMatch(page, /type="password"/);
+    assert.match(service, /createUserByAdmin[\s\S]*findOrCreateOAuthUser\(\{/);
 });

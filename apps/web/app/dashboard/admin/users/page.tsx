@@ -17,7 +17,6 @@ import {
     Trash2,
     UserPlus,
     X,
-    Lock,
     Mail,
     User,
     Layers
@@ -46,7 +45,7 @@ async function readJson(res: Response): Promise<{ success?: boolean; error?: str
     }
 }
 
-/** Peran yang dikelola halaman ini; Guru/Pengawas dikelola di tempat lain dan dipertahankan. */
+/** Peran yang dikelola halaman ini; Pengawas dikelola di tempat lain dan dipertahankan. */
 const MANAGED_ROLES = ['Admin', 'Proktor', 'Siswa'];
 
 export default function AdminUsersPage() {
@@ -61,7 +60,6 @@ export default function AdminUsersPage() {
     const [addForm, setAddForm] = useState({
         name: '',
         email: '',
-        password: '',
         role: 'Siswa',
         schoolName: '',
         className: '',
@@ -137,10 +135,6 @@ export default function AdminUsersPage() {
 
     const handleAddUserSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (addForm.password.length < 8) {
-            setAddError('Password minimal 8 karakter.');
-            return;
-        }
         setAddLoading(true);
         setAddError(null);
 
@@ -159,7 +153,6 @@ export default function AdminUsersPage() {
             setAddForm({
                 name: '',
                 email: '',
-                password: '',
                 role: 'Siswa',
                 schoolName: '',
                 className: '',
@@ -187,7 +180,6 @@ export default function AdminUsersPage() {
         if (u.isSuperadmin) return 'Superadmin';
         if (u.isPlatformAdmin || u.roles.some(r => r.toUpperCase() === 'ADMIN')) return 'Admin';
         if (u.roles.some(r => r.toUpperCase() === 'PROKTOR')) return 'Proktor';
-        if (u.roles.some(r => r.toUpperCase() === 'GURU')) return 'Guru';
         if (u.roles.some(r => r.toUpperCase() === 'PENGAWAS')) return 'Pengawas';
         return 'Siswa';
     };
@@ -204,12 +196,6 @@ export default function AdminUsersPage() {
                 return (
                     <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-blue-500/10 text-blue-600 border border-blue-500/20">
                         <Shield className="w-3.5 h-3.5" /> Admin
-                    </span>
-                );
-            case 'GURU':
-                return (
-                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-500/10 text-emerald-700 border border-emerald-500/20">
-                        <User className="w-3.5 h-3.5" /> Guru
                     </span>
                 );
             case 'PENGAWAS':
@@ -537,24 +523,10 @@ export default function AdminUsersPage() {
                                 </div>
                             </div>
 
-                            <div>
-                                <label className="block text-xs font-semibold text-slate-600 mb-1">
-                                    Password <span className="text-red-500">*</span> <span className="text-slate-400 font-normal">(minimal 8 karakter)</span>
-                                </label>
-                                <div className="relative">
-                                    <Lock className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
-                                    <input
-                                        type="password"
-                                        required
-                                        minLength={8}
-                                        autoComplete="new-password"
-                                        placeholder="Minimal 8 karakter"
-                                        value={addForm.password}
-                                        onChange={(e) => setAddForm({ ...addForm, password: e.target.value })}
-                                        className="w-full bg-slate-50 border border-slate-200 focus:border-blue-500 focus:bg-white text-slate-900 text-xs rounded-xl py-2 pl-9 pr-3 outline-none"
-                                    />
-                                </div>
-                            </div>
+                            <p className="text-[11px] text-slate-500 leading-relaxed bg-slate-50 border border-slate-200 rounded-xl p-3">
+                                Akun didaftarkan tanpa password. Pemiliknya masuk dengan <strong>akun Google</strong> beremail sama,
+                                dan peran yang Anda pilih langsung berlaku.
+                            </p>
 
                             <div>
                                 <label className="block text-xs font-semibold text-slate-600 mb-1">

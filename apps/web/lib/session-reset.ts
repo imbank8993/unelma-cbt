@@ -41,11 +41,10 @@ export async function clearCbtSession(): Promise<void> {
 }
 
 /**
- * Bersihkan sesi lalu ulangi hand-off dari acca-app. Dipakai oleh layar error
- * SSO supaya siswa bisa memulihkan sendiri tanpa berganti perangkat.
+ * Bersihkan sesi lalu kembali ke halaman login (Google). Unelma CBT tidak lagi
+ * menerima hand-off dari ACCA New.
  */
 export async function resetAndRetrySso(): Promise<void> {
     await clearCbtSession();
-    const accaUrl = process.env.NEXT_PUBLIC_ACCA_URL || 'https://acca.icgowa.sch.id';
-    window.location.href = `${accaUrl}/api/sso/cbt`;
+    window.location.href = '/login';
 }

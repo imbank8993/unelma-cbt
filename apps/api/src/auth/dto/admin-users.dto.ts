@@ -1,6 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Transform } from 'class-transformer';
-import { IsEmail, IsIn, IsNotEmpty, IsOptional, IsString, MaxLength, MinLength } from 'class-validator';
+import { IsEmail, IsIn, IsNotEmpty, IsOptional, IsString, MaxLength } from 'class-validator';
 
 export const ADMIN_MANAGED_ROLES = ['Admin', 'Proktor', 'Siswa'] as const;
 export type AdminManagedRole = (typeof ADMIN_MANAGED_ROLES)[number];
@@ -25,13 +25,6 @@ export class AdminCreateUserDto {
   @IsNotEmpty({ message: 'Nama lengkap wajib diisi.' })
   @MaxLength(150)
   name!: string;
-
-  /** Wajib: tidak ada lagi password bawaan yang bisa ditebak. */
-  @ApiProperty({ minLength: 8 })
-  @IsString()
-  @MinLength(8, { message: 'Password minimal 8 karakter.' })
-  @MaxLength(128)
-  password!: string;
 
   @ApiProperty({ enum: ADMIN_MANAGED_ROLES })
   @Transform(canonicalRole)

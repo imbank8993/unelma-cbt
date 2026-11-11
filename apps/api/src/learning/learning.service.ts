@@ -25,10 +25,10 @@ export class LearningService {
         catch (error) { if (error instanceof ForbiddenException) return false; throw error; }
     }
     private async reader(user: AuthUser, org: string) {
-        await this.authz.assertOrgRole(user, org, ['Siswa', 'Guru', 'Admin'], 'Siswa/Guru/Admin');
+        await this.authz.assertOrgRole(user, org, ['Siswa', 'Proktor', 'Admin'], 'Siswa/Proktor/Admin');
     }
     private async manager(user: AuthUser, org: string) {
-        await this.authz.assertOrgRole(user, org, ['Guru', 'Admin'], 'Guru/Admin');
+        await this.authz.assertOrgRole(user, org, ['Proktor', 'Admin'], 'Proktor/Admin');
     }
     private async editable(user: AuthUser, row: MaterialRow) {
         await this.manager(user, row.organization_id);
@@ -46,14 +46,14 @@ export class LearningService {
     }
     /**
      * Paywall ditegakkan DI SERVER: siswa yang belum membuka materi berbayar
-     * tidak menerima isi, lampiran, PDF, maupun aktivitasnya. Guru/Admin (staf
+     * tidak menerima isi, lampiran, PDF, maupun aktivitasnya. Proktor/Admin (staf
      * pengelola materi) tidak terkunci.
      */
     private async lockedFor(user: AuthUser, row: MaterialRow): Promise<boolean> {
         const paid = row as MaterialRow & { is_paid?: boolean; token_price?: number };
         if (!paid.is_paid || !(Number(paid.token_price) > 0)) return false;
         if (row.created_by === user.id) return false;
-        if (await this.allowed(user, row.organization_id, ['Guru', 'Admin'])) return false;
+        if (await this.allowed(user, row.organization_id, ['Proktor', 'Admin'])) return false;
         return isPaidItemLocked(this.db, user.id, 'material', paid);
     }
     private async assertUnlocked(user: AuthUser, row: MaterialRow) {
@@ -61,7 +61,7 @@ export class LearningService {
     }
     async list(user: AuthUser, org: string, manage = false) {
         await this.reader(user, org);
-        const canManage = await this.allowed(user, org, ['Guru', 'Admin']);
+        const canManage = await this.allowed(user, org, ['Proktor', 'Admin']);
         if (manage) await this.manager(user, org);
         const isAdmin = canManage && await this.allowed(user, org, ['Admin']);
         let query = this.db.from('cbt_learning_materials').select(LIST_COLUMNS).eq('organization_id', org);
@@ -76,7 +76,7 @@ export class LearningService {
         return { materials: rows.map(row => {
             const p = (progress.data || []).find((item: { material_id: string }) => item.material_id === row.id);
             const updated = !!p?.completed && (p.completed_version || 1) !== (row.content_version || 1);
-            // Sama dengan `editable()`: guru hanya pemilik materinya; Admin boleh semua.
+            // Sama dengan `editable()`: Proktor hanya pemilik materinya; Admin boleh semua.
             const canEdit = canManage && (row.created_by === user.id || isAdmin);
             return { ...row, completed: !!p?.completed && !updated, materialUpdated: updated, canEdit };
         }), canManage };
@@ -85,7 +85,7 @@ export class LearningService {
         await this.reader(user, org);
         const row = await this.row(org, id);
         if (row.status !== 'published') await this.editable(user, row);
-        const canEdit = await this.allowed(user, org, ['Guru', 'Admin']) && (row.created_by === user.id || await this.allowed(user, org, ['Admin']));
+        const canEdit = await this.allowed(user, org, ['Proktor', 'Admin']) && (row.created_by === user.id || await this.allowed(user, org, ['Admin']));
         const { data, error } = await this.db.from('cbt_learning_progress').select('completed, completed_version').eq('material_id', id).eq('user_id', user.id).maybeSingle();
         if (error) throw new InternalServerErrorException('Gagal membaca progres belajar.');
         const materialUpdated = !!data?.completed && (data.completed_version || 1) !== (row.content_version || 1);

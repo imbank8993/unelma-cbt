@@ -98,6 +98,7 @@ export default function Sidebar({
                     { icon: 'fa-coins', label: 'Paket Token', href: '/dashboard/admin/tokens' },
                     { icon: 'fa-receipt', label: 'Tracker Transaksi', href: '/dashboard/admin/transactions' },
                     { icon: 'fa-hand-holding-dollar', label: 'Komisi & Pencairan', href: '/dashboard/admin/commissions' },
+                    { icon: 'fa-user-check', label: 'Permintaan Proktor', href: '/dashboard/admin/proctor-requests' },
                     { icon: 'fa-user-gear', label: 'Kelola Pengguna', href: '/dashboard/admin/users' },
                     { icon: 'fa-database', label: 'Backup Data', href: '/dashboard/admin/backup' },
                 ],
@@ -119,6 +120,7 @@ export default function Sidebar({
                     { icon: 'fa-coins', label: 'Paket Token', href: '/dashboard/admin/tokens' },
                     { icon: 'fa-receipt', label: 'Tracker Transaksi', href: '/dashboard/admin/transactions' },
                     { icon: 'fa-hand-holding-dollar', label: 'Komisi & Pencairan', href: '/dashboard/admin/commissions' },
+                    { icon: 'fa-user-check', label: 'Permintaan Proktor', href: '/dashboard/admin/proctor-requests' },
                     { icon: 'fa-user-gear', label: 'Kelola Pengguna', href: '/dashboard/admin/users' },
                     { icon: 'fa-database', label: 'Backup Data', href: '/dashboard/admin/backup' },
                 ],
@@ -151,6 +153,7 @@ export default function Sidebar({
             { icon: 'fa-chart-column', label: 'Hasil', href: '/dashboard/siswa/results' },
             { icon: 'fa-arrow-trend-up', label: 'Analisis', href: '/dashboard/siswa/analytics' },
             { icon: 'fa-coins', label: 'Token Saya', href: '/dashboard/siswa/tokens' },
+            { icon: 'fa-user-tie', label: 'Ajukan Jadi Proktor', href: '/dashboard/siswa/ajukan-proktor' },
         ],
         'Pengawas': [
             { icon: 'fa-house', label: 'Dashboard', href: '/dashboard/pengawas' },

@@ -314,3 +314,16 @@ psql "$DATABASE_URL_HOST" -f database/migrations/20261111_03_proctor_payouts_mul
 - Ujian ASAS/ASAT dan Asesmen Madrasah tidak boleh dijadikan berbayar.
 
 Tidak ada migrasi untuk perubahan ini.
+
+## Login hanya Google, peran Guru dihapus, aturan komisi per tanggal & pengajuan Proktor (11 November 2026)
+
+- **Semua akun masuk dengan Google.** Login email/password dan masuk lewat ACCA New dimatikan (keluar kini kembali ke `/login` Unelma CBT). Admin menambah pengguna tanpa password; pemiliknya masuk dengan akun Google beremail sama. Darurat saja: `PASSWORD_LOGIN_ENABLED=true` / `ACCA_SSO_ENABLED=true` di `.env` API menghidupkan sementara jalur lama.
+- **Peran Guru dihapus.** Migrasi memindahkan setiap Guru menjadi Proktor. Bank soal, ujian, dan bahan ajar dibuat oleh Proktor (dan Admin). Halaman lama di `/dashboard/guru` (tugas validasi, penilaian) kini dibuka sebagai Proktor.
+- **Aturan komisi per tanggal.** Perubahan bagi hasil berlaku untuk transaksi mulai hari perubahan (zona waktu sekolah); transaksi sebelumnya tetap memakai aturan lama. Riwayat aturan tampil di halaman Komisi.
+- **Pengajuan Proktor.** Pengguna (Siswa) membuka menu **Ajukan Jadi Proktor**, mengisi identitas, keahlian, dan rekening; Admin meninjau di **Pengaturan → Permintaan Proktor** lalu menyetujui (peran Siswa diganti Proktor) atau menolak dengan alasan.
+
+Migrasi (wajib; aman dijalankan ulang):
+
+```bash
+psql "$DATABASE_URL_HOST" -f database/migrations/20261111_04_google_only_proctor_applications.sql
+```

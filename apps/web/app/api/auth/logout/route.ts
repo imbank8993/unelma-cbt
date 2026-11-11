@@ -1,5 +1,6 @@
 import { SECURE_SESSION_COOKIE,SESSION_COOKIE,sessionCookieOptions } from '@/lib/app-jwt';
-import { NextResponse } from 'next/server';
+import { resolvePublicOrigin } from '@/lib/public-origin';
+import { NextRequest, NextResponse } from 'next/server';
 
 function clearSession(response: NextResponse): NextResponse {
     // Opsi lainnya harus sama persis dengan saat cookie diterbitkan, jika
@@ -15,13 +16,9 @@ export async function POST() {
     return clearSession(response);
 }
 
-/**
- * Front-channel logout callback untuk ACCA New. Setelah menghapus sesi ACCA
- * New, arahkan browser ke endpoint ini agar cookie host-only CBT juga dihapus.
- */
-export async function GET() {
-    const accaUrl = process.env.NEXT_PUBLIC_ACCA_URL || 'https://acca.icgowa.sch.id';
-    const destination = new URL('/login?logged_out=1', accaUrl);
+/** Keluar lewat tautan: hapus sesi lalu kembali ke halaman login Unelma CBT sendiri. */
+export async function GET(request: NextRequest) {
+    const destination = new URL('/login?logged_out=1', resolvePublicOrigin(request));
     const response = NextResponse.redirect(destination);
     response.headers.set('Cache-Control', 'no-store');
     return clearSession(response);

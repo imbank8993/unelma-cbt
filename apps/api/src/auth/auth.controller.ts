@@ -16,6 +16,13 @@ const IP_FAILURE_LIMIT = 200;
 const FAILURE_WINDOW_MS = 15 * 60_000;
 export const loginFailures = new RateLimiter();
 
+/**
+ * Jalur masuk lama, dimatikan secara bawaan. Hanya dapat dihidupkan sementara
+ * lewat variabel lingkungan untuk pemulihan darurat (mis. akun Admin tanpa Google).
+ */
+const PASSWORD_LOGIN_ENABLED = () => process.env.PASSWORD_LOGIN_ENABLED === 'true';
+const ACCA_SSO_ENABLED = () => process.env.ACCA_SSO_ENABLED === 'true';
+
 @ApiTags('auth')
 @Controller('auth')
 export class AuthController {
@@ -23,8 +30,13 @@ export class AuthController {
 
   @Post('login')
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Masuk dengan email dan password' })
+  @ApiOperation({ summary: 'DINONAKTIFKAN — semua akun masuk dengan Google' })
   async login(@Body() dto: LoginDto, @Req() req: Request) {
+    // Unelma CBT hanya memakai login Google: email dibuktikan oleh Google,
+    // bukan oleh password yang bisa ditebak atau dibocorkan.
+    if (!PASSWORD_LOGIN_ENABLED()) {
+      throw new ForbiddenException('Login dengan email & password tidak lagi digunakan. Silakan masuk dengan tombol Google.');
+    }
     const ip = dto.ipAddress || req.ip;
     const ua = dto.userAgent || req.headers['user-agent'];
     const accountKey = `account:${String(dto.email || '').trim().toLowerCase()}`;
@@ -59,8 +71,11 @@ export class AuthController {
 
   @Post('sso')
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Tukar tiket SSO acca-app dengan sesi CBT' })
+  @ApiOperation({ summary: 'DINONAKTIFKAN — Unelma CBT tidak lagi terhubung dengan ACCA New' })
   sso(@Body() dto: SsoTicketDto, @Req() req: Request) {
+    if (!ACCA_SSO_ENABLED()) {
+      throw new ForbiddenException('Masuk melalui ACCA New tidak lagi didukung. Silakan masuk dengan tombol Google.');
+    }
     const ip = dto.ipAddress || req.ip;
     const ua = dto.userAgent || req.headers['user-agent'];
     return this.authService.exchangeSsoTicket(dto.token, ip, ua);

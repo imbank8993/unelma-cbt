@@ -619,7 +619,7 @@ export class AuthService {
     // Ganti peran dalam SATU transaksi: bila penyisipan gagal, peran lama tetap
     // utuh (sebelumnya pengguna bisa tertinggal tanpa peran sama sekali).
     // Yang diganti hanya peran yang dikelola halaman ini (Admin/Proktor/Siswa);
-    // peran Guru/Pengawas dipertahankan, kecuali saat diturunkan menjadi Siswa.
+    // peran lain (mis. Pengawas) dipertahankan, kecuali saat diturunkan menjadi Siswa.
     const replacedRoles = matchedRole === 'Siswa'
       ? ['admin', 'proktor', 'siswa', 'guru', 'pengawas']
       : ['admin', 'proktor', 'siswa'];
@@ -734,7 +734,7 @@ export class AuthService {
 
   async createUserByAdmin(
     actorUser: AuthUser,
-    dto: { email: string; name: string; password?: string; role: string; schoolName?: string; className?: string },
+    dto: { email: string; name: string; role: string; schoolName?: string; className?: string },
   ): Promise<{ success: boolean; message: string; user?: any }> {
     const validRoles = ['Admin', 'Proktor', 'Siswa'];
     const matchedRole = validRoles.find((r) => r.toLowerCase() === (dto.role || '').toLowerCase()) || 'Siswa';
@@ -755,22 +755,12 @@ export class AuthService {
     }
 
     const fullName = (dto.name || '').trim() || normalizedEmail.split('@')[0];
-    // Tidak ada lagi password bawaan yang sama untuk semua akun: akun baru yang
-    // passwordnya bisa ditebak = akun yang bisa diambil alih siapa pun.
-    const password = dto.password || '';
-    if (password.length < 8) {
-      throw new BadRequestException('Password minimal 8 karakter.');
-    }
-
-    const authUser = await this.authUsers.createUser({
+    // Akun didaftarkan TANPA password: pemiliknya masuk dengan akun Google
+    // beremail sama, dan peran yang ditetapkan Admin langsung berlaku.
+    const authUser = await this.authUsers.findOrCreateOAuthUser({
       email: normalizedEmail,
-      password,
-      emailConfirm: true,
-      userMetadata: {
-        full_name: fullName,
-        school_name: dto.schoolName?.trim() || null,
-        role: matchedRole,
-      },
+      name: fullName,
+      provider: 'google',
     });
 
     await this.db.from('cbt_profiles').upsert(
@@ -829,17 +819,15 @@ export class AuthService {
   async signup(dto: SignupDto, ipAddress?: string, userAgent?: string): Promise<LoginResponse> {
     // Pendaftaran tanpa password = pendaftaran lewat Google: email wajib
     // dibuktikan dengan ID token Google, bukan sekadar diketik di formulir.
-    let google: Awaited<ReturnType<typeof verifyGoogleIdToken>> | null = null;
-    if (!dto.password) {
-      if (!dto.credential) {
-        throw new BadRequestException('Pendaftaran tanpa password harus melalui tombol Google.');
-      }
-      google = await verifyGoogleIdToken(dto.credential);
-      if (dto.email && dto.email.trim().toLowerCase() !== google.email) {
-        throw new BadRequestException('Email pendaftaran harus sama dengan email akun Google.');
-      }
-      dto = { ...dto, email: google.email, avatarUrl: google.picture || dto.avatarUrl };
+    // Pendaftaran HANYA lewat akun Google: tidak ada lagi akun berpassword.
+    if (!dto.credential) {
+      throw new BadRequestException('Pendaftaran hanya dapat dilakukan dengan akun Google.');
     }
+    const google = await verifyGoogleIdToken(dto.credential);
+    if (dto.email && dto.email.trim().toLowerCase() !== google.email) {
+      throw new BadRequestException('Email pendaftaran harus sama dengan email akun Google.');
+    }
+    dto = { ...dto, email: google.email, password: undefined, avatarUrl: google.picture || dto.avatarUrl };
     const normalizedEmail = (dto.email || '').trim().toLowerCase();
     if (!normalizedEmail || !dto.name || !dto.schoolName) {
       throw new BadRequestException('Email, Nama Lengkap, dan Asal Sekolah wajib diisi.');

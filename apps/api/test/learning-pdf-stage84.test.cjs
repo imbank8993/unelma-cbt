@@ -5,7 +5,7 @@ require('ts-node').register({ project: path.resolve(__dirname, '../tsconfig.json
 const { ForbiddenException } = require('@nestjs/common');
 const { LearningService } = require('../src/learning/learning.service.ts');
 const { fixtureDb } = require('./fixture-db.cjs');
-const teacher = { id: 'teacher', roles: ['Guru'] }, student = { id: 'student', roles: ['Siswa'] };
+const teacher = { id: 'teacher', roles: ['Proktor'] }, student = { id: 'student', roles: ['Siswa'] };
 const dto = { revision: 1, title: 'Materi', description: '', subject: '', status: 'draft', format: 'latex', contentHtml: '<h1>untrusted conversion</h1>', conversionNotes: '' };
 const file = { originalname: 'materi.TEX', size: 12, buffer: Buffer.from('fixture tex') };
 function setup({ compileFails = false, pdfFails = false, dbFails = false } = {}) {

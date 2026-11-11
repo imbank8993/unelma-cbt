@@ -23,6 +23,7 @@ import {
     updateCommissionConfig,
     updateProctorPermissions,
     type CommissionConfig,
+    type CommissionRuleHistoryItem,
     type ProctorSummaryItem
 } from '@/lib/api/commissions';
 
@@ -41,6 +42,7 @@ export default function AdminCommissionsPage() {
     const [savingConfig, setSavingConfig] = useState(false);
     const [feedback, setFeedback] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
     const [loadError, setLoadError] = useState<string | null>(null);
+    const [ruleHistory, setRuleHistory] = useState<CommissionRuleHistoryItem[]>([]);
 
     // Modal Pencairan
     const [selectedProc, setSelectedProc] = useState<ProctorSummaryItem | null>(null);
@@ -57,6 +59,7 @@ export default function AdminCommissionsPage() {
             if (!res.success) throw new Error(res.error || 'Data komisi gagal dimuat.');
             if (res.config) setConfig(res.config);
             setProctors(res.proctors || []);
+            setRuleHistory(res.rule_history || []);
         } catch (err) {
             // Daftar dikosongkan agar angka lama tidak disangka masih berlaku.
             setProctors([]);
@@ -311,7 +314,11 @@ export default function AdminCommissionsPage() {
                         <span className="text-[11px] text-slate-400 mt-1 block">Mencegah harga bahan ajar terlalu minim</span>
                     </div>
 
-                    <div className="sm:col-span-2 lg:col-span-3 flex justify-end">
+                    <div className="sm:col-span-2 lg:col-span-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                        <p className="text-[11px] text-slate-500 leading-relaxed max-w-2xl">
+                            Perubahan bagi hasil berlaku untuk transaksi <strong>mulai hari ini</strong>. Transaksi tanggal sebelumnya
+                            tetap dihitung dengan aturan lama. Kurs token dipakai saat komisi dicairkan.
+                        </p>
                         <button
                             type="submit"
                             disabled={savingConfig}
@@ -321,6 +328,41 @@ export default function AdminCommissionsPage() {
                         </button>
                     </div>
                 </form>
+
+                {ruleHistory.length > 0 && (
+                    <div className="border-t border-slate-100 pt-4">
+                        <h3 className="text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Riwayat Aturan Bagi Hasil</h3>
+                        <div className="overflow-x-auto">
+                            <table className="w-full text-left text-xs">
+                                <thead className="text-[11px] text-slate-500 uppercase tracking-wider border-b border-slate-100">
+                                    <tr>
+                                        <th className="py-2 pr-4">Berlaku Mulai</th>
+                                        <th className="py-2 pr-4">Admin</th>
+                                        <th className="py-2 pr-4">Proktor</th>
+                                        <th className="py-2 pr-4">Kurs</th>
+                                        <th className="py-2">Diubah Oleh</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-slate-50 text-slate-700">
+                                    {ruleHistory.map((rule, index) => (
+                                        <tr key={rule.id}>
+                                            <td className="py-2 pr-4 font-semibold">
+                                                {rule.effective_from
+                                                    ? new Date(rule.effective_from).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })
+                                                    : 'Sejak awal'}
+                                                {index === 0 && <span className="ml-2 px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700 text-[10px] font-bold">Aktif</span>}
+                                            </td>
+                                            <td className="py-2 pr-4">{rule.admin_share_pct}%</td>
+                                            <td className="py-2 pr-4">{rule.proctor_share_pct}%</td>
+                                            <td className="py-2 pr-4">Rp {Number(rule.token_idr_rate).toLocaleString('id-ID')}</td>
+                                            <td className="py-2 text-slate-500">{rule.created_by_name || '-'}</td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                )}
             </div>
 
             {/* Daftar Rekap Proktor & Pencairan */}

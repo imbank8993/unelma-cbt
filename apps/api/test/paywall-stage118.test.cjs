@@ -62,7 +62,7 @@ test('bahan ajar berbayar: isi, lampiran, dan progres ditahan server sampai dibu
     assert.equal(opened.material.locked, false);
     assert.match(opened.material.content_html, /RAHASIA/);
 
-    const teacher = await learningFixture({ unlocked: false, roles: ['Guru'] }).detail({ id: 'guru-lain' }, ORG, MATERIAL);
+    const teacher = await learningFixture({ unlocked: false, roles: ['Proktor'] }).detail({ id: 'proktor-lain' }, ORG, MATERIAL);
     assert.equal(teacher.material.locked, false);
     const free = await learningFixture({ unlocked: false, paid: false }).detail(student, ORG, MATERIAL);
     assert.equal(free.material.locked, false);

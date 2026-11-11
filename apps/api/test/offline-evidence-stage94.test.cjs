@@ -181,8 +181,6 @@ test('shared devices: offline packages need the last server-verified owner and e
     assert.match(examPage, /userId: ownerId,/);
     assert.match(examPage, /rememberExamOfflineOwner\(authUser\.id\)/);
     assert.doesNotMatch(examPage, /userId: knownUserId,/);
-    const singleLogout = read('../../web/app/components/SingleLogoutListener.tsx');
-    assert.match(singleLogout, /forgetExamOfflineOwner\(\);[\s\S]*clearExamRecoverySessions\(\)[\s\S]*clearExamOfflineShells\(\)/);
     assert.match(read('../../web/app/components/Header.tsx'), /forgetExamOfflineOwner\(\);/);
 
     const values = new Map();
