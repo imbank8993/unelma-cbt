@@ -79,6 +79,20 @@ export class CreatePaymentDto {
   /** Identitas pembeli selalu diambil dari akun yang login; tidak diterima dari request. */
   @IsUUID()
   package_id!: string;
+
+  /**
+   * Metode pembayaran Core API: 'qris', 'bca_va', 'bni_va', 'bri_va', 'permata_va', 'cimb_va', 'mandiri_bill'.
+   * Bila tidak diisi, menggunakan Snap standar.
+   */
+  @IsOptional()
+  @IsString()
+  payment_method?: string;
+}
+
+export class CheckPaymentStatusDto {
+  @IsString()
+  @IsNotEmpty({ message: 'Order ID wajib diisi.' })
+  order_id!: string;
 }
 
 export class UnlockItemDto {

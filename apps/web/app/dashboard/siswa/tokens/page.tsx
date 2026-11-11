@@ -1,24 +1,23 @@
 "use client";
 
 import React, { useEffect, useState } from 'react';
-import Script from 'next/script';
 import Link from 'next/link';
 import { Coins, Zap, CheckCircle2, Clock, ArrowRight, ShieldCheck, History, ArrowDownLeft, ArrowUpRight, BookOpen, ClipboardCheck } from 'lucide-react';
 import {
     getUserTokenBalance,
     getUserTokenTransactions,
     getPublicTokenPackages,
-    createPayment,
     type TokenPackage,
     type TokenTransaction
 } from '@/lib/api/tokens';
+import CustomPaymentModal from '@/app/components/tokens/CustomPaymentModal';
 
 export default function SiswaTokensPage() {
     const [balance, setBalance] = useState<number>(0);
     const [packages, setPackages] = useState<TokenPackage[]>([]);
     const [transactions, setTransactions] = useState<TokenTransaction[]>([]);
     const [loading, setLoading] = useState(true);
-    const [purchasingId, setPurchasingId] = useState<string | null>(null);
+    const [selectedPackage, setSelectedPackage] = useState<TokenPackage | null>(null);
     const [feedback, setFeedback] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
     const loadData = async () => {
@@ -50,51 +49,23 @@ export default function SiswaTokensPage() {
         loadData();
     }, []);
 
-    const handleBuyPackage = async (pkg: TokenPackage) => {
-        setPurchasingId(pkg.id);
-        setFeedback(null);
-
-        try {
-            const res = await createPayment({ package_id: pkg.id });
-            if (!res.success) {
-                throw new Error(res.error || 'Gagal memulai pembayaran.');
-            }
-            if (!res.snap_token) {
-                throw new Error('Token pembayaran tidak valid.');
-            }
-
-            if (typeof window !== 'undefined' && (window as any).snap) {
-                (window as any).snap.pay(res.snap_token, {
-                    onSuccess: () => {
-                        setFeedback({ type: 'success', text: `Pembayaran ${pkg.name} berhasil! Saldo token Anda telah bertambah.` });
-                        setTimeout(loadData, 1500);
-                    },
-                    onPending: () => {
-                        setFeedback({ type: 'success', text: 'Pesanan dibuat. Silakan selesaikan pembayaran di Midtrans.' });
-                    },
-                    onError: () => {
-                        setFeedback({ type: 'error', text: 'Pembayaran gagal atau dibatalkan.' });
-                    },
-                    onClose: () => {
-                        setPurchasingId(null);
-                    }
-                });
-            } else if (res.redirect_url) {
-                window.location.href = res.redirect_url;
-            }
-        } catch (err: any) {
-            setFeedback({ type: 'error', text: err.message || 'Terjadi kesalahan sistem.' });
-        } finally {
-            setPurchasingId(null);
-        }
+    const handleBuyPackage = (pkg: TokenPackage) => {
+        setSelectedPackage(pkg);
     };
 
     return (
         <div className="max-w-6xl mx-auto space-y-8 pb-16">
-            <Script
-                src="https://app.sandbox.midtrans.com/snap/snap.js"
-                strategy="lazyOnload"
-                data-client-key={process.env.NEXT_PUBLIC_MIDTRANS_CLIENT_KEY || ''}
+            <CustomPaymentModal
+                isOpen={!!selectedPackage}
+                onClose={() => setSelectedPackage(null)}
+                pkg={selectedPackage}
+                onSuccess={(credited) => {
+                    setFeedback({
+                        type: 'success',
+                        text: `Pembayaran berhasil! +${credited} saldo token telah ditambahkan ke akun Anda.`
+                    });
+                    setTimeout(loadData, 1000);
+                }}
             />
 
             {/* Page Header */}
@@ -206,10 +177,9 @@ export default function SiswaTokensPage() {
                                     <button
                                         type="button"
                                         onClick={() => handleBuyPackage(pkg)}
-                                        disabled={purchasingId === pkg.id}
-                                        className="px-4 py-2 bg-[#030C4D] hover:bg-[#020510] text-white text-xs font-bold rounded-xl transition-all shadow-xs disabled:opacity-60 cursor-pointer flex items-center gap-1.5"
+                                        className="px-4 py-2 bg-[#030C4D] hover:bg-[#020510] text-white text-xs font-bold rounded-xl transition-all shadow-xs cursor-pointer flex items-center gap-1.5"
                                     >
-                                        <span>{purchasingId === pkg.id ? 'Memproses...' : 'Beli Sekarang'}</span>
+                                        <span>Beli Sekarang</span>
                                         <ArrowRight size={14} />
                                     </button>
                                 </div>

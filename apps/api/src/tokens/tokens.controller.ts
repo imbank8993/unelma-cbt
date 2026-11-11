@@ -3,7 +3,7 @@ import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import type { AuthUser } from '@acca-cbt/shared';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
-import { CreatePaymentDto, CreateTokenPackageDto, SaveMidtransConfigDto, UnlockItemDto, UpdateTokenPackageDto } from './tokens.dto';
+import { CheckPaymentStatusDto, CreatePaymentDto, CreateTokenPackageDto, SaveMidtransConfigDto, UnlockItemDto, UpdateTokenPackageDto } from './tokens.dto';
 import { TokensService } from './tokens.service';
 
 function assertAdmin(user: AuthUser) {
@@ -85,6 +85,13 @@ export class TokensController {
   @ApiOperation({ summary: 'Buat transaksi Midtrans Snap token (wajib login)' })
   createPayment(@CurrentUser() user: AuthUser, @Body() dto: CreatePaymentDto) {
     return this.tokens.createPayment(user, dto);
+  }
+
+  @Post('payments/check-status')
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: 'Periksa status transaksi pembayaran token pengguna' })
+  checkPaymentStatus(@CurrentUser() user: AuthUser, @Body() dto: CheckPaymentStatusDto) {
+    return this.tokens.checkPaymentStatus(user, dto.order_id);
   }
 
   @Post('payments/webhook')

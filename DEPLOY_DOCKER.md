@@ -338,3 +338,20 @@ Proktor kini pembuat konten mandiri (disetujui lewat pengajuan), bukan staf seko
 - `/dashboard/guru` dialihkan ke `/dashboard/proktor`; halaman backup Proktor dihapus. Alamat lama ASAS/AM Proktor (`/dashboard/proktor/pas`, `/dashboard/proktor/exams/pas/...`) dialihkan ke daftar ujian Proktor.
 - Sisa peran Guru dihapus dari kode (API, peran bersama, menu). Nama peran `GURU` dari sesi lama dibaca sebagai Proktor; bila ada pengguna yang menerima 403 setelah deploy, cukup keluar lalu masuk lagi.
 - Validator yang ditugaskan (Proktor) kini dapat membuka halaman tinjauan bank milik pembuat lain; sebelumnya tertolak.
+
+## Pembayaran Token Kustom Penuh via Midtrans Core API (11 November 2026)
+
+Pembayaran token tidak lagi mengalihkan pengguna ke halaman hosted Midtrans (`app.sandbox.midtrans.com` atau `app.midtrans.com`) maupun modal popup Snap eksternal. Pengguna tetap 100% berada di halaman Unelma CBT:
+- **Metode Pembayaran Didukung:** QRIS (GoPay, OVO, Dana, ShopeePay, BCA Mobile, Livin, BRImo, dll.), BCA Virtual Account, Mandiri Bill Payment, BNI Virtual Account, BRI Virtual Account, Permata Virtual Account.
+- **Tampilan Interaktif Unelma:**
+  - Kode QR QRIS tampil langsung di modal pembayaran web Unelma.
+  - Nomor Virtual Account dilengkapi tombol salin 1-klik dan panduan transfer (Mobile Banking & ATM).
+  - Penghitung mundur waktu pembayaran (countdown timer).
+  - Pengecekan status otomatis (polling tiap 3.5 detik) dan tombol manual "Saya Sudah Bayar (Cek Status)".
+  - Saldo langsung dikreditkan secara atomik ketika status pembayaran diverifikasi lunas (`settlement`).
+
+Migrasi (opsional/aman dijalankan ulang; tabel lokal sudah disiapkan):
+
+```bash
+psql "$DATABASE_URL_HOST" -f database/migrations/20261111_05_core_api_payment_details.sql
+```

@@ -106,18 +106,50 @@ export async function saveMidtransConfig(data: {
 }
 
 // ── 3. Pembayaran & Checkout ──
+export interface CorePaymentDetails {
+  payment_method: string;
+  payment_type: string;
+  qr_url?: string | null;
+  qr_string?: string | null;
+  va_number?: string | null;
+  bank?: string | null;
+  biller_code?: string | null;
+  bill_key?: string | null;
+  expiry_time?: string | null;
+}
+
+export interface PaymentCreateResult {
+  order_id: string;
+  snap_token?: string;
+  redirect_url?: string;
+  client_key?: string;
+  is_production: boolean;
+  payment_method?: string;
+  payment_type?: string;
+  amount?: number;
+  token_amount?: number;
+  package_name?: string;
+  payment_details?: CorePaymentDetails;
+}
+
 export async function createPayment(data: {
   package_id: string;
-}): Promise<
+  payment_method?: string;
+}): Promise<ApiResult<PaymentCreateResult>> {
+  return apiSend<PaymentCreateResult>('/api/payments/create', data, 'POST');
+}
+
+export async function checkPaymentStatus(orderId: string): Promise<
   ApiResult<{
-    order_id: string;
-    snap_token: string;
-    redirect_url: string;
-    client_key: string;
-    is_production: boolean;
+    status: 'pending' | 'success' | 'failed';
+    token_amount?: number;
+    balance?: number;
+    payment_type?: string;
+    payment_details?: CorePaymentDetails;
+    message?: string;
   }>
 > {
-  return apiSend('/api/payments/create', data, 'POST');
+  return apiSend('/api/payments/check-status', { order_id: orderId }, 'POST');
 }
 
 // ── 4. Saldo & Riwayat Siswa ──

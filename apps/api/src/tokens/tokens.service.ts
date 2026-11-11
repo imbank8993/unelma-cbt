@@ -218,20 +218,127 @@ export class TokensService {
     const snapEndpoint = cfg.is_production
       ? 'https://app.midtrans.com/snap/v1/transactions'
       : 'https://app.sandbox.midtrans.com/snap/v1/transactions';
-    const payload = {
-      transaction_details: { order_id: orderId, gross_amount: amount },
-      customer_details: {
-        first_name: customerName,
-        ...(customerEmail ? { email: customerEmail } : {}),
+    const coreEndpoint = cfg.is_production
+      ? 'https://api.midtrans.com/v2/charge'
+      : 'https://api.sandbox.midtrans.com/v2/charge';
+
+    const paymentMethod = (dto.payment_method || '').toLowerCase().trim();
+    const isCoreApi = Boolean(paymentMethod);
+
+    const transactionDetails = { order_id: orderId, gross_amount: amount };
+    const customerDetails = {
+      first_name: customerName,
+      ...(customerEmail ? { email: customerEmail } : {}),
+    };
+    const itemDetails = [
+      {
+        id: pkg.id,
+        price: amount,
+        quantity: 1,
+        name: `${pkg.name} (${pkg.token_amount} Token)`.slice(0, 50),
       },
-      item_details: [
-        {
-          id: pkg.id,
-          price: amount,
-          quantity: 1,
-          name: `${pkg.name} (${pkg.token_amount} Token)`.slice(0, 50),
-        },
-      ],
+    ];
+
+    if (isCoreApi) {
+      let chargePayload: any = {
+        transaction_details: transactionDetails,
+        customer_details: customerDetails,
+        item_details: itemDetails,
+      };
+
+      if (paymentMethod === 'qris') {
+        chargePayload.payment_type = 'qris';
+        chargePayload.qris = { acquirer: 'gopay' };
+      } else if (['bca_va', 'bni_va', 'bri_va', 'cimb_va'].includes(paymentMethod)) {
+        const bank = paymentMethod.replace('_va', '');
+        chargePayload.payment_type = 'bank_transfer';
+        chargePayload.bank_transfer = { bank };
+      } else if (paymentMethod === 'permata_va') {
+        chargePayload.payment_type = 'bank_transfer';
+        chargePayload.bank_transfer = { bank: 'permata' };
+      } else if (paymentMethod === 'mandiri_bill') {
+        chargePayload.payment_type = 'echannel';
+        chargePayload.echannel = {
+          bill_info1: 'Pembelian Token:',
+          bill_info2: `${pkg.token_amount} Token Unelma`,
+        };
+      } else {
+        throw new BadRequestException(`Metode pembayaran '${paymentMethod}' tidak didukung.`);
+      }
+
+      let chargeJson: any = null;
+      try {
+        const chargeRes = await fetch(coreEndpoint, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Accept: 'application/json',
+            Authorization: basicAuth(serverKey),
+          },
+          body: JSON.stringify(chargePayload),
+        });
+        chargeJson = await chargeRes.json();
+      } catch (err) {
+        this.logger.error(`Gagal memanggil Midtrans Core API: ${(err as Error).message}`);
+        throw new ServiceUnavailableException('Gagal menghubungi gateway pembayaran Midtrans. Silakan coba lagi.');
+      }
+
+      if (!chargeJson || (chargeJson.status_code !== '201' && chargeJson.status_code !== '200')) {
+        this.logger.warn(`Midtrans Core API error: ${JSON.stringify(chargeJson)}`);
+        throw new BadRequestException(chargeJson?.status_message || 'Gagal memproses pembayaran. Periksa konfigurasi metode pembayaran.');
+      }
+
+      const qrAction = Array.isArray(chargeJson.actions)
+        ? chargeJson.actions.find((a: any) => a.name === 'generate-qr-code')
+        : null;
+      const qrUrl = qrAction?.url || null;
+      const qrString = chargeJson.qr_string || null;
+      const vaNumber = chargeJson.va_numbers?.[0]?.va_number || chargeJson.permata_va_number || null;
+      const bank = chargeJson.va_numbers?.[0]?.bank || (chargeJson.permata_va_number ? 'permata' : null) || (paymentMethod === 'mandiri_bill' ? 'mandiri' : null);
+      const billerCode = chargeJson.biller_code || null;
+      const billKey = chargeJson.bill_key || null;
+      const expiryTime = chargeJson.expiry_time || null;
+
+      const paymentDetails = {
+        payment_method: paymentMethod,
+        payment_type: chargeJson.payment_type || paymentMethod,
+        qr_url: qrUrl,
+        qr_string: qrString,
+        va_number: vaNumber,
+        bank,
+        biller_code: billerCode,
+        bill_key: billKey,
+        expiry_time: expiryTime,
+      };
+
+      const rows = await this.prisma.$queryRawUnsafe<any[]>(`
+        INSERT INTO public.payment_transactions (
+          order_id, user_id, email, customer_name, package_id, package_name,
+          token_amount, amount, status, snap_token, snap_redirect_url, payment_type, payment_details
+        ) VALUES (
+          $1, $2::uuid, $3, $4, $5::uuid, $6, $7, $8, 'pending', $9, $10, $11, $12::jsonb
+        )
+        RETURNING id, order_id, package_name, token_amount, amount, status, created_at
+      `, orderId, user.id, customerEmail, customerName, pkg.id, pkg.name, pkg.token_amount, amount, null, null, paymentMethod, JSON.stringify(paymentDetails));
+
+      return {
+        success: true,
+        order_id: orderId,
+        payment_method: paymentMethod,
+        payment_type: chargeJson.payment_type || paymentMethod,
+        amount,
+        token_amount: pkg.token_amount,
+        package_name: pkg.name,
+        payment_details: paymentDetails,
+        is_production: cfg.is_production,
+        transaction: rows[0],
+      };
+    }
+
+    const payload = {
+      transaction_details: transactionDetails,
+      customer_details: customerDetails,
+      item_details: itemDetails,
     };
 
     let snapToken = '';
@@ -263,9 +370,9 @@ export class TokensService {
     const rows = await this.prisma.$queryRawUnsafe<any[]>(`
       INSERT INTO public.payment_transactions (
         order_id, user_id, email, customer_name, package_id, package_name,
-        token_amount, amount, status, snap_token, snap_redirect_url
+        token_amount, amount, status, snap_token, snap_redirect_url, payment_type, payment_details
       ) VALUES (
-        $1, $2::uuid, $3, $4, $5::uuid, $6, $7, $8, 'pending', $9, $10
+        $1, $2::uuid, $3, $4, $5::uuid, $6, $7, $8, 'pending', $9, $10, 'snap', '{}'::jsonb
       )
       RETURNING id, order_id, package_name, token_amount, amount, status, created_at
     `, orderId, user.id, customerEmail, customerName, pkg.id, pkg.name, pkg.token_amount, amount, snapToken, redirectUrl);
@@ -361,47 +468,7 @@ export class TokensService {
     const isFailed = txStatus === 'cancel' || txStatus === 'deny' || txStatus === 'expire' || txStatus === 'failure';
 
     if (isSettled) {
-      const credited = await this.prisma.$transaction(async (prisma) => {
-        // Klaim atomik: hanya satu notifikasi (dari banyak yang mungkin datang
-        // bersamaan) yang berhasil mengubah status, dan hanya ia yang memberi kredit.
-        const claimed = await prisma.$queryRawUnsafe<any[]>(`
-          UPDATE public.payment_transactions
-          SET status = 'success', payment_type = $1, paid_at = NOW(), updated_at = NOW()
-          WHERE id = $2::uuid AND status <> 'success'
-          RETURNING id
-        `, official.payment_type || 'midtrans', tx.id);
-        if (!claimed.length) return false;
-
-        let targetUserId = tx.user_id as string | null;
-        if (!targetUserId && tx.email) {
-          // Transaksi lama (sebelum pembelian wajib login) belum menyimpan user_id.
-          const u = await prisma.$queryRawUnsafe<any[]>(`
-            SELECT id FROM auth.users WHERE lower(email) = lower($1)
-          `, tx.email);
-          if (u.length) targetUserId = u[0].id;
-        }
-        if (!targetUserId) {
-          // Melempar membatalkan klaim status di atas. Balasan 503 menjaga
-          // notifikasi tetap dapat dicoba lagi setelah akun dipulihkan.
-          throw new ServiceUnavailableException('Pemilik transaksi belum dapat ditemukan.');
-        }
-
-        const profiles = await prisma.$queryRawUnsafe<Array<{ id: string }>>(`
-          UPDATE public.cbt_profiles
-          SET token_balance = COALESCE(token_balance, 0) + $1
-          WHERE id = $2::uuid
-          RETURNING id
-        `, tx.token_amount, targetUserId);
-        if (!profiles.length) {
-          throw new ServiceUnavailableException('Profil penerima token belum tersedia.');
-        }
-        await prisma.$executeRawUnsafe(`
-          INSERT INTO public.token_transactions (user_id, amount, type, description, reference_id)
-          VALUES ($1::uuid, $2, 'topup', $3, $4)
-        `, targetUserId, tx.token_amount, `Top up token: ${tx.package_name || 'Paket Token'}`, orderId);
-        return true;
-      });
-
+      const credited = await this.creditSettledTransaction(tx, official, orderId);
       if (!credited) return { status: 'already_success' };
       this.logger.log(`[Token Webhook] Order ${orderId} settled. User credited with ${tx.token_amount} tokens.`);
       return { status: 'settled', tokens_credited: tx.token_amount };
@@ -417,6 +484,119 @@ export class TokensService {
     }
 
     return { status: 'pending' };
+  }
+
+  private async creditSettledTransaction(tx: any, official: any, orderId: string): Promise<boolean> {
+    return this.prisma.$transaction(async (prisma) => {
+      // Klaim atomik: hanya satu proses (webhook atau polling pengguna) yang berhasil mengubah status.
+      const claimed = await prisma.$queryRawUnsafe<any[]>(`
+        UPDATE public.payment_transactions
+        SET status = 'success', payment_type = $1, paid_at = NOW(), updated_at = NOW()
+        WHERE id = $2::uuid AND status <> 'success'
+        RETURNING id
+      `, official.payment_type || tx.payment_type || 'midtrans', tx.id);
+      if (!claimed.length) return false;
+
+      let targetUserId = tx.user_id as string | null;
+      if (!targetUserId && tx.email) {
+        // Transaksi lama (sebelum pembelian wajib login) belum menyimpan user_id.
+        const u = await prisma.$queryRawUnsafe<any[]>(`
+          SELECT id FROM auth.users WHERE lower(email) = lower($1)
+        `, tx.email);
+        if (u.length) targetUserId = u[0].id;
+      }
+      if (!targetUserId) {
+        throw new ServiceUnavailableException('Pemilik transaksi belum dapat ditemukan.');
+      }
+
+      const profiles = await prisma.$queryRawUnsafe<Array<{ id: string }>>(`
+        UPDATE public.cbt_profiles
+        SET token_balance = COALESCE(token_balance, 0) + $1
+        WHERE id = $2::uuid
+        RETURNING id
+      `, tx.token_amount, targetUserId);
+      if (!profiles.length) {
+        throw new ServiceUnavailableException('Profil penerima token belum tersedia.');
+      }
+      await prisma.$executeRawUnsafe(`
+        INSERT INTO public.token_transactions (user_id, amount, type, description, reference_id)
+        VALUES ($1::uuid, $2, 'topup', $3, $4)
+      `, targetUserId, tx.token_amount, `Top up token: ${tx.package_name || 'Paket Token'}`, orderId);
+      return true;
+    });
+  }
+
+  /**
+   * Cek status transaksi pembayaran token dari pengguna saat membuka layar pembayaran kustom.
+   * Bila di Midtrans sudah lunas (settlement), saldo langsung dikreditkan tanpa harus menunggu webhook.
+   */
+  async checkPaymentStatus(user: AuthUser, orderId: string) {
+    const cleanOrderId = (orderId || '').trim();
+    if (!cleanOrderId) throw new BadRequestException('Order ID wajib disertakan.');
+
+    const txs = await this.prisma.$queryRawUnsafe<any[]>(`
+      SELECT * FROM public.payment_transactions WHERE order_id = $1
+    `, cleanOrderId);
+    if (!txs.length) throw new NotFoundException('Transaksi tidak ditemukan.');
+
+    const tx = txs[0];
+    const isOwner = tx.user_id === user.id;
+    const isAdmin = user.isPlatformAdmin || user.roles.includes('ADMIN') || user.resolved?.superadmin === true;
+    if (!isOwner && !isAdmin) {
+      throw new ForbiddenException('Anda tidak berhak memeriksa transaksi ini.');
+    }
+
+    if (tx.status === 'success') {
+      const balance = await this.getUserBalance(tx.user_id);
+      return { success: true, status: 'success', token_amount: tx.token_amount, balance };
+    }
+
+    if (tx.status === 'failed') {
+      return { success: true, status: 'failed', message: 'Transaksi dibatalkan atau telah kedaluwarsa.' };
+    }
+
+    // Ambil status resmi ke Midtrans
+    const cfg = await this.getMidtransConfig(false);
+    const serverKey = cfg.is_production ? cfg.production_server_key : cfg.sandbox_server_key;
+    if (!serverKey) {
+      return { success: true, status: tx.status, payment_details: tx.payment_details };
+    }
+
+    let official: any = null;
+    try {
+      official = await this.fetchMidtransStatus(cleanOrderId, cfg.is_production, serverKey);
+    } catch {
+      return { success: true, status: tx.status, payment_details: tx.payment_details };
+    }
+
+    const txStatus = official?.transaction_status;
+    const isSettled = official?.status_code === '200' && (
+      txStatus === 'settlement' ||
+      (txStatus === 'capture' && (!official.fraud_status || official.fraud_status.toLowerCase() === 'accept'))
+    );
+    const isFailed = txStatus === 'cancel' || txStatus === 'deny' || txStatus === 'expire' || txStatus === 'failure';
+
+    if (isSettled) {
+      await this.creditSettledTransaction(tx, official, cleanOrderId);
+      const balance = await this.getUserBalance(tx.user_id);
+      return { success: true, status: 'success', token_amount: tx.token_amount, balance };
+    }
+
+    if (isFailed) {
+      await this.prisma.$executeRawUnsafe(`
+        UPDATE public.payment_transactions
+        SET status = 'failed', updated_at = NOW()
+        WHERE id = $1::uuid AND status = 'pending'
+      `, tx.id);
+      return { success: true, status: 'failed', message: 'Transaksi dibatalkan atau telah kedaluwarsa.' };
+    }
+
+    return {
+      success: true,
+      status: 'pending',
+      payment_type: official.payment_type || tx.payment_type,
+      payment_details: tx.payment_details,
+    };
   }
 
   // ─────────────────────────────────────────────────────────────
