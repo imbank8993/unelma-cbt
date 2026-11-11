@@ -23,6 +23,7 @@ X
 } from 'lucide-react';
 import React,{ useCallback,useEffect,useState } from 'react';
 
+import { InlineSelect } from '@/components/ui/InlineSelect';
 const currentYear = new Date().getFullYear();
 const generateYearOptions = (): string[] => {
     const years: string[] = [];
@@ -293,16 +294,14 @@ export default function GuruClassesPage() {
                             </button>
                         ))}
                     </div>
-                    <select
+                    <InlineSelect
                         value={yearFilter}
-                        onChange={e => setYearFilter(e.target.value)}
-                        className="bg-white border border-[#030C4D]/30 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-[#030C4D]/20 outline-none"
-                    >
+                        onChange={(next) => setYearFilter(next)} height="42px">
                         <option value="all">Semua Tahun Ajaran</option>
                         {yearOptions.map(y => (
                             <option key={y} value={y}>{y}</option>
                         ))}
-                    </select>
+                    </InlineSelect>
                 </div>
 
                 <div className="flex gap-2">

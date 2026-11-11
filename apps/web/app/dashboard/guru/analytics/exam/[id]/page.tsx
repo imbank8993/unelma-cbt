@@ -31,6 +31,7 @@ import {
 import { useMemoryState } from '@/lib/useMemoryState';
 import dynamic from 'next/dynamic';
 
+import { InlineSelect } from '@/components/ui/InlineSelect';
 // Lazy load chart components
 const StatsGrid = dynamic(
   () => import('@/app/components/ui/Charts').then(mod => ({ default: mod.StatsGrid })),
@@ -417,14 +418,12 @@ export default function ExamResultsDetailPage() {
                     className="pl-10 pr-4 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
                   />
                 </div>
-                <select
+                <InlineSelect
                   value={sortBy}
-                  onChange={e => setSortBy(e.target.value as 'score' | 'name')}
-                  className="px-4 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
-                >
+                  onChange={(next) => setSortBy(next as 'score' | 'name')} height="38px">
                   <option value="score">Sortir: Nilai Tertinggi</option>
                   <option value="name">Sortir: Nama A-Z</option>
-                </select>
+                </InlineSelect>
               </div>
               <div className="text-sm text-slate-500">
                 {filteredStudents.length} siswa

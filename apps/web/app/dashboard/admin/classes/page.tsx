@@ -31,6 +31,7 @@ Users
 } from 'lucide-react';
 import React,{ useCallback,useEffect,useState } from 'react';
 
+import { InlineSelect } from '@/components/ui/InlineSelect';
 const currentYear = new Date().getFullYear();
 const generateYearOptions = (): string[] => {
     const years: string[] = [];
@@ -577,24 +578,22 @@ export default function SettingsClassesPage() {
                         </ModalField>
 
                         <ModalField label="Tahun Ajaran" required>
-                            <select
+                            <InlineSelect
                                 value={classForm.schoolYear}
-                                onChange={e => setClassForm({ ...classForm, schoolYear: e.target.value })}
-                            >
+                                onChange={(next) => setClassForm({ ...classForm, schoolYear: next })} className="w-full" minWidth="0" height="40px">
                                 {yearOptions.map(y => (
                                     <option key={y} value={y}>{y}</option>
                                 ))}
-                            </select>
+                            </InlineSelect>
                         </ModalField>
 
                         <ModalField label="Tipe Kelas" required>
-                            <select
+                            <InlineSelect
                                 value={classForm.type}
-                                onChange={e => setClassForm({ ...classForm, type: e.target.value as typeof classForm.type })}
-                            >
+                                onChange={(next) => setClassForm({ ...classForm, type: next as typeof classForm.type })} className="w-full" minWidth="0" height="40px">
                                 <option value="reguler">Reguler (Utama)</option>
                                 <option value="tambahan">Tambahan</option>
-                            </select>
+                            </InlineSelect>
                         </ModalField>
                     </ModalBody>
                     <ModalFooter>
@@ -636,24 +635,22 @@ export default function SettingsClassesPage() {
                         </ModalField>
 
                         <ModalField label="Tahun Ajaran" required>
-                            <select
+                            <InlineSelect
                                 value={classForm.schoolYear}
-                                onChange={e => setClassForm({ ...classForm, schoolYear: e.target.value })}
-                            >
+                                onChange={(next) => setClassForm({ ...classForm, schoolYear: next })} className="w-full" minWidth="0" height="40px">
                                 {yearOptions.map(y => (
                                     <option key={y} value={y}>{y}</option>
                                 ))}
-                            </select>
+                            </InlineSelect>
                         </ModalField>
 
                         <ModalField label="Tipe Kelas" required>
-                            <select
+                            <InlineSelect
                                 value={classForm.type}
-                                onChange={e => setClassForm({ ...classForm, type: e.target.value as typeof classForm.type })}
-                            >
+                                onChange={(next) => setClassForm({ ...classForm, type: next as typeof classForm.type })} className="w-full" minWidth="0" height="40px">
                                 <option value="reguler">Reguler (Utama)</option>
                                 <option value="tambahan">Tambahan</option>
-                            </select>
+                            </InlineSelect>
                         </ModalField>
                     </ModalBody>
                     <ModalFooter>

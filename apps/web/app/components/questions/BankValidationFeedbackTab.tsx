@@ -24,6 +24,7 @@ import type { QuestionRecord } from '@/lib/api/questions';
 import { ValidationReportModal } from '@/app/components/validations/ValidationReportModal';
 import { VALIDATION_STATUS_LABELS } from '@/lib/validation-status';
 
+import { InlineSelect } from '@/components/ui/InlineSelect';
 const recommendationLabels = { approved: 'Disetujui', revision_needed: 'Perlu revisi', rejected: 'Ditolak' } as const;
 const categoryLabels = { typo: 'Salah ketik', materi: 'Materi', kunci_jawaban: 'Kunci jawaban', konstruksi: 'Konstruksi', bahasa: 'Bahasa', lainnya: 'Lainnya' };
 const itemLabels = { valid: 'Layak', revision: 'Revisi', rejected: 'Tolak' } as const;
@@ -177,9 +178,9 @@ export default function BankValidationFeedbackTab({
     return (
         <div className="space-y-6">
             <label className="block text-sm font-semibold">Riwayat sesi validasi
-                <select className="block mt-2 w-full rounded-lg border border-slate-200 dark:border-slate-700 p-2 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100" value={latestValidation.id} onChange={event => { setSelectedSession(event.target.value); const url = new URL(window.location.href); url.searchParams.set('validation', event.target.value); url.searchParams.set('tab', 'validations'); window.history.replaceState({}, '', url); }}>
+                <InlineSelect value={latestValidation.id} onChange={(next) => { setSelectedSession(next); const url = new URL(window.location.href); url.searchParams.set('validation', next); url.searchParams.set('tab', 'validations'); window.history.replaceState({}, '', url); }} className="mt-2 w-full" minWidth="0" height="38px">
                     {validations.map(session => <option key={session.id} value={session.id}>{session.title} — {new Date(session.created_at).toLocaleDateString('id-ID')}</option>)}
-                </select>
+                </InlineSelect>
             </label>
 
             {/* Header Status Validasi */}

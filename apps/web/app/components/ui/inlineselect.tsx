@@ -24,6 +24,7 @@ export function InlineSelect({
     style,
     id,
     name,
+    required,
     'aria-label': ariaLabel,
 }: {
     value: string;
@@ -40,6 +41,7 @@ export function InlineSelect({
     style?: CSSProperties;
     id?: string;
     name?: string;
+    required?: boolean;
     'aria-label'?: string;
 }) {
     return (
@@ -57,6 +59,7 @@ export function InlineSelect({
                 onKeyDown={onKeyDown}
                 title={title}
                 disabled={disabled}
+                required={required}
             >
                 {options?.map(opt => (
                     <option key={opt.value} value={opt.value} disabled={opt.disabled}>

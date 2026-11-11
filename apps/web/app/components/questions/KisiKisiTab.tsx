@@ -11,6 +11,7 @@ import { Check,Edit3,Plus,Search,Trash2,X } from 'lucide-react';
 import { useCallback,useEffect,useState } from 'react';
 import { BankChildSelectionBar, useBankChildSelection } from './useBankChildSelection';
 
+import { InlineSelect } from '@/components/ui/InlineSelect';
 interface KisiKisiTabProps {
     bankId: string;
     onItemsChange?: (items: KisiKisiItem[]) => void;
@@ -213,15 +214,13 @@ export default function KisiKisiTab({ bankId, onItemsChange }: KisiKisiTabProps)
                         <div className="p-6 overflow-y-auto flex-1 space-y-4">
                             <div>
                                 <label className="block text-sm font-medium text-slate-700 mb-1.5">Level Kognitif</label>
-                                <select
+                                <InlineSelect
                                     value={levelKognitif}
-                                    onChange={e => setLevelKognitif(e.target.value)}
-                                    className="w-full bg-white border border-slate-200 rounded-lg px-4 py-2.5 text-sm outline-none focus:border-indigo-500"
-                                >
+                                    onChange={(next) => setLevelKognitif(next)} className="w-full" minWidth="0" height="42px">
                                     <option value="L1">L1 (Pengetahuan/Pemahaman)</option>
                                     <option value="L2">L2 (Aplikasi)</option>
                                     <option value="L3">L3 (Penalaran/HOTS)</option>
-                                </select>
+                                </InlineSelect>
                             </div>
                             
                             <div>

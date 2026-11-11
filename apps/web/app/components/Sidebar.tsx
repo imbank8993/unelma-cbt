@@ -7,6 +7,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import './sidebar.css';
+import { InlineSelectIndicator } from '@/app/components/ui/inlineselect';
 
 interface MenuItem {
     icon: string;
@@ -255,7 +256,7 @@ export default function Sidebar({
                                             )}
                                         </div>
                                         {!isCollapsed && (
-                                            <i className={`fa-solid fa-chevron-down chevron text-xs transition-transform duration-200 ${isSubmenuOpen ? 'rotate' : ''}`}></i>
+                                            <InlineSelectIndicator size={16} className={`chevron transition-transform duration-200 ${isSubmenuOpen ? 'rotate' : ''}`} />
                                         )}
                                     </button>
                                 ) : (

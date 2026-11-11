@@ -9,6 +9,7 @@ import React,{ useState } from 'react';
 import { BaseOption } from '../schema';
 import { OptionRichInput } from './OptionRichInput';
 
+import { InlineSelect } from '@/components/ui/InlineSelect';
 interface OrderingFormProps {
   options: BaseOption[];
   correctOrder: string[]; // ordered array of option IDs
@@ -163,17 +164,15 @@ const OrderingItemRow = React.memo(({
       <div className="flex items-center gap-1.5 shrink-0 w-24 justify-center">
         {/* Order Dropdown */}
         <div className="flex bg-slate-50 border border-slate-200 rounded shadow-sm">
-          <select
-            value={idx}
-            onChange={(e) => onMove(idx, parseInt(e.target.value))}
-            className="w-12 h-7 px-1 rounded flex items-center justify-center text-sm font-semibold text-slate-600 bg-transparent outline-none cursor-pointer hover:bg-slate-100 transition-all text-center appearance-none"
-            title="Ubah Urutan"
-            style={{ textAlignLast: 'center' }}
-          >
+          <InlineSelect
+            value={String(idx)}
+            onChange={(next) => onMove(idx, parseInt(next))}
+           
+            title="Ubah Urutan" minWidth="60px" height="28px">
             {Array.from({ length: total }).map((_, i) => (
               <option key={i} value={i}>{i + 1}</option>
             ))}
-          </select>
+          </InlineSelect>
         </div>
 
         {/* Delete */}

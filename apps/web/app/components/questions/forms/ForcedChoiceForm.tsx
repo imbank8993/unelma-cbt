@@ -5,6 +5,7 @@ import type { DimensionItem } from '@/lib/api/questions';
 import { BaseOption } from '../schema';
 import { AnswerOptionCard,OptionList } from './AnswerOptionCard';
 
+import { InlineSelect } from '@/components/ui/InlineSelect';
 interface ForcedChoiceFormProps {
     options: BaseOption[];
     dimensions: DimensionItem[];
@@ -48,16 +49,14 @@ const ForcedChoiceOptionCard = React.memo(({
             <div className="w-px bg-slate-100 self-stretch" />
             {/* Kolom Dimensi — 35% */}
             <div className="w-[35%] min-w-0 p-2.5 flex items-center">
-                <select
+                <InlineSelect
                     value={opt.dimension_id || ''}
-                    onChange={(e) => onUpdateOption(idx, { dimension_id: e.target.value || null })}
-                    className="w-full bg-slate-50 border border-slate-200 focus:border-fuchsia-400 focus:ring-2 focus:ring-fuchsia-100 rounded-lg px-3 py-2 text-sm text-slate-700 outline-none transition-all"
-                >
+                    onChange={(next) => onUpdateOption(idx, { dimension_id: next || null })} className="w-full" minWidth="0" height="38px">
                     <option value="">-- Pilih Dimensi --</option>
                     {dimensions.map(d => (
                         <option key={d.id} value={d.id}>{d.name}</option>
                     ))}
-                </select>
+                </InlineSelect>
             </div>
         </div>
     );

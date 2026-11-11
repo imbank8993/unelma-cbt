@@ -16,6 +16,7 @@ import { AlertTriangle,BarChart3,Calculator,FileSpreadsheet,Loader2,RefreshCw,Us
 import { useRouter,useSearchParams } from 'next/navigation';
 import { Suspense,useCallback,useEffect,useState } from 'react';
 
+import { InlineSelect } from '@/components/ui/InlineSelect';
 interface ItemAnalysis {
     id: string;
     number: number;
@@ -203,16 +204,14 @@ function GradingContent() {
                 </div>
 
                 <div className="flex items-center gap-3 w-full sm:w-auto">
-                    <select
+                    <InlineSelect
                         value={selectedExamId}
-                        onChange={(e) => setSelectedExamId(e.target.value)}
-                        className="flex-1 sm:w-72 bg-slate-50 border border-slate-200 text-slate-800 focus:ring-2 focus:ring-[#030C4D] outline-none px-3.5 py-2.5 rounded-xl text-xs font-semibold"
-                    >
+                        onChange={(next) => setSelectedExamId(next)} className="flex-1 sm:w-72" minWidth="0" height="42px">
                         <option value="">-- Pilih Ujian --</option>
                         {exams.map(exam => (
                             <option key={exam.id} value={exam.id}>{exam.title}</option>
                         ))}
-                    </select>
+                    </InlineSelect>
 
                     <button
                         onClick={handleRefresh}

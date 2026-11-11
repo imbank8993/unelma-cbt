@@ -40,7 +40,6 @@ Archive,
 BookOpen,
 Calendar,
 CheckCircle2,
-ChevronDown,
 ClipboardCheck,
 Clock,
 Eye,EyeOff,
@@ -60,6 +59,7 @@ import { useRouter } from 'next/navigation';
 import React,{ useCallback,useEffect,useMemo,useState } from 'react';
 import type { LucideIcon } from 'lucide-react';
 
+import { InlineSelect } from '@/components/ui/InlineSelect';
 type TabId = 'all' | 'draft' | 'active' | 'finished' | 'archived' | 'pas';
 type SortBy = 'newest' | 'oldest' | 'name';
 
@@ -571,30 +571,24 @@ const ExamsPage = () => {
                         />
                     </div>
                     <div className="relative w-full sm:w-auto">
-                        <select
+                        <InlineSelect
                             value={typeFilter}
-                            onChange={e => setTypeFilter(e.target.value)}
-                            className="w-full appearance-none bg-white border border-[#030C4D]/30 rounded-lg pl-4 pr-10 py-3 text-sm focus:ring-2 focus:ring-[#030C4D]/20 outline-none text-slate-600 cursor-pointer"
-                        >
+                            onChange={(next) => setTypeFilter(next)} className="w-full" minWidth="0" height="44px">
                             <option value="all">Semua Jenis Ujian</option>
                             <option value="daily">Ulangan Harian</option>
                             <option value="tryout">Try Out</option>
                             <option value="assignment">Tugas</option>
                             <option value="lainnya">Lainnya</option>
-                        </select>
-                        <ChevronDown className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={16} />
+                        </InlineSelect>
                     </div>
                     <div className="relative w-full sm:w-auto">
-                        <select
+                        <InlineSelect
                             value={sortBy}
-                            onChange={e => setSortBy(e.target.value as SortBy)}
-                            className="w-full appearance-none bg-white border border-[#030C4D]/30 rounded-lg pl-4 pr-10 py-3 text-sm focus:ring-2 focus:ring-[#030C4D]/20 outline-none text-slate-600 cursor-pointer"
-                        >
+                            onChange={(next) => setSortBy(next as SortBy)} className="w-full" minWidth="0" height="44px">
                             <option value="newest">Terbaru</option>
                             <option value="oldest">Terlama</option>
                             <option value="name">Nama</option>
-                        </select>
-                        <ChevronDown className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={16} />
+                        </InlineSelect>
                     </div>
                     <button
                         onClick={() => setIsAddModalOpen(true)}
@@ -696,14 +690,13 @@ const ExamsPage = () => {
                                 </div>
                                 <div>
                                     <label className="block text-sm font-medium text-slate-700 mb-1.5">Semester</label>
-                                    <select value={configForm.semester}
-                                        onChange={e => setConfigForm(p => ({ ...p, semester: e.target.value }))}
-                                        className="w-full border border-[#030C4D]/30 rounded-xl p-3 text-sm focus:ring-2 focus:ring-[#030C4D]/20 outline-none">
+                                    <InlineSelect value={configForm.semester}
+                                        onChange={(next) => setConfigForm(p => ({ ...p, semester: next }))} className="w-full" minWidth="0" height="44px">
                                         <option value="">Pilih Semester (Opsional)</option>
                                         <option value="semua">Semua</option>
                                         <option value="ganjil">Ganjil</option>
                                         <option value="genap">Genap</option>
-                                    </select>
+                                    </InlineSelect>
                                 </div>
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                     <div>
@@ -755,27 +748,25 @@ const ExamsPage = () => {
                             <form onSubmit={handleAddBankToConfig} className="space-y-4">
                                 <div>
                                     <label className="block text-sm font-medium text-slate-700 mb-1.5">Bank Soal *</label>
-                                    <select required value={addBankForm.bank_id}
-                                        onChange={e => setAddBankForm(p => ({ ...p, bank_id: e.target.value }))}
-                                        className="w-full border border-[#030C4D]/30 rounded-xl p-3 text-sm">
+                                    <InlineSelect required value={addBankForm.bank_id}
+                                        onChange={(next) => setAddBankForm(p => ({ ...p, bank_id: next }))} className="w-full" minWidth="0" height="44px">
                                         <option value="">— Pilih Bank Soal —</option>
                                         {qBanks.filter(b => b.is_published).map(bank => (
                                             <option key={bank.id} value={bank.id}>
                                                 {bank.title} ({bank.question_count ?? bank.total_questions ?? 0} Soal)
                                             </option>
                                         ))}
-                                    </select>
+                                    </InlineSelect>
                                 </div>
                                 <div>
                                     <label className="block text-sm font-medium text-slate-700 mb-1.5">Mata Pelajaran</label>
-                                    <select value={addBankForm.subject_id || ''}
-                                        onChange={e => setAddBankForm(p => ({ ...p, subject_id: e.target.value }))}
-                                        className="w-full border border-[#030C4D]/30 rounded-xl p-3 text-sm">
+                                    <InlineSelect value={addBankForm.subject_id || ''}
+                                        onChange={(next) => setAddBankForm(p => ({ ...p, subject_id: next }))} className="w-full" minWidth="0" height="44px">
                                         <option value="">— Pilih (opsional) —</option>
                                         {subjects.map(sub => (
                                             <option key={sub.id} value={sub.id}>{sub.name}</option>
                                         ))}
-                                    </select>
+                                    </InlineSelect>
                                 </div>
                                 <div>
                                     <label className="block text-sm font-medium text-slate-700 mb-1.5">Durasi (menit)</label>
@@ -818,14 +809,13 @@ const ExamsPage = () => {
                             <form onSubmit={handleAddClassExam} className="space-y-4">
                                 <div>
                                     <label className="block text-sm font-medium text-slate-700 mb-1.5">Bank Soal *</label>
-                                    <select required value={addClassForm.bank_id}
-                                        onChange={e => setAddClassForm(p => ({ ...p, bank_id: e.target.value }))}
-                                        className="w-full border border-[#030C4D]/30 rounded-xl p-3 text-sm">
+                                    <InlineSelect required value={addClassForm.bank_id}
+                                        onChange={(next) => setAddClassForm(p => ({ ...p, bank_id: next }))} className="w-full" minWidth="0" height="44px">
                                         <option value="">— Pilih Bank Soal —</option>
                                         {configBanks.map(bank => (
                                             <option key={bank.id} value={bank.id}>{bank.question_banks?.title || 'Bank soal'}</option>
                                         ))}
-                                    </select>
+                                    </InlineSelect>
                                 </div>
                                 <div>
                                     <label className="block text-sm font-medium text-slate-700 mb-1.5">Kelas *</label>

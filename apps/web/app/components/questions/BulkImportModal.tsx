@@ -38,6 +38,7 @@ XCircle
 import React,{ useCallback,useEffect,useMemo,useRef,useState } from 'react';
 import { LatexRenderer } from './LatexRenderer';
 
+import { InlineSelect } from '@/components/ui/InlineSelect';
 interface BulkImportModalProps {
     isOpen: boolean;
     onClose: () => void;
@@ -553,16 +554,14 @@ export default function BulkImportModal({
                                         <label className="block text-sm font-semibold text-slate-700 mb-2">
                                             Pilih Bank Soal Sumber
                                         </label>
-                                        <select
+                                        <InlineSelect
                                             value={selectedSourceBank}
-                                            onChange={(e) => handleSourceBankChange(e.target.value)}
-                                            className="w-full border border-slate-200 rounded-lg px-4 py-3 text-sm bg-white focus:outline-none focus:border-primary"
-                                        >
+                                            onChange={(next) => handleSourceBankChange(next)} className="w-full" minWidth="0" height="44px">
                                             <option value="">-- Pilih Bank Soal --</option>
                                             {allBanks.map((b) => (
                                                 <option key={b.id} value={b.id}>{b.title || b.name || 'Bank Soal'}</option>
                                             ))}
-                                        </select>
+                                        </InlineSelect>
                                     </div>
 
                                     {/* Search */}

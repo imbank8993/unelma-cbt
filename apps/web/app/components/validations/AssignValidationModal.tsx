@@ -227,11 +227,10 @@ export function AssignValidationModal({
                 {/* Bank Soal Selection (Searchable) */}
                 <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
                     Folder Validasi
-                    <select aria-label="Folder untuk validasi baru" value={folderId} onChange={event => setFolderId(event.target.value)} disabled={isSubmitting || staffLoading}
-                        className="mt-1.5 w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 p-2.5 text-sm font-normal">
+                    <InlineSelect aria-label="Folder untuk validasi baru" value={folderId} onChange={(next) => setFolderId(next)} disabled={isSubmitting || staffLoading} className="mt-1.5 w-full" minWidth="0" height="42px">
                         <option value="">Tanpa Folder</option>
                         {availableFolders.map(folder => <option key={folder.id} value={folder.id}>{folder.name}</option>)}
-                    </select>
+                    </InlineSelect>
                 </label>
                 <div ref={bankPickerRef}>
                     <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1.5">

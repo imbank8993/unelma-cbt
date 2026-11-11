@@ -16,6 +16,7 @@ import {
     Layers
 } from 'lucide-react';
 import { Spinner } from '@/app/components/ui/Spinner';
+import { InlineSelect } from '@/components/ui/InlineSelect';
 
 interface ManagedUser {
     id: string;
@@ -378,18 +379,18 @@ export default function AdminUsersPage() {
                                                     ) : (
                                                         <div className="inline-flex items-center justify-end gap-2">
                                                             {isActionLoading && <div className="w-4 h-4 border-2 border-slate-300 border-t-slate-600 rounded-full animate-spin" />}
-                                                            <select
+                                                            <InlineSelect
+                                                                aria-label={`Peran ${u.email}`}
                                                                 disabled={isActionLoading}
+                                                                minWidth="112px"
                                                                 value={primaryRole === 'Superadmin' ? 'Admin' : MANAGED_ROLES.includes(primaryRole) ? primaryRole : ''}
-                                                                onChange={(e) => {
-                                                                    const next = e.target.value;
+                                                                onChange={(next) => {
                                                                     if (next === 'Siswa' && !MANAGED_ROLES.includes(primaryRole)
                                                                         && !confirm(`Jadikan ${u.email} Siswa? Peran ${primaryRole} miliknya akan dicabut.`)) {
                                                                         return;
                                                                     }
                                                                     void handleRoleChange(u.id, u.email, next);
                                                                 }}
-                                                                className="bg-white border border-slate-300 focus:border-[#030C4D] text-slate-700 text-xs rounded-lg px-3 py-1.5 outline-none cursor-pointer"
                                                             >
                                                                 {!MANAGED_ROLES.includes(primaryRole) && primaryRole !== 'Superadmin' && (
                                                                     <option value="" disabled>{primaryRole} (pilih untuk mengubah)</option>
@@ -397,7 +398,7 @@ export default function AdminUsersPage() {
                                                                 <option value="Admin">Admin</option>
                                                                 <option value="Proktor">Proktor</option>
                                                                 <option value="Siswa">Siswa</option>
-                                                            </select>
+                                                            </InlineSelect>
 
                                                             <button
                                                                 type="button"
@@ -489,15 +490,18 @@ export default function AdminUsersPage() {
                                 <label className="block text-xs font-semibold text-slate-600 mb-1">
                                     Peran / Role <span className="text-slate-400">*</span>
                                 </label>
-                                <select
+                                <InlineSelect
+                                    aria-label="Peran pengguna baru"
                                     value={addForm.role}
-                                    onChange={(e) => setAddForm({ ...addForm, role: e.target.value })}
-                                    className="w-full bg-white border border-slate-300 focus:border-[#030C4D] text-slate-900 text-xs rounded-lg py-2 px-3 outline-none cursor-pointer"
-                                >
-                                    <option value="Admin">Admin (khusus Superadmin) — Hak Akses Penuh Kelola Ujian & Sekolah</option>
-                                    <option value="Proktor">Proktor (Pembuat Soal & Bahan Ajar)</option>
-                                    <option value="Siswa">Siswa (Peserta Ujian)</option>
-                                </select>
+                                    onChange={(role) => setAddForm({ ...addForm, role })}
+                                    minWidth="100%"
+                                    className="w-full"
+                                    options={[
+                                        { value: 'Admin', label: 'Admin (khusus Superadmin) — Hak Akses Penuh Kelola Ujian & Sekolah' },
+                                        { value: 'Proktor', label: 'Proktor (Pembuat Soal & Bahan Ajar)' },
+                                        { value: 'Siswa', label: 'Siswa (Peserta Ujian)' },
+                                    ]}
+                                />
                             </div>
 
                             <div className="grid grid-cols-2 gap-3">
