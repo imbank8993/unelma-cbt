@@ -53,3 +53,31 @@ export async function assertPaidContentAllowed(
     throw new ForbiddenException(`Izin menjual ${LABEL[kind]} berbayar untuk pembuat konten ini sedang dicabut Admin.`);
   }
 }
+
+/**
+ * Apakah item berbayar MASIH TERKUNCI bagi pengguna ini.
+ * Item gratis (is_paid=false atau harga 0) tidak pernah terkunci — sama dengan
+ * aturan `TokensService.checkAccess`. Pemanggil menangani pengecualian staf.
+ */
+export async function isPaidItemLocked(
+  db: Pick<DbService, 'from'>,
+  userId: string,
+  kind: PaidContentKind,
+  item: { id: string; is_paid?: boolean | null; token_price?: number | string | null },
+): Promise<boolean> {
+  if (!item.is_paid || !(Number(item.token_price) > 0)) return false;
+  const { data, error } = await db
+    .from('unlocked_items')
+    .select('id')
+    .eq('user_id', userId)
+    .eq('item_type', kind)
+    .eq('item_id', item.id)
+    .maybeSingle();
+  if (error) throw new InternalServerErrorException('Status akses konten berbayar belum dapat diperiksa.');
+  return !data;
+}
+
+export const PAID_LOCKED_MESSAGE: Record<PaidContentKind, string> = {
+  exam: 'Ujian ini berbayar. Buka aksesnya dengan token terlebih dahulu.',
+  material: 'Bahan ajar ini berbayar. Buka aksesnya dengan token terlebih dahulu.',
+};

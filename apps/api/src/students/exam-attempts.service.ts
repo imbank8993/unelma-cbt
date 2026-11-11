@@ -36,6 +36,7 @@ import { SettingsService } from '../settings/settings.service';
 import { DbService, type DbSession } from '../prisma/prisma-db-adapter';
 import { ScoringClient } from '../scoring/scoring.client';
 import { assertExamAccess } from './exam-access';
+import { isPaidItemLocked, PAID_LOCKED_MESSAGE } from '../common/paid-content';
 import { studentQuestion } from './student-question';
 
 /** Batas waktu sesi yang sudah digantikan oleh reset proktor pada attempt yang sama. */
@@ -250,7 +251,7 @@ export class ExamAttemptsService {
         const { data: exam } = await this.db
             .from('cbt_exams')
             .select(
-                'id, organization_id, question_bank_id, is_published, start_time, end_time, duration_minutes, status, metadata',
+                'id, organization_id, question_bank_id, is_published, start_time, end_time, duration_minutes, status, metadata, is_paid, token_price',
             )
             .eq('id', examId)
             .maybeSingle();
@@ -291,6 +292,11 @@ export class ExamAttemptsService {
             .eq('exam_id', examId)
             .eq('status', 'in_progress')
             .maybeSingle();
+        // Paywall ditegakkan di server: ujian berbayar hanya bisa DIMULAI setelah
+        // dibuka dengan token. Pengerjaan yang sudah berjalan tetap boleh dilanjutkan.
+        if (!existing && await isPaidItemLocked(this.db, user.id, 'exam', exam as { id: string; is_paid?: boolean; token_price?: number })) {
+            return this.refuse(PAID_LOCKED_MESSAGE.exam, { paymentRequired: true });
+        }
         const recoveryUntil = this.proctorRecoveryUntil(existing as any);
         const recoveryActive = recoveryUntil !== null && now < recoveryUntil;
         // Hanya intent yang terikat ke isi kiriman (digest) yang boleh menunda penutupan.

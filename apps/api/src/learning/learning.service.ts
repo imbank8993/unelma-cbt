@@ -1,4 +1,4 @@
-import { assertPaidContentAllowed } from '../common/paid-content';
+import { assertPaidContentAllowed, isPaidItemLocked, PAID_LOCKED_MESSAGE } from '../common/paid-content';
 import { LearningLatexService } from './learning-latex.service';
 import { BadRequestException, ConflictException, ForbiddenException, Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common';
 import type { AuthUser } from '@acca-cbt/shared';
@@ -44,6 +44,21 @@ export class LearningService {
         const { file_key, rendered_pdf_key, ...safe } = row;
         return { ...safe, hasFile: !!file_key, hasRenderedPdf: !!rendered_pdf_key };
     }
+    /**
+     * Paywall ditegakkan DI SERVER: siswa yang belum membuka materi berbayar
+     * tidak menerima isi, lampiran, PDF, maupun aktivitasnya. Guru/Admin (staf
+     * pengelola materi) tidak terkunci.
+     */
+    private async lockedFor(user: AuthUser, row: MaterialRow): Promise<boolean> {
+        const paid = row as MaterialRow & { is_paid?: boolean; token_price?: number };
+        if (!paid.is_paid || !(Number(paid.token_price) > 0)) return false;
+        if (row.created_by === user.id) return false;
+        if (await this.allowed(user, row.organization_id, ['Guru', 'Admin'])) return false;
+        return isPaidItemLocked(this.db, user.id, 'material', paid);
+    }
+    private async assertUnlocked(user: AuthUser, row: MaterialRow) {
+        if (await this.lockedFor(user, row)) throw new ForbiddenException(PAID_LOCKED_MESSAGE.material);
+    }
     async list(user: AuthUser, org: string, manage = false) {
         await this.reader(user, org);
         const canManage = await this.allowed(user, org, ['Guru', 'Admin']);
@@ -74,7 +89,12 @@ export class LearningService {
         const { data, error } = await this.db.from('cbt_learning_progress').select('completed, completed_version').eq('material_id', id).eq('user_id', user.id).maybeSingle();
         if (error) throw new InternalServerErrorException('Gagal membaca progres belajar.');
         const materialUpdated = !!data?.completed && (data.completed_version || 1) !== (row.content_version || 1);
-        return { material: this.publicRow(row), canEdit, completed: data?.completed === true && !materialUpdated, materialUpdated };
+        const locked = !canEdit && await this.lockedFor(user, row);
+        // Materi terkunci: judul/harga tetap tampil untuk layar pembelian, isinya tidak dikirim.
+        const material = locked
+            ? { ...this.publicRow(row), content_html: '', conversion_notes: '', hasFile: false, hasRenderedPdf: false, locked: true }
+            : { ...this.publicRow(row), locked: false };
+        return { material, canEdit, completed: data?.completed === true && !materialUpdated, materialUpdated };
     }
     async create(user: AuthUser, org: string, dto: CreateMaterialDto) {
         await this.manager(user, org);
@@ -178,6 +198,7 @@ export class LearningService {
         await this.reader(user, org);
         const row = await this.row(org, id);
         if (row.status !== 'published') await this.editable(user, row);
+        await this.assertUnlocked(user, row);
         const key = rendered ? row.rendered_pdf_key : row.file_key;
         if (!key) throw new NotFoundException(rendered ? 'PDF belum tersedia. Unggah ulang sumber TeX untuk mengompilasi.' : 'Lampiran tidak tersedia.');
         const object = await this.storage.getObject(key);
@@ -190,6 +211,7 @@ export class LearningService {
             await db.raw('SELECT id FROM public.cbt_learning_materials WHERE id = $1::uuid FOR UPDATE', id);
             const row = await this.row(org, id, db);
             if (row.status !== 'published') throw new BadRequestException('Materi belum diterbitkan.');
+            await this.assertUnlocked(user, row);
             if (contentVersion !== undefined && contentVersion !== (row.content_version || 1)) throw new ConflictException('Materi telah diperbarui. Muat ulang sebelum menandai selesai.');
             const { error } = await db.from('cbt_learning_progress').upsert({ material_id: id, user_id: user.id, completed, completed_version: row.content_version || 1, updated_at: new Date().toISOString() }, { onConflict: 'material_id,user_id' });
             if (error) throw new InternalServerErrorException('Gagal menyimpan progres belajar.');
@@ -200,6 +222,7 @@ export class LearningService {
         await this.reader(user, org);
         const row = await this.row(org, id);
         if (row.status !== 'published') throw new ForbiddenException('Aktivitas hanya tersedia pada materi terbit.');
+        await this.assertUnlocked(user, row);
         const { data, error } = await this.db.from('cbt_learning_activity').select('state, revision').eq('material_id', id).eq('user_id', user.id).eq('content_version', row.content_version || 1).maybeSingle();
         if (error) throw new InternalServerErrorException('Gagal membaca jawaban aktivitas.');
         return { state: data?.state || {}, revision: data?.revision || 0, contentVersion: row.content_version || 1, userId: user.id };
@@ -210,6 +233,7 @@ export class LearningService {
             await db.raw('SELECT id FROM public.cbt_learning_materials WHERE id = $1::uuid FOR UPDATE', id);
             const row = await this.row(org, id, db);
             if (row.status !== 'published' || row.format !== 'html') throw new ForbiddenException('Aktivitas HTML belum tersedia.');
+            await this.assertUnlocked(user, row);
             if (dto.contentVersion !== (row.content_version || 1)) throw new ConflictException('Materi diperbarui. Jawaban lama tidak ditimpa; muat ulang materi.');
             if (Buffer.byteLength(JSON.stringify(dto.state), 'utf8') > 128 * 1024) throw new BadRequestException('Data aktivitas terlalu besar (maksimum 128 KB).');
             const payload = { state: dto.state, revision: dto.revision + 1, updated_at: new Date().toISOString() };

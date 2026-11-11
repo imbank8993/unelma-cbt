@@ -21,7 +21,9 @@ export function ExamStartPreparation({ exam, onConfirm, onBack, screenShare }: {
     const leavingRef = useRef(false);
 
     // Token check state
-    const [hasAccess, setHasAccess] = useState(true);
+    // Ujian berbayar tertutup sampai server memastikan sudah dibuka (gagal memeriksa = tetap tertutup).
+    const isPaidExam = Boolean(exam.is_paid && (exam.token_price || 0) > 0);
+    const [hasAccess, setHasAccess] = useState(!isPaidExam);
     const [accessInfo, setAccessInfo] = useState<{ tokenPrice: number; balance: number } | null>(null);
     const [unlocking, setUnlocking] = useState(false);
     const [unlockError, setUnlockError] = useState('');
@@ -32,6 +34,9 @@ export function ExamStartPreparation({ exam, onConfirm, onBack, screenShare }: {
                 if (res.success) {
                     setHasAccess(res.hasAccess);
                     setAccessInfo({ tokenPrice: res.tokenPrice, balance: res.balance || 0 });
+                } else {
+                    setHasAccess(false);
+                    setUnlockError(res.error || 'Status akses ujian belum dapat diperiksa. Muat ulang halaman.');
                 }
             });
         }

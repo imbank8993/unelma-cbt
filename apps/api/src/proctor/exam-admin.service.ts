@@ -232,6 +232,7 @@ export class ExamAdminService {
         }
 
         if (dto.isPaid) {
+            this.assertPaidAllowedForType(examType);
             await assertPaidContentAllowed(this.db, user.id, 'exam', dto.tokenPrice);
         }
 
@@ -348,6 +349,7 @@ export class ExamAdminService {
             // menggratiskan ujian berbayar.
             const nextPaid = dto.isPaid ?? Boolean(existing.is_paid);
             const nextPrice = dto.tokenPrice ?? Number(existing.token_price ?? 0);
+            if (nextPaid) this.assertPaidAllowedForType(examType);
             if (nextPaid && (!existing.is_paid || Number(existing.token_price ?? 0) !== nextPrice)) {
                 await assertPaidContentAllowed(db, existing.created_by || user.id, 'exam', nextPrice);
             }
@@ -871,6 +873,13 @@ export class ExamAdminService {
     private async isElevated(user: AuthUser, organizationId: string): Promise<boolean> {
         if (user.isPlatformAdmin || user.resolved?.superadmin === true) return true;
         return this.roles.hasOrgRole(user.id, organizationId, ['Proktor', 'Admin']);
+    }
+
+    /** Penilaian resmi madrasah (ASAS/ASAT/AM) wajib diikuti semua siswa: tidak boleh berbayar. */
+    private assertPaidAllowedForType(examType: string) {
+        if (isSemesterAssessmentExam({ exam_type: examType })) {
+            throw new BadRequestException('Ujian ASAS/ASAT dan Asesmen Madrasah tidak boleh berbayar.');
+        }
     }
 
     private async assertMayUseExamType(

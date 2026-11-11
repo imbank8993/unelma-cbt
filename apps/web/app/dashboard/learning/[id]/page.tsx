@@ -14,7 +14,8 @@ import { checkItemAccess, unlockItemWithTokens } from '@/lib/api/tokens';
 import '@/app/components/learning/learning.css';
 
 const READER_PATH = /\/dashboard\/learning\/([0-9a-f-]{36})\/?$/i;
-const surfaceKey = (material: LearningMaterial) => `${material.id}:${material.content_version || 1}:${material.revision}`;
+// `locked` ikut kunci: setelah dibuka dengan token, isi lengkap dari server harus menggantikan tampilan terkunci.
+const surfaceKey = (material: LearningMaterial) => `${material.id}:${material.content_version || 1}:${material.revision}${material.locked ? ':locked' : ''}`;
 interface Surface { key: string; material: LearningMaterial; ready: boolean }
 
 export default function LearningReader() {
@@ -62,10 +63,12 @@ function LearningReaderContent({ initialId }: { initialId: string }) {
             setHasAccess(true);
             return;
         }
-        if (material.is_paid && (material.token_price || 0) > 0) {
+        if (material.locked || (material.is_paid && (material.token_price || 0) > 0)) {
+            // Tertutup sampai terbukti terbuka: server sudah menahan isi materi terkunci.
+            if (material.locked) setHasAccess(false);
             void checkItemAccess('material', material.id).then(res => {
                 if (res.success) {
-                    setHasAccess(res.hasAccess);
+                    setHasAccess(res.hasAccess && !material.locked);
                     setAccessInfo({ tokenPrice: res.tokenPrice, balance: res.balance || 0 });
                 }
             });
@@ -85,6 +88,8 @@ function LearningReaderContent({ initialId }: { initialId: string }) {
                 return;
             }
             setHasAccess(true);
+            // Ambil ulang dari server: isi materi baru dikirim setelah dibuka.
+            load(material.id, true);
         } catch (err) {
             setUnlockError((err as Error).message);
         } finally {

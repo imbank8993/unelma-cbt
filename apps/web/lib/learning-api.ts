@@ -10,6 +10,8 @@ export interface LearningMaterial {
     /** Dari daftar: pemanggil boleh mengubah/menghapus (pemilik materi atau Admin). */
     canEdit?: boolean; created_by?: string;
     is_paid?: boolean; token_price?: number;
+    /** Dari server: materi berbayar yang belum dibuka pemanggil; isinya tidak dikirim. */
+    locked?: boolean;
 }
 export class LearningRequestError extends Error { constructor(message: string, public status: number) { super(message); } }
 export async function learningRequest<T>(path = '', init: RequestInit = {}): Promise<T> {

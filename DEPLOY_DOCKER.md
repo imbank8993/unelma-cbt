@@ -306,3 +306,11 @@ Migrasi (agar pencairan kedua dalam bulan yang sama bisa dicatat; aman dijalanka
 ```bash
 psql "$DATABASE_URL_HOST" -f database/migrations/20261111_03_proctor_payouts_multi.sql
 ```
+
+## Paywall ujian & bahan ajar ditegakkan server (11 November 2026)
+
+- Bahan ajar berbayar yang belum dibuka: API tidak mengirim isi, lampiran, PDF, progres, maupun aktivitasnya (sebelumnya isi lengkap sudah terkirim ke browser dan hanya ditutup lapisan tampilan). Guru/Admin tidak terkunci.
+- Ujian berbayar tidak bisa **dimulai** sebelum dibuka dengan token (soal hanya keluar untuk pengerjaan aktif). Pengerjaan yang sudah berjalan tetap bisa dilanjutkan. Layar persiapan kini tertutup secara default dan tetap tertutup bila pengecekan gagal.
+- Ujian ASAS/ASAT dan Asesmen Madrasah tidak boleh dijadikan berbayar.
+
+Tidak ada migrasi untuk perubahan ini.
