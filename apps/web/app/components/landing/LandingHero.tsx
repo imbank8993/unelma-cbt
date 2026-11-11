@@ -84,11 +84,11 @@ export default function LandingHero({ currentUser }: LandingHeroProps) {
             try {
                 googleObj.accounts.id.prompt((notification) => {
                     if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
-                        setErrorMsg('Jendela login Google tertutup atau belum dipilih. Silakan klik kembali.');
+                        window.location.href = '/login';
                     }
                 });
             } catch {
-                setErrorMsg('Silakan gunakan tombol masuk di halaman login.');
+                window.location.href = '/login';
             }
         } else {
             window.location.href = '/login';
