@@ -48,8 +48,8 @@ class MemoryDb {
         };return query;
     }
 }
-const user={id:'teacher',roles:['GURU']};
-const roles={hasOrgRole:async(id,org,wanted)=>org==='org-1'&&wanted.includes(id==='teacher'?'Guru':id==='proctor'?'Proktor':'Admin')};
+const user={id:'teacher',roles:['PROKTOR']};
+const roles={hasOrgRole:async(id,org,wanted)=>org==='org-1'&&wanted.includes(id==='admin'?'Admin':'Proktor')};
 const schoolScope={assertSchoolId:async id=>{
     if(id!=='org-1')throw new Error('ID sekolah tidak sesuai');
     return id;
@@ -84,7 +84,7 @@ async function test(name,fn){await fn();console.log('PASS',name);count++;}
         await svc.moveToFolder(user,['bank'],'folder');assert.equal(db.state.cbt_question_banks[0].folder_id,'folder');
     });
     await test('Bank folders are private unless public; only creator or admin renames or deletes',async()=>{
-        const role={teacher:'Guru',teacher2:'Guru',proctor:'Proktor',admin:'Admin'};
+        const role={teacher:'Proktor',teacher2:'Proktor',proctor:'Proktor',admin:'Admin'};
         const folderRoles={hasOrgRole:async(id,org,wanted)=>org==='org-1'&&wanted.includes(role[id])};
         const db=base(),auth=new AuthorizationService(db,folderRoles,schoolScope),svc=new QuestionBanksService(db,auth,folderRoles,{emailMap:async()=>new Map()});
         const t1={id:'teacher'},t2={id:'teacher2'},pr={id:'proctor'},ad={id:'admin'};
@@ -182,7 +182,7 @@ async function test(name,fn){await fn();console.log('PASS',name);count++;}
     await test('A bank referenced by an exam cannot be deleted',async()=>{
         const db=base(),auth=new AuthorizationService(db,roles,schoolScope),svc=new QuestionBanksService(db,auth,roles,{emailMap:async()=>new Map()});
         db.state.cbt_exams=[{id:'exam',question_bank_id:'bank'}];
-        await assert.rejects(()=>svc.remove(user,'bank'),/tidak dapat dihapus/);
+        await assert.rejects(()=>svc.remove({id:'admin'},'bank'),/tidak dapat dihapus/);
         assert.ok(db.state.cbt_question_banks.some(bank=>bank.id==='bank'));
     });
     await test('Deleting own question does not authorize deletion of arbitrary image URLs',async()=>{
