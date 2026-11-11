@@ -58,7 +58,7 @@ import { QuestionsService } from './questions.service';
 @ApiBearerAuth()
 @Controller('question-banks')
 @UseGuards(JwtAuthGuard, RolesGuard)
-@Roles('ADMIN', 'PROKTOR', 'GURU')
+@Roles('ADMIN', 'PROKTOR')
 export class QuestionsController {
     constructor(
         private readonly banks: QuestionBanksService,

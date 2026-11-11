@@ -15,10 +15,10 @@ function fixture(fail = []) {
   cbt_question_banks:[{id:'bank',organization_id:'school',created_by:'a',is_published:false,title:'Shared bank'}],
   cbt_exams:[{id:'exam',organization_id:'school',created_by:'a',is_published:false,exam_type:'daily',title:'Shared exam'}],
   cbt_profiles:staff.map(id=>({id,full_name:id})),
-  cbt_organization_members:staff.map(id=>({id:'member-'+id,user_id:id,organization_id:'school',is_active:true,profiles:{full_name:id},member_roles:[{roles:{name:id==='admin'?'Admin':'Guru'}}]})),
+  cbt_organization_members:staff.map(id=>({id:'member-'+id,user_id:id,organization_id:'school',is_active:true,profiles:{full_name:id},member_roles:[{roles:{name:id==='admin'?'Admin':'Proktor'}}]})),
   cbt_bank_collaborators:[],cbt_exam_collaborators:[],cbt_collaboration_events:[],
  },fail);
- const roles = {hasOrgRole:async(id,org,allowed)=>org==='school' && staff.includes(id) && allowed.includes(id==='admin'?'Admin':'Guru')};
+ const roles = {hasOrgRole:async(id,org,allowed)=>org==='school' && staff.includes(id) && allowed.includes(id==='admin'?'Admin':'Proktor')};
  const scope = {assertSchoolId:async id=>{if(id!=='school')throw Error('wrong school');return id;}};
  const auth = new AuthorizationService(db,roles,scope);
  return {db,roles,auth,staff,service:new CollaborationService(db,auth)};

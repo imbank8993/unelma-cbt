@@ -17,7 +17,7 @@ const { UnauthorizedException } = require('@nestjs/common');
 
 const examId = '11111111-1111-4111-8111-111111111111';
 const student = { id: 'student', roles: ['SISWA'] };
-const teacher = { id: 'teacher', roles: ['GURU'] };
+const teacher = { id: 'teacher', roles: ['PROKTOR'] };
 const device = 'test-device';
 
 // ── #1 berkas aktif ──────────────────────────────────────────────────────

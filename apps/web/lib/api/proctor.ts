@@ -365,8 +365,6 @@ export async function getOrganizationStats(): Promise<OrganizationStats> {
 interface ResolvedRoles {
     roles: string[];
     isProctor: boolean;
-    isGuru: boolean;
-    hasDualRole: boolean;
 }
 
 /**
@@ -377,16 +375,13 @@ async function resolveRoles(): Promise<ResolvedRoles> {
     const res = await apiGet<ResolvedRoles>('/api/proctor/roles');
     return res.success
         ? res
-        : { roles: [], isProctor: false, isGuru: false, hasDualRole: false };
+        : { roles: [], isProctor: false };
 }
 
 export async function isUserProctor(): Promise<boolean> {
     return (await resolveRoles()).isProctor;
 }
 
-export async function hasUserDualRole(): Promise<boolean> {
-    return (await resolveRoles()).hasDualRole;
-}
 
 export async function getRecentLogins(limit = 10): Promise<RecentLogin[]> {
     const query = new URLSearchParams({ limit: String(limit) });

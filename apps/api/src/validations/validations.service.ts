@@ -486,9 +486,9 @@ export class ValidationsService {
         }
 
         await this.authz.assertOrgStaff(user, (val as any).organization_id);
-        if (await this.authz.isRestrictedProctor(user, (val as any).organization_id)) {
-            await this.authz.assertBankAccess(user, (val as any).bank_id, 'read');
-        }
+        // Penugasan sebagai validator adalah izinnya sendiri: validator (Proktor)
+        // tetap dapat meninjau bank milik pembuat lain. Tanpa penugasan, akses bank
+        // diperiksa di bawah.
         const { data: assignment, error: assignmentError } = await this.db
             .from('cbt_question_bank_validators').select('id, status')
             .eq('validation_id', validationId).eq('validator_id', user.id).maybeSingle();
@@ -1039,8 +1039,8 @@ export class ValidationsService {
                 .select('organization_id, approval_rule, status, bank_id').eq('id', validationId).single();
             if (error || !session) throw new NotFoundException('Sesi validasi tidak ditemukan.');
             await this.assertValidationManager(user, session.organization_id);
-            // Proktor terbatas hanya boleh memutuskan bank yang boleh ia baca
-            // (miliknya atau yang sudah dipublikasikan), sama seperti getDetail.
+            // Proktor hanya boleh memutuskan sesi untuk bank yang boleh ia baca
+            // (miliknya atau yang dibagikan kepadanya).
             if (await this.authz.isRestrictedProctor(user, session.organization_id)) {
                 await this.authz.assertBankAccess(user, session.bank_id, 'read', tx);
             }

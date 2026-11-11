@@ -59,7 +59,6 @@ import { useRouter } from 'next/navigation';
 import React,{ useCallback,useEffect,useMemo,useState } from 'react';
 import type { LucideIcon } from 'lucide-react';
 import EditPASPeriodModal from '@/app/components/pas/EditPASPeriodModal';
-import ProctorPASPage from '../pas/page';
 
 type TabId = 'all' | 'draft' | 'active' | 'finished' | 'archived' | 'pas';
 type SortBy = 'newest' | 'oldest' | 'name';
@@ -454,13 +453,6 @@ const ExamsPage = () => {
                             </Button>
                         </FilterActions>
                     </FilterToolbar>
-                </div>
-            )}
-
-            {/* ─────────────── PAS TAB CONTENT ─────────────── */}
-            {isFolderExamCategory(typeFilter) && (
-                <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-1 sm:p-6 mb-6">
-                    <ProctorPASPage key={typeFilter} activeTab={activeTab} typeFilter={typeFilter} onTypeFilterChange={setTypeFilter} />
                 </div>
             )}
 

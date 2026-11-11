@@ -96,7 +96,7 @@ test('PAS period returns computed readiness; frontend uses it for schedule rows,
  assert.equal((await service.getPeriod({ id: 'staff' }, 'p')).pas_class_schedules[0].readiness.ready, true);
  f.db.tables.cbt_pas_room_invigilators = [];
  assert.equal((await service.getPeriod({ id: 'staff' }, 'p')).pas_class_schedules[0].readiness.ready, false);
- for (const role of ['admin', 'proktor']) {
+ for (const role of ['admin']) { // ASAS/AM khusus Admin
   const page = fs.readFileSync(path.resolve(__dirname, `../../web/app/dashboard/${role}/exams/pas/[id]/page.tsx`), 'utf8');
   assert.match(page, /schedules\.filter\(isPASScheduleReady\)/);
   assert.match(page, /statusFilter === 'ready' && !isPASScheduleReady\(sc\)/);
@@ -191,7 +191,7 @@ test('failed activation transaction leaves exam unpublished and target creation 
 });
 
 test('PAS schedule forms do not auto-generate or auto-activate and expose separate per-row activation actions', () => {
- for (const role of ['admin', 'proktor']) {
+ for (const role of ['admin']) { // ASAS/AM khusus Admin
   const source = fs.readFileSync(path.resolve(__dirname, `../../web/app/dashboard/${role}/exams/pas/[id]/page.tsx`), 'utf8');
   const add = source.slice(source.indexOf('const handleAddSchedule'), source.indexOf('const handleRemoveSchedule'));
   assert.doesNotMatch(add, /generateExamsFrom|setPASScheduleActivation/);
@@ -260,7 +260,7 @@ test('schedule room column shows actual rooms and session supervisors instead of
  assert.doesNotMatch(rendered, /Label bebas|sesi lain|Atur pengawas/);
  props.schedule.allocated_room_ids = [];
  assert.match(text(mod.exports.PASScheduleRooms(props)), /Label bebasAtur penempatan peserta/);
- for (const role of ['admin', 'proktor']) {
+ for (const role of ['admin']) { // ASAS/AM khusus Admin
   const page = fs.readFileSync(path.resolve(__dirname, `../../web/app/dashboard/${role}/exams/pas/[id]/page.tsx`), 'utf8');
   assert.match(page, /Bank Soal \/ Kelas/);
   assert.doesNotMatch(page, /<th[^>]*>Kelas<\/th>/);

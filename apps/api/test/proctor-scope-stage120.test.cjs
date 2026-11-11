@@ -100,4 +100,27 @@ test('web: proctor screens no longer load school data or offer ASAS/AM', () => {
     assert.match(read('../../web/components/exams/CreateExamModal.tsx'), /role === 'guru' \|\| role === 'proktor'/);
     const mobile = read('../../web/app/components/MobileNav.tsx');
     assert.doesNotMatch(mobile, /\/dashboard\/proktor\/settings/);
+    // Alamat lama ASAS/AM milik Proktor dialihkan, bukan menampilkan halaman yang ditolak server.
+    for (const page of ['../../web/app/dashboard/proktor/pas/page.tsx', '../../web/app/dashboard/proktor/exams/pas/[id]/page.tsx']) {
+        assert.match(read(page), /redirect\('\/dashboard\/proktor\/exams'\)/, page);
+    }
+});
+
+test('the Guru role is gone: no role checks, decorators, menus or dashboard role for it', () => {
+    const shared = read('../../../packages/shared/src/roles.ts');
+    assert.doesNotMatch(shared, /\| 'Guru'|Guru: (?:70|'\/dashboard\/guru')/);
+    assert.match(shared, /GURU: 'Proktor'/);
+    const rbac = read('../../web/lib/rbac.ts');
+    assert.doesNotMatch(rbac, /'Guru'(?!.*Proktor)/);
+    for (const nav of ['Sidebar', 'MobileNav']) assert.doesNotMatch(read(`../../web/app/components/${nav}.tsx`), /'Guru': \[/);
+    const sourceFiles = [];
+    const walk = dir => { for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+        const full = path.join(dir, entry.name);
+        if (entry.isDirectory()) walk(full); else if (full.endsWith('.ts')) sourceFiles.push(full);
+    } };
+    walk(path.resolve(__dirname, '../src'));
+    for (const file of sourceFiles) {
+        const text = fs.readFileSync(file, 'utf8');
+        assert.doesNotMatch(text, /'GURU'(?!\]\.includes\(String\(teacher)|\['Guru'|'Guru'\]|, 'Guru'/, path.relative(__dirname, file));
+    }
 });

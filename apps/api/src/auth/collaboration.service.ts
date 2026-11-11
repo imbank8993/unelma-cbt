@@ -40,7 +40,7 @@ export class CollaborationService {
             .eq('organization_id', context.resource.organization_id).eq('is_active', true);
         if (error) throw new ServiceUnavailableException('Daftar guru belum dapat dibaca.');
         return (data || []).filter((member: any) => member.user_id !== context.resource.created_by &&
-            (member.member_roles || []).some((role: any) => (type === 'period' ? ['ADMIN'] : ['GURU', 'PROKTOR', 'ADMIN']).includes(String(role.roles?.name).toUpperCase())))
+            (member.member_roles || []).some((role: any) => (type === 'period' ? ['ADMIN'] : ['PROKTOR', 'ADMIN']).includes(String(role.roles?.name).toUpperCase())))
             .map((member: any) => ({ id: member.user_id, name: member.profiles?.full_name || 'Tanpa nama', nip: member.profiles?.identity_number || '' }))
             .sort((a: { name: string }, b: { name: string }) => a.name.localeCompare(b.name, 'id'));
     }
@@ -61,7 +61,7 @@ export class CollaborationService {
                 throw new ForbiddenException('Hanya pembuat atau Admin yang dapat memberikan hak pengelola atau reset.');
             }
             const candidates = await this.candidates(user, type, id);
-            if (!candidates.some((candidate: { id: string }) => candidate.id === targetId)) throw new BadRequestException('Kolaborator harus merupakan Guru, Proktor, atau Admin aktif sekolah ini.');
+            if (!candidates.some((candidate: { id: string }) => candidate.id === targetId)) throw new BadRequestException('Kolaborator harus merupakan Proktor atau Admin aktif sekolah ini.');
             const table = collaborationTable(type), key = collaborationKey(type);
             const previous = await db.from(table).select('*').eq(key, id).eq('user_id', targetId).maybeSingle();
             if (previous.error) throw new ServiceUnavailableException('Akses sebelumnya belum dapat dibaca.');

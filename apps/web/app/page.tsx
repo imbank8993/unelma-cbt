@@ -27,7 +27,7 @@ export default function Home() {
         let cancelled = false;
         let retryTimer: ReturnType<typeof setTimeout> | undefined;
 
-        const VALID_SSO_ROLES = ['Superadmin', 'Admin', 'Proktor', 'Guru', 'Pengawas', 'Siswa'];
+        const VALID_SSO_ROLES = ['Superadmin', 'Admin', 'Proktor', 'Pengawas', 'Siswa'];
         const searchStr = typeof window !== 'undefined' ? window.location.search : '';
         const urlParams = new URLSearchParams(searchStr);
         const ssoRoleParam = urlParams.get('sso_role') || '';

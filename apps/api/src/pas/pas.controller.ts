@@ -54,7 +54,7 @@ import { PasService } from './pas.service';
 @ApiBearerAuth()
 @Controller('pas')
 @UseGuards(JwtAuthGuard, RolesGuard)
-@Roles('ADMIN', 'PROKTOR', 'GURU', 'PENGAWAS')
+@Roles('ADMIN', 'PROKTOR', 'PENGAWAS')
 export class PasController {
     constructor(
         private readonly pas: PasService,

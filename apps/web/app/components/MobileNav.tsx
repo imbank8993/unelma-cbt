@@ -21,7 +21,7 @@ const MobileNav = () => {
     const getRole = () => {
         if (pathname.includes('/admin')) return 'Admin';
         if (pathname.includes('/proktor')) return 'Proktor';
-        if (pathname.includes('/guru')) return 'Guru';
+        if (pathname.includes('/guru')) return 'Proktor';
         if (pathname.includes('/pengawas')) return 'Pengawas';
         if (pathname.includes('/siswa')) return 'Siswa';
         return 'User';
@@ -48,13 +48,6 @@ const MobileNav = () => {
             { icon: BookOpen, label: 'Bank', href: '/dashboard/proktor/questions' },
             { icon: Users, label: 'Kelas', href: '/dashboard/proktor/classes' },
             { icon: Wallet, label: 'Komisi', href: '/dashboard/proktor/commissions' },
-        ],
-        'Guru': [
-            { icon: LayoutDashboard, label: 'Dash', href: '/dashboard/guru' },
-            { icon: ClipboardCheck, label: 'Ujian', href: '/dashboard/guru/exams' },
-            { icon: Activity, label: 'Monitor', href: '/dashboard/guru/monitoring' },
-            { icon: BarChart3, label: 'Nilai', href: '/dashboard/guru/grading' },
-            { icon: BookOpen, label: 'Bank', href: '/dashboard/guru/questions' },
         ],
         'Pengawas': [
             { icon: LayoutDashboard, label: 'Dash', href: '/dashboard/pengawas' },

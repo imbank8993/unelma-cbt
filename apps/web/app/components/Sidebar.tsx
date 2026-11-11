@@ -73,7 +73,7 @@ export default function Sidebar({
         }
         if (pathname.includes('/admin')) return 'Admin';
         if (pathname.includes('/proktor')) return 'Proktor';
-        if (pathname.includes('/guru')) return 'Guru';
+        if (pathname.includes('/guru')) return 'Proktor';
         if (pathname.includes('/siswa')) return 'Siswa';
         if (pathname.includes('/pengawas')) return 'Pengawas';
         return (dbUserRole as Role) || 'User';
@@ -135,15 +135,6 @@ export default function Sidebar({
             { icon: 'fa-clipboard-check', label: 'Ujian', href: '/dashboard/proktor/exams' },
             { icon: 'fa-chart-line', label: 'Monitoring', href: '/dashboard/proktor/monitoring' },
             { icon: 'fa-hand-holding-dollar', label: 'Komisi Saya', href: '/dashboard/proktor/commissions' },
-        ],
-        'Guru': [
-            { icon: 'fa-house', label: 'Dashboard', href: '/dashboard/guru' },
-            { icon: 'fa-graduation-cap', label: 'Bahan Ajar', href: '/dashboard/learning' },
-            { icon: 'fa-users', label: 'Kelas', href: '/dashboard/guru/classes' },
-            { icon: 'fa-book-open', label: 'Bank Soal', href: '/dashboard/guru/questions' },
-            { icon: 'fa-shield-halved', label: 'Validasi Soal', href: '/dashboard/guru/validations' },
-            { icon: 'fa-clipboard-check', label: 'Ujian', href: '/dashboard/guru/exams' },
-            { icon: 'fa-chart-line', label: 'Monitoring', href: '/dashboard/guru/monitoring' },
         ],
         'Siswa': [
             { icon: 'fa-house', label: 'Dashboard', href: '/dashboard/siswa' },

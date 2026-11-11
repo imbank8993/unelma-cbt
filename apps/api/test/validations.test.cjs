@@ -8,7 +8,7 @@ const { AuthorizationService } = require('../src/auth/authorization.service.ts')
 const { QuestionBanksService } = require('../src/questions/question-banks.service.ts');
 const { QuestionsService } = require('../src/questions/questions.service.ts');
 const { ForbiddenException } = require('@nestjs/common');
-const user = id => ({ id, organizationId: 'school', roles: [id === 'admin' ? 'ADMIN' : 'GURU'], isPlatformAdmin: false });
+const user = id => ({ id, organizationId: 'school', roles: [id === 'admin' ? 'ADMIN' : 'PROKTOR'], isPlatformAdmin: false });
 function setup(rule = 'any', options = {}) {
     const db = fixtureDb({
         cbt_question_banks: [{ id: 'bank', organization_id: 'school', created_by: 'owner', is_published: false }],
@@ -19,7 +19,7 @@ function setup(rule = 'any', options = {}) {
         cbt_question_validation_notes: [],
     }, [], options);
     const authz = new AuthorizationService(db, {
-        hasOrgRole: async (id, org, roles) => org === 'school' && roles.includes(id === 'admin' ? 'Admin' : 'Guru'),
+        hasOrgRole: async (id, org, roles) => org === 'school' && roles.includes(id === 'admin' ? 'Admin' : 'Proktor'),
     }, { assertSchoolId: async id => { if (id !== 'school') throw new ForbiddenException(); return id; } });
     return { db, authz, service: new ValidationsService(db, authz) };
 }
@@ -28,7 +28,8 @@ const note = extra => ({ questionId: 'q1', targetScope: 'question_text', comment
 
 test('Unrelated teacher cannot list sessions, read detail or review', async () => {
     const { service } = setup();
-    await assert.rejects(service.list(user('stranger')), ForbiddenException);
+    // Proktor lain hanya melihat sesi untuk bank miliknya sendiri.
+    assert.deepEqual(await service.list(user('stranger')), []);
     await assert.rejects(service.getDetail(user('stranger'), 'session'), ForbiddenException);
     await assert.rejects(service.getReviewData(user('stranger'), 'session'), ForbiddenException);
     assert.equal((await service.list(user('admin'))).length, 1);
@@ -111,7 +112,7 @@ test('Admin decision requires admin, completed recommendations and manual rule',
     await assert.rejects(service.decide(user('admin'), 'session', 'approved'), /seluruh validator/);
     for (const id of ['a','b']) await service.submitReview(user(id), 'session', recommendation('approved'));
     assert.equal(db.tables.cbt_question_bank_validations[0].status, 'in_progress');
-    await assert.rejects(service.decide(user('owner'), 'session', 'approved'), ForbiddenException);
+    await assert.rejects(service.decide(user('stranger'), 'session', 'approved'), ForbiddenException);
     await service.decide(user('admin'), 'session', 'revision_needed');
     assert.equal(db.tables.cbt_question_bank_validations[0].status, 'revision_needed');
     await service.submitReview(user('a'), 'session', recommendation('approved'));

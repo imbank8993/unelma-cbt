@@ -90,13 +90,12 @@ export default function BottomNav({
     const dashboardPath = useMemo(() => {
         const r = (activeRole || '').toLowerCase()
         if (r.includes('siswa')) return '/dashboard/siswa'
-        if (r.includes('guru')) return '/dashboard/guru'
         if (r.includes('proktor')) return '/dashboard/proktor'
         if (r.includes('admin')) return '/dashboard/admin'
         if (r.includes('pengawas')) return '/dashboard/pengawas'
 
         if (pathname.includes('/siswa')) return '/dashboard/siswa'
-        if (pathname.includes('/guru')) return '/dashboard/guru'
+        if (pathname.includes('/guru')) return '/dashboard/proktor'
         if (pathname.includes('/proktor')) return '/dashboard/proktor'
         if (pathname.includes('/admin')) return '/dashboard/admin'
         if (pathname.includes('/pengawas')) return '/dashboard/pengawas'

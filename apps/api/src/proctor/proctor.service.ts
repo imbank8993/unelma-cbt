@@ -23,7 +23,6 @@ const ROLE_PRIORITY = [
     'SUPERADMIN',
     'ADMIN',
     'PROKTOR',
-    'GURU',
     'PENGAWAS',
     'SISWA',
 ];
@@ -33,7 +32,6 @@ const ROLE_LABEL: Record<string, string> = {
     SUPERADMIN: 'Admin',
     ADMIN: 'Admin',
     PROKTOR: 'Proktor',
-    GURU: 'Guru',
     PENGAWAS: 'Pengawas',
     SISWA: 'Siswa',
 };
@@ -309,8 +307,6 @@ export class ProctorService {
         return {
             roles: [...names],
             isProctor,
-            isGuru: names.has('GURU'),
-            hasDualRole: isProctor && names.has('GURU'),
         };
     }
 

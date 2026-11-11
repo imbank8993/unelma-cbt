@@ -37,7 +37,7 @@ import { ValidationsService } from './validations.service';
 @ApiBearerAuth()
 @Controller('validations')
 @UseGuards(JwtAuthGuard, RolesGuard)
-@Roles('ADMIN', 'PROKTOR', 'GURU')
+@Roles('ADMIN', 'PROKTOR')
 export class ValidationsController {
     constructor(private readonly validations: ValidationsService) {}
 

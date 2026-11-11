@@ -335,4 +335,6 @@ Proktor kini pembuat konten mandiri (disetujui lewat pengajuan), bukan staf seko
 - **Proktor:** bank soal, ujian (selain ASAS/ASAT/AM), bahan ajar, kelas tambahan beserta pesertanya, validasi bank miliknya, dan komisi. Bank/ujian Proktor lain — termasuk yang sudah dipublikasikan — tidak terbaca kecuali dibagikan lewat kolaborasi. Proktor tetap tidak dapat menghapus bank soal.
 - **Khusus Admin:** ASAS/ASAT/AM (folder, ruang, sesi, jadwal, berita acara), backup/impor, tahun ajaran, kelas utama, daftar seluruh siswa, riwayat login, konfigurasi ujian sekolah, dan perubahan pengaturan. Pemantauan seluruh ujian juga khusus Admin; Proktor memantau ujiannya sendiri dan ujian yang memakai bank soalnya. Pengawas tetap bekerja lewat penugasan ruang.
 - Folder ASAS/ASAT/AM tidak lagi dapat dibagikan ke Proktor; hak kolaborasi folder yang sudah ada tidak memberi akses apa pun.
-- `/dashboard/guru` dialihkan ke `/dashboard/proktor`; halaman backup Proktor dihapus.
+- `/dashboard/guru` dialihkan ke `/dashboard/proktor`; halaman backup Proktor dihapus. Alamat lama ASAS/AM Proktor (`/dashboard/proktor/pas`, `/dashboard/proktor/exams/pas/...`) dialihkan ke daftar ujian Proktor.
+- Sisa peran Guru dihapus dari kode (API, peran bersama, menu). Nama peran `GURU` dari sesi lama dibaca sebagai Proktor; bila ada pengguna yang menerima 403 setelah deploy, cukup keluar lalu masuk lagi.
+- Validator yang ditugaskan (Proktor) kini dapat membuka halaman tinjauan bank milik pembuat lain; sebelumnya tertolak.

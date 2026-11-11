@@ -45,8 +45,8 @@ test('ADMIN-01: pengawas diatur bersama ruang (Ruang dan Pengawas), tidak di mod
     }
 });
 
-test('ADMIN-02: Halaman detail periode PAS Admin & Proktor menampilkan tab Pengawas dan Administrasi', () => {
-    for (const roleDir of ['admin', 'proktor']) {
+test('ADMIN-02: Halaman detail periode PAS Admin menampilkan tab Pengawas dan Administrasi', () => {
+    for (const roleDir of ['admin']) {
         const pageSource = fs.readFileSync(
             path.resolve(__dirname, `../../web/app/dashboard/${roleDir}/exams/pas/[id]/page.tsx`),
             'utf8',

@@ -8,7 +8,7 @@ const read = relative => fs.readFileSync(path.join(root, relative), 'utf8');
 
 test('SSO-ROLE-01: school roles, including Admin, are replaced from the SSO ticket', () => {
     const auth = read('apps/api/src/auth/auth.service.ts');
-    assert.match(auth, /SSO_SYNCED_ROLES\s*=\s*\['ADMIN',\s*'PROKTOR',\s*'GURU',\s*'PENGAWAS',\s*'SISWA'\]/);
+    assert.match(auth, /SSO_SYNCED_ROLES\s*=\s*\['ADMIN',\s*'PROKTOR',\s*'PENGAWAS',\s*'SISWA'\]/);
     assert.match(auth, /current\.filter\(\(id\) => syncedIds\.has\(id\) && !desired\.has\(id\)\)/);
 });
 

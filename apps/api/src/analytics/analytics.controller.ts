@@ -20,7 +20,7 @@ import { AnalyticsService } from './analytics.service';
 @ApiBearerAuth()
 @Controller('analytics')
 @UseGuards(JwtAuthGuard, RolesGuard)
-@Roles('ADMIN', 'PROKTOR', 'GURU')
+@Roles('ADMIN', 'PROKTOR')
 export class AnalyticsController {
     constructor(private readonly analytics: AnalyticsService) {}
 

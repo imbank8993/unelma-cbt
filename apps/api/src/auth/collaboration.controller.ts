@@ -17,7 +17,7 @@ class GrantDto {
 
 @Controller('collaboration')
 @UseGuards(JwtAuthGuard, RolesGuard)
-@Roles('ADMIN', 'PROKTOR', 'GURU')
+@Roles('ADMIN', 'PROKTOR')
 export class CollaborationController {
     constructor(private readonly collaboration: CollaborationService) {}
     @Get(':type/:id')

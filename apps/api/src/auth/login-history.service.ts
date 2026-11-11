@@ -187,7 +187,6 @@ export class LoginHistoryService {
         SUPERADMIN: 'Admin',
         ADMIN: 'Admin',
         PROKTOR: 'Proktor',
-        GURU: 'Guru',
         PENGAWAS: 'Pengawas',
         SISWA: 'Siswa',
     };

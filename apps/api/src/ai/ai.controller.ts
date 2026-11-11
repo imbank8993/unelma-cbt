@@ -26,7 +26,7 @@ class KisiKisiDto {
 @UseGuards(JwtAuthGuard, RolesGuard)
 // Hanya staf yang boleh memakai fitur AI. Versi lama tidak memeriksa apa pun,
 // sehingga siapa pun yang bisa memanggilnya dapat menghabiskan kuota OpenAI.
-@Roles('ADMIN', 'PROKTOR', 'GURU')
+@Roles('ADMIN', 'PROKTOR')
 export class AiController {
     constructor(private readonly ai: AiService) {}
 

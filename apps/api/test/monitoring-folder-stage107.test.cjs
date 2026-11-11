@@ -21,7 +21,7 @@ function fixture() {
         cbt_bank_collaborators: [{ bank_id: 'bank', user_id: 'colleague', permission: 'viewer' }],
         cbt_exam_collaborators: [],
     });
-    const roles = { hasOrgRole: async (id, org, allowed) => org === 'school' && ['owner', 'colleague', 'stranger'].includes(id) && allowed.includes('Guru') };
+    const roles = { hasOrgRole: async (id, org, allowed) => org === 'school' && ['owner', 'colleague', 'stranger'].includes(id) && allowed.includes('Proktor') };
     return { db, roles, auth: new AuthorizationService(db, roles, scope) };
 }
 
@@ -103,7 +103,7 @@ test('MF-04: Proktor mulai per ruang, Admin per bank soal, guru hanya per bank s
 test('MF-05: folder ASAS/AM 5 tab; pelaksanaan dipantau di halaman Monitoring', () => {
     assert.match(web('app/components/pas/CompactExamPeriodWorkspace.tsx'),
         /COMPACT_PERIOD_TABS = \[\s*\['schedules', 'Jadwal'\], \['rooms', 'Ruang dan Pengawas'\], \['sessions', 'Sesi'\], \['administration', 'Administrasi'\], \['exam_settings', 'Pengaturan Ujian'\],\s*\] as const/);
-    for (const role of ['admin', 'proktor']) {
+    for (const role of ['admin']) {
         const page = web(`app/dashboard/${role}/exams/pas/[id]/page.tsx`);
         assert.doesNotMatch(page, /PASSlotMonitoring|PASBankResultsPanel|Hasil & Analisis/);
         assert.match(page, /<PASTodayStatusCard periodId=\{period\.id\}/);
@@ -127,7 +127,7 @@ test('MF-07: Ruang dan Pengawas satu tab dengan tombol Tambah pengawas; Sesi tab
     assert.match(panel, /Tambah pengawas<\/Button>/);
     assert.match(panel, /hideNav = false/);
     assert.doesNotMatch(panel, /handleTabChange\('invigilators'\)/);
-    for (const role of ['admin', 'proktor']) {
+    for (const role of ['admin']) {
         const page = web(`app/dashboard/${role}/exams/pas/[id]/page.tsx`);
         assert.match(page, /if \(tab === 'rooms' \|\| tab === 'sessions'\) \{ setLogisticsSubTab\(tab\); setActiveTab\('rooms_sessions'\); \}/);
         assert.match(page, /hideNav=\{isCompactPeriod\}/);

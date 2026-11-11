@@ -52,7 +52,7 @@ import { AssignValidationModal } from './AssignValidationModal';
 import { ValidationReportModal } from './ValidationReportModal';
 import { ValidationFolders } from './ValidationFolders';
 
-const VALIDATOR_ROLES = ['Guru', 'Proktor', 'Admin'];
+const VALIDATOR_ROLES = ['Proktor', 'Admin'];
 const RUNNING_STATUSES: ValidationStatus[] = ['pending', 'in_progress', 'resubmitted'];
 
 /** 'yyyy-mm-dd' lokal untuk DatePicker dari tanggal ISO. */

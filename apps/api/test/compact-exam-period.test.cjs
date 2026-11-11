@@ -256,9 +256,10 @@ test('room column names every room with the class head count instead of "N ruang
     assert.match(text(row), /Ruang A\(5\)Ruang B\(5\)Ruang C\(5\)\+1 ruang lainnya/);
 });
 
-test('both routes enable the compact workspace for ASAS/ASAT (pas, legacy pat) and AM only', () => {
+test('the admin route enables the compact workspace for ASAS/ASAT (pas, legacy pat) and AM only', () => {
     const { isSemesterAssessmentType } = require('../../web/lib/exam-types.ts');
-    for (const role of ['admin', 'proktor']) {
+    // ASAS/ASAT/AM khusus Admin; rute Proktor hanya mengalihkan (lihat stage120).
+    for (const role of ['admin']) {
         const source = fs.readFileSync(path.join(web, `app/dashboard/${role}/exams/pas/[id]/page.tsx`), 'utf8');
         const ast = ts.createSourceFile('page.tsx', source, ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX);
         let initializer;

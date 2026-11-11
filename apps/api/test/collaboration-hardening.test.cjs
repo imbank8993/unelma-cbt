@@ -20,11 +20,11 @@ function fixture({ banks = 1, exams = 1 } = {}) {
         cbt_exams: Array.from({ length: exams }, (_, i) => ({ id: i ? `exam-${i}` : 'exam', organization_id: 'school', created_by: 'a', is_published: false, exam_type: 'daily', title: `Exam ${i}` })),
         cbt_profiles: staff.map(id => ({ id, full_name: id })),
         cbt_organization_members: staff.map(id => ({ id: 'member-' + id, user_id: id, organization_id: 'school', is_active: true, profiles: { full_name: id },
-            member_roles: [{ roles: { name: id === 'admin' ? 'Admin' : 'Guru' } }] })),
+            member_roles: [{ roles: { name: id === 'admin' ? 'Admin' : 'Proktor' } }] })),
         cbt_bank_collaborators: [], cbt_exam_collaborators: [], cbt_collaboration_events: [],
         cbt_exam_question_sources: [], cbt_question_bank_validations: [], cbt_question_bank_validators: [],
     });
-    const roles = { hasOrgRole: async (id, org, allowed) => org === 'school' && staff.includes(id) && allowed.includes(id === 'admin' ? 'Admin' : 'Guru') };
+    const roles = { hasOrgRole: async (id, org, allowed) => org === 'school' && staff.includes(id) && allowed.includes(id === 'admin' ? 'Admin' : 'Proktor') };
     const auth = new AuthorizationService(db, roles, { assertSchoolId: async id => id });
     return { db, roles, auth, service: new CollaborationService(db, auth) };
 }

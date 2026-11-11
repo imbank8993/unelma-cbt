@@ -34,7 +34,7 @@ function tables() {
         ],
         cbt_organization_members: [
             member('student-1', 'Siswa'), member('student-2', 'Siswa'),
-            member('student-3', 'Siswa'), member('teacher-1', 'Guru'),
+            member('student-3', 'Siswa'), member('teacher-1', 'Proktor'),
             member('watcher-1', 'Pengawas'), member('inactive-student', 'Siswa', false),
         ],
         cbt_pas_room_students: [
@@ -262,7 +262,7 @@ test('ROOM-07: mutasi ruang memakai transaksi dan lock sesuai cakupan', () => {
     assert.match(rooms, /pas-room-students:/);
     assert.match(rooms, /currentIds\.size \+ movingIds\.length > capacity/);
     assert.match(rooms, /eq\('pas_period_id', periodId\)/);
-    assert.match(pas, /\['Guru', 'Pengawas', 'Proktor', 'Admin'\]/);
+    assert.match(pas, /\['Pengawas', 'Proktor', 'Admin'\]/);
 });
 
 test('ROOM-08: UI admin dan proktor menampilkan serta menegakkan sisa kapasitas', () => {

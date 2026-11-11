@@ -105,7 +105,7 @@ export class ExamAdminService {
         if (isInvigilator && !elevated) {
             assignedStudents = await assignedPasExamStudents(this.db, user.id, organizationId);
             const assignedIds = new Set(assignedStudents.keys());
-            const teacher = await this.roles.hasOrgRole(user.id, organizationId, ['Proktor', 'Guru']);
+            const teacher = await this.roles.hasOrgRole(user.id, organizationId, ['Proktor']);
             const { data: banks, error: bankError } = teacher
                 ? await this.db.from('cbt_question_banks').select('id').eq('organization_id', organizationId).eq('created_by', user.id)
                 : { data: [], error: null };

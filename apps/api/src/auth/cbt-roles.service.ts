@@ -127,7 +127,6 @@ export class CbtRolesService {
 
     if (orgRoleNames.has('PROKTOR')) out.proktor = true;
     if (orgRoleNames.has('ADMIN')) out.admin = true;
-    if (orgRoleNames.has('GURU')) out.guru = true;
     // Pengawas is a duty-derived capability, never an SSO or membership role.
     out.pengawas = Boolean((memberships as any[])?.length) &&
       await hasPasInvigilationAssignment(this.db, userId, organizationId);

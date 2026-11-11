@@ -10,7 +10,7 @@ import { FilterActions,FilterSearch,FilterSelect,FilterToolbar } from '@/app/com
 import { Modal,ModalBody,ModalField,ModalFooter } from '@/app/components/ui/modal';
 import { Spinner } from '@/app/components/ui/Spinner';
 import { LIST_PAGE_SIZE, ListPagination } from '@/app/components/ui/list-pagination';
-import { getProctorOrganization,hasUserDualRole,isUserProctor,listSubjects } from '@/lib/api/proctor';
+import { getProctorOrganization,isUserProctor,listSubjects } from '@/lib/api/proctor';
 import type { ProctorOrganization,SchoolSubject } from '@/lib/api/proctor';
 import { bulkMoveBanksToFolder,createBankFolder,createQuestionBank,deleteBankFolder,deleteQuestionBank,listBankFolders,listOrganizationLabels,listQuestionBanks,moveBankToFolder,toggleQuestionBankPublishAction,updateBankFolder } from '@/lib/api/questions';
 import type { BankFolder,OrganizationLabel,QuestionBank } from '@/lib/api/questions';
@@ -51,7 +51,6 @@ export default function ProktorQuestionBankPage() {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [org, setOrg] = useState<ProctorOrganization | null>(null);
     const [, setIsProctor] = useState(true);
-    const [, setIsDualRole] = useState(false);
     const [, setCurrentUserId] = useState<string | null>(null);
 
     const [activeTab] = useState<'all' | 'draft' | 'published'>('all');
@@ -163,15 +162,13 @@ export default function ProktorQuestionBankPage() {
         try {
             const user = await getSessionUser();
             if (user) {
-                const [organization, proctorStatus, dualRoleStatus] = await Promise.all([
+                const [organization, proctorStatus] = await Promise.all([
                     getProctorOrganization(),
                     isUserProctor(),
-                    hasUserDualRole()
                 ]);
                 if (organization) {
                     setOrg(organization);
                     setIsProctor(proctorStatus);
-                    setIsDualRole(dualRoleStatus);
                     setCurrentUserId(user.id);
                     const [bankList, labelList, folderList, subjectList] = await Promise.all([
                         listQuestionBanks(),

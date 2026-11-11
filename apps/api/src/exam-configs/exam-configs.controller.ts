@@ -40,7 +40,7 @@ import { ExamConfigsService } from './exam-configs.service';
 @ApiBearerAuth()
 @Controller('exam-configs')
 @UseGuards(JwtAuthGuard, RolesGuard)
-@Roles('ADMIN', 'PROKTOR', 'GURU')
+@Roles('ADMIN', 'PROKTOR')
 export class ExamConfigsController {
     constructor(private readonly configs: ExamConfigsService) {}
 

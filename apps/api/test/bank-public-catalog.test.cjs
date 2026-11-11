@@ -9,7 +9,7 @@ const { QuestionsService } = require('../src/questions/questions.service.ts');
 const { ValidationsService } = require('../src/validations/validations.service.ts');
 const { StorageAccessService } = require('../src/storage/storage-access.service.ts');
 const { StorageService } = require('../src/storage/storage.service.ts');
-const user = { id: 'reader', organizationId: 'school', roles: ['GURU'] };
+const user = { id: 'reader', organizationId: 'school', roles: ['PROKTOR'] };
 const image = 'users/owner/questions/image.png';
 const denied = error => error.getStatus?.() === 403;
 
@@ -29,7 +29,7 @@ function setup({ proctor = false } = {}) {
             ({ user_id, organization_id: 'school', is_active: true })),
     });
     const roles = { hasOrgRole: async (id, org, wanted) => org === 'school' &&
-        (wanted.includes('Guru') || proctor && id === 'proctor' && wanted.includes('Proktor')) };
+        (wanted.includes('Proktor') || proctor && id === 'proctor' && wanted.includes('Proktor')) };
     const auth = new AuthorizationService(db, roles, { assertSchoolId: async org => {
         assert.equal(org, 'school'); return org;
     } });

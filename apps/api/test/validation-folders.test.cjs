@@ -21,18 +21,18 @@ function setup(failedTables = []) {
         cbt_question_bank_validators: [{ id: 'assignment', validation_id: 'session', validator_id: 'teacher', status: 'submitted', validation: session }],
         cbt_question_validation_notes: [{ id: 'note', validation_id: 'session', comment: 'Catatan lama', is_resolved: true }],
     }, failedTables);
-    const roles = { hasOrgRole: async (id, org, wanted) => org === 'school' && wanted.includes(id === 'admin' ? 'Admin' : id.startsWith('proctor') ? 'Proktor' : 'Guru') };
+    const roles = { hasOrgRole: async (id, org, wanted) => org === 'school' && wanted.includes(id === 'admin' ? 'Admin' : id.startsWith('proctor') || id === 'teacher' ? 'Proktor' : 'Siswa') };
     const auth = new AuthorizationService(db, roles, { assertSchoolId: async id => { if (id !== 'school') throw Error('Sekolah lain'); return id; } });
     return { db, service: new ValidationsService(db, auth) };
 }
 
-test('Admin and Proktor create named school folders; teachers cannot manage folders', async () => {
+test('Admin and Proktor create named school folders; students cannot manage folders', async () => {
     const { db, service } = setup();
     const added = await service.createFolder(user('proctor'), '  ASAS 2027  ');
     assert.equal(db.tables.cbt_validation_folders.find(folder => folder.id === added.id).name, 'ASAS 2027');
     assert.equal((await service.listFolders(user('admin'))).length, 2);
-    for (const action of [() => service.listFolders(user('teacher')), () => service.createFolder(user('teacher'), 'X'),
-        () => service.updateFolder(user('teacher'), 'folder', 'X'), () => service.removeFolder(user('teacher'), 'folder')]) {
+    for (const action of [() => service.listFolders(user('student')), () => service.createFolder(user('student'), 'X'),
+        () => service.updateFolder(user('student'), 'folder', 'X'), () => service.removeFolder(user('student'), 'folder')]) {
         await assert.rejects(action, error => error.getStatus?.() === 403);
     }
     for (const name of ['   ', 'x'.repeat(121)]) await assert.rejects(service.createFolder(user('admin'), name));

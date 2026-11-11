@@ -13,7 +13,7 @@ import { SingleSchoolService } from './single-school.service';
 import { verifyGoogleIdToken } from './google-id-token';
 
 /** Peran sekolah yang disamakan persis dengan isi tiket SSO. */
-const SSO_SYNCED_ROLES = ['ADMIN', 'PROKTOR', 'GURU', 'PENGAWAS', 'SISWA'] as const;
+const SSO_SYNCED_ROLES = ['ADMIN', 'PROKTOR', 'PENGAWAS', 'SISWA'] as const;
 
 @Injectable()
 export class AuthService {

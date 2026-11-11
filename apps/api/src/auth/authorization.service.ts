@@ -75,7 +75,7 @@ export class AuthorizationService {
         return this.assertOrgRole(
             user,
             organizationId,
-            ['Proktor', 'Admin', 'Guru'],
+            ['Proktor', 'Admin'],
             'staf sekolah',
         );
     }
@@ -85,7 +85,7 @@ export class AuthorizationService {
      * di sekolah ini. Dipakai saat menunjuk orang, mis. validator bank soal.
      */
     hasOrgStaffRole(userId: string, organizationId: string): Promise<boolean> {
-        return this.roles.hasOrgRole(userId, organizationId, ['Proktor', 'Admin', 'Guru']);
+        return this.roles.hasOrgRole(userId, organizationId, ['Proktor', 'Admin']);
     }
 
     /** Operasi pemantauan staf sekolah: Proktor, Admin, Guru, dan Pengawas. */
@@ -93,7 +93,7 @@ export class AuthorizationService {
         return this.assertOrgRole(
             user,
             organizationId,
-            ['Proktor', 'Admin', 'Guru', 'Pengawas'],
+            ['Proktor', 'Admin', 'Pengawas'],
             'staf pemantauan sekolah',
         );
     }
@@ -135,7 +135,7 @@ export class AuthorizationService {
 
     assertStaffByRecord(user: AuthUser, table: string, id: string, column = 'organization_id') {
         return this.assertRoleByRecord(
-            user, table, id, ['Proktor', 'Admin', 'Guru'], 'staf sekolah', column,
+            user, table, id, ['Proktor', 'Admin'], 'staf sekolah', column,
         );
     }
 
@@ -180,7 +180,7 @@ export class AuthorizationService {
     ) {
         return this.assertByParent(
             user, table, id, foreignKey, parentTable,
-            ['Proktor', 'Admin', 'Guru'], 'staf sekolah', parentColumn,
+            ['Proktor', 'Admin'], 'staf sekolah', parentColumn,
         );
     }
 
@@ -255,7 +255,7 @@ export class AuthorizationService {
         if (error || !resource) throw new NotFoundException('Data kolaborasi tidak ditemukan.');
         if (type === 'exam') await this.assertOrgMonitoring(user, resource.organization_id);
         else await this.assertOrgStaff(user, resource.organization_id);
-        const staff = this.isElevatedGlobally(user) || await this.roles.hasOrgRole(user.id, resource.organization_id, type === 'period' ? ['Admin'] : ['Guru', 'Proktor', 'Admin']);
+        const staff = this.isElevatedGlobally(user) || await this.roles.hasOrgRole(user.id, resource.organization_id, type === 'period' ? ['Admin'] : ['Proktor', 'Admin']);
         const admin = this.isElevatedGlobally(user) || await this.roles.hasOrgRole(user.id, resource.organization_id, ['Admin']);
         const owner = staff && resource.created_by === user.id;
         // Bank soal tetap tidak boleh dihapus Proktor (kebijakan lama, dipertahankan);
@@ -271,7 +271,7 @@ export class AuthorizationService {
      */
     async collaborationListContext(user: AuthUser, organizationId: string, type: CollaborativeResource = 'exam') {
         const admin = this.isElevatedGlobally(user) || await this.roles.hasOrgRole(user.id, organizationId, ['Admin']);
-        const staff = admin || await this.roles.hasOrgRole(user.id, organizationId, type === 'period' ? ['Admin'] : ['Guru', 'Proktor', 'Admin']);
+        const staff = admin || await this.roles.hasOrgRole(user.id, organizationId, type === 'period' ? ['Admin'] : ['Proktor', 'Admin']);
         const proctorBank = type === 'bank' && !admin && await this.roles.hasOrgRole(user.id, organizationId, ['Proktor']);
         return {
             admin, staff,
@@ -366,13 +366,13 @@ export class AuthorizationService {
         const full = { allParticipants: true, studentIds: [] };
         if (this.isElevatedGlobally(user) || await this.roles.hasOrgRole(user.id, organizationId, ['Admin'])) return full;
         if (record.created_by !== user.id) {
-            if (record.id && knownGrant !== null && await this.roles.hasOrgRole(user.id, organizationId, ['Proktor', 'Guru'])) {
+            if (record.id && knownGrant !== null && await this.roles.hasOrgRole(user.id, organizationId, ['Proktor'])) {
                 const grant = knownGrant !== undefined ? knownGrant : await collaborationGrant(this.db, 'exam', record.id, user.id);
                 if (grant?.can_reset && ['editor', 'manager'].includes(grant.permission)) return full;
             }
             return null;
         }
-        if (await this.roles.hasOrgRole(user.id, organizationId, ['Proktor', 'Guru'])) return full;
+        if (await this.roles.hasOrgRole(user.id, organizationId, ['Proktor'])) return full;
         return null;
     }
 
@@ -391,14 +391,14 @@ export class AuthorizationService {
         if (await this.roles.hasOrgRole(user.id, record.organization_id, ['Admin'])) return true;
         // knownGrant: grant yang sudah dimuat sekaligus untuk satu halaman daftar (null = tidak ada).
         if (record.id && record.created_by !== user.id && knownGrant !== null &&
-            await this.roles.hasOrgRole(user.id, record.organization_id, ['Proktor', 'Guru'])) {
+            await this.roles.hasOrgRole(user.id, record.organization_id, ['Proktor'])) {
             const grant = knownGrant !== undefined ? knownGrant : await collaborationGrant(this.db, 'exam', record.id, user.id);
             if (grant && ['editor', 'manager'].includes(grant.permission)) return true;
         }
         // Proktor mengelola ujian buatannya sendiri; ASAS/ASAT/AM adalah urusan sekolah (Admin).
         if (isSemesterAssessmentExam(record)) return false;
         return record.created_by === user.id &&
-            await this.roles.hasOrgRole(user.id, record.organization_id, ['Proktor', 'Guru']);
+            await this.roles.hasOrgRole(user.id, record.organization_id, ['Proktor']);
     }
 
     /**
@@ -428,7 +428,7 @@ export class AuthorizationService {
         await this.schoolScope.assertSchoolId(record.organization_id);
         if (this.isElevatedGlobally(user)) return;
 
-        if (await this.roles.hasOrgRole(user.id, record.organization_id, ['Guru', 'Proktor'])) {
+        if (await this.roles.hasOrgRole(user.id, record.organization_id, ['Proktor'])) {
             if (await collaborationGrant(this.db, 'exam', examId, user.id)) return;
         }
 
@@ -437,7 +437,7 @@ export class AuthorizationService {
         if (isMonitorStaff) return;
 
         // Proktor (pembuat konten) memantau ujian buatannya sendiri
-        const isTeacher = await this.roles.hasOrgRole(user.id, record.organization_id, ['Proktor', 'Guru']);
+        const isTeacher = await this.roles.hasOrgRole(user.id, record.organization_id, ['Proktor']);
         if (isTeacher && record.created_by === user.id) return;
 
         // ... dan ujian yang menggunakan bank soal miliknya

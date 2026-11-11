@@ -10,7 +10,6 @@
 export type DashboardRole =
   | 'Siswa'
   | 'Proktor'
-  | 'Guru'
   | 'Pengawas'
   | 'Admin'
   | 'Superadmin'
@@ -28,7 +27,6 @@ export const ROLE_PRIORITY: Record<DashboardRole, number> = {
   Superadmin: 110,
   Admin: 100,
   Proktor: 80,
-  Guru: 70,
   Pengawas: 60,
   Siswa: 50,
   None: 0,
@@ -37,7 +35,6 @@ export const ROLE_PRIORITY: Record<DashboardRole, number> = {
 export const ROLE_TO_DASHBOARD_PATH: Record<DashboardRole, string> = {
   Siswa: '/dashboard/siswa',
   Proktor: '/dashboard/proktor',
-  Guru: '/dashboard/guru',
   Pengawas: '/dashboard/pengawas',
   Admin: '/dashboard/admin',
   Superadmin: '/dashboard/admin',
@@ -50,7 +47,8 @@ export const ROLE_NAME_CANON: Record<string, DashboardRole> = {
   SUPER_ADMIN: 'Superadmin',
   ADMIN: 'Admin',
   PROKTOR: 'Proktor',
-  GURU: 'Guru',
+  // Peran Guru sudah dilebur ke Proktor; nama lama dari token/data lama dipetakan ke Proktor.
+  GURU: 'Proktor',
   PENGAWAS: 'Pengawas',
   SISWA: 'Siswa',
 };
@@ -58,7 +56,6 @@ export const ROLE_NAME_CANON: Record<string, DashboardRole> = {
 export interface ResolvedUserRoles {
   siswa: boolean;
   proktor: boolean;
-  guru: boolean;
   pengawas: boolean;
   admin: boolean;
   superadmin: boolean;
@@ -68,19 +65,17 @@ export function emptyResolvedRoles(): ResolvedUserRoles {
   return {
     siswa: false,
     proktor: false,
-    guru: false,
     pengawas: false,
     admin: false,
     superadmin: false,
   };
 }
 
-/** Peran terbaik yang memenuhi syarat: Superadmin > Admin > Proktor > Guru > Pengawas > Siswa. */
+/** Peran terbaik yang memenuhi syarat: Superadmin > Admin > Proktor > Pengawas > Siswa. */
 export function pickBestRole(roles: ResolvedUserRoles): DashboardRole {
   if (roles.superadmin) return 'Superadmin';
   if (roles.admin) return 'Admin';
   if (roles.proktor) return 'Proktor';
-  if (roles.guru) return 'Guru';
   if (roles.pengawas) return 'Pengawas';
   if (roles.siswa) return 'Siswa';
   return 'None';

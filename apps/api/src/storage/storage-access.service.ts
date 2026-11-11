@@ -56,7 +56,7 @@ export class StorageAccessService {
         const audience = await loadExamAudience(this.db, user);
         if (!audience.organizationId) throw new ForbiddenException('Berkas tidak tersedia.');
         const staff = user.isPlatformAdmin || user.resolved?.superadmin ||
-            (user.roles || []).some(role => ['ADMIN', 'PROKTOR', 'GURU'].includes(role.toUpperCase()));
+            (user.roles || []).some(role => ['ADMIN', 'PROKTOR'].includes(role.toUpperCase()));
         if (staff) {
             const { data: banks, error } = await this.db.from('cbt_question_banks')
                 .select('id, image_url').eq('organization_id', audience.organizationId);

@@ -41,7 +41,7 @@ export function fileServingHeaders(contentType: string): Record<string, string> 
 export function canUploadSvg(user: { roles?: string[]; isPlatformAdmin?: boolean; resolved?: { superadmin?: boolean } } | null): boolean {
     if (!user) return true;
     return Boolean(user.isPlatformAdmin || user.resolved?.superadmin ||
-        (user.roles || []).some(role => ['ADMIN', 'PROKTOR', 'GURU'].includes(String(role).toUpperCase())));
+        (user.roles || []).some(role => ['ADMIN', 'PROKTOR'].includes(String(role).toUpperCase())));
 }
 
 /** Only explicitly public branding/profile folders bypass authentication. Unknown folders are private. */

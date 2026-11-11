@@ -11,7 +11,7 @@ const {ExamAdminService}=require('../src/proctor/exam-admin.service.ts');
 const {ExamKeyCorrectionService}=require('../src/grading/exam-key-correction.service.ts');
 const {ValidationsService}=require('../src/validations/validations.service.ts');
 const {ProctoringService}=require('../src/proctoring/proctoring.service.ts');
-const user=id=>({id,organizationId:'school',roles:id==='proctor'?['PROKTOR']:id==='admin'?['ADMIN']:['GURU']});
+const user=id=>({id,organizationId:'school',roles:id==='proctor'?['PROKTOR']:id==='admin'?['ADMIN']:['PROKTOR']});
 const denied=e=>e.getStatus?.()===403;
 function fixture(){
  const db=fixtureDb({cbt_question_banks:[
@@ -27,7 +27,7 @@ function fixture(){
   cbt_question_bank_validators:[{validation_id:'session',validator_id:'proctor'}],
   cbt_exam_question_snapshots:[{exam_id:'public-exam',question_snapshot:{id:'q',bank_id:'public',type:'mcq'}}]});
  const roles={hasOrgRole:async(id,school,allowed)=>school==='school'&&allowed.some(role=>
-  ({proctor:['Proktor'],teacher:['Guru'],otherTeacher:['Guru'],admin:['Admin','Proktor']}[id]||[]).includes(role))};
+  ({proctor:['Proktor'],teacher:['Proktor'],otherTeacher:['Proktor'],admin:['Admin','Proktor']}[id]||[]).includes(role))};
  const auth=new AuthorizationService(db,roles,{assertSchoolId:async id=>{if(id!=='school')throw Object.assign(Error('School denied'),{getStatus:()=>403});return id}});
  const users={emailMap:async()=>new Map()};
  return {db,auth,roles,banks:new QuestionBanksService(db,auth,roles,users),exams:new ExamAdminService(db,auth,roles)};
@@ -76,8 +76,13 @@ test('direct monitoring and management of foreign exams are denied for proctors,
  await f.auth.assertExamMonitoring(user('admin'),'draft-exam');await f.auth.assertExamStaff(user('admin'),'draft-exam');
  await f.auth.assertExamStaff(user('teacher'),'draft-exam');
 });
-test('validation assignment and exam-key correction cannot bypass ownership and publication rules',async()=>{
+test('validator assignment grants review only; exam-key correction still requires ownership',async()=>{
  const f=fixture();
+ // Ditugaskan sebagai validator = boleh meninjau bank pembuat lain, tanpa hak ubah.
+ f.db.tables.cbt_bank_questions=[{id:'dq',bank_id:'draft',type:'mcq'}];
+ await new ValidationsService(f.db,f.auth).getReviewData(user('proctor'),'session');
+ await assert.rejects(f.auth.assertBankAccess(user('proctor'),'draft','write'),denied);
+ f.db.tables.cbt_question_bank_validators=[];
  await assert.rejects(new ValidationsService(f.db,f.auth).getReviewData(user('proctor'),'session'),denied);
  const correction=new ExamKeyCorrectionService(f.db,f.auth,{});
  await assert.rejects(correction.get(user('proctor'),'public-exam'),denied);
@@ -129,7 +134,7 @@ test('proctors keep their own draft banks and administrators retain full school 
  assert.deepEqual((await f.banks.list(user('proctor'),'school',true)).map(bank=>bank.id),[]);
  const own=await f.banks.get(user('proctor'),'own');assert.equal(own.is_published,false);
  const original=f.roles.hasOrgRole;
- f.roles.hasOrgRole=async(id,school,allowed)=>id==='proctor'&&school==='school'&&allowed.includes('Guru')||await original(id,school,allowed);
+ f.roles.hasOrgRole=async(id,school,allowed)=>id==='proctor'&&school==='school'&&allowed.includes('Proktor')||await original(id,school,allowed);
  await assert.rejects(f.auth.assertBankAccess(user('proctor'),'public','write'),denied);
 });
 
@@ -148,12 +153,14 @@ test('proctors cannot delete even their own banks; all permission responses agre
  assert.equal(f.db.tables.cbt_question_banks.length,4);
  // A simultaneous Guru role must not bypass a Proktor restriction.
  const original=f.roles.hasOrgRole;
- f.roles.hasOrgRole=async(id,school,allowed)=>id==='proctor'&&school==='school'&&allowed.includes('Guru')||await original(id,school,allowed);
+ f.roles.hasOrgRole=async(id,school,allowed)=>id==='proctor'&&school==='school'&&allowed.includes('Proktor')||await original(id,school,allowed);
  await assert.rejects(f.banks.remove(user('proctor'),'own'),denied);
  // Admin + Proktor retains the administrator's deletion permission.
  assert.equal((await f.banks.get(user('admin'),'own')).canDelete,true);
  assert.equal((await f.banks.list(user('admin'),'school')).find(bank=>bank.id==='own').canDelete,true);
  await f.banks.remove(user('admin'),'own');
- await f.banks.remove(user('teacher'),'draft');
+ // Pembuat lain (kini juga Proktor) pun tidak dapat menghapus banknya; hanya Admin.
+ await assert.rejects(f.banks.remove(user('teacher'),'draft'),denied);
+ await f.banks.remove(user('admin'),'draft');
  assert.deepEqual(f.db.tables.cbt_question_banks.map(bank=>bank.id),['public','foreign']);
 });

@@ -464,7 +464,7 @@ export class PasService {
                     .filter(Boolean) as string[],
             }))
             .filter(
-                (member) => member.roles.length === 0 || ['Guru', 'Pengawas', 'Proktor', 'Admin']
+                (member) => member.roles.length === 0 || ['Pengawas', 'Proktor', 'Admin']
                     .some((role) => member.roles.includes(role)),
             );
     }

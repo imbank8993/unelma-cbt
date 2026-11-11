@@ -12,7 +12,7 @@ function fixture(failedTables = []) {
         // This private bank is hidden from the folder's proctor owner.
         cbt_question_banks: [{ id: 'draft', organization_id: 'school', created_by: 'teacher', is_published: false, folder_id: 'folder' }],
     }, failedTables);
-    const roles = { hasOrgRole: async (id, org, allowed) => org === 'school' && allowed.includes(id === 'admin' ? 'Admin' : id === 'proctor' ? 'Proktor' : 'Guru') };
+    const roles = { hasOrgRole: async (id, org, allowed) => org === 'school' && allowed.includes(id === 'admin' ? 'Admin' : id === 'proctor' ? 'Proktor' : 'Proktor') };
     const auth = new AuthorizationService(db, roles, { assertSchoolId: async id => id });
     return { db, service: new QuestionBanksService(db, auth, roles, { emailMap: async () => new Map() }) };
 }

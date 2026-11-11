@@ -16,7 +16,7 @@ import { listTeachersAndInvigilators, type PASStaffMember } from '@/lib/api/pas'
 import { listValidations, createValidation, listValidationFolders, type ValidationFolder, type ApprovalRule } from '@/lib/api/validations';
 import type { QuestionBank } from '@/lib/api/questions';
 
-const VALIDATOR_ROLES = ['Guru', 'Proktor', 'Admin'];
+const VALIDATOR_ROLES = ['Proktor', 'Admin'];
 
 interface AssignValidationModalProps {
     isOpen: boolean;

@@ -1,6 +1,6 @@
 import { getSessionUser } from './session';
 
-export type DashboardRole = 'Siswa' | 'Proktor' | 'Guru' | 'Pengawas' | 'Admin' | 'Superadmin' | 'None';
+export type DashboardRole = 'Siswa' | 'Proktor' | 'Pengawas' | 'Admin' | 'Superadmin' | 'None';
 
 /**
  * Emails granted Superadmin rights. A Superadmin can manage all schools
@@ -21,7 +21,6 @@ export const ROLE_PRIORITY: Record<DashboardRole, number> = {
     'Superadmin': 110,
     'Admin': 100,
     'Proktor': 80,
-    'Guru': 70,
     'Pengawas': 60,
     'Siswa': 50,
     'None': 0,
@@ -30,7 +29,6 @@ export const ROLE_PRIORITY: Record<DashboardRole, number> = {
 export const ROLE_TO_DASHBOARD_PATH: Record<DashboardRole, string> = {
     'Siswa': '/dashboard/siswa',
     'Proktor': '/dashboard/proktor',
-    'Guru': '/dashboard/guru',
     'Pengawas': '/dashboard/pengawas',
     'Admin': '/dashboard/admin',
     'Superadmin': '/dashboard/admin',
@@ -43,7 +41,8 @@ export const ROLE_NAME_CANON: Record<string, DashboardRole> = {
     'SUPER_ADMIN': 'Superadmin',
     'ADMIN': 'Admin',
     'PROKTOR': 'Proktor',
-    'GURU': 'Guru',
+    // Peran Guru sudah dilebur ke Proktor; nama lama dipetakan ke Proktor.
+    'GURU': 'Proktor',
     'PENGAWAS': 'Pengawas',
     'SISWA': 'Siswa',
 };
@@ -149,7 +148,6 @@ export function getRoleFromPath(pathname: string | null | undefined): DashboardR
 export interface ResolvedUserRoles {
     siswa: boolean;
     proktor: boolean;
-    guru: boolean;
     pengawas: boolean;
     admin: boolean;
     superadmin: boolean;
@@ -157,13 +155,12 @@ export interface ResolvedUserRoles {
 
 /**
  * Pick the best role for the user given their actual qualifications.
- * Superadmin > Admin > Proktor > Guru > Pengawas > Siswa.
+ * Superadmin > Admin > Proktor > Pengawas > Siswa.
  */
 export function pickBestRole(roles: ResolvedUserRoles): DashboardRole {
     if (roles.superadmin) return 'Superadmin';
     if (roles.admin) return 'Admin';
     if (roles.proktor) return 'Proktor';
-    if (roles.guru) return 'Guru';
     if (roles.pengawas) return 'Pengawas';
     if (roles.siswa) return 'Siswa';
     return 'None';
@@ -211,7 +208,6 @@ function isRoleQualified(roles: ResolvedUserRoles, role: DashboardRole): boolean
         case 'Superadmin': return roles.superadmin;
         case 'Admin': return roles.admin;
         case 'Proktor': return roles.proktor;
-        case 'Guru': return roles.guru;
         case 'Pengawas': return roles.pengawas;
         case 'Siswa': return roles.siswa;
         default: return false;
@@ -288,7 +284,6 @@ export function getUserRoleContexts(roles: ResolvedUserRoles): UserRoleContext[]
         ['Superadmin', 'superadmin'],
         ['Admin', 'admin'],
         ['Proktor', 'proktor'],
-        ['Guru', 'guru'],
         ['Pengawas', 'pengawas'],
         ['Siswa', 'siswa'],
     ];

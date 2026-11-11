@@ -19,7 +19,7 @@ function fixture() {
   cbt_exams:[{id:'e1',organization_id:'school',created_by:'admin',exam_type:'pas'}, {id:'e3',organization_id:'school',created_by:'admin',exam_type:'pas'}],
  });
 }
-const roles={hasOrgRole:async (id,org,allowed)=>org==='school' && allowed.includes('Guru')};
+const roles={hasOrgRole:async (id,org,allowed)=>org==='school' && allowed.includes('Proktor')};
 const scope={assertSchoolId:async id=>{assert.equal(id,'school');return id;}};
 const user={id:'teacher',isPlatformAdmin:false};
 test('assigned PAS exams are school scoped and assignment removal revokes access',async()=>{
@@ -84,7 +84,7 @@ function roomFixture(failedTables = []) {
   cbt_answers: ['a1', 'a2', 'a3', 'a4'].map(id => ({ attempt_id: id, question_id: 'q', selected_option_id: 'o', is_correct: true })),
   cbt_attempt_security_logs: ['a1', 'a2', 'a3', 'a4'].map(id => ({ attempt_id: id, event_type: 'tab_switch', created_at: '2026-09-20T00:10:00Z' })),
  }, failedTables, { now: '2026-09-20T00:30:00Z' });
- const roleNames = { guard: ['Pengawas'], teacherGuard: ['Guru'], author: ['Guru', 'Pengawas'], creator: ['Guru'], proctor: ['Proktor'], admin: ['Admin'] };
+ const roleNames = { guard: ['Pengawas'], teacherGuard: ['Proktor'], author: ['Proktor', 'Pengawas'], creator: ['Proktor'], proctor: ['Proktor'], admin: ['Admin'] };
  const roles = { hasOrgRole: async (id, org, allowed) => org === 'school' && (roleNames[id] || []).some(role => allowed.includes(role)) };
  const auth = new AuthorizationService(db, roles, scope);
  const grading = { retryPendingAutoSubmissions: async () => {}, gradeAttemptFromSavedAnswers: async () => null };

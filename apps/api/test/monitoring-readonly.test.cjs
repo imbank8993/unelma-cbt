@@ -17,7 +17,7 @@ for (const examType of ['quiz', 'pas', 'pat']) {
    cbt_exams: [exam], cbt_question_banks: [{ id: 'bank', created_by: 'teacher', organization_id: 'school' }],
    cbt_exam_attempts: [{ id: 'attempt', exam_id: 'exam', user_id: 'student', status: 'submitted', exams: exam }],
   });
-  const roles = { hasOrgRole: async (id, org, allowed) => org === 'school' && allowed.includes(id === 'proctor' ? 'Proktor' : 'Guru') };
+  const roles = { hasOrgRole: async (id, org, allowed) => org === 'school' && allowed.includes(id === 'proctor' ? 'Proktor' : 'Proktor') };
   const scope = { assertSchoolId: async id => { assert.equal(id, 'school'); return id; } };
   const auth = new AuthorizationService(db, roles, scope);
   const user = { id: 'teacher' };

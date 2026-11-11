@@ -22,7 +22,7 @@ import { ImportsService } from './imports.service';
 @ApiBearerAuth()
 @Controller('question-banks')
 @UseGuards(JwtAuthGuard, RolesGuard)
-@Roles('ADMIN', 'PROKTOR', 'GURU')
+@Roles('ADMIN', 'PROKTOR')
 export class ImportsController {
     constructor(private readonly imports: ImportsService) {}
 
