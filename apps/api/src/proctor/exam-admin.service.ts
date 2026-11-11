@@ -197,6 +197,7 @@ export class ExamAdminService {
         // untuk ditutup.
         const examType = dto.examType || 'pas';
         await this.assertMayUseExamType(user, organizationId, examType);
+        this.assertPublicAllowedForType(examType, dto.isPublic);
 
         this.assertValidDuration(examType, dto.duration);
         const timeZone = (await this.settings?.getSchoolTimeZone?.()) || 'Asia/Jakarta';
@@ -329,6 +330,23 @@ export class ExamAdminService {
             // miliknya sendiri menjadi PAS/PAT.
             if (examType !== existing.exam_type) {
                 await this.assertMayUseExamType(user, existing.organization_id, examType);
+            }
+            this.assertPublicAllowedForType(examType, dto.isPublic);
+
+            // Ujian umum → privat: akses siswa langsung bergantung pada penugasan,
+            // padahal penugasan baru disimpan SETELAH langkah ini. Siswa yang
+            // sedang mengerjakan akan terputus (jawaban tidak bisa disimpan atau
+            // dikumpulkan) bila penugasan berikutnya gagal atau tidak mencakupnya.
+            const wasPublic = existing.metadata?.is_public === true;
+            if (wasPublic && dto.isPublic === false) {
+                const { data: active, error: activeError } = await db.from('cbt_exam_attempts')
+                    .select('id').eq('exam_id', examId).eq('status', 'in_progress').limit(1);
+                if (activeError) throw new BadRequestException('Status pengerjaan ujian belum dapat diperiksa.');
+                if ((active || []).length) {
+                    throw new ConflictException(
+                        'Ujian umum ini sedang dikerjakan siswa. Tunggu semua pengerjaan selesai sebelum mengubahnya menjadi ujian per kelas.',
+                    );
+                }
             }
 
             const title = this.normalizeExamInput(dto);
@@ -877,6 +895,17 @@ export class ExamAdminService {
     }
 
     /** Penilaian resmi madrasah (ASAS/ASAT/AM) wajib diikuti semua siswa: tidak boleh berbayar. */
+    /**
+     * "Ujian Umum (Semua Siswa)" hanya untuk jenis Lainnya — aturan yang sama
+     * dengan formulir. Tanpa pemeriksaan ini, permintaan API langsung bisa
+     * membuka ujian Harian/Tugas/ASAS untuk seluruh sekolah tanpa penugasan.
+     */
+    private assertPublicAllowedForType(examType: string, isPublic: boolean | undefined) {
+        if (isPublic === true && examType !== 'lainnya') {
+            throw new BadRequestException('Opsi Ujian Umum (Semua Siswa) hanya tersedia untuk jenis ujian Lainnya.');
+        }
+    }
+
     private assertPaidAllowedForType(examType: string) {
         if (isSemesterAssessmentExam({ exam_type: examType })) {
             throw new BadRequestException('Ujian ASAS/ASAT dan Asesmen Madrasah tidak boleh berbayar.');
@@ -995,7 +1024,9 @@ export class ExamAdminService {
             max_violations: dto.maxViolations !== undefined
                 ? dto.maxViolations
                 : (existing.max_violations !== undefined ? existing.max_violations : 3),
-            is_public: dto.isPublic ?? false,
+            // Tidak dikirim = PERTAHANKAN. Sebelumnya `?? false` membuat setiap
+            // penyuntingan tanpa bidang ini diam-diam menjadikan ujian umum privat.
+            is_public: dto.isPublic ?? existing.is_public === true,
             document_url: isAssignment
                 ? (dto.documentUrl ?? existing.document_url ?? '')
                 : existing.document_url,

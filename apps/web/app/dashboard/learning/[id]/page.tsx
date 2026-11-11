@@ -82,9 +82,12 @@ function LearningReaderContent({ initialId }: { initialId: string }) {
         setUnlocking(true);
         setUnlockError('');
         try {
-            const res = await unlockItemWithTokens('material', material.id);
+            const res = await unlockItemWithTokens('material', material.id, accessInfo?.tokenPrice || material.token_price || 1);
             if (!res.success) {
                 setUnlockError(res.error || 'Gagal membuka akses bahan ajar.');
+                // Harga atau saldo mungkin berubah: tampilkan nilai terbaru.
+                const fresh = await checkItemAccess('material', material.id);
+                if (fresh.success) setAccessInfo({ tokenPrice: fresh.tokenPrice, balance: fresh.balance || 0 });
                 return;
             }
             setHasAccess(true);

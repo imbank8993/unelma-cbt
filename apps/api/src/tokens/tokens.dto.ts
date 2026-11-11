@@ -101,6 +101,16 @@ export class UnlockItemDto {
 
   @IsUUID()
   itemId!: string;
+
+  /**
+   * Harga (token) yang dilihat siswa di layar pembelian. Bila harga item sudah
+   * berubah, pembukaan ditolak alih-alih memotong saldo dengan harga baru.
+   */
+  @IsOptional()
+  @IsInt()
+  @Min(0)
+  @Max(10_000)
+  expectedPrice?: number;
 }
 
 export class SaveMidtransConfigDto {

@@ -136,7 +136,7 @@ export class TokensController {
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Buka akses item menggunakan token' })
   unlockItem(@CurrentUser() user: AuthUser, @Body() dto: UnlockItemDto) {
-    return this.tokens.unlockItem(user.id, dto);
+    return this.tokens.unlockItem(user, dto);
   }
 
   // ── 6. Admin Trackers ──

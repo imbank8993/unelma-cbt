@@ -75,7 +75,8 @@ export default function SiswaDashboard() {
                 setAnnouncements(pickAnnouncements(announcementResponse.value, 'show_siswa'));
             }
             if (tokenResponse.status === 'fulfilled' && tokenResponse.value.success) {
-                setTokenBalance(tokenResponse.value.tokenBalance);
+                // API mengirim `token_balance`; `tokenBalance` tidak pernah ada sehingga saldo tampil kosong.
+                setTokenBalance(Number(tokenResponse.value.token_balance) || 0);
             }
         } catch (error) {
             clock.current = null;

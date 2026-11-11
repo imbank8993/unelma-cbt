@@ -22,7 +22,8 @@ export interface AppConfig {
     app_subtitle?: string;
     maintenance_mode?: boolean;
     time_zone?: string;
-    time_zone_source?: 'site_settings' | 'app_config' | 'default';
+    /** 'unavailable' = zona waktu gagal ditentukan; time_zone tidak disertakan. */
+    time_zone_source?: 'site_settings' | 'app_config' | 'default' | 'unavailable';
 }
 
 /** key: 'exam_administration' — shared by ASAS, ASAT and AM documents. */
@@ -66,7 +67,16 @@ let cached: Promise<ApiResult<{ settings: SettingRow[] }>> | null = null;
 export function getSettings(options: { refresh?: boolean } = {}) {
     if (options.refresh) cached = null;
     if (!cached) {
-        cached = apiGet<{ settings: SettingRow[] }>('/api/settings');
+        const pending = apiGet<{ settings: SettingRow[] }>('/api/settings');
+        cached = pending;
+        // Hanya hasil sukses yang disimpan. Kegagalan sesaat (timeout, jaringan,
+        // sesi kedaluwarsa) tidak boleh membuat pengaturan "kosong" sampai
+        // halaman dimuat ulang penuh; panggilan berikutnya mencoba lagi.
+        // Pemeriksaan `cached === pending` mencegah menghapus permintaan yang
+        // lebih baru (mis. setelah refresh atau updateSetting).
+        void pending.then((result) => {
+            if (!result.success && cached === pending) cached = null;
+        });
     }
     return cached;
 }

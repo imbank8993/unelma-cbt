@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsDefined, IsNotEmpty, IsString } from 'class-validator';
+import { IsDefined, IsNotEmpty, IsString, ValidateIf } from 'class-validator';
 
 export class UpsertSettingDto {
     @ApiProperty({ example: 'app_config' })
@@ -13,7 +13,9 @@ export class UpsertSettingDto {
     })
     // Hanya dipastikan ADA, bukan bertipe tertentu: kolomnya jsonb dan
     // pemanggil menyimpan objek, array, maupun skalar. `null` sah sebagai cara
-    // mengosongkan pengaturan.
+    // mengosongkan pengaturan. `@IsDefined` sendiri menolak `null`, jadi
+    // validasinya dilewati khusus untuk `null`; yang ditolak hanya `undefined`.
+    @ValidateIf((dto: UpsertSettingDto) => dto.value !== null)
     @IsDefined({ message: 'Nilai pengaturan wajib disertakan' })
     value!: unknown;
 }

@@ -153,8 +153,8 @@ export async function checkPaymentStatus(orderId: string): Promise<
 }
 
 // ── 4. Saldo & Riwayat Siswa ──
-export async function getUserTokenBalance(): Promise<ApiResult<{ token_balance: number; tokenBalance: number }>> {
-  return apiGet<{ token_balance: number; tokenBalance: number }>('/api/tokens/balance');
+export async function getUserTokenBalance(): Promise<ApiResult<{ token_balance: number }>> {
+  return apiGet<{ token_balance: number }>('/api/tokens/balance');
 }
 
 export async function getUserTokenTransactions(): Promise<ApiResult<{ transactions: TokenTransaction[] }>> {
@@ -172,8 +172,10 @@ export async function checkItemAccess(
 export async function unlockItemWithTokens(
   itemType: 'exam' | 'material',
   itemId: string,
+  /** Harga yang ditampilkan ke siswa; server menolak bila harganya sudah berubah. */
+  expectedPrice?: number,
 ): Promise<ApiResult<{ message: string; remainingBalance: number }>> {
-  return apiSend('/api/tokens/unlock', { itemType, itemId }, 'POST');
+  return apiSend('/api/tokens/unlock', { itemType, itemId, expectedPrice }, 'POST');
 }
 
 // ── 6. Admin Trackers ──

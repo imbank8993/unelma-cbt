@@ -152,3 +152,32 @@ test('public exams may drop their class targets while students are working', asy
     await s.assign({ id: 'staff' }, EXAM, [], [], false);
     assert.equal(db.tables.cbt_exam_targets.length, 0);
 });
+
+test('Ujian Umum hanya untuk jenis Lainnya, baik saat membuat maupun menyunting', async () => {
+    const { s, db } = service();
+    await assert.rejects(s.create({ id: 'teacher' }, ORG, base({ examType: 'daily', isPublic: true })), /hanya tersedia untuk jenis ujian Lainnya/);
+    noInsert(db);
+    await s.create({ id: 'teacher' }, ORG, base({ examType: 'lainnya', isPublic: true }));
+    assert.equal(db.tables.cbt_exams.at(-1).metadata.is_public, true);
+
+    const edit = service({ cbt_exams: [{ id: EXAM, organization_id: ORG, metadata: {}, exam_type: 'daily', status: 'draft', title: 'UTS' }] });
+    await assert.rejects(edit.s.update({ id: 'staff' }, EXAM, { title: 'UTS', examType: 'daily', duration: 60, isPublic: true }), /jenis ujian Lainnya/);
+    assert.equal(edit.db.tables.cbt_exams[0].metadata.is_public, undefined);
+});
+
+test('menyunting tanpa isPublic mempertahankan status ujian umum', async () => {
+    const { s, db } = service({ cbt_exams: [{ id: EXAM, organization_id: ORG, metadata: { is_public: true }, exam_type: 'lainnya', status: 'active', title: 'TO' }] });
+    await s.update({ id: 'staff' }, EXAM, { title: 'TO', examType: 'lainnya', duration: 60 });
+    assert.equal(db.tables.cbt_exams[0].metadata.is_public, true);
+});
+
+test('ujian umum tidak bisa dijadikan per kelas selagi ada siswa mengerjakan', async () => {
+    const exam = { id: EXAM, organization_id: ORG, metadata: { is_public: true }, exam_type: 'lainnya', status: 'active', title: 'TO' };
+    const busy = service({ cbt_exams: [{ ...exam }], cbt_exam_attempts: [{ id: 'a1', exam_id: EXAM, user_id: 'stu', status: 'in_progress' }] });
+    await assert.rejects(busy.s.update({ id: 'staff' }, EXAM, { title: 'TO', examType: 'lainnya', duration: 60, isPublic: false }), /sedang dikerjakan siswa/);
+    assert.equal(busy.db.tables.cbt_exams[0].metadata.is_public, true);
+
+    const done = service({ cbt_exams: [{ ...exam }], cbt_exam_attempts: [{ id: 'a1', exam_id: EXAM, user_id: 'stu', status: 'submitted' }] });
+    await done.s.update({ id: 'staff' }, EXAM, { title: 'TO', examType: 'lainnya', duration: 60, isPublic: false });
+    assert.equal(done.db.tables.cbt_exams[0].metadata.is_public, false);
+});

@@ -148,10 +148,35 @@ test('webhook pesanan lama tetap terverifikasi setelah admin pindah mode', async
     } finally { net.restore(); }
 });
 
-function unlockFixture({ balance, alreadyUnlocked = false }) {
+const STUDENT = { id: 'user-1', roles: ['SISWA'] };
+const EXAM_ID = '00000000-0000-4000-8000-000000000001';
+
+/** DbService palsu untuk `loadExamAudience`: hasil per tabel, rantai query diabaikan. */
+function fakeDb({ studentOrg = 'org-1', participantExamIds = [EXAM_ID] } = {}) {
+    const tables = {
+        cbt_organization_members: studentOrg ? [{ organization_id: studentOrg }] : [],
+        cbt_class_members: [],
+        cbt_additional_class_members: [],
+        cbt_exam_participants: participantExamIds.map((exam_id) => ({ exam_id })),
+    };
+    return {
+        from(table) {
+            const result = { data: tables[table] || [], error: null };
+            const chain = {
+                select: () => chain, eq: () => chain, in: () => chain, or: () => chain,
+                then: (resolve, reject) => Promise.resolve(result).then(resolve, reject),
+            };
+            return chain;
+        },
+    };
+}
+
+function unlockFixture({ balance, alreadyUnlocked = false, exam = {}, db = {}, priceInTransaction }) {
     const state = { balance, unlocked: alreadyUnlocked };
+    const examRow = { title: 'Ujian A', is_paid: true, token_price: 5, organization_id: 'org-1', is_published: true, metadata: {}, end_time: null, ...exam };
     const prisma = fakePrisma([
-        [/FROM public.cbt_exams/, () => [{ title: 'Ujian A', is_paid: true, token_price: 5 }]],
+        [/FOR SHARE/, () => [{ ...examRow, token_price: priceInTransaction ?? examRow.token_price }]],
+        [/FROM public.cbt_exams/, () => [examRow]],
         [/SELECT 1 FROM public.unlocked_items/, () => (state.unlocked ? [{ '?column?': 1 }] : [])],
         [/COALESCE\(token_balance, 0\) as balance/, () => [{ balance: state.balance }]],
         [/INSERT INTO public.unlocked_items/, () => {
@@ -165,17 +190,17 @@ function unlockFixture({ balance, alreadyUnlocked = false }) {
             return [{ token_balance: state.balance }];
         }],
     ]);
-    return { service: new TokensService(prisma, config), prisma, state };
+    return { service: new TokensService(prisma, config, fakeDb(db), {}), prisma, state };
 }
 
 test('unlock memotong saldo secara atomik dan tidak pernah minus', async () => {
     const ok = unlockFixture({ balance: 7 });
-    const r = await ok.service.unlockItem('user-1', { itemType: 'exam', itemId: '00000000-0000-4000-8000-000000000001' });
+    const r = await ok.service.unlockItem(STUDENT, { itemType: 'exam', itemId: '00000000-0000-4000-8000-000000000001' });
     assert.equal(r.remainingBalance, 2);
 
     const poor = unlockFixture({ balance: 3 });
     await assert.rejects(
-        poor.service.unlockItem('user-1', { itemType: 'exam', itemId: '00000000-0000-4000-8000-000000000001' }),
+        poor.service.unlockItem(STUDENT, { itemType: 'exam', itemId: '00000000-0000-4000-8000-000000000001' }),
         /tidak mencukupi/,
     );
     assert.equal(poor.state.balance, 3);
@@ -187,10 +212,51 @@ test('unlock paralel item yang sama hanya memotong saldo sekali', async () => {
     const f = unlockFixture({ balance: 20 });
     // Simulasikan request kedua yang lolos checkAccess sebelum request pertama commit.
     const item = { itemType: 'exam', itemId: '00000000-0000-4000-8000-000000000001' };
-    const first = f.service.unlockItem('user-1', item);
-    const second = f.service.unlockItem('user-1', item);
+    const first = f.service.unlockItem(STUDENT, item);
+    const second = f.service.unlockItem(STUDENT, item);
     await Promise.all([first, second]);
     assert.equal(f.state.balance, 15);
+});
+
+test('unlock menolak ujian yang tidak dapat diakses siswa tanpa memotong saldo', async () => {
+    const cases = [
+        ['draf / belum terbit', { exam: { is_published: false } }, /tidak tersedia/],
+        ['sekolah lain', { exam: { organization_id: 'org-2' } }, /tidak tersedia/],
+        ['tidak ditugaskan & bukan umum', { db: { participantExamIds: [] } }, /tidak tersedia/],
+        ['sudah berakhir', { exam: { end_time: '2000-01-01T00:00:00Z' } }, /sudah berakhir/],
+    ];
+    for (const [label, opts, message] of cases) {
+        const f = unlockFixture({ balance: 50, ...opts });
+        await assert.rejects(f.service.unlockItem(STUDENT, { itemType: 'exam', itemId: EXAM_ID }), message, label);
+        assert.equal(f.state.balance, 50, label);
+        assert.equal(f.state.unlocked, false, label);
+    }
+
+    // Ujian umum tetap bisa dibuka meski tidak ditugaskan.
+    const pub = unlockFixture({ balance: 50, exam: { metadata: { is_public: true } }, db: { participantExamIds: [] } });
+    await pub.service.unlockItem(STUDENT, { itemType: 'exam', itemId: EXAM_ID });
+    assert.equal(pub.state.balance, 45);
+});
+
+test('unlock menolak bila harga berubah dari yang dilihat siswa', async () => {
+    const seen = unlockFixture({ balance: 50 });
+    await assert.rejects(
+        seen.service.unlockItem(STUDENT, { itemType: 'exam', itemId: EXAM_ID, expectedPrice: 3 }),
+        /berubah menjadi 5 token/,
+    );
+    assert.equal(seen.state.balance, 50);
+
+    // Harga diubah pembuat di antara pembacaan awal dan transaksi pemotongan.
+    const raced = unlockFixture({ balance: 50, priceInTransaction: 40 });
+    await assert.rejects(
+        raced.service.unlockItem(STUDENT, { itemType: 'exam', itemId: EXAM_ID, expectedPrice: 5 }),
+        /berubah menjadi 40 token/,
+    );
+    assert.equal(raced.state.balance, 50);
+
+    const ok = unlockFixture({ balance: 50 });
+    await ok.service.unlockItem(STUDENT, { itemType: 'exam', itemId: EXAM_ID, expectedPrice: 5 });
+    assert.equal(ok.state.balance, 45);
 });
 
 test('konfigurasi Midtrans: mode aktif wajib punya kunci, kunci SB- ditolak di produksi', async () => {

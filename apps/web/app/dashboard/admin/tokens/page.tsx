@@ -89,6 +89,18 @@ export default function AdminTokensPage() {
         }
     };
 
+    /** Segarkan daftar paket saja; form Midtrans dibiarkan apa adanya. */
+    const refreshPackages = async () => {
+        setLoading(true);
+        try {
+            await loadPackages();
+        } catch (err) {
+            console.error('Error loading token packages:', err);
+        } finally {
+            setLoading(false);
+        }
+    };
+
     useEffect(() => {
         loadData();
     }, []);
@@ -147,7 +159,8 @@ export default function AdminTokensPage() {
                 if (!res.success) throw new Error(res.error || 'Gagal membuat paket.');
             }
             setModalOpen(false);
-            await loadData();
+            // Hanya daftar paket: memuat ulang Midtrans akan menghapus input yang belum disimpan.
+            await refreshPackages();
         } catch (err: any) {
             alert(err.message || 'Terjadi kesalahan.');
         } finally {
@@ -160,7 +173,7 @@ export default function AdminTokensPage() {
         try {
             const res = await deleteTokenPackage(id);
             if (res.success) {
-                await loadData();
+                await refreshPackages();
             } else {
                 alert(res.error || 'Gagal menghapus paket.');
             }
@@ -250,7 +263,9 @@ export default function AdminTokensPage() {
                     </div>
 
                     <button
-                        onClick={loadData}
+                        type="button"
+                        onClick={refreshPackages}
+                        disabled={loading}
                         className="p-2 text-slate-500 hover:text-slate-800 rounded-lg hover:bg-slate-100 transition-colors"
                         title="Segarkan data"
                     >

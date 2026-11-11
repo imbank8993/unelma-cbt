@@ -82,7 +82,7 @@ export default function PublicApplyProctorPage() {
         const res = await getMyProctorApplication();
         if (!res.success) {
             // Jika belum login, tampilkan tombol masuk dengan Google
-            if (res.status === 401 || (typeof res.error === 'string' && res.error.toLowerCase().includes('sesi'))) {
+            if (res.unauthorized || (typeof res.error === 'string' && res.error.toLowerCase().includes('sesi'))) {
                 setAuthRequired(true);
                 setLoading(false);
                 return;

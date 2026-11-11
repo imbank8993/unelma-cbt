@@ -65,31 +65,35 @@ export class SettingsService {
         const rows = (data as SettingRow[]) || [];
         const filtered = options.includeSensitive ? rows : rows.filter((row) => !SENSITIVE_KEYS.has(row.key));
 
-        const effectiveInfo = await this.getSchoolTimeZoneInfo();
+        // Kegagalan membaca zona waktu TIDAK boleh menggagalkan seluruh daftar:
+        // root layout membaca mode pemeliharaan dan nama aplikasi dari sini, dan
+        // daftar kosong berarti mode pemeliharaan diam-diam mati. Zona waktu
+        // ditandai tidak tersedia (bukan ditebak); jadwal tetap memakai
+        // /settings/school-timezone yang melempar galat dengan jelas.
+        let effectiveInfo: { timeZone: string; source: 'site_settings' | 'app_config' | 'default' } | null = null;
+        try {
+            effectiveInfo = await this.getSchoolTimeZoneInfo();
+        } catch (error) {
+            this.logger.error(`Zona waktu sekolah tidak dapat ditentukan: ${(error as Error).message}`);
+        }
+
         let foundAppConfig = false;
         const mapped = filtered.map((row) => {
             if (row.key === 'app_config') {
                 foundAppConfig = true;
-                const val =
-                    row.value && typeof row.value === 'object' && !Array.isArray(row.value)
-                        ? {
-                              ...(row.value as Record<string, unknown>),
-                              time_zone: effectiveInfo.timeZone,
-                              time_zone_source: effectiveInfo.source,
-                          }
-                        : { time_zone: effectiveInfo.timeZone, time_zone_source: effectiveInfo.source };
-                return { ...row, value: val };
+                return { ...row, value: this.withTimeZone(row.value, effectiveInfo) };
             }
             return row;
         });
 
         if (!foundAppConfig) {
+            const now = new Date().toISOString();
             mapped.push({
                 id: 'synthesized-app-config',
                 key: 'app_config',
-                value: { time_zone: effectiveInfo.timeZone, time_zone_source: effectiveInfo.source },
-                created_at: new Date().toISOString(),
-                updated_at: new Date().toISOString(),
+                value: this.withTimeZone(null, effectiveInfo),
+                created_at: now,
+                updated_at: now,
             });
         }
 
@@ -113,18 +117,24 @@ export class SettingsService {
     async findOne(key: string): Promise<SettingRow | null> {
         const row = await this.findRawOne(key);
         if (key === 'app_config' && row) {
-            const effectiveInfo = await this.getSchoolTimeZoneInfo();
-            const val =
-                row.value && typeof row.value === 'object' && !Array.isArray(row.value)
-                    ? {
-                          ...(row.value as Record<string, unknown>),
-                          time_zone: effectiveInfo.timeZone,
-                          time_zone_source: effectiveInfo.source,
-                      }
-                    : { time_zone: effectiveInfo.timeZone, time_zone_source: effectiveInfo.source };
-            return { ...row, value: val };
+            return { ...row, value: this.withTimeZone(row.value, await this.getSchoolTimeZoneInfo()) };
         }
         return row;
+    }
+
+    /** Timpa zona waktu pada app_config dengan nilai efektif; `null` = tidak dapat ditentukan. */
+    private withTimeZone(
+        value: unknown,
+        info: { timeZone: string; source: 'site_settings' | 'app_config' | 'default' } | null,
+    ): Record<string, unknown> {
+        const base: Record<string, unknown> =
+            value && typeof value === 'object' && !Array.isArray(value) ? { ...(value as Record<string, unknown>) } : {};
+        if (!info) {
+            // Jangan teruskan time_zone tersimpan yang mungkin bukan nilai efektif.
+            delete base.time_zone;
+            return { ...base, time_zone_source: 'unavailable' };
+        }
+        return { ...base, time_zone: info.timeZone, time_zone_source: info.source };
     }
 
     async getSchoolTimeZoneInfo(): Promise<{ timeZone: string; source: 'site_settings' | 'app_config' | 'default' }> {

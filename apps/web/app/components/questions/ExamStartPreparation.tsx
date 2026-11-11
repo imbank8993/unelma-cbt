@@ -47,9 +47,12 @@ export function ExamStartPreparation({ exam, onConfirm, onBack, screenShare }: {
         setUnlocking(true);
         setUnlockError('');
         try {
-            const res = await unlockItemWithTokens('exam', exam.id);
+            const res = await unlockItemWithTokens('exam', exam.id, accessInfo?.tokenPrice || exam.token_price || 1);
             if (!res.success) {
                 setUnlockError(res.error || 'Gagal membuka akses ujian.');
+                // Harga atau saldo mungkin berubah: tampilkan nilai terbaru.
+                const fresh = await checkItemAccess('exam', exam.id);
+                if (fresh.success) setAccessInfo({ tokenPrice: fresh.tokenPrice, balance: fresh.balance || 0 });
                 return;
             }
             setHasAccess(true);

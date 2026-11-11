@@ -1,6 +1,9 @@
-import { BadRequestException, ForbiddenException, HttpException, HttpStatus, Injectable, Logger, NotFoundException, ServiceUnavailableException } from '@nestjs/common';
+import { BadRequestException, ConflictException, ForbiddenException, HttpException, HttpStatus, Injectable, Logger, NotFoundException, ServiceUnavailableException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../prisma/prisma.service';
+import { DbService } from '../prisma/prisma-db-adapter';
+import { AuthorizationService } from '../auth/authorization.service';
+import { canAccessExam, loadExamAudience } from '../students/exam-access';
 import type { AuthUser } from '@acca-cbt/shared';
 import * as crypto from 'crypto';
 import { CreatePaymentDto, CreateTokenPackageDto, SaveMidtransConfigDto, UnlockItemDto, UpdateTokenPackageDto } from './tokens.dto';
@@ -11,6 +14,19 @@ export interface MidtransConfig {
   sandbox_server_key?: string;
   production_client_key?: string;
   production_server_key?: string;
+}
+
+interface UnlockableItem {
+  id: string;
+  title: string;
+  isPaid: boolean;
+  tokenPrice: number;
+  isFree: boolean;
+  organization_id?: string | null;
+  is_published?: boolean | null;
+  metadata?: any;
+  end_time?: string | Date | null;
+  status?: string | null;
 }
 
 const MAX_PENDING_ORDERS_PER_10_MIN = 5;
@@ -29,6 +45,8 @@ export class TokensService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly config: ConfigService,
+    private readonly db: DbService,
+    private readonly authz: AuthorizationService,
   ) {}
 
   // ─────────────────────────────────────────────────────────────
@@ -624,34 +642,62 @@ export class TokensService {
   // 5. UNLOCK ITEMS (EXAM / BAHAN AJAR)
   // ─────────────────────────────────────────────────────────────
 
-  async checkAccess(userId: string, itemType: 'exam' | 'material', itemId: string) {
-    let title = '';
-    let isPaid = false;
-    let tokenPrice = 0;
-
-    if (itemType === 'exam') {
-      const rows = await this.prisma.$queryRawUnsafe<any[]>(`
-        SELECT title, COALESCE(is_paid, false) as is_paid, COALESCE(token_price, 0) as token_price
-        FROM public.cbt_exams
-        WHERE id = $1::uuid
-      `, itemId);
-      if (!rows.length) throw new NotFoundException('Ujian tidak ditemukan.');
-      title = rows[0].title;
-      isPaid = Boolean(rows[0].is_paid);
-      tokenPrice = Number(rows[0].token_price || 0);
-    } else {
-      const rows = await this.prisma.$queryRawUnsafe<any[]>(`
-        SELECT title, COALESCE(is_paid, false) as is_paid, COALESCE(token_price, 0) as token_price
-        FROM public.cbt_learning_materials
-        WHERE id = $1::uuid
-      `, itemId);
-      if (!rows.length) throw new NotFoundException('Bahan ajar tidak ditemukan.');
-      title = rows[0].title;
-      isPaid = Boolean(rows[0].is_paid);
-      tokenPrice = Number(rows[0].token_price || 0);
+  private async loadItem(itemType: 'exam' | 'material', itemId: string): Promise<UnlockableItem> {
+    const rows = itemType === 'exam'
+      ? await this.prisma.$queryRawUnsafe<any[]>(`
+          SELECT title, COALESCE(is_paid, false) as is_paid, COALESCE(token_price, 0) as token_price,
+                 organization_id, is_published, metadata, end_time
+          FROM public.cbt_exams
+          WHERE id = $1::uuid
+        `, itemId)
+      : await this.prisma.$queryRawUnsafe<any[]>(`
+          SELECT title, COALESCE(is_paid, false) as is_paid, COALESCE(token_price, 0) as token_price,
+                 organization_id, status
+          FROM public.cbt_learning_materials
+          WHERE id = $1::uuid
+        `, itemId);
+    if (!rows.length) {
+      throw new NotFoundException(itemType === 'exam' ? 'Ujian tidak ditemukan.' : 'Bahan ajar tidak ditemukan.');
     }
+    const row = rows[0];
+    const isPaid = Boolean(row.is_paid);
+    const tokenPrice = Number(row.token_price || 0);
+    return { ...row, id: itemId, isPaid, tokenPrice, isFree: !isPaid || tokenPrice <= 0 };
+  }
 
-    if (!isPaid || tokenPrice <= 0) {
+  /**
+   * Saldo hanya boleh dipotong untuk item yang memang bisa dipakai siswa ini.
+   * Aturannya sama dengan memulai ujian (`canAccessExam`) dan membaca bahan
+   * ajar (terbit + anggota sekolah). Tanpa ini siswa bisa terpotong token —
+   * dan pembuatnya ikut mendapat komisi — untuk ujian draf, ujian sekolah
+   * lain, atau ujian yang tidak ditugaskan kepadanya.
+   */
+  private async assertUnlockable(user: AuthUser, itemType: 'exam' | 'material', item: UnlockableItem) {
+    const unavailable = () => new ForbiddenException(
+      itemType === 'exam' ? 'Ujian ini tidak tersedia untuk Anda.' : 'Bahan ajar ini tidak tersedia untuk Anda.',
+    );
+    if (itemType === 'exam') {
+      const metadata = typeof item.metadata === 'string' ? JSON.parse(item.metadata) : item.metadata;
+      const exam = { id: item.id, organization_id: item.organization_id ?? null, is_published: item.is_published === true, metadata };
+      if (!canAccessExam(exam, await loadExamAudience(this.db, user))) throw unavailable();
+      if (item.end_time && new Date(item.end_time).getTime() <= Date.now()) {
+        throw new BadRequestException('Ujian ini sudah berakhir sehingga tidak dapat dibuka lagi.');
+      }
+      return;
+    }
+    if (item.status !== 'published') throw unavailable();
+    try {
+      await this.authz.assertOrgRole(user, item.organization_id, ['Siswa', 'Proktor', 'Admin'], 'Siswa/Proktor/Admin');
+    } catch (error) {
+      if (error instanceof ForbiddenException) throw unavailable();
+      throw error;
+    }
+  }
+
+  async checkAccess(userId: string, itemType: 'exam' | 'material', itemId: string) {
+    const { title, isFree, tokenPrice } = await this.loadItem(itemType, itemId);
+
+    if (isFree) {
       return { hasAccess: true, isFree: true, title, tokenPrice: 0 };
     }
 
@@ -671,7 +717,8 @@ export class TokensService {
     return { hasAccess: false, isUnlocked: false, title, tokenPrice, balance: userBalance };
   }
 
-  async unlockItem(userId: string, dto: UnlockItemDto) {
+  async unlockItem(user: AuthUser, dto: UnlockItemDto) {
+    const userId = user.id;
     const { itemType, itemId } = dto;
     const access = await this.checkAccess(userId, itemType, itemId);
 
@@ -679,7 +726,13 @@ export class TokensService {
       return { success: true, message: 'Item sudah terbuka.', remainingBalance: access.balance || 0 };
     }
 
+    await this.assertUnlockable(user, itemType, await this.loadItem(itemType, itemId));
+
     const tokenCost = access.tokenPrice;
+    const priceChanged = (price: number) => new ConflictException(
+      `Harga item ini berubah menjadi ${price} token. Periksa kembali sebelum membuka akses.`,
+    );
+    if (dto.expectedPrice !== undefined && dto.expectedPrice !== tokenCost) throw priceChanged(tokenCost);
     const itemLabel = itemType === 'exam' ? 'Ujian' : 'Bahan Ajar';
     const desc = `Membuka akses ${itemLabel}: ${access.title}`;
     const insufficient = (balance: number) => new BadRequestException(
@@ -688,6 +741,19 @@ export class TokensService {
 
     let newBalance = null as number | null;
     await this.prisma.$transaction(async (prisma) => {
+      // 0. Kunci baris item dan pastikan harganya masih sama dengan yang akan
+      //    dipotong: pembuat bisa mengubah harga di antara pembacaan di atas
+      //    dan transaksi ini.
+      const table = itemType === 'exam' ? 'cbt_exams' : 'cbt_learning_materials';
+      const current = await prisma.$queryRawUnsafe<any[]>(`
+        SELECT COALESCE(is_paid, false) as is_paid, COALESCE(token_price, 0) as token_price
+        FROM public.${table}
+        WHERE id = $1::uuid
+        FOR SHARE
+      `, itemId);
+      const currentPrice = current.length && current[0].is_paid ? Number(current[0].token_price || 0) : 0;
+      if (currentPrice !== tokenCost) throw priceChanged(currentPrice);
+
       // 1. Klaim item lebih dulu. Permintaan paralel untuk item yang sama
       //    menunggu di unique index lalu tidak menyisipkan apa-apa, sehingga
       //    saldo hanya terpotong sekali.
