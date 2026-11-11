@@ -123,12 +123,10 @@ export async function getAdminCommissionsSummary(): Promise<
   );
 }
 
+/** Jumlah token/rupiah dihitung server dari saldo komisi yang belum dicairkan. */
 export async function processAdminPayout(data: {
   proctor_id: string;
   period_month: string;
-  total_tokens: number;
-  proctor_tokens: number;
-  total_idr: number;
   transfer_proof_url: string;
   notes?: string;
 }): Promise<ApiResult<{ payout: ProctorPayout }>> {
@@ -144,7 +142,7 @@ export async function updateProctorPermissions(
   }
 ): Promise<ApiResult<{ profile: any }>> {
   return apiSend<{ profile: any }>(
-    `/api/commissions/admin/proctors/${profileId}/permissions`,
+    `/api/commissions/admin/proctors/${encodeURIComponent(profileId)}/permissions`,
     data,
     'PUT'
   );

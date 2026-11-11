@@ -40,6 +40,7 @@ export default function AdminCommissionsPage() {
     const [search, setSearch] = useState('');
     const [savingConfig, setSavingConfig] = useState(false);
     const [feedback, setFeedback] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+    const [loadError, setLoadError] = useState<string | null>(null);
 
     // Modal Pencairan
     const [selectedProc, setSelectedProc] = useState<ProctorSummaryItem | null>(null);
@@ -50,14 +51,16 @@ export default function AdminCommissionsPage() {
 
     const loadData = async () => {
         setLoading(true);
+        setLoadError(null);
         try {
             const res = await getAdminCommissionsSummary();
-            if (res.success) {
-                if (res.config) setConfig(res.config);
-                if (res.proctors) setProctors(res.proctors);
-            }
+            if (!res.success) throw new Error(res.error || 'Data komisi gagal dimuat.');
+            if (res.config) setConfig(res.config);
+            setProctors(res.proctors || []);
         } catch (err) {
-            console.error('Error loading commissions summary:', err);
+            // Daftar dikosongkan agar angka lama tidak disangka masih berlaku.
+            setProctors([]);
+            setLoadError(String((err as Error)?.message || 'Data komisi gagal dimuat.'));
         } finally {
             setLoading(false);
         }
@@ -112,28 +115,44 @@ export default function AdminCommissionsPage() {
         setPayoutNotes(`Pencairan komisi periode ${payoutPeriod}`);
     };
 
+    const handleChangePeriod = (value: string) => {
+        // Catatan bawaan ikut periode; catatan yang sudah diketik admin dibiarkan.
+        if (payoutNotes === `Pencairan komisi periode ${payoutPeriod}`) {
+            setPayoutNotes(`Pencairan komisi periode ${value}`);
+        }
+        setPayoutPeriod(value);
+    };
+
     const handleSubmitPayout = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!selectedProc) return;
-        if (!proofUrl.trim()) {
-            alert('Harap masukkan URL bukti transfer.');
+        if (!selectedProc || processingPayout) return;
+        let validProof = '';
+        try {
+            const url = new URL(proofUrl.trim());
+            if (url.protocol === 'https:' || url.protocol === 'http:') validProof = url.href;
+        } catch { /* ditangani di bawah */ }
+        if (!validProof) {
+            alert('Tautan bukti transfer harus berupa URL http(s) yang valid.');
             return;
         }
 
         setProcessingPayout(true);
         try {
+            // Jumlah token & rupiah dihitung ulang oleh server dari saldo yang belum dicairkan.
             const res = await processAdminPayout({
                 proctor_id: selectedProc.user_id,
                 period_month: payoutPeriod,
-                total_tokens: selectedProc.gross_tokens,
-                proctor_tokens: selectedProc.pending_tokens,
-                total_idr: selectedProc.pending_idr,
-                transfer_proof_url: proofUrl.trim(),
+                transfer_proof_url: validProof,
                 notes: payoutNotes,
             });
 
             if (res.success) {
-                alert('Pencairan komisi proktor berhasil diproses!');
+                const paid = res.payout;
+                alert(
+                    paid
+                        ? `Pencairan ${Number(paid.proctor_tokens).toLocaleString('id-ID')} token (Rp ${Number(paid.total_idr).toLocaleString('id-ID')}) berhasil dicatat.`
+                        : 'Pencairan komisi proktor berhasil diproses!',
+                );
                 setSelectedProc(null);
                 await loadData();
             } else {
@@ -350,6 +369,18 @@ export default function AdminCommissionsPage() {
                                         Memuat data komisi proktor...
                                     </td>
                                 </tr>
+                            ) : loadError ? (
+                                <tr>
+                                    <td colSpan={8} className="py-10 text-center">
+                                        <div className="inline-flex items-center gap-3 px-4 py-3 rounded-xl bg-red-50 text-red-800 border border-red-200 text-xs font-semibold">
+                                            <AlertCircle size={16} />
+                                            <span>Data komisi gagal dimuat: {loadError}</span>
+                                            <button type="button" onClick={loadData} className="px-3 py-1 rounded-lg bg-white border border-red-300 cursor-pointer">
+                                                Coba lagi
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
                             ) : filteredProctors.length === 0 ? (
                                 <tr>
                                     <td colSpan={8} className="py-12 text-center text-slate-400">
@@ -499,6 +530,9 @@ export default function AdminCommissionsPage() {
                                 <span className="text-slate-900">Total Nominal Transfer:</span>
                                 <span className="text-emerald-700">Rp {selectedProc.pending_idr.toLocaleString('id-ID')}</span>
                             </div>
+                            <p className="text-[11px] text-slate-500 pt-1">
+                                Jumlah final dihitung ulang server saat disimpan dari saldo yang belum dicairkan.
+                            </p>
                         </div>
 
                         <form onSubmit={handleSubmitPayout} className="space-y-4">
@@ -509,7 +543,7 @@ export default function AdminCommissionsPage() {
                                 <input
                                     type="month"
                                     value={payoutPeriod}
-                                    onChange={(e) => setPayoutPeriod(e.target.value)}
+                                    onChange={(e) => handleChangePeriod(e.target.value)}
                                     className="w-full px-3.5 py-2 rounded-xl border border-slate-200 text-xs font-bold text-slate-800"
                                     required
                                 />

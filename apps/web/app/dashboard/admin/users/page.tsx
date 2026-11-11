@@ -37,6 +37,18 @@ interface ManagedUser {
     lastSignInAt: string | null;
 }
 
+/** Balasan non-JSON (mis. 502 dari reverse proxy) tidak boleh memunculkan pesan "Unexpected token". */
+async function readJson(res: Response): Promise<{ success?: boolean; error?: string; message?: string; data?: unknown }> {
+    try {
+        return await res.json();
+    } catch {
+        return { success: false, error: `Server membalas dengan status ${res.status}.` };
+    }
+}
+
+/** Peran yang dikelola halaman ini; Guru/Pengawas dikelola di tempat lain dan dipertahankan. */
+const MANAGED_ROLES = ['Admin', 'Proktor', 'Siswa'];
+
 export default function AdminUsersPage() {
     const [users, setUsers] = useState<ManagedUser[]>([]);
     const [loading, setLoading] = useState(true);
@@ -50,7 +62,7 @@ export default function AdminUsersPage() {
         name: '',
         email: '',
         password: '',
-        role: 'Admin',
+        role: 'Siswa',
         schoolName: '',
         className: '',
     });
@@ -61,11 +73,11 @@ export default function AdminUsersPage() {
         setLoading(true);
         try {
             const res = await fetch('/api/auth/admin/users');
-            const json = await res.json();
+            const json = await readJson(res);
             if (!res.ok || !json.success) {
                 throw new Error(json.error || 'Gagal memuat daftar pengguna.');
             }
-            setUsers(json.data || []);
+            setUsers((json.data as ManagedUser[]) || []);
         } catch (err) {
             setToastMsg({ type: 'error', text: (err as Error).message });
         } finally {
@@ -86,7 +98,7 @@ export default function AdminUsersPage() {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ role: newRole }),
             });
-            const json = await res.json();
+            const json = await readJson(res);
             if (!res.ok || !json.success) {
                 throw new Error(json.error || 'Gagal mengubah peran pengguna.');
             }
@@ -110,7 +122,7 @@ export default function AdminUsersPage() {
             const res = await fetch(`/api/auth/admin/users/${encodeURIComponent(userId)}`, {
                 method: 'DELETE',
             });
-            const json = await res.json();
+            const json = await readJson(res);
             if (!res.ok || !json.success) {
                 throw new Error(json.error || 'Gagal menghapus pengguna.');
             }
@@ -125,6 +137,10 @@ export default function AdminUsersPage() {
 
     const handleAddUserSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        if (addForm.password.length < 8) {
+            setAddError('Password minimal 8 karakter.');
+            return;
+        }
         setAddLoading(true);
         setAddError(null);
 
@@ -134,7 +150,7 @@ export default function AdminUsersPage() {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(addForm),
             });
-            const json = await res.json();
+            const json = await readJson(res);
             if (!res.ok || !json.success) {
                 throw new Error(json.error || 'Gagal membuat pengguna baru.');
             }
@@ -144,7 +160,7 @@ export default function AdminUsersPage() {
                 name: '',
                 email: '',
                 password: '',
-                role: 'Admin',
+                role: 'Siswa',
                 schoolName: '',
                 className: '',
             });
@@ -171,6 +187,8 @@ export default function AdminUsersPage() {
         if (u.isSuperadmin) return 'Superadmin';
         if (u.isPlatformAdmin || u.roles.some(r => r.toUpperCase() === 'ADMIN')) return 'Admin';
         if (u.roles.some(r => r.toUpperCase() === 'PROKTOR')) return 'Proktor';
+        if (u.roles.some(r => r.toUpperCase() === 'GURU')) return 'Guru';
+        if (u.roles.some(r => r.toUpperCase() === 'PENGAWAS')) return 'Pengawas';
         return 'Siswa';
     };
 
@@ -186,6 +204,18 @@ export default function AdminUsersPage() {
                 return (
                     <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-blue-500/10 text-blue-600 border border-blue-500/20">
                         <Shield className="w-3.5 h-3.5" /> Admin
+                    </span>
+                );
+            case 'GURU':
+                return (
+                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-500/10 text-emerald-700 border border-emerald-500/20">
+                        <User className="w-3.5 h-3.5" /> Guru
+                    </span>
+                );
+            case 'PENGAWAS':
+                return (
+                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-sky-500/10 text-sky-700 border border-sky-500/20">
+                        <Layers className="w-3.5 h-3.5" /> Pengawas
                     </span>
                 );
             case 'PROKTOR':
@@ -377,6 +407,11 @@ export default function AdminUsersPage() {
 
                                                 <td className="py-4 px-6">
                                                     {getRoleBadge(primaryRole)}
+                                                    {u.roles.length > 1 && (
+                                                        <div className="mt-1 text-[10px] text-slate-500">
+                                                            Peran: {u.roles.join(', ')}
+                                                        </div>
+                                                    )}
                                                 </td>
 
                                                 <td className="py-4 px-6 text-xs text-slate-500">
@@ -397,10 +432,20 @@ export default function AdminUsersPage() {
                                                             {isActionLoading && <div className="w-4 h-4 border-2 border-blue-600/30 border-t-blue-600 rounded-full animate-spin" />}
                                                             <select
                                                                 disabled={isActionLoading}
-                                                                value={primaryRole === 'Superadmin' ? 'Admin' : primaryRole}
-                                                                onChange={(e) => handleRoleChange(u.id, u.email, e.target.value)}
+                                                                value={primaryRole === 'Superadmin' ? 'Admin' : MANAGED_ROLES.includes(primaryRole) ? primaryRole : ''}
+                                                                onChange={(e) => {
+                                                                    const next = e.target.value;
+                                                                    if (next === 'Siswa' && !MANAGED_ROLES.includes(primaryRole)
+                                                                        && !confirm(`Jadikan ${u.email} Siswa? Peran ${primaryRole} miliknya akan dicabut.`)) {
+                                                                        return;
+                                                                    }
+                                                                    void handleRoleChange(u.id, u.email, next);
+                                                                }}
                                                                 className="bg-white border border-slate-300 hover:border-blue-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 text-slate-700 font-medium text-xs rounded-xl px-3 py-1.5 outline-none transition-all cursor-pointer shadow-sm"
                                                             >
+                                                                {!MANAGED_ROLES.includes(primaryRole) && primaryRole !== 'Superadmin' && (
+                                                                    <option value="" disabled>{primaryRole} (pilih untuk mengubah)</option>
+                                                                )}
                                                                 <option value="Admin">Admin</option>
                                                                 <option value="Proktor">Proktor</option>
                                                                 <option value="Siswa">Siswa</option>
@@ -494,13 +539,16 @@ export default function AdminUsersPage() {
 
                             <div>
                                 <label className="block text-xs font-semibold text-slate-600 mb-1">
-                                    Password <span className="text-slate-400 font-normal">(Default: Admin123!)</span>
+                                    Password <span className="text-red-500">*</span> <span className="text-slate-400 font-normal">(minimal 8 karakter)</span>
                                 </label>
                                 <div className="relative">
                                     <Lock className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
                                     <input
                                         type="password"
-                                        placeholder="Admin123!"
+                                        required
+                                        minLength={8}
+                                        autoComplete="new-password"
+                                        placeholder="Minimal 8 karakter"
                                         value={addForm.password}
                                         onChange={(e) => setAddForm({ ...addForm, password: e.target.value })}
                                         className="w-full bg-slate-50 border border-slate-200 focus:border-blue-500 focus:bg-white text-slate-900 text-xs rounded-xl py-2 pl-9 pr-3 outline-none"
@@ -517,7 +565,7 @@ export default function AdminUsersPage() {
                                     onChange={(e) => setAddForm({ ...addForm, role: e.target.value })}
                                     className="w-full bg-slate-50 border border-slate-200 focus:border-blue-500 focus:bg-white text-slate-900 text-xs rounded-xl py-2 px-3 outline-none cursor-pointer"
                                 >
-                                    <option value="Admin">Admin (Hak Akses Penuh Kelola Ujian & Sekolah)</option>
+                                    <option value="Admin">Admin (khusus Superadmin) — Hak Akses Penuh Kelola Ujian & Sekolah</option>
                                     <option value="Proktor">Proktor (Pengawas & Penyelenggara Ujian)</option>
                                     <option value="Siswa">Siswa (Peserta Ujian)</option>
                                 </select>

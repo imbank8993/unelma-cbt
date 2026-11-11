@@ -1,10 +1,11 @@
-import { Body, Delete, ForbiddenException, Param, Controller, Get, HttpCode, HttpStatus, Patch, Post, Req, UnauthorizedException, UseGuards } from '@nestjs/common';
+import { Body, Delete, ForbiddenException, Param, ParseUUIDPipe, Controller, Get, HttpCode, HttpStatus, Patch, Post, Req, UnauthorizedException, UseGuards } from '@nestjs/common';
 import { Request } from 'express';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import type { AuthUser } from '@acca-cbt/shared';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
 import { AuthService } from './auth.service';
-import { LoginDto, SsoTicketDto, SignupDto } from './dto/login.dto';
+import { GoogleLoginDto, LoginDto, SsoTicketDto, SignupDto } from './dto/login.dto';
+import { AdminCreateUserDto, AdminUpdateRoleDto } from './dto/admin-users.dto';
 import { JwtAuthGuard } from './jwt-auth.guard';
 import { RateLimiter, tooManyRequests } from '../common/rate-limit';
 
@@ -111,7 +112,7 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Masuk atau mendaftar dengan akun Google' })
   async googleLogin(
-    @Body() body: { email: string; name: string; avatarUrl?: string; googleId?: string; schoolName?: string; className?: string },
+    @Body() body: GoogleLoginDto,
     @Req() req: Request,
   ) {
     const ip = req.ip;
@@ -136,7 +137,7 @@ export class AuthController {
   @ApiOperation({ summary: 'Buat akun pengguna atau admin baru langsung oleh Superadmin / Admin' })
   async createUserByAdmin(
     @CurrentUser() user: AuthUser,
-    @Body() body: { email: string; name: string; password?: string; role: string; schoolName?: string; className?: string },
+    @Body() body: AdminCreateUserDto,
   ) {
     if (!user.isPlatformAdmin && !user.roles.includes('SUPERADMIN') && !user.roles.includes('ADMIN')) {
       throw new ForbiddenException('Hanya Superadmin atau Admin yang berhak membuat akun pengguna.');
@@ -150,8 +151,8 @@ export class AuthController {
   @ApiOperation({ summary: 'Ubah atau tunjuk peran pengguna oleh Superadmin / Admin' })
   async updateUserRole(
     @CurrentUser() user: AuthUser,
-    @Param('userId') targetUserId: string,
-    @Body() body: { role: string },
+    @Param('userId', ParseUUIDPipe) targetUserId: string,
+    @Body() body: AdminUpdateRoleDto,
   ) {
     if (!user.isPlatformAdmin && !user.roles.includes('SUPERADMIN') && !user.roles.includes('ADMIN')) {
       throw new ForbiddenException('Hanya Superadmin atau Admin yang berhak menunjuk peran pengguna.');
@@ -165,7 +166,7 @@ export class AuthController {
   @ApiOperation({ summary: 'Hapus pengguna oleh Superadmin / Admin' })
   async deleteUser(
     @CurrentUser() user: AuthUser,
-    @Param('userId') targetUserId: string,
+    @Param('userId', ParseUUIDPipe) targetUserId: string,
   ) {
     if (!user.isPlatformAdmin && !user.roles.includes('SUPERADMIN') && !user.roles.includes('ADMIN')) {
       throw new ForbiddenException('Hanya Superadmin atau Admin yang berhak menghapus pengguna.');

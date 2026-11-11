@@ -1,4 +1,5 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
+import type { AuthUser } from '@acca-cbt/shared';
 import { PrismaService } from '../prisma/prisma.service';
 import {
   ProcessPayoutDto,
@@ -25,6 +26,68 @@ const DEFAULT_CONFIG: CommissionConfig = {
   min_material_token_price: 1,
 };
 
+/** Peran yang boleh mendaftarkan rekening penerima komisi (pembuat konten). */
+const CONTENT_CREATOR_ROLES = ['PROKTOR', 'GURU', 'ADMIN', 'SUPERADMIN'];
+
+type RawClient = Pick<PrismaService, '$queryRawUnsafe'>;
+
+/**
+ * Pendapatan pembuat konten dihitung dari token yang BENAR-BENAR dipotong saat
+ * siswa membuka item (`token_transactions` jenis `usage`), bukan dari harga item
+ * saat ini. Dengan begitu menaikkan harga setelah siswa membuka item tidak
+ * menggelembungkan komisi, dan menggratiskan item tidak menghapus komisi sah.
+ *
+ * `$1` opsional: batasi ke satu pemilik konten.
+ */
+const EARNINGS_SQL = `
+  SELECT owner_id,
+         COUNT(*)::int AS unlock_count,
+         COALESCE(SUM(tokens), 0)::int AS gross_tokens
+  FROM (
+    SELECT e.created_by AS owner_id, -tt.amount AS tokens
+    FROM public.token_transactions tt
+    JOIN public.cbt_exams e ON tt.reference_id = e.id::text
+    WHERE tt.type = 'usage' AND tt.amount < 0
+    UNION ALL
+    SELECT m.created_by AS owner_id, -tt.amount AS tokens
+    FROM public.token_transactions tt
+    JOIN public.cbt_learning_materials m ON tt.reference_id = m.id::text
+    WHERE tt.type = 'usage' AND tt.amount < 0
+  ) revenue
+  WHERE owner_id IS NOT NULL AND ($1::uuid IS NULL OR owner_id = $1::uuid)
+  GROUP BY owner_id
+`;
+
+const PAID_SQL = `
+  SELECT proctor_id,
+         COALESCE(SUM(proctor_tokens), 0)::int AS paid_tokens,
+         COALESCE(SUM(total_idr), 0)::float8 AS paid_idr
+  FROM public.proctor_payouts
+  WHERE status = 'paid' AND ($1::uuid IS NULL OR proctor_id = $1::uuid)
+  GROUP BY proctor_id
+`;
+
+/** Hanya tautan http(s) yang disimpan: nilainya dipakai sebagai <iframe src>/<a href> di halaman proktor. */
+export function normalizeProofUrl(raw: unknown): string {
+  const value = typeof raw === 'string' ? raw.trim() : '';
+  try {
+    const url = new URL(value);
+    if ((url.protocol === 'https:' || url.protocol === 'http:') && url.hostname) return url.href;
+  } catch {
+    /* jatuh ke error di bawah */
+  }
+  throw new BadRequestException('Tautan bukti transfer harus berupa URL http(s) yang valid.');
+}
+
+export function proctorShare(grossTokens: number, config: CommissionConfig): number {
+  return Math.floor((Math.max(0, grossTokens) * config.proctor_share_pct) / 100);
+}
+
+function isUniqueViolation(error: unknown): boolean {
+  const e = error as { code?: string; meta?: { code?: string }; message?: string };
+  return e?.code === '23505' || e?.meta?.code === '23505' || /23505|duplicate key|unique constraint/i.test(String(e?.message || ''));
+}
+
 @Injectable()
 export class CommissionsService {
   constructor(private readonly prisma: PrismaService) {}
@@ -40,7 +103,7 @@ export class CommissionsService {
     if (!rows.length || !rows[0].value) {
       return DEFAULT_CONFIG;
     }
-    const val = rows[0].value;
+    const val = typeof rows[0].value === 'string' ? JSON.parse(rows[0].value) : rows[0].value;
     return {
       admin_share_pct: Number(val.admin_share_pct ?? DEFAULT_CONFIG.admin_share_pct),
       proctor_share_pct: Number(val.proctor_share_pct ?? DEFAULT_CONFIG.proctor_share_pct),
@@ -55,33 +118,56 @@ export class CommissionsService {
     if (dto.admin_share_pct + dto.proctor_share_pct !== 100) {
       throw new BadRequestException('Total persentase komisi Admin dan Proktor harus bernilai 100%');
     }
+    const config: CommissionConfig = {
+      admin_share_pct: dto.admin_share_pct,
+      proctor_share_pct: dto.proctor_share_pct,
+      token_idr_rate: dto.token_idr_rate,
+      min_withdrawal_tokens: dto.min_withdrawal_tokens,
+      min_exam_token_price: dto.min_exam_token_price,
+      min_material_token_price: dto.min_material_token_price,
+    };
 
-    const json = JSON.stringify(dto);
     await this.prisma.$executeRawUnsafe(`
       INSERT INTO public.acca_settings (key, value, updated_at)
       VALUES ('commission_config', $1::jsonb, NOW())
       ON CONFLICT (key) DO UPDATE
       SET value = $1::jsonb, updated_at = NOW()
-    `, json);
+    `, JSON.stringify(config));
 
-    return { success: true, config: dto };
+    return { success: true, config };
   }
 
   // ─────────────────────────────────────────────────────────────
   // 2. ADMIN SUMMARY & PAYOUT MANAGEMENT
   // ─────────────────────────────────────────────────────────────
 
+  private async earningsFor(db: RawClient, ownerId: string) {
+    const [earned] = await db.$queryRawUnsafe<any[]>(EARNINGS_SQL, ownerId);
+    const [paid] = await db.$queryRawUnsafe<any[]>(PAID_SQL, ownerId);
+    return {
+      unlocks: Number(earned?.unlock_count || 0),
+      grossTokens: Number(earned?.gross_tokens || 0),
+      paidTokens: Number(paid?.paid_tokens || 0),
+      paidIdr: Number(paid?.paid_idr || 0),
+    };
+  }
+
   async getAdminSummary() {
     const config = await this.getConfig();
 
-    // 1. Ambil daftar seluruh proktor (baik dari proctor_profiles, user_roles, maupun yang membuat ujian/materi)
-    const proctors = await this.prisma.$queryRawUnsafe<any[]>(`
-      SELECT DISTINCT
-        p.id as user_id,
+    // Satu query untuk seluruh daftar (sebelumnya 3 query per proktor).
+    // Yang tampil: pemegang peran Proktor, pemilik profil rekening, dan siapa
+    // pun yang kontennya sudah menghasilkan token (mis. Guru).
+    const rows = await this.prisma.$queryRawUnsafe<any[]>(`
+      WITH earnings AS (${EARNINGS_SQL.replace('$1::uuid IS NULL OR owner_id = $1::uuid', 'TRUE')}),
+           paid AS (${PAID_SQL.replace('$1::uuid IS NULL OR proctor_id = $1::uuid', 'TRUE')})
+      SELECT
+        p.id AS user_id,
         p.email,
         p.full_name,
-        prof.id as profile_id,
-        prof.nik,
+        prof.id AS profile_id,
+        CASE WHEN prof.nik IS NULL THEN NULL
+             ELSE repeat('•', GREATEST(length(prof.nik) - 4, 0)) || right(prof.nik, 4) END AS nik,
         prof.whatsapp,
         prof.bank1_name,
         prof.bank1_account_name,
@@ -89,134 +175,120 @@ export class CommissionsService {
         prof.bank2_name,
         prof.bank2_account_name,
         prof.bank2_account_number,
-        COALESCE(prof.can_create_exams, true) as can_create_exams,
-        COALESCE(prof.can_create_materials, true) as can_create_materials,
-        COALESCE(prof.status, 'approved') as profile_status
+        COALESCE(prof.can_create_exams, true) AS can_create_exams,
+        COALESCE(prof.can_create_materials, true) AS can_create_materials,
+        COALESCE(prof.status, 'approved') AS profile_status,
+        COALESCE(earnings.unlock_count, 0)::int AS total_unlocks,
+        COALESCE(earnings.gross_tokens, 0)::int AS gross_tokens,
+        COALESCE(paid.paid_tokens, 0)::int AS paid_tokens,
+        COALESCE(paid.paid_idr, 0)::float8 AS paid_idr
       FROM public.cbt_profiles p
-      LEFT JOIN public.cbt_user_roles ur ON ur.user_id = p.id
-      LEFT JOIN public.cbt_roles r ON r.id = ur.role_id
       LEFT JOIN public.proctor_profiles prof ON prof.user_id = p.id
-      WHERE lower(r.name) = 'proktor' OR prof.id IS NOT NULL
-      ORDER BY p.full_name ASC
+      LEFT JOIN earnings ON earnings.owner_id = p.id
+      LEFT JOIN paid ON paid.proctor_id = p.id
+      WHERE prof.id IS NOT NULL
+         OR earnings.owner_id IS NOT NULL
+         OR EXISTS (
+           SELECT 1
+           FROM public.cbt_organization_members om
+           JOIN public.cbt_member_roles mr ON mr.organization_member_id = om.id
+           JOIN public.cbt_roles r ON r.id = mr.role_id
+           WHERE om.user_id = p.id AND lower(r.name) = 'proktor'
+         )
+      ORDER BY p.full_name ASC NULLS LAST
     `);
 
-    // 2. Hitung statistik komisi untuk masing-masing proktor
-    const summaryList = await Promise.all(
-      proctors.map(async (proc) => {
-        // Hitung token dari ujian yang dibuat proktor ini
-        const examStats = await this.prisma.$queryRawUnsafe<any[]>(`
-          SELECT 
-            COUNT(ui.id)::int as unlock_count,
-            COALESCE(SUM(e.token_price), 0)::int as total_exam_tokens
-          FROM public.cbt_exams e
-          JOIN public.unlocked_items ui ON ui.item_id = e.id::text AND ui.item_type = 'exam'
-          WHERE e.created_by = $1::uuid AND e.is_paid = true
-        `, proc.user_id);
+    const proctors = rows.map((row) => {
+      const grossTokens = Number(row.gross_tokens || 0);
+      const earned = proctorShare(grossTokens, config);
+      const paidTokens = Number(row.paid_tokens || 0);
+      const pendingTokens = Math.max(0, earned - paidTokens);
+      const isEligible = pendingTokens >= config.min_withdrawal_tokens;
+      return {
+        ...row,
+        total_unlocks: Number(row.total_unlocks || 0),
+        gross_tokens: grossTokens,
+        proctor_tokens_earned: earned,
+        total_idr_earned: earned * config.token_idr_rate,
+        paid_tokens: paidTokens,
+        paid_idr: Number(row.paid_idr || 0),
+        pending_tokens: pendingTokens,
+        pending_idr: pendingTokens * config.token_idr_rate,
+        status: isEligible ? 'eligible' : 'accumulating',
+        is_eligible: isEligible,
+      };
+    });
 
-        // Hitung token dari bahan ajar yang dibuat proktor ini
-        const matStats = await this.prisma.$queryRawUnsafe<any[]>(`
-          SELECT 
-            COUNT(ui.id)::int as unlock_count,
-            COALESCE(SUM(m.token_price), 0)::int as total_mat_tokens
-          FROM public.cbt_learning_materials m
-          JOIN public.unlocked_items ui ON ui.item_id = m.id::text AND ui.item_type = 'material'
-          WHERE m.created_by = $1::uuid AND m.is_paid = true
-        `, proc.user_id);
-
-        const totalUnlocks = (examStats[0]?.unlock_count || 0) + (matStats[0]?.unlock_count || 0);
-        const grossTokens = (examStats[0]?.total_exam_tokens || 0) + (matStats[0]?.total_mat_tokens || 0);
-        
-        // Komisi proktor sesuai persentase yang disetel (misal 60%)
-        const proctorTokensEarned = Math.floor((grossTokens * config.proctor_share_pct) / 100);
-        const totalIdrEarned = proctorTokensEarned * config.token_idr_rate;
-
-        // Hitung token yang sudah dicairkan
-        const payoutStats = await this.prisma.$queryRawUnsafe<any[]>(`
-          SELECT 
-            COALESCE(SUM(proctor_tokens), 0)::int as paid_tokens,
-            COALESCE(SUM(total_idr), 0)::numeric as paid_idr
-          FROM public.proctor_payouts
-          WHERE proctor_id = $1::uuid AND status = 'paid'
-        `, proc.user_id);
-
-        const paidTokens = payoutStats[0]?.paid_tokens || 0;
-        const paidIdr = Number(payoutStats[0]?.paid_idr || 0);
-        const pendingTokens = Math.max(0, proctorTokensEarned - paidTokens);
-        const pendingIdr = pendingTokens * config.token_idr_rate;
-
-        // Status pencairan: jika token belum cair >= ambang batas (misal 200), maka 'eligible' (bisa dicairkan)
-        const isEligible = pendingTokens >= config.min_withdrawal_tokens;
-        const status = isEligible ? 'eligible' : 'accumulating';
-
-        return {
-          ...proc,
-          total_unlocks: totalUnlocks,
-          gross_tokens: grossTokens,
-          proctor_tokens_earned: proctorTokensEarned,
-          total_idr_earned: totalIdrEarned,
-          paid_tokens: paidTokens,
-          paid_idr: paidIdr,
-          pending_tokens: pendingTokens,
-          pending_idr: pendingIdr,
-          status, // 'eligible' (>= 200) atau 'accumulating' (< 200)
-          is_eligible: isEligible,
-        };
-      })
-    );
-
-    return {
-      config,
-      proctors: summaryList,
-    };
+    return { config, proctors };
   }
 
+  /**
+   * Catat pencairan. Jumlahnya DIHITUNG SERVER dari saldo yang belum dicairkan
+   * (bukan dari angka kiriman browser), di dalam transaksi yang dikunci per
+   * proktor sehingga klik ganda tidak membuat dua pencairan. Setiap pencairan
+   * adalah baris baru — tidak pernah menimpa pencairan sebelumnya.
+   */
   async processPayout(adminUserId: string, dto: ProcessPayoutDto) {
+    const proofUrl = normalizeProofUrl(dto.transfer_proof_url);
     const config = await this.getConfig();
-    if (dto.proctor_tokens < config.min_withdrawal_tokens) {
-      throw new BadRequestException(
-        `Penarikan belum memenuhi batas minimal ${config.min_withdrawal_tokens} token.`
-      );
+
+    try {
+      return await this.prisma.$transaction(async (tx) => {
+        await tx.$queryRawUnsafe(
+          `SELECT 1 AS locked FROM (SELECT pg_advisory_xact_lock(hashtext($1))) l`,
+          `proctor_payout:${dto.proctor_id}`,
+        );
+
+        const owner = await tx.$queryRawUnsafe<any[]>(
+          `SELECT id FROM public.cbt_profiles WHERE id = $1::uuid`,
+          dto.proctor_id,
+        );
+        if (!owner.length) throw new NotFoundException('Proktor tidak ditemukan.');
+
+        const earnings = await this.earningsFor(tx, dto.proctor_id);
+        const earned = proctorShare(earnings.grossTokens, config);
+        const pendingTokens = Math.max(0, earned - earnings.paidTokens);
+        if (pendingTokens < config.min_withdrawal_tokens) {
+          throw new BadRequestException(
+            `Saldo komisi yang belum dicairkan (${pendingTokens} token) belum memenuhi batas minimal ${config.min_withdrawal_tokens} token.`,
+          );
+        }
+
+        const rows = await tx.$queryRawUnsafe<any[]>(`
+          INSERT INTO public.proctor_payouts (
+            proctor_id, period_month, total_tokens, proctor_share_pct,
+            proctor_tokens, rate_per_token_idr, total_idr, status,
+            transfer_proof_url, notes, paid_at, processed_by, created_at, updated_at
+          )
+          VALUES (
+            $1::uuid, $2, $3, $4,
+            $5, $6, $7, 'paid',
+            $8, $9, NOW(), $10::uuid, NOW(), NOW()
+          )
+          RETURNING *
+        `,
+          dto.proctor_id,
+          dto.period_month,
+          earnings.grossTokens,
+          config.proctor_share_pct,
+          pendingTokens,
+          config.token_idr_rate,
+          pendingTokens * config.token_idr_rate,
+          proofUrl,
+          (dto.notes || '').trim(),
+          adminUserId,
+        );
+
+        return { success: true, payout: rows[0] };
+      });
+    } catch (error) {
+      if (isUniqueViolation(error)) {
+        throw new BadRequestException(
+          'Proktor ini sudah dicairkan pada periode tersebut. Jalankan migrasi 20261111_03_proctor_payouts_multi.sql agar pencairan kedua dalam bulan yang sama bisa dicatat, atau pilih periode lain.',
+        );
+      }
+      throw error;
     }
-
-    const rows = await this.prisma.$queryRawUnsafe<any[]>(`
-      INSERT INTO public.proctor_payouts (
-        proctor_id, period_month, total_tokens, proctor_share_pct,
-        proctor_tokens, rate_per_token_idr, total_idr, status,
-        transfer_proof_url, notes, paid_at, processed_by, created_at, updated_at
-      )
-      VALUES (
-        $1::uuid, $2, $3, $4,
-        $5, $6, $7, 'paid',
-        $8, $9, NOW(), $10::uuid, NOW(), NOW()
-      )
-      ON CONFLICT (proctor_id, period_month) DO UPDATE
-      SET
-        total_tokens = $3,
-        proctor_share_pct = $4,
-        proctor_tokens = $5,
-        rate_per_token_idr = $6,
-        total_idr = $7,
-        status = 'paid',
-        transfer_proof_url = $8,
-        notes = $9,
-        paid_at = NOW(),
-        processed_by = $10::uuid,
-        updated_at = NOW()
-      RETURNING *
-    `,
-      dto.proctor_id,
-      dto.period_month,
-      dto.total_tokens,
-      config.proctor_share_pct,
-      dto.proctor_tokens,
-      config.token_idr_rate,
-      dto.total_idr,
-      dto.transfer_proof_url,
-      dto.notes || '',
-      adminUserId
-    );
-
-    return { success: true, payout: rows[0] };
   }
 
   // ─────────────────────────────────────────────────────────────
@@ -226,96 +298,60 @@ export class CommissionsService {
   async getProctorMySummary(userId: string) {
     const config = await this.getConfig();
 
-    // Profil proktor
     const profiles = await this.prisma.$queryRawUnsafe<any[]>(`
       SELECT * FROM public.proctor_profiles WHERE user_id = $1::uuid LIMIT 1
     `, userId);
     const profile = profiles[0] || null;
 
-    // Rincian per ujian
-    const exams = await this.prisma.$queryRawUnsafe<any[]>(`
-      SELECT 
-        e.id,
-        e.title,
-        e.token_price,
-        COUNT(ui.id)::int as total_students,
-        (COUNT(ui.id) * e.token_price)::int as total_tokens,
-        FLOOR((COUNT(ui.id) * e.token_price * $2) / 100)::int as proctor_tokens,
-        (FLOOR((COUNT(ui.id) * e.token_price * $2) / 100) * $3)::numeric as proctor_idr
-      FROM public.cbt_exams e
-      LEFT JOIN public.unlocked_items ui ON ui.item_id = e.id::text AND ui.item_type = 'exam'
-      WHERE e.created_by = $1::uuid AND e.is_paid = true
-      GROUP BY e.id, e.title, e.token_price
-      ORDER BY e.created_at DESC
-    `, userId, config.proctor_share_pct, config.token_idr_rate);
+    // Rincian per item: token yang benar-benar dibayar siswa untuk item itu.
+    const itemSql = (table: string) => `
+      SELECT
+        i.id,
+        i.title,
+        i.token_price,
+        COUNT(DISTINCT tt.user_id)::int AS total_students,
+        COALESCE(SUM(-tt.amount), 0)::int AS total_tokens
+      FROM public.${table} i
+      LEFT JOIN public.token_transactions tt
+        ON tt.reference_id = i.id::text AND tt.type = 'usage' AND tt.amount < 0
+      WHERE i.created_by = $1::uuid AND (i.is_paid = true OR tt.id IS NOT NULL)
+      GROUP BY i.id, i.title, i.token_price, i.created_at
+      ORDER BY i.created_at DESC
+    `;
+    const withShare = (rows: any[]) => rows.map((row) => {
+      const proctorTokens = proctorShare(Number(row.total_tokens || 0), config);
+      return { ...row, proctor_tokens: proctorTokens, proctor_idr: proctorTokens * config.token_idr_rate };
+    });
+    const exams = withShare(await this.prisma.$queryRawUnsafe<any[]>(itemSql('cbt_exams'), userId));
+    const materials = withShare(await this.prisma.$queryRawUnsafe<any[]>(itemSql('cbt_learning_materials'), userId));
 
-    // Rincian per bahan ajar
-    const materials = await this.prisma.$queryRawUnsafe<any[]>(`
-      SELECT 
-        m.id,
-        m.title,
-        m.token_price,
-        COUNT(ui.id)::int as total_students,
-        (COUNT(ui.id) * m.token_price)::int as total_tokens,
-        FLOOR((COUNT(ui.id) * m.token_price * $2) / 100)::int as proctor_tokens,
-        (FLOOR((COUNT(ui.id) * m.token_price * $2) / 100) * $3)::numeric as proctor_idr
-      FROM public.cbt_learning_materials m
-      LEFT JOIN public.unlocked_items ui ON ui.item_id = m.id::text AND ui.item_type = 'material'
-      WHERE m.created_by = $1::uuid AND m.is_paid = true
-      GROUP BY m.id, m.title, m.token_price
-      ORDER BY m.created_at DESC
-    `, userId, config.proctor_share_pct, config.token_idr_rate);
-
-    // Total gross & proctor tokens
-    let grossTokens = 0;
-    let proctorTokensEarned = 0;
-    let totalUnlocks = 0;
-
-    for (const e of exams) {
-      grossTokens += Number(e.total_tokens || 0);
-      proctorTokensEarned += Number(e.proctor_tokens || 0);
-      totalUnlocks += Number(e.total_students || 0);
-    }
-    for (const m of materials) {
-      grossTokens += Number(m.total_tokens || 0);
-      proctorTokensEarned += Number(m.proctor_tokens || 0);
-      totalUnlocks += Number(m.total_students || 0);
-    }
-
-    // Riwayat pencairan
     const payouts = await this.prisma.$queryRawUnsafe<any[]>(`
-      SELECT 
+      SELECT
         p.*,
         adm.full_name as processed_by_name
       FROM public.proctor_payouts p
       LEFT JOIN public.cbt_profiles adm ON adm.id = p.processed_by
       WHERE p.proctor_id = $1::uuid
-      ORDER BY p.period_month DESC
+      ORDER BY p.period_month DESC, p.created_at DESC
     `, userId);
 
-    const paidTokens = payouts
-      .filter((p) => p.status === 'paid')
-      .reduce((sum, p) => sum + Number(p.proctor_tokens || 0), 0);
-    const paidIdr = payouts
-      .filter((p) => p.status === 'paid')
-      .reduce((sum, p) => sum + Number(p.total_idr || 0), 0);
-
-    const pendingTokens = Math.max(0, proctorTokensEarned - paidTokens);
-    const pendingIdr = pendingTokens * config.token_idr_rate;
+    const earnings = await this.earningsFor(this.prisma, userId);
+    const proctorTokensEarned = proctorShare(earnings.grossTokens, config);
+    const pendingTokens = Math.max(0, proctorTokensEarned - earnings.paidTokens);
     const isEligible = pendingTokens >= config.min_withdrawal_tokens;
 
     return {
       config,
       profile,
       summary: {
-        total_unlocks: totalUnlocks,
-        gross_tokens: grossTokens,
+        total_unlocks: earnings.unlocks,
+        gross_tokens: earnings.grossTokens,
         proctor_tokens_earned: proctorTokensEarned,
         total_idr_earned: proctorTokensEarned * config.token_idr_rate,
-        paid_tokens: paidTokens,
-        paid_idr: paidIdr,
+        paid_tokens: earnings.paidTokens,
+        paid_idr: earnings.paidIdr,
         pending_tokens: pendingTokens,
-        pending_idr: pendingIdr,
+        pending_idr: pendingTokens * config.token_idr_rate,
         status: isEligible ? 'eligible' : 'accumulating',
         is_eligible: isEligible,
       },
@@ -325,7 +361,14 @@ export class CommissionsService {
     };
   }
 
-  async registerOrUpdateProfile(userId: string, dto: RegisterProctorDto) {
+  async registerOrUpdateProfile(user: AuthUser, dto: RegisterProctorDto) {
+    const roles = (user.roles || []).map((role) => String(role).toUpperCase());
+    const allowed = user.isPlatformAdmin || user.resolved?.superadmin === true
+      || roles.some((role) => CONTENT_CREATOR_ROLES.includes(role));
+    if (!allowed) {
+      throw new ForbiddenException('Hanya Proktor, Guru, atau Admin yang dapat mendaftarkan rekening penerima komisi.');
+    }
+
     const rows = await this.prisma.$queryRawUnsafe<any[]>(`
       INSERT INTO public.proctor_profiles (
         user_id, full_name, nik, whatsapp, email,
@@ -354,7 +397,7 @@ export class CommissionsService {
         updated_at = NOW()
       RETURNING *
     `,
-      userId,
+      user.id,
       dto.full_name,
       dto.nik,
       dto.whatsapp,
@@ -385,7 +428,7 @@ export class CommissionsService {
       UPDATE public.proctor_profiles
       SET can_create_exams = $1, can_create_materials = $2, status = $3, updated_at = NOW()
       WHERE id = $4::uuid
-      RETURNING *
+      RETURNING id, user_id, can_create_exams, can_create_materials, status
     `, canExams, canMats, status, profileId);
 
     return { success: true, profile: rows[0] };

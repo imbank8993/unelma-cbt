@@ -1,3 +1,4 @@
+import { assertPaidContentAllowed } from '../common/paid-content';
 import { LearningLatexService } from './learning-latex.service';
 import { BadRequestException, ConflictException, ForbiddenException, Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common';
 import type { AuthUser } from '@acca-cbt/shared';
@@ -94,6 +95,13 @@ export class LearningService {
         if (!dto.title.trim()) throw new BadRequestException('Judul wajib diisi.');
         if (row.rendered_pdf_key && (dto.format !== 'latex' || dto.contentHtml !== row.content_html)) throw new BadRequestException('Unggah ulang file TeX untuk mengubah isi dokumen PDF.');
         if (dto.status === 'published' && !dto.contentHtml.trim() && !row.file_key) throw new BadRequestException('Unggah berkas atau isi materi sebelum menerbitkan.');
+        const currentPaid = Boolean((row as any).is_paid);
+        const currentPrice = Number((row as any).token_price ?? 0);
+        const nextPaid = dto.isPaid ?? currentPaid;
+        const nextPrice = dto.tokenPrice ?? currentPrice;
+        if (nextPaid && (!currentPaid || currentPrice !== nextPrice)) {
+            await assertPaidContentAllowed(this.db, row.created_by || user.id, 'material', nextPrice);
+        }
         const { data, error } = await this.db.from('cbt_learning_materials').update({
             cover_data: dto.coverData ?? row.cover_data ?? '',
             subtopic_order: dto.subtopicOrder ?? row.subtopic_order ?? 0,
@@ -103,8 +111,8 @@ export class LearningService {
             content_version: (row.content_version || 1) + (row.content_html !== dto.contentHtml || row.format !== dto.format ? 1 : 0),
             revision: dto.revision + 1, updated_at: new Date().toISOString(),
             published_at: dto.status === 'published' ? (row.published_at || new Date().toISOString()) : null,
-            is_paid: dto.isPaid ?? (row as any).is_paid ?? false,
-            token_price: dto.tokenPrice ?? (row as any).token_price ?? 0,
+            is_paid: nextPaid,
+            token_price: nextPrice,
         }).eq('id', id).eq('organization_id', org).eq('revision', dto.revision).select('*').maybeSingle();
         if (error) throw new InternalServerErrorException('Gagal menyimpan bahan ajar.');
         if (!data) throw new ConflictException('Materi telah berubah di tab lain. Muat ulang sebelum menyimpan.');

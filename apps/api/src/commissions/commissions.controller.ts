@@ -85,6 +85,6 @@ export class CommissionsController {
   @Post('proctor/register')
   @ApiOperation({ summary: 'Pendaftaran dan perbaruan data rekening/NIK proktor' })
   registerProctor(@CurrentUser() user: AuthUser, @Body() dto: RegisterProctorDto) {
-    return this.commissions.registerOrUpdateProfile(user.id, dto);
+    return this.commissions.registerOrUpdateProfile(user, dto);
   }
 }

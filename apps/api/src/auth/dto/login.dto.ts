@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsNotEmpty, IsOptional, IsString } from 'class-validator';
+import { IsNotEmpty, IsOptional, IsString, MaxLength } from 'class-validator';
 
 /**
  * Metadata klien yang diteruskan oleh proxy Next.js. NestJS berada di belakang
@@ -65,4 +65,30 @@ export class SignupDto extends ClientMetaDto {
   @IsOptional()
   @IsString()
   avatarUrl?: string;
+
+  @ApiPropertyOptional({ description: 'ID token Google (wajib bila mendaftar tanpa password)' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(4096)
+  credential?: string;
+}
+
+export class GoogleLoginDto extends ClientMetaDto {
+  @ApiProperty({ description: 'ID token dari Google Identity Services (response.credential)' })
+  @IsString()
+  @IsNotEmpty({ message: 'Kredensial Google wajib disertakan.' })
+  @MaxLength(4096)
+  credential!: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  @MaxLength(200)
+  schoolName?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  @MaxLength(50)
+  className?: string;
 }

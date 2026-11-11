@@ -24,6 +24,20 @@ import {
     type ProctorPayout
 } from '@/lib/api/commissions';
 
+/**
+ * Bukti transfer dipakai sebagai <iframe src>/<a href>: hanya http(s) yang boleh,
+ * agar tautan `javascript:` tidak bisa menjalankan skrip di sesi proktor.
+ */
+function safeProofUrl(raw: string | null | undefined): string | null {
+    if (!raw) return null;
+    try {
+        const url = new URL(raw);
+        return url.protocol === 'https:' || url.protocol === 'http:' ? url.href : null;
+    } catch {
+        return null;
+    }
+}
+
 export default function ProctorCommissionsPage() {
     const [data, setData] = useState<ProctorMySummaryResponse | null>(null);
     const [loading, setLoading] = useState(true);
@@ -385,10 +399,10 @@ export default function ProctorCommissionsPage() {
                                             </span>
                                         </td>
                                         <td className="py-3 px-4 text-center">
-                                            {p.transfer_proof_url ? (
+                                            {safeProofUrl(p.transfer_proof_url) ? (
                                                 <button
                                                     type="button"
-                                                    onClick={() => setViewProofUrl(p.transfer_proof_url!)}
+                                                    onClick={() => setViewProofUrl(safeProofUrl(p.transfer_proof_url))}
                                                     className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-indigo-50 text-indigo-700 hover:bg-indigo-100 font-bold text-xs transition-colors"
                                                 >
                                                     <Eye size={12} />

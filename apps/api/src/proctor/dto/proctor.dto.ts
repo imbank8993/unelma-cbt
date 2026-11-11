@@ -180,6 +180,7 @@ class ExamFieldsDto {
     @IsOptional()
     @IsInt()
     @Min(0)
+    @Max(10_000)
     tokenPrice?: number;
 }
 

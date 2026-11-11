@@ -7,11 +7,13 @@ const TWELVE_HOURS = 12 * 60 * 60;
 export async function POST(request: NextRequest) {
     try {
         const body = await request.json().catch(() => ({}));
-        const { email, name, avatarUrl, googleId, schoolName, className } = body;
+        // Hanya ID token Google yang diteruskan; server memverifikasi tanda
+        // tangannya dan mengambil email dari token, bukan dari isi permintaan.
+        const { credential, schoolName, className } = body;
 
-        if (!email) {
+        if (typeof credential !== 'string' || !credential) {
             return NextResponse.json(
-                { success: false, error: 'Email akun Google wajib disertakan.' },
+                { success: false, error: 'Kredensial Google wajib disertakan. Silakan masuk ulang dengan Google.' },
                 { status: 400 },
             );
         }
@@ -23,7 +25,7 @@ export async function POST(request: NextRequest) {
             message?: string;
         }>('/auth/google', {
             method: 'POST',
-            body: JSON.stringify({ email, name: name || 'Pengguna Google', avatarUrl, googleId, schoolName, className }),
+            body: JSON.stringify({ credential, schoolName, className }),
         });
 
         if (status !== 200 || !resBody?.access_token) {

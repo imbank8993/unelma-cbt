@@ -23,7 +23,7 @@ export default function LandingHero({ currentUser }: LandingHeroProps) {
         'Autentikasi akun Google resmi — akses cepat, aman, tanpa perlu kata sandi terpisah.',
     ];
 
-    const handleGoogleAuth = async (googleEmail: string, googleName: string, avatarUrl?: string) => {
+    const handleGoogleAuth = async (credential: string) => {
         setLoading(true);
         setErrorMsg(null);
         try {
@@ -31,9 +31,7 @@ export default function LandingHero({ currentUser }: LandingHeroProps) {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    email: googleEmail,
-                    name: googleName,
-                    avatarUrl: avatarUrl || `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(googleName)}`,
+                    credential,
                 }),
             });
 
@@ -58,16 +56,8 @@ export default function LandingHero({ currentUser }: LandingHeroProps) {
         try {
             const token = response.credential;
             if (!token) throw new Error('Token Google tidak ditemukan.');
-            const base64Url = token.split('.')[1];
-            const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-            const jsonPayload = decodeURIComponent(
-                atob(base64)
-                    .split('')
-                    .map((c) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
-                    .join('')
-            );
-            const payload = JSON.parse(jsonPayload);
-            await handleGoogleAuth(payload.email, payload.name, payload.picture);
+            // Token dikirim utuh; server yang memverifikasi dan membaca isinya.
+            await handleGoogleAuth(token);
         } catch {
             setErrorMsg('Gagal memproses autentikasi akun Google.');
             setLoading(false);

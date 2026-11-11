@@ -6,7 +6,7 @@ const TWELVE_HOURS = 12 * 60 * 60;
 
 export async function POST(request: NextRequest) {
     const body = await request.json().catch(() => ({}));
-    const { email, name, schoolName, password, avatarUrl } = body;
+    const { email, name, schoolName, password, avatarUrl, credential } = body;
 
     const forwarded = request.headers.get('x-forwarded-for');
     const ipAddress = forwarded?.split(',')[0]?.trim() || request.headers.get('x-real-ip') || undefined;
@@ -32,6 +32,7 @@ export async function POST(request: NextRequest) {
             schoolName,
             password: password || undefined,
             avatarUrl: avatarUrl || undefined,
+            credential: typeof credential === 'string' && credential ? credential : undefined,
             ipAddress,
             userAgent,
         }),

@@ -10,6 +10,7 @@ import { AuthUsersRepository } from './auth-users.repository';
 import { LoginHistoryService } from './login-history.service';
 import { CbtRolesService } from './cbt-roles.service';
 import { SingleSchoolService } from './single-school.service';
+import { verifyGoogleIdToken } from './google-id-token';
 
 /** Peran sekolah yang disamakan persis dengan isi tiket SSO. */
 const SSO_SYNCED_ROLES = ['ADMIN', 'PROKTOR', 'GURU', 'PENGAWAS', 'SISWA'] as const;
@@ -397,14 +398,20 @@ export class AuthService {
 
 
   async loginWithGoogle(
-    payload: { email: string; name: string; avatarUrl?: string | null; googleId?: string; schoolName?: string; className?: string },
+    body: { credential: string; schoolName?: string; className?: string },
     ipAddress?: string,
     userAgent?: string,
   ): Promise<LoginResponse> {
-    const normalizedEmail = (payload.email || '').trim().toLowerCase();
-    if (!normalizedEmail) {
-      throw new BadRequestException('Email Google tidak valid.');
-    }
+    // Identitas HANYA dari ID token Google yang terverifikasi, tidak pernah
+    // dari email/nama yang dikirim browser.
+    const google = await verifyGoogleIdToken(body.credential);
+    const normalizedEmail = google.email;
+    const payload = {
+      name: google.name,
+      avatarUrl: google.picture,
+      schoolName: body.schoolName,
+      className: body.className,
+    };
 
     const authUser = await this.authUsers.findOrCreateOAuthUser({
       email: normalizedEmail,
@@ -609,35 +616,69 @@ export class AuthService {
       throw new BadRequestException(`Role ${matchedRole} tidak ditemukan di database.`);
     }
 
-    // Replace roles
-    await this.prisma.$executeRawUnsafe(
-      `DELETE FROM public.cbt_member_roles WHERE organization_member_id = $1::uuid`,
-      (member as any).id,
-    );
-
-    await this.db.from('cbt_member_roles').insert({
-      organization_member_id: (member as any).id,
-      role_id: (roleRow as any).id,
-    });
-
-    if (matchedRole === 'Admin') {
-      await this.prisma.$executeRawUnsafe(
-        `INSERT INTO public.platform_admins (id, email, created_at)
-         VALUES ($1::uuid, $2, now())
-         ON CONFLICT (id) DO NOTHING`,
-        targetUserId,
-        targetUser.email || '',
+    // Ganti peran dalam SATU transaksi: bila penyisipan gagal, peran lama tetap
+    // utuh (sebelumnya pengguna bisa tertinggal tanpa peran sama sekali).
+    // Yang diganti hanya peran yang dikelola halaman ini (Admin/Proktor/Siswa);
+    // peran Guru/Pengawas dipertahankan, kecuali saat diturunkan menjadi Siswa.
+    const replacedRoles = matchedRole === 'Siswa'
+      ? ['admin', 'proktor', 'siswa', 'guru', 'pengawas']
+      : ['admin', 'proktor', 'siswa'];
+    await this.prisma.$transaction(async (tx) => {
+      await tx.$executeRawUnsafe(
+        `DELETE FROM public.cbt_member_roles mr
+         USING public.cbt_roles r
+         WHERE mr.organization_member_id = $1
+           AND r.id = mr.role_id
+           AND lower(r.name) = ANY($2::text[])`,
+        (member as any).id,
+        replacedRoles,
       );
-    } else {
-      if (!isSuperadminEmail(targetUser.email)) {
-        await this.prisma.$executeRawUnsafe(
+      await tx.$executeRawUnsafe(
+        `INSERT INTO public.cbt_member_roles (organization_member_id, role_id)
+         VALUES ($1, $2)
+         ON CONFLICT DO NOTHING`,
+        (member as any).id,
+        (roleRow as any).id,
+      );
+
+      if (matchedRole === 'Admin') {
+        await tx.$executeRawUnsafe(
+          `INSERT INTO public.platform_admins (id, email, created_at)
+           VALUES ($1::uuid, $2, now())
+           ON CONFLICT (id) DO NOTHING`,
+          targetUserId,
+          targetUser.email || '',
+        );
+      } else if (!isSuperadminEmail(targetUser.email)) {
+        await tx.$executeRawUnsafe(
           `DELETE FROM public.platform_admins WHERE id = $1::uuid`,
           targetUserId,
         );
       }
-    }
+    });
 
     return { success: true, message: `Peran ${targetUser.email || 'pengguna'} berhasil diubah menjadi ${matchedRole}.` };
+  }
+
+  /** Jenis catatan keuangan yang melekat pada akun (kosong = aman dihapus). */
+  private async financialFootprint(userId: string): Promise<string[]> {
+    const checks: Array<[string, string]> = [
+      ['saldo token', `SELECT 1 FROM public.cbt_profiles WHERE id = $1::uuid AND COALESCE(token_balance, 0) <> 0`],
+      ['riwayat pembelian token', `SELECT 1 FROM public.payment_transactions WHERE user_id = $1::uuid LIMIT 1`],
+      ['riwayat pemakaian token', `SELECT 1 FROM public.token_transactions WHERE user_id = $1::uuid LIMIT 1`],
+      ['riwayat pencairan komisi', `SELECT 1 FROM public.proctor_payouts WHERE proctor_id = $1::uuid LIMIT 1`],
+    ];
+    const found: string[] = [];
+    for (const [label, sql] of checks) {
+      try {
+        const rows = await this.prisma.$queryRawUnsafe<any[]>(sql, userId);
+        if (rows.length) found.push(label);
+      } catch (error) {
+        // Tabel fitur token/komisi belum dimigrasikan = tidak ada catatannya.
+        if (!/does not exist|42P01|42703/i.test(String((error as Error)?.message || ''))) throw error;
+      }
+    }
+    return found;
   }
 
   async deleteUserByAdmin(
@@ -672,6 +713,16 @@ export class AuthService {
       throw new ForbiddenException('Hanya Superadmin yang berhak menghapus akun Admin.');
     }
 
+    // Akun dengan catatan keuangan (saldo/riwayat token, pembayaran, komisi)
+    // tidak dihapus permanen: penghapusan berantai akan menghilangkan atau
+    // memutus catatan itu dari pemiliknya.
+    const financial = await this.financialFootprint(targetUserId);
+    if (financial.length) {
+      throw new BadRequestException(
+        `Akun ${targetUser.email} tidak dihapus karena memiliki ${financial.join(', ')}. Ubah perannya bila akun tidak boleh lagi dipakai mengelola sistem.`,
+      );
+    }
+
     // Hapus dari auth.users (cascades ke cbt_profiles, platform_admins, cbt_organization_members, cbt_member_roles)
     await this.prisma.$executeRawUnsafe(
       `DELETE FROM auth.users WHERE id = $1::uuid`,
@@ -704,7 +755,12 @@ export class AuthService {
     }
 
     const fullName = (dto.name || '').trim() || normalizedEmail.split('@')[0];
-    const password = dto.password?.trim() || 'Admin123!';
+    // Tidak ada lagi password bawaan yang sama untuk semua akun: akun baru yang
+    // passwordnya bisa ditebak = akun yang bisa diambil alih siapa pun.
+    const password = dto.password || '';
+    if (password.length < 8) {
+      throw new BadRequestException('Password minimal 8 karakter.');
+    }
 
     const authUser = await this.authUsers.createUser({
       email: normalizedEmail,
@@ -771,6 +827,19 @@ export class AuthService {
   }
 
   async signup(dto: SignupDto, ipAddress?: string, userAgent?: string): Promise<LoginResponse> {
+    // Pendaftaran tanpa password = pendaftaran lewat Google: email wajib
+    // dibuktikan dengan ID token Google, bukan sekadar diketik di formulir.
+    let google: Awaited<ReturnType<typeof verifyGoogleIdToken>> | null = null;
+    if (!dto.password) {
+      if (!dto.credential) {
+        throw new BadRequestException('Pendaftaran tanpa password harus melalui tombol Google.');
+      }
+      google = await verifyGoogleIdToken(dto.credential);
+      if (dto.email && dto.email.trim().toLowerCase() !== google.email) {
+        throw new BadRequestException('Email pendaftaran harus sama dengan email akun Google.');
+      }
+      dto = { ...dto, email: google.email, avatarUrl: google.picture || dto.avatarUrl };
+    }
     const normalizedEmail = (dto.email || '').trim().toLowerCase();
     if (!normalizedEmail || !dto.name || !dto.schoolName) {
       throw new BadRequestException('Email, Nama Lengkap, dan Asal Sekolah wajib diisi.');

@@ -1,3 +1,4 @@
+import { assertPaidContentAllowed } from '../common/paid-content';
 import { isUUID } from 'class-validator';
 import { collaborationGrants, collaboratorCounts } from '../common/collaboration-access';
 import {
@@ -230,6 +231,10 @@ export class ExamAdminService {
             }
         }
 
+        if (dto.isPaid) {
+            await assertPaidContentAllowed(this.db, user.id, 'exam', dto.tokenPrice);
+        }
+
         const data = await insertIdempotently<{ id: string }>(this.db, {
             table: 'cbt_exams',
             organizationId,
@@ -269,7 +274,7 @@ export class ExamAdminService {
             await db.raw('SELECT id FROM public.cbt_exams WHERE id = $1::uuid FOR UPDATE', examId);
             const { data } = await db
                 .from('cbt_exams')
-                .select('metadata, exam_type, organization_id, status, updated_at')
+                .select('metadata, exam_type, organization_id, status, updated_at, is_paid, token_price, created_by')
                 .eq('id', examId)
                 .maybeSingle();
 
@@ -281,6 +286,9 @@ export class ExamAdminService {
                 organization_id: string;
                 status: string;
                 updated_at?: string;
+                is_paid?: boolean | null;
+                token_price?: number | null;
+                created_by?: string | null;
             };
             if (dto.expectedUpdatedAt && (!existing.updated_at || Date.parse(dto.expectedUpdatedAt) !== Date.parse(existing.updated_at))) {
                 throw new ConflictException('Ujian telah diubah oleh pengguna lain. Muat ulang sebelum menyimpan.');
@@ -335,6 +343,15 @@ export class ExamAdminService {
             }
             this.assertValidWindow(startTime, endTime);
 
+            // Field berbayar yang tidak dikirim formulir berarti PERTAHANKAN nilai
+            // lama. Sebelumnya `?? false` membuat setiap penyuntingan biasa diam-diam
+            // menggratiskan ujian berbayar.
+            const nextPaid = dto.isPaid ?? Boolean(existing.is_paid);
+            const nextPrice = dto.tokenPrice ?? Number(existing.token_price ?? 0);
+            if (nextPaid && (!existing.is_paid || Number(existing.token_price ?? 0) !== nextPrice)) {
+                await assertPaidContentAllowed(db, existing.created_by || user.id, 'exam', nextPrice);
+            }
+
             const { error } = await db
                 .from('cbt_exams')
                 .update({
@@ -349,8 +366,8 @@ export class ExamAdminService {
                     randomize_options: dto.randomizeOptions ?? true,
                     show_results: dto.showResults ?? false,
                     scoring_type: dto.scoringType || 'classical',
-                is_paid: dto.isPaid ?? false,
-                token_price: dto.tokenPrice ?? 0,
+                    is_paid: nextPaid,
+                    token_price: nextPrice,
                     // Selalu ditulis, termasuk saat kosong: mengosongkan jadwal
                     // adalah perubahan yang sah, dan melewatkannya membuat jadwal
                     // lama tertinggal.

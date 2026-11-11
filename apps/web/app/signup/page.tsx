@@ -24,8 +24,10 @@ export default function SignupPage() {
     const [showGoogleModal, setShowGoogleModal] = useState(false);
     const [googleEmail, setGoogleEmail] = useState('');
     const [googleName, setGoogleName] = useState('');
+    // ID token Google utuh; server memverifikasinya dan memakai email di dalamnya.
+    const [googleCredential, setGoogleCredential] = useState('');
 
-    const handleSignup = async (e?: React.FormEvent, customData?: { email: string; name: string; avatarUrl?: string }) => {
+    const handleSignup = async (e?: React.FormEvent, customData?: { email: string; name: string; avatarUrl?: string; credential?: string }) => {
         if (e) e.preventDefault();
 
         const targetEmail = customData?.email || email;
@@ -53,7 +55,8 @@ export default function SignupPage() {
                     name: targetName,
                     schoolName: schoolName.trim(),
                     className: className.trim() || undefined,
-                    password: password || undefined,
+                    password: customData?.credential ? undefined : (password || undefined),
+                    credential: customData?.credential || undefined,
                     avatarUrl: customData?.avatarUrl || `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(targetName)}`,
                 }),
             });
@@ -87,12 +90,16 @@ export default function SignupPage() {
                     .map((c) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
                     .join('')
             );
+            // Isi token dibaca hanya untuk mengisi formulir; server tetap
+            // memverifikasi token dan memakai email dari token itu.
             const payload = JSON.parse(jsonPayload);
+            setGoogleCredential(token);
             setGoogleEmail(payload.email || '');
             setGoogleName(payload.name || '');
             setShowGoogleModal(true);
         } catch {
-            setShowGoogleModal(true);
+            setGoogleCredential('');
+            setErrorMsg('Gagal memproses akun Google. Silakan coba lagi.');
         }
     };
 
@@ -219,9 +226,9 @@ export default function SignupPage() {
                                 <input
                                     type="email"
                                     value={googleEmail}
-                                    onChange={(e) => setGoogleEmail(e.target.value)}
+                                    readOnly
                                     placeholder="nama@gmail.com"
-                                    className="w-full bg-slate-800 border border-slate-700 text-white text-xs rounded-xl px-3 py-2 outline-none focus:border-blue-500"
+                                    className="w-full opacity-80 cursor-not-allowed bg-slate-800 border border-slate-700 text-white text-xs rounded-xl px-3 py-2 outline-none focus:border-blue-500"
                                 />
                             </div>
 
@@ -262,12 +269,16 @@ export default function SignupPage() {
                             <button
                                 type="button"
                                 onClick={() => {
+                                    if (!googleCredential) {
+                                        alert('Sesi Google tidak ditemukan. Klik tombol Google sekali lagi.');
+                                        return;
+                                    }
                                     if (!googleEmail || !googleName || !schoolName) {
                                         alert('Email, Nama Lengkap, dan Asal Sekolah wajib diisi.');
                                         return;
                                     }
                                     setShowGoogleModal(false);
-                                    handleSignup(undefined, { email: googleEmail, name: googleName });
+                                    handleSignup(undefined, { email: googleEmail, name: googleName, credential: googleCredential });
                                 }}
                                 className="w-full mt-2 py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-semibold transition-all shadow cursor-pointer"
                             >

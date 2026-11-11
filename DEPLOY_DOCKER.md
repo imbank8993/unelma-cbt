@@ -285,3 +285,24 @@ Migrasi index (opsional, mempercepat tracker saat data besar; aman dijalankan ul
 ```bash
 psql "$DATABASE_URL_HOST" -f database/migrations/20261111_02_token_tracker_indexes.sql
 ```
+
+## Login Google diverifikasi server (11 November 2026) — WAJIB SEGERA
+
+Sebelumnya `/api/auth/google` membuat sesi untuk email yang dikirim browser tanpa memverifikasi token Google, sehingga siapa pun bisa masuk sebagai akun mana pun (termasuk Superadmin). Kini browser mengirim ID token Google utuh dan API memverifikasi tanda tangan, issuer, audience (Client ID), masa berlaku, dan `email_verified`; email diambil dari token. Pendaftaran tanpa password juga wajib lewat token Google.
+
+- API harus bisa menjangkau `https://www.googleapis.com/oauth2/v3/certs` (kunci publik Google, di-cache).
+- Client ID: `GOOGLE_CLIENT_ID` di `.env` API (boleh beberapa, dipisah koma). Bila kosong, dipakai Client ID bawaan yang sama dengan halaman login. Bila `NEXT_PUBLIC_GOOGLE_CLIENT_ID` di web diganti, isi juga `GOOGLE_CLIENT_ID` dengan nilai yang sama.
+- Setelah deploy, pengguna cukup klik tombol Google lagi; sesi yang sudah ada tidak terpengaruh.
+
+## Komisi proktor, harga konten berbayar & manajemen pengguna (11 November 2026)
+
+- Komisi dihitung dari token yang benar-benar dibayar siswa (`token_transactions`), bukan dari harga item saat ini.
+- Pencairan dihitung server, dikunci per proktor, dan selalu menjadi baris baru (tidak menimpa pencairan sebelumnya). Bukti transfer wajib URL http(s).
+- Pendaftaran rekening komisi hanya untuk Proktor/Guru/Admin. Izin **Ujian/Materi** di halaman Komisi dan **harga minimal** kini benar-benar ditegakkan saat konten dijadikan berbayar atau harganya diubah. Menyunting ujian tidak lagi menggratiskan ujian berbayar.
+- Tambah pengguna wajib password minimal 8 karakter (tidak ada lagi password bawaan). Ubah peran mempertahankan peran Guru/Pengawas (kecuali diturunkan menjadi Siswa) dan berjalan dalam satu transaksi. Akun dengan catatan token/pembayaran/komisi tidak bisa dihapus permanen.
+
+Migrasi (agar pencairan kedua dalam bulan yang sama bisa dicatat; aman dijalankan ulang):
+
+```bash
+psql "$DATABASE_URL_HOST" -f database/migrations/20261111_03_proctor_payouts_multi.sql
+```
