@@ -147,3 +147,29 @@ test('Ujian ASAS/AM (status scheduled) tampil di dashboard dan jadwal siswa begi
     const listed = await service.listExams({ id: 'student' });
     assert.deepEqual(listed.map(row => row.id), ['asas'], 'yang belum diaktifkan tetap tersembunyi');
 });
+
+test('Jadwal & dashboard siswa menerima tarif token dan status sudah dibuka', async () => {
+    const { StudentsService } = require('../src/students/students.service.ts');
+    const { fixtureDb } = require('./fixture-db.cjs');
+    const base = { organization_id: 'school', is_published: true, metadata: { is_public: true } };
+    const db = fixtureDb({
+        cbt_organization_members: [{ user_id: 'student', organization_id: 'school', is_active: true }],
+        cbt_exams: [
+            { ...base, id: 'paid', is_paid: true, token_price: 5 },
+            { ...base, id: 'opened', is_paid: true, token_price: 3 },
+            { ...base, id: 'free', is_paid: false, token_price: 7 },
+        ],
+        cbt_exam_attempts: [],
+        unlocked_items: [{ user_id: 'student', item_type: 'exam', item_id: 'opened' }],
+    });
+    const byId = Object.fromEntries((await new StudentsService(db).listExams({ id: 'student' })).map(e => [e.id, e]));
+    assert.deepEqual([byId.paid.is_paid, byId.paid.token_price, byId.paid.isUnlocked], [true, 5, false]);
+    assert.deepEqual([byId.opened.token_price, byId.opened.isUnlocked], [3, true]);
+    // Ujian gratis tidak menampilkan tarif, walau kolom harga terisi.
+    assert.deepEqual([byId.free.is_paid, byId.free.token_price, byId.free.isUnlocked], [false, 0, false]);
+
+    for (const page of ['schedule/page.tsx', 'page.tsx']) {
+        const source = fs.readFileSync(path.resolve(__dirname, `../../web/app/dashboard/siswa/${page}`), 'utf8');
+        assert.match(source, /exam\.isUnlocked \? 'Sudah dibuka' : `\$\{exam\.token_price\} Token`/, page);
+    }
+});

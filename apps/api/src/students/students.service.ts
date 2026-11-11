@@ -233,7 +233,7 @@ export class StudentsService {
             .from('cbt_exams')
             .select(
                 `id, organization_id, title, description, status, is_published, start_time, end_time,
-                 duration_minutes, exam_type, question_bank_id, created_at, metadata`,
+                 duration_minutes, exam_type, question_bank_id, created_at, metadata, is_paid, token_price`,
             )
             .eq('organization_id', audience.organizationId)
             .eq('is_published', true)
@@ -276,13 +276,36 @@ export class StudentsService {
             rows.filter((a) => a.status === 'in_progress').map((a) => a.exam_id),
         );
 
-        return visibleExams.map((exam) => ({
-            ...exam,
-            metadata: studentExamMetadata(exam.metadata),
-            isCompleted: completed.has(exam.id),
-            isInProgress: inProgress.has(exam.id),
-            ...(recovery.get(exam.id) || {}),
-        }));
+        // Tarif token ditampilkan di kartu jadwal/dashboard; ujian berbayar yang
+        // sudah dibuka siswa ini tidak perlu menampilkan harga lagi.
+        const paidIds = visibleExams
+            .filter((exam) => exam.is_paid === true && Number(exam.token_price) > 0)
+            .map((exam) => exam.id);
+        const unlocked = new Set<string>();
+        if (paidIds.length) {
+            const { data: unlockedRows, error: unlockedError } = await this.db
+                .from('unlocked_items')
+                .select('item_id')
+                .eq('user_id', user.id)
+                .eq('item_type', 'exam')
+                .in('item_id', paidIds);
+            if (unlockedError) throw new InternalServerErrorException('Status akses ujian berbayar belum dapat dimuat.');
+            for (const row of (unlockedRows as Array<{ item_id: string }>) || []) unlocked.add(row.item_id);
+        }
+
+        return visibleExams.map((exam) => {
+            const tokenPrice = exam.is_paid === true ? Math.max(0, Number(exam.token_price) || 0) : 0;
+            return {
+                ...exam,
+                is_paid: tokenPrice > 0,
+                token_price: tokenPrice,
+                isUnlocked: tokenPrice > 0 && unlocked.has(exam.id),
+                metadata: studentExamMetadata(exam.metadata),
+                isCompleted: completed.has(exam.id),
+                isInProgress: inProgress.has(exam.id),
+                ...(recovery.get(exam.id) || {}),
+            };
+        });
     }
 
     /**

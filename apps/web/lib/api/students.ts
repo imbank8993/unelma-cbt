@@ -62,6 +62,11 @@ export interface StudentScheduledExam {
     recoverySubmitOnly?: boolean;
     /** Jendela pribadi ini adalah ujian susulan (bukan pemulihan). */
     isMakeup?: boolean;
+    /** Ujian berbayar: dibuka dengan `token_price` token. */
+    is_paid?: boolean;
+    token_price?: number;
+    /** Siswa ini sudah membuka (membayar) ujian berbayar ini. */
+    isUnlocked?: boolean;
 }
 
 export async function listStudentClasses(): Promise<StudentClass[]> {

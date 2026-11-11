@@ -15,7 +15,8 @@ CalendarDays,
 CheckCircle2,
 Clock,
 Ghost,
-Lock,RefreshCw
+Lock,RefreshCw,
+    Coins,
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useCallback,useEffect,useRef,useState } from 'react';
@@ -187,6 +188,11 @@ const SchedulePage = () => {
                                                 <span className="flex items-center gap-1 text-[#030C4D] font-bold bg-blue-50 px-2 py-0.5 rounded-lg border border-blue-100/30">
                                                     <RefreshCw size={11} /> {exam.duration_minutes || 60} menit
                                                 </span>
+                                                {exam.is_paid && (exam.token_price ?? 0) > 0 && (
+                                                    <span className={`flex items-center gap-1 font-bold px-2 py-0.5 rounded-lg border ${exam.isUnlocked ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-amber-50 text-amber-700 border-amber-200'}`}>
+                                                        <Coins size={11} /> {exam.isUnlocked ? 'Sudah dibuka' : `${exam.token_price} Token`}
+                                                    </span>
+                                                )}
                                             </div>
                                         </div>
                                     </div>
