@@ -896,13 +896,14 @@ export class ExamAdminService {
 
     /** Penilaian resmi madrasah (ASAS/ASAT/AM) wajib diikuti semua siswa: tidak boleh berbayar. */
     /**
-     * "Ujian Umum (Semua Siswa)" hanya untuk jenis Lainnya — aturan yang sama
-     * dengan formulir. Tanpa pemeriksaan ini, permintaan API langsung bisa
-     * membuka ujian Harian/Tugas/ASAS untuk seluruh sekolah tanpa penugasan.
+     * "Ujian Umum (Semua Siswa)" tersedia untuk semua jenis KECUALI ASAS/ASAT/AM —
+     * aturan yang sama dengan formulir. Ujian semester dijadwalkan lewat folder
+     * (ruang, pengawas, kelas), jadi tidak boleh terbuka untuk seluruh sekolah
+     * tanpa penugasan, termasuk lewat permintaan API langsung.
      */
     private assertPublicAllowedForType(examType: string, isPublic: boolean | undefined) {
-        if (isPublic === true && examType !== 'lainnya') {
-            throw new BadRequestException('Opsi Ujian Umum (Semua Siswa) hanya tersedia untuk jenis ujian Lainnya.');
+        if (isPublic === true && isSemesterAssessmentExam({ exam_type: examType })) {
+            throw new BadRequestException('Opsi Ujian Umum (Semua Siswa) tidak tersedia untuk ujian ASAS/ASAT dan Asesmen Madrasah.');
         }
     }
 

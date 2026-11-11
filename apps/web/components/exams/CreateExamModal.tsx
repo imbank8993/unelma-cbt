@@ -545,7 +545,7 @@ export const CreateExamModal: React.FC<CreateExamModalProps> = ({
                 screenshotEnabled: formData.screenshotEnabled,
                 maxViolations: formData.maxViolations,
                 scoringType: formData.scoringTypes.join(','),
-                isPublic: formData.examType === 'lainnya' ? formData.isPublic : false,
+                isPublic: !isFolderExamCategory(formData.examType) ? formData.isPublic : false,
                 documentUrl: formData.examType === 'assignment' ? formData.documentUrl : undefined,
                 videoUrl: formData.examType === 'assignment' ? formData.videoUrl : undefined,
                 assignmentDescription: formData.examType === 'assignment' ? formData.assignmentDescription : undefined,
@@ -683,7 +683,7 @@ export const CreateExamModal: React.FC<CreateExamModalProps> = ({
                                     setFormData((prev) => ({
                                         ...prev,
                                         examType: nextType,
-                                        isPublic: nextType === 'lainnya' ? prev.isPublic : false,
+                                        isPublic: !isFolderExamCategory(nextType) ? prev.isPublic : false,
                                         requireBank: nextType === 'assignment' ? prev.requireBank : true,
                                     }));
                                 }}
@@ -1132,7 +1132,7 @@ export const CreateExamModal: React.FC<CreateExamModalProps> = ({
                                     Peserta & Kelas Sasaran
                                 </h4>
                             </div>
-                            {formData.examType === 'lainnya' && (
+                            {!isFolderExamCategory(formData.examType) && (
                                 <label className="flex items-center gap-2 cursor-pointer select-none">
                                     <input
                                         type="checkbox"

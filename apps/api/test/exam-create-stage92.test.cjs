@@ -153,15 +153,20 @@ test('public exams may drop their class targets while students are working', asy
     assert.equal(db.tables.cbt_exam_targets.length, 0);
 });
 
-test('Ujian Umum hanya untuk jenis Lainnya, baik saat membuat maupun menyunting', async () => {
-    const { s, db } = service();
-    await assert.rejects(s.create({ id: 'teacher' }, ORG, base({ examType: 'daily', isPublic: true })), /hanya tersedia untuk jenis ujian Lainnya/);
-    noInsert(db);
-    await s.create({ id: 'teacher' }, ORG, base({ examType: 'lainnya', isPublic: true }));
-    assert.equal(db.tables.cbt_exams.at(-1).metadata.is_public, true);
+test('Ujian Umum tersedia untuk semua jenis kecuali ASAS/ASAT/AM', async () => {
+    for (const examType of ['daily', 'tryout', 'assignment', 'lainnya']) {
+        const { s, db } = service();
+        await s.create({ id: 'teacher' }, ORG, base({ examType, isPublic: true }));
+        assert.equal(db.tables.cbt_exams.at(-1).metadata.is_public, true, examType);
+    }
+    for (const examType of ['pas', 'pat', 'am']) {
+        const { s, db } = service();
+        await assert.rejects(s.create({ id: 'teacher' }, ORG, base({ examType, isPublic: true })), /tidak tersedia untuk ujian ASAS/, examType);
+        noInsert(db);
+    }
 
-    const edit = service({ cbt_exams: [{ id: EXAM, organization_id: ORG, metadata: {}, exam_type: 'daily', status: 'draft', title: 'UTS' }] });
-    await assert.rejects(edit.s.update({ id: 'staff' }, EXAM, { title: 'UTS', examType: 'daily', duration: 60, isPublic: true }), /jenis ujian Lainnya/);
+    const edit = service({ cbt_exams: [{ id: EXAM, organization_id: ORG, metadata: {}, exam_type: 'pas', status: 'draft', title: 'ASAS' }] });
+    await assert.rejects(edit.s.update({ id: 'staff' }, EXAM, { title: 'ASAS', examType: 'pas', duration: 60, isPublic: true }), /tidak tersedia untuk ujian ASAS/);
     assert.equal(edit.db.tables.cbt_exams[0].metadata.is_public, undefined);
 });
 
@@ -180,4 +185,16 @@ test('ujian umum tidak bisa dijadikan per kelas selagi ada siswa mengerjakan', a
     const done = service({ cbt_exams: [{ ...exam }], cbt_exam_attempts: [{ id: 'a1', exam_id: EXAM, user_id: 'stu', status: 'submitted' }] });
     await done.s.update({ id: 'staff' }, EXAM, { title: 'TO', examType: 'lainnya', duration: 60, isPublic: false });
     assert.equal(done.db.tables.cbt_exams[0].metadata.is_public, false);
+});
+
+test('siswa tanpa kelas tetap bisa melihat ujian umum, tetapi tidak ujian per kelas', async () => {
+    const { loadExamAudience, canAccessExam } = require('../src/students/exam-access.ts');
+    const db = fixtureDb({
+        cbt_organization_members: [{ user_id: 'stu', organization_id: ORG, is_active: true }],
+        cbt_class_members: [], cbt_additional_class_members: [], cbt_exam_participants: [],
+    });
+    const audience = await loadExamAudience(db, { id: 'stu' });
+    const exam = { id: EXAM, organization_id: ORG, is_published: true };
+    assert.equal(canAccessExam({ ...exam, metadata: { is_public: true } }, audience), true);
+    assert.equal(canAccessExam({ ...exam, metadata: {} }, audience), false);
 });
