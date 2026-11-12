@@ -27,7 +27,7 @@ function harness() {
         useCallback: fn => fn,
         useEffect(fn) { if (initial) effects.push(fn); },
     };
-    const code = ts.transpileModule(fs.readFileSync(path.resolve(__dirname, '../../web/app/dashboard/siswa/analytics/page.tsx'), 'utf8'), {
+    const code = ts.transpileModule(fs.readFileSync(path.resolve(__dirname, '../../web/app/components/student/StudentAnalyticsPanel.tsx'), 'utf8'), {
         compilerOptions: { jsx: ts.JsxEmit.React, module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 },
     }).outputText;
     const module = { exports: {} };

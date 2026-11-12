@@ -142,8 +142,7 @@ export default function Sidebar({
             { icon: 'fa-graduation-cap', label: 'Ruang Belajar', href: '/dashboard/learning' },
             { icon: 'fa-users', label: 'Kelas', href: '/dashboard/siswa/classes' },
             { icon: 'fa-calendar', label: 'Jadwal', href: '/dashboard/siswa/schedule' },
-            { icon: 'fa-chart-column', label: 'Hasil', href: '/dashboard/siswa/results' },
-            { icon: 'fa-arrow-trend-up', label: 'Analisis', href: '/dashboard/siswa/analytics' },
+            { icon: 'fa-chart-column', label: 'Hasil & Analisis', href: '/dashboard/siswa/results' },
             { icon: 'fa-coins', label: 'Token Saya', href: '/dashboard/siswa/tokens' },
         ],
         'Pengawas': [
