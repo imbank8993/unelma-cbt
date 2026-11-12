@@ -1,3 +1,4 @@
+import type { ExamPassResult } from '../exam-type-catalog';
 import type { TopicAnalysis } from '@acca-cbt/shared';
 import type { IrtCalibration } from '@/lib/irt-calibration';
 import { getSessionUser } from '../session';
@@ -171,6 +172,8 @@ export interface DeviceInfo {
 }
 
 export interface ExamAttemptRecord {
+    /** Jenis ujian kustom: skor mentah, subtes, dan status Lulus/Tidak Lulus. */
+    pass_result?: ExamPassResult | null;
     screen_share_exception?: {
         reason: string; created_at: string | null; created_by: string | null;
         /** exam = ujian ini saja; period = semua ujian di periode ASAS/ASAT/AM. */
@@ -225,6 +228,11 @@ export interface ExamAttemptRecord {
     last_heartbeat_at?: string | null;
     total_score?: number | null;
     kelas_name?: string | null;
+    /** Ujian berbayar dapat dikerjakan ulang: urutan pengerjaan selesai siswa ini. */
+    attempt_number?: number;
+    attempt_count?: number;
+    /** Pengerjaan selesai terakhir = nilai resmi; yang lain hanya riwayat. */
+    is_latest_attempt?: boolean;
     warning_count?: number;
     tab_switch_count?: number;
     violation_breakdown?: {
@@ -554,7 +562,8 @@ export interface ExamInput {
     title: string;
     description?: string;
     duration: number;
-    examType?: 'daily' | 'pas' | 'pat' | 'am' | 'tryout' | 'lainnya' | 'assignment';
+    /** Jenis bawaan, atau kode jenis kustom dari Pengaturan → Jenis Ujian. */
+    examType?: 'daily' | 'pas' | 'pat' | 'am' | 'tryout' | 'lainnya' | 'assignment' | (string & {});
     timeZone?: string;
     startTime?: string;
     endTime?: string;

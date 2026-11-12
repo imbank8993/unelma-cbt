@@ -10,6 +10,7 @@ import { formatStudentName, getScoreColorClass } from '@/lib/monitoring-health';
 import { monitoringScoreModels } from '@/lib/monitoring-score-models';
 import { savedAnswerCount } from '@/lib/monitoring-answer-count';
 import { ParticipantRoomInfo } from './ParticipantRoomInfo';
+import { PassResultBadge, PassResultDetail, passResultSummary } from '@/components/exams/PassResultBadge';
 import { hasThetaIrtScale, irtScaledScore } from '@acca-cbt/shared';
 
 function getAttemptResultFacts(att: ExamAttemptRecord) {
@@ -116,6 +117,11 @@ export function MonitoringResultsTable({ attempts, hasAnyAttempts, onViewDetails
                             <td className="p-3 sm:px-4 sm:py-3">
                                 <button type="button" className="monitoring-participant-name font-medium sm:font-semibold text-slate-800" onClick={event => { event.stopPropagation(); setSelectedId(att.id); }}>{formatStudentName(att.profiles?.full_name, 'Tanpa Nama')}</button>
                                 <span className="mt-1 sm:mt-0.5 block text-xs text-slate-500">{att.profiles?.identity_number ? `${att.profiles.identity_number} · ` : ''}{att.kelas_name || 'Tanpa kelas'}</span>
+                                {(att.attempt_count ?? 1) > 1 && (
+                                    <span className={`mt-1 inline-block rounded-md px-1.5 py-0.5 text-[11px] font-semibold ${att.is_latest_attempt ? 'bg-blue-50 text-blue-700' : 'bg-slate-100 text-slate-500'}`}>
+                                        Pengerjaan ke-{att.attempt_number}{att.is_latest_attempt ? ' · Nilai resmi' : ' · Riwayat'}
+                                    </span>
+                                )}
                                 {showRoomInfo && <div className="hidden sm:block"><ParticipantRoomInfo attempt={att} /></div>}
                                 <span className="mt-2 block text-[11px] text-slate-500 sm:hidden">{statusText} · {answered ?? '—'} / {total ?? '—'} terjawab</span>
                             </td>
@@ -129,6 +135,12 @@ export function MonitoringResultsTable({ attempts, hasAnyAttempts, onViewDetails
                             </td>
                             <td className={`p-3 w-[115px] sm:w-auto sm:px-4 sm:py-3 sm:text-right font-semibold tabular-nums ${getScoreColorClass(score)}`}>
                                 <div>{score === null ? isUnstarted ? '—' : classicalModel?.pendingLabel ?? 'Menunggu nilai' : score.toFixed(2)}</div>
+                                {!isUnstarted && att.pass_result && (
+                                    <div className="mt-1 flex flex-col items-start gap-0.5 sm:items-end" title={passResultSummary(att.pass_result) || undefined}>
+                                        <PassResultBadge result={att.pass_result} />
+                                        {att.pass_result.score_mode === 'raw' && <span className="text-[11px] font-medium text-slate-500">Skor mentah {att.pass_result.raw_score}</span>}
+                                    </div>
+                                )}
                                 <div className="mt-0.5 text-[11px] font-medium text-slate-500 sm:hidden">
                                     {answered ?? '—'} / {total ?? '—'} terjawab
                                 </div>
@@ -166,6 +178,10 @@ export function MonitoringResultsTable({ attempts, hasAnyAttempts, onViewDetails
                                 {scoreModels.map(model => <span key={model.type} className="text-slate-600">{model.label}: <strong className="text-slate-800">{model.score === null ? model.pendingLabel : model.score.toFixed(2)}</strong></span>)}
                                 {extraIrtScores.map(item => <span key={item.type} className="text-slate-600">{item.label}: <strong className="text-slate-800">{Number(item.score).toFixed(2)}</strong></span>)}
                             </div>
+                            {att.pass_result && <div className="mt-4"><PassResultDetail result={att.pass_result} /></div>}
+                            {!!att.pass_result?.unmapped_question_count && (
+                                <p className="mt-2 text-[11px] text-amber-700">{att.pass_result.unmapped_question_count} soal tidak masuk subtes mana pun (materi kisi-kisinya tidak cocok).</p>
+                            )}
                         </td></tr>}
                     </Fragment>;
                 })}

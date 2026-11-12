@@ -6,6 +6,10 @@ export function studentExamMetadata(value: Record<string, unknown> | null | unde
         'window_open', 'window_close', 'exam_duration', 'document_url', 'video_url',
         'assignment_description', 'allow_file_upload', 'allowed_file_types', 'require_bank', 'program',
     ];
-    return Object.fromEntries(keys.filter(key => Object.prototype.hasOwnProperty.call(value || {}, key))
+    const picked: Record<string, unknown> = Object.fromEntries(keys.filter(key => Object.prototype.hasOwnProperty.call(value || {}, key))
         .map(key => [key, value![key]]));
+    // Jenis ujian kustom: hanya namanya — aturan kelulusan tidak perlu sampai ke siswa sebelum hasil keluar.
+    const rule = value?.exam_type_rule as { label?: unknown } | undefined;
+    if (rule && typeof rule.label === 'string') picked.exam_type_label = rule.label;
+    return picked;
 }

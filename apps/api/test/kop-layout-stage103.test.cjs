@@ -100,5 +100,4 @@ test('KOP-05: semua dokumen ujian memakai satu kop berlogo yang sama', () => {
     assert.match(panel, /renderKopHTML\(kopProfile, \{\s*logoSrc:/);
     assert.match(panel, /useKopLogo\(kopParts\.logoUrl\)/);
     assert.doesNotMatch(panel, /mode: 'cors'/);
-    assert.match(web('app/components/validations/ValidationReportModal.tsx'), /useKopLogo\(schoolProfile\?\.logo_url\)/);
 });

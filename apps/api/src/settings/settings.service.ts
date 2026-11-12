@@ -2,6 +2,12 @@ import { Injectable, InternalServerErrorException, Logger } from '@nestjs/common
 import { assertValidTimeZone, DEFAULT_SCHOOL_TIME_ZONE } from '../common/school-time';
 import { DbService } from '../prisma/prisma-db-adapter';
 import { EXAM_ADMINISTRATION_SETTING_KEY, normalizeExamAdministrationSettings } from '../common/exam-administration-settings';
+import {
+    EXAM_TYPE_CATALOG_SETTING_KEY,
+    normalizeExamTypeCatalog,
+    parseExamTypeCatalog,
+    type ExamTypeCatalog,
+} from '../common/exam-type-catalog';
 
 export interface SettingRow {
     id: string;
@@ -170,6 +176,15 @@ export class SettingsService {
         return { timeZone: DEFAULT_SCHOOL_TIME_ZONE, source: 'default' };
     }
 
+    /**
+     * Katalog jenis ujian kustom. Belum pernah disimpan = katalog bawaan
+     * (SKD CPNS), sehingga jenis itu langsung tersedia tanpa langkah awal.
+     */
+    async getExamTypeCatalog(): Promise<ExamTypeCatalog> {
+        const row = await this.findRawOne(EXAM_TYPE_CATALOG_SETTING_KEY);
+        return parseExamTypeCatalog(row?.value ?? null);
+    }
+
     async getSchoolTimeZone(): Promise<string> {
         const info = await this.getSchoolTimeZoneInfo();
         return info.timeZone;
@@ -185,6 +200,7 @@ export class SettingsService {
      */
     async upsert(key: string, value: unknown): Promise<void> {
         if (key === EXAM_ADMINISTRATION_SETTING_KEY) value = normalizeExamAdministrationSettings(value);
+        if (key === EXAM_TYPE_CATALOG_SETTING_KEY) value = normalizeExamTypeCatalog(value);
         const { error } = await this.db.from('acca_settings').upsert(
             { key, value, updated_at: new Date().toISOString() },
             { onConflict: 'key' },

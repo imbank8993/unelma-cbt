@@ -9,7 +9,6 @@ const {QuestionsService}=require('../src/questions/questions.service.ts');
 const {BankContentService}=require('../src/questions/bank-content.service.ts');
 const {ExamAdminService}=require('../src/proctor/exam-admin.service.ts');
 const {ExamKeyCorrectionService}=require('../src/grading/exam-key-correction.service.ts');
-const {ValidationsService}=require('../src/validations/validations.service.ts');
 const {ProctoringService}=require('../src/proctoring/proctoring.service.ts');
 const user=id=>({id,organizationId:'school',roles:id==='proctor'?['PROKTOR']:id==='admin'?['ADMIN']:['PROKTOR']});
 const denied=e=>e.getStatus?.()===403;
@@ -23,8 +22,6 @@ function fixture(){
    {id:'draft-exam',created_by:'teacher',is_published:false,organization_id:'school',exam_type:'daily',question_bank_id:'draft'},
    {id:'public-exam',created_by:'teacher',is_published:true,organization_id:'school',exam_type:'daily',question_bank_id:'public'}],
   cbt_bank_questions:[{id:'q',bank_id:'public',type:'mcq'}],
-  cbt_question_bank_validations:[{id:'session',bank_id:'draft',organization_id:'school',bank:{created_by:'teacher',is_published:false}}],
-  cbt_question_bank_validators:[{validation_id:'session',validator_id:'proctor'}],
   cbt_exam_question_snapshots:[{exam_id:'public-exam',question_snapshot:{id:'q',bank_id:'public',type:'mcq'}}]});
  const roles={hasOrgRole:async(id,school,allowed)=>school==='school'&&allowed.some(role=>
   ({proctor:['Proktor'],teacher:['Proktor'],otherTeacher:['Proktor'],admin:['Admin','Proktor']}[id]||[]).includes(role))};
@@ -76,14 +73,9 @@ test('direct monitoring and management of foreign exams are denied for proctors,
  await f.auth.assertExamMonitoring(user('admin'),'draft-exam');await f.auth.assertExamStaff(user('admin'),'draft-exam');
  await f.auth.assertExamStaff(user('teacher'),'draft-exam');
 });
-test('validator assignment grants review only; exam-key correction still requires ownership',async()=>{
+test('exam-key correction still requires ownership',async()=>{
  const f=fixture();
- // Ditugaskan sebagai validator = boleh meninjau bank pembuat lain, tanpa hak ubah.
- f.db.tables.cbt_bank_questions=[{id:'dq',bank_id:'draft',type:'mcq'}];
- await new ValidationsService(f.db,f.auth).getReviewData(user('proctor'),'session');
  await assert.rejects(f.auth.assertBankAccess(user('proctor'),'draft','write'),denied);
- f.db.tables.cbt_question_bank_validators=[];
- await assert.rejects(new ValidationsService(f.db,f.auth).getReviewData(user('proctor'),'session'),denied);
  const correction=new ExamKeyCorrectionService(f.db,f.auth,{});
  await assert.rejects(correction.get(user('proctor'),'public-exam'),denied);
  assert.equal(f.db.writes.length,0);

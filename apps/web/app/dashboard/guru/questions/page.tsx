@@ -37,7 +37,6 @@ Trash2
 import Link from 'next/link';
 import React,{ useCallback,useEffect,useRef,useState } from 'react';
 import { CreateBankModal } from '@/components/questions/CreateBankModal';
-import { ValidationBadge } from '@/app/components/validations/ValidationBadge';
 import { QuestionBankCover } from '@/app/components/questions/QuestionBankCover';
 import { FolderBankContents } from '@/app/components/questions/FolderBankContents';
 import { MobileBankFolder } from '@/app/components/questions/MobileBankFolder';
@@ -440,18 +439,15 @@ export default function GuruQuestionBankPage() {
     };
 
     const renderReadAction = (bank: QuestionBank, mobile = false) => {
-        const validationTask = !!bank.validationId;
-        const locked = bank.canRead === false && !validationTask;
-        const label = locked ? 'Terkunci' : validationTask ? 'Validasi' : 'Lihat';
+        const locked = bank.canRead === false;
+        const label = locked ? 'Terkunci' : 'Lihat';
         const button = <Button size="sm" variant="secondary" disabled={locked}
             mobileIconOnly={mobile} aria-label={label}
-            title={locked ? 'Isi soal hanya tersedia bagi pemilik, kolaborator, admin, atau validator yang ditugaskan.' : label}
+            title={locked ? 'Isi soal hanya tersedia bagi pemilik, kolaborator, atau admin.' : label}
             leftIcon={locked ? <Lock size={16} /> : <Eye size={16} />}>
             {label}
         </Button>;
-        return locked ? button : <Link className="shrink-0" href={validationTask
-            ? `/dashboard/guru/validations/${bank.validationId}/review`
-            : `/dashboard/guru/questions/${bank.id}`}>{button}</Link>;
+        return locked ? button : <Link className="shrink-0" href={`/dashboard/guru/questions/${bank.id}`}>{button}</Link>;
     };
 
     // Render bank card for desktop
@@ -477,7 +473,6 @@ export default function GuruQuestionBankPage() {
                         <span className={`px-2 py-0.5 rounded-lg text-xs font-semibold ${bank.is_published ? 'bg-[#030C4D]/10 text-[#030C4D] border border-[#030C4D]/30' : 'bg-red-50 text-red-600 border border-red-200'}`}>
                             {bank.is_published ? 'Published' : 'Draft'}
                         </span>
-                        <ValidationBadge summary={bank.validation_summary} />
                         {bank.subject && <span className="text-xs text-slate-400">{bank.subject}</span>}
                         {bank.class_level && <span className="text-xs text-slate-400">• {bank.class_level}</span>}
                     </div>
@@ -543,7 +538,6 @@ export default function GuruQuestionBankPage() {
                         <span className={`px-2 py-0.5 rounded-lg text-[10px] font-semibold ${bank.is_published ? 'bg-[#030C4D]/10 text-[#030C4D] border border-[#030C4D]/30' : 'bg-red-50 text-red-600 border border-red-200'}`}>
                             {bank.is_published ? 'Published' : 'Draft'}
                         </span>
-                        <ValidationBadge summary={bank.validation_summary} />
                         {bank.subject && <span className="text-xs text-slate-400">{bank.subject}</span>}
                         {bank.class_level && <span className="text-xs text-slate-400">• {bank.class_level}</span>}
                     </div>

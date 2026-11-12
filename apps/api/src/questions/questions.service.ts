@@ -36,6 +36,13 @@ export function assertQuestionStructure(dto: Pick<SaveQuestionDto, 'type' | 'opt
         case 'mcq_complex':
             if (options.length < 2) fail('Soal pilihan ganda membutuhkan minimal 2 opsi.');
             if (!options.some(option => option.isCorrect)) fail('Pilih minimal satu jawaban yang benar.');
+            if (dto.metadata?.option_scoring === 'weighted') {
+                if (dto.type !== 'mcq') fail('Skor berbobot per opsi hanya untuk Pilihan Ganda biasa.');
+                if (options.some(option => typeof option.weight !== 'number' || !Number.isFinite(option.weight) || option.weight < 0)) {
+                    fail('Isi bobot setiap opsi dengan angka 0 atau lebih.');
+                }
+                if (!options.some(option => (option.weight ?? 0) > 0)) fail('Minimal satu opsi harus berbobot lebih dari 0.');
+            }
             break;
         case 'true_false':
             if (!options.length) fail('Soal benar/salah membutuhkan minimal satu pernyataan.');

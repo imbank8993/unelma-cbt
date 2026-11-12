@@ -1,6 +1,5 @@
 import { Module } from '@nestjs/common';
 import { LearningModule } from './learning/learning.module';
-import { ValidationsModule } from './validations/validations.module';
 import { ConfigModule } from '@nestjs/config';
 import { AiModule } from './ai/ai.module';
 import { AnalyticsModule } from './analytics/analytics.module';
@@ -54,7 +53,6 @@ import { CommissionsModule } from './commissions/commissions.module';
     NotificationsModule,
     AnalyticsModule,
     LearningModule,
-    ValidationsModule,
     TokensModule,
     CommissionsModule,
   ],

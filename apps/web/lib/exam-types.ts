@@ -16,8 +16,12 @@ export function examTypeCategory(type?: string | null): ExamTypeCategory {
     return 'lainnya';
 }
 
-export function examTypeLabel(type?: string | null): string {
-    return EXAM_TYPE_LABELS[examTypeCategory(type)];
+/** Label jenis; jenis kustom (Pengaturan → Jenis Ujian) memakai nama yang tersimpan di metadata ujian. */
+export function examTypeLabel(type?: string | null, metadata?: Record<string, unknown> | null): string {
+    const rule = metadata?.exam_type_rule as { label?: unknown } | undefined;
+    const custom = typeof rule?.label === 'string' ? rule.label
+        : typeof metadata?.exam_type_label === 'string' ? metadata.exam_type_label : null;
+    return custom || EXAM_TYPE_LABELS[examTypeCategory(type)];
 }
 
 export function matchesExamType(type: string | null | undefined, category: string): boolean {

@@ -124,6 +124,13 @@ export class ProctorService {
                    AND COALESCE(e.metadata->>'archived_at', '') = ''
                    AND COALESCE(e.exam_type, '') <> 'assignment'
                    AND a.status IN ('submitted', 'auto_submitted')
+                   -- Pengerjaan ulang ujian berbayar: hanya pengerjaan terakhir (nilai resmi).
+                   AND NOT EXISTS (
+                       SELECT 1 FROM public.cbt_exam_attempts newer
+                        WHERE newer.exam_id = a.exam_id AND newer.user_id = a.user_id
+                          AND newer.status IN ('submitted', 'auto_submitted')
+                          AND (COALESCE(newer.finished_at, '-infinity') > COALESCE(a.finished_at, '-infinity')
+                               OR (newer.finished_at IS NOT DISTINCT FROM a.finished_at AND newer.id > a.id)))
              ), recent_exams AS (
                 SELECT exam_id, score_label, COUNT(*)::int AS participant_count,
                        COUNT(ranking_score)::int AS scored_count, MAX(finished_at) AS last_finished_at

@@ -1,4 +1,5 @@
 "use client";
+import { PassResultBadge, passResultSummary } from '@/components/exams/PassResultBadge';
 import { selectedStudentScore, studentScoreType, STUDENT_SCORE_LABELS } from '@acca-cbt/shared';
 import { getStudentResultsResult,type StudentResult } from '@/lib/api/students';
 import { retryExamEvidence } from '@/lib/exam-evidence-outbox';
@@ -143,7 +144,13 @@ export default function StudentResultsPage() {
                                         {formatSchoolDateTime(attempt.finished_at, timeZone)}
                                     </p>
                                     <div className="flex flex-wrap gap-1.5">
+                                        {(attempt.attempt_count ?? 1) > 1 && (
+                                            <span className={`rounded-md px-2 py-0.5 text-[11px] font-semibold ${attempt.is_latest_attempt ? 'bg-blue-50 text-[#030C4D] dark:bg-blue-500/10 dark:text-blue-300' : 'bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400'}`}>
+                                                Pengerjaan ke-{attempt.attempt_number}{attempt.is_latest_attempt ? ' · Nilai resmi' : ' · Riwayat'}
+                                            </span>
+                                        )}
                                         {attempt.needs_manual_grading && <span className="rounded-md bg-amber-50 px-2 py-0.5 text-[11px] font-semibold text-amber-700 dark:bg-amber-500/10 dark:text-amber-300">Menunggu penilaian</span>}
+                                        {canViewDetails && <PassResultBadge result={attempt.pass_result} />}
                                         {!canViewDetails && <span className="rounded-md bg-slate-100 px-2 py-0.5 text-[11px] font-semibold text-slate-600 dark:bg-slate-800 dark:text-slate-300">Nilai belum dibuka guru</span>}
                                     </div>
                                 </div>
@@ -155,6 +162,9 @@ export default function StudentResultsPage() {
                                             {displayedScore == null ? '—' : Number(displayedScore).toFixed(2)}
                                             <span className="ml-0.5 text-xs font-normal text-slate-400">{classical ? '/100' : ' 200–800'}</span>
                                         </p>
+                                        {attempt.pass_result && passResultSummary(attempt.pass_result) && (
+                                            <p className="mt-0.5 max-w-[14rem] text-[11px] text-slate-500 dark:text-slate-400">{passResultSummary(attempt.pass_result)}</p>
+                                        )}
                                         {displayedScore == null && <p className="text-[11px] text-slate-500">{scoreLabel.startsWith('IRT') && !attempt.needs_manual_grading ? 'Menunggu perhitungan IRT' : 'Menunggu penilaian'}</p>}
                                     </div>
                                 )}

@@ -6,9 +6,6 @@ const { fixtureDb } = require('./fixture-db.cjs');
 const { AuthorizationService } = require('../src/auth/authorization.service.ts');
 const { QuestionBanksService } = require('../src/questions/question-banks.service.ts');
 const { QuestionsService } = require('../src/questions/questions.service.ts');
-const { ValidationsService } = require('../src/validations/validations.service.ts');
-const { StorageAccessService } = require('../src/storage/storage-access.service.ts');
-const { StorageService } = require('../src/storage/storage.service.ts');
 const user = { id: 'reader', organizationId: 'school', roles: ['PROKTOR'] };
 const image = 'users/owner/questions/image.png';
 const denied = error => error.getStatus?.() === 403;
@@ -23,8 +20,6 @@ function setup({ proctor = false } = {}) {
         cbt_bank_questions: [{ id: 'q', bank_id: 'bank', type: 'essay',
             question_text: `<img src="/api/storage/file/${image}">${secret}` }],
         cbt_bank_collaborators: [],
-        cbt_question_bank_validations: [{ id: 'validation', bank_id: 'bank', organization_id: 'school', status: 'pending' }],
-        cbt_question_bank_validators: [],
         cbt_organization_members: ['reader', 'owner', 'proctor'].map(user_id =>
             ({ user_id, organization_id: 'school', is_active: true })),
     });
@@ -34,11 +29,11 @@ function setup({ proctor = false } = {}) {
         assert.equal(org, 'school'); return org;
     } });
     const banks = new QuestionBanksService(db, auth, roles, { emailMap: async () => new Map() });
-    return { db, auth, banks, secret, validations: new ValidationsService(db, auth) };
+    return { db, auth, banks, secret };
 }
 
 test('Guru C sees only a public bank card and its question count', async () => {
-    const { db, auth, banks, validations, secret } = setup();
+    const { db, auth, banks, secret } = setup();
     const cards = await banks.list(user, 'school', false, true);
     assert.equal(cards.length, 1);
     assert.equal(cards[0].title, 'Physics');
@@ -47,7 +42,6 @@ test('Guru C sees only a public bank card and its question count', async () => {
     assert.equal(cards[0].canManage, false);
     assert.equal(cards[0].canDelete, false);
     assert.equal(cards[0].canPublish, false);
-    assert.equal(cards[0].validationId, null);
     assert.equal(JSON.stringify(cards).includes(secret), false);
     assert.equal(cards[0].bank_questions, undefined);
     await assert.rejects(banks.get(user, 'bank'), denied);
@@ -55,7 +49,6 @@ test('Guru C sees only a public bank card and its question count', async () => {
     await assert.rejects(auth.assertBankAccess(user, 'bank', 'write'), denied);
     await assert.rejects(auth.assertBankAccess(user, 'bank', 'delete'), denied);
     await assert.rejects(banks.setPublished(user, 'bank', true), denied);
-    await assert.rejects(validations.getReviewData(user, 'validation'), denied);
 });
 
 test('Proktor A who made the folder reads Guru B draft questions without edit or publish rights', async () => {
@@ -100,32 +93,11 @@ test('teacher can place an owned bank into a proctor’s public folder', async (
     assert.equal(db.tables.cbt_question_banks.find(bank => bank.id === 'mine').folder_id, 'folder');
 });
 
-test('assigned validator gets a review link for private banks and can review but cannot edit the original', async () => {
-    const { db, auth, banks, validations } = setup();
-    db.tables.bank_folders[0].is_public = false;
-    db.tables.cbt_question_bank_validators.push({ id: 'assignment', validation_id: 'validation', validator_id: user.id });
-    const [card] = await banks.list(user, 'school', false, true);
-    assert.equal(card.canRead, false);
-    assert.equal(card.validationId, 'validation');
-    assert.equal(card.canManage, false);
-    assert.equal((await validations.getReviewData(user, 'validation')).questions[0].id, 'q');
-    await assert.rejects(auth.assertBankAccess(user, 'bank', 'write'), denied);
-    const storage = Object.create(StorageService.prototype);
-    storage.publicUrl = '/api/storage/file';
-    await new StorageAccessService(db, auth, storage).assertRead(user, image);
-    db.tables.cbt_question_bank_validators = [];
-    assert.deepEqual(await banks.list(user, 'school', false, true), []);
-    await assert.rejects(validations.getReviewData(user, 'validation'), denied);
-    await assert.rejects(new StorageAccessService(db, auth, storage).assertRead(user, image), denied);
-});
-
-test('collaborator keeps normal read access and assignments from another school do not expose cards', async () => {
+test('collaborator keeps normal read access and loses it when removed', async () => {
     const { db, banks } = setup();
     db.tables.cbt_bank_collaborators.push({ bank_id: 'bank', user_id: user.id, permission: 'viewer' });
     assert.equal((await banks.list(user, 'school', false, true))[0].canRead, true);
     db.tables.cbt_bank_collaborators = [];
     db.tables.bank_folders[0].is_public = false;
-    db.tables.cbt_question_bank_validators.push({ validation_id: 'validation', validator_id: user.id });
-    db.tables.cbt_question_bank_validations[0].organization_id = 'other';
     assert.deepEqual(await banks.list(user, 'school', false, true), []);
 });

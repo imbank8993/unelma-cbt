@@ -15,7 +15,8 @@ export function recoveryLabel(exam: StudentScheduledExam): { badge: string; acti
 }
 
 export function scheduleState(exam: StudentScheduledExam, now: number): 'open' | 'upcoming' | 'closed' | 'invalid' {
-    if (exam.isCompleted) return 'closed';
+    // Ujian berbayar yang sudah dibuka boleh dikerjakan ulang selama jadwalnya buka.
+    if (exam.isCompleted && !exam.canRetake) return 'closed';
     if (!exam.is_published || exam.status === 'archived') return 'closed';
     if (recoveryActive(exam, now)) return 'open';
     const start = exam.start_time ? Date.parse(exam.start_time) : -Infinity;

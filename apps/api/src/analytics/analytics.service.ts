@@ -1,3 +1,5 @@
+import { examPassStatuses } from '../common/exam-pass-status';
+import { finishedAttemptOrder, withoutSupersededAttempts } from '../common/attempt-history';
 import { Injectable, NotFoundException } from '@nestjs/common';
 import type { AuthUser } from '@acca-cbt/shared';
 import { AuthorizationService } from '../auth/authorization.service';
@@ -51,7 +53,7 @@ export class AnalyticsService {
             .select(
                 `*,
                 question_banks:cbt_question_banks(title),
-                exam_attempts:cbt_exam_attempts(id, status, total_score)`,
+                exam_attempts:cbt_exam_attempts(id, user_id, status, total_score, finished_at)`,
             )
             .eq('organization_id', organizationId);
 
@@ -63,7 +65,9 @@ export class AnalyticsService {
         const { data } = await query.order('created_at', { ascending: false });
 
         return ((data as any[]) || []).map((exam) => {
-            const attempts = exam.exam_attempts ?? [];
+            // Pengerjaan ulang ujian berbayar: hanya pengerjaan terakhir tiap siswa yang dihitung.
+            const attempts = withoutSupersededAttempts(((exam.exam_attempts ?? []) as any[])
+                .map((attempt) => ({ ...attempt, exam_id: exam.id })));
             const completed = attempts.filter((a: any) => FINISHED_STATUSES.includes(a.status));
             const scores = completed
                 .filter((a: any) => a.total_score !== null)
@@ -100,7 +104,8 @@ export class AnalyticsService {
             .from('cbt_exam_attempts')
             .select('*')
             .eq('exam_id', examId);
-        const attempts = (attemptRows as any[]) || [];
+        // Nilai resmi = pengerjaan terakhir; pengerjaan ulang yang lebih lama tidak dihitung ganda.
+        const attempts = withoutSupersededAttempts((attemptRows as any[]) || []);
 
         const completedAttempts = attempts.filter((a) => FINISHED_STATUSES.includes(a.status));
 
@@ -213,8 +218,12 @@ export class AnalyticsService {
             .in('status', FINISHED_STATUSES);
 
         const studentMap = new Map<string, any>();
+        // Pengerjaan ulang ujian berbayar: performa memakai pengerjaan terakhir
+        // (nilai resmi); jumlah pengerjaan tetap dilaporkan.
+        const rows = (data as any[]) || [];
+        const attemptOrder = finishedAttemptOrder(rows);
 
-        ((data as any[]) || []).forEach((attempt) => {
+        withoutSupersededAttempts(rows).forEach((attempt) => {
             const studentId = attempt.user_id;
             const existing = studentMap.get(studentId);
             const score = Number(attempt.total_score) || 0;
@@ -249,6 +258,7 @@ export class AnalyticsService {
                     total_time_used_seconds: 0,
                     attempt_id: attempt.id,
                     attempt_status: attempt.status,
+                    attempt_count: attemptOrder.get(attempt.id)?.attempt_count ?? 1,
                     _finished_at: attempt.finished_at,
                 });
             }
@@ -355,10 +365,10 @@ export class AnalyticsService {
 
         const { data: attemptRows } = await this.db
             .from('cbt_exam_attempts')
-            .select('id, user_id, status, profiles:cbt_profiles(full_name)')
+            .select('id, exam_id, user_id, status, finished_at, profiles:cbt_profiles(full_name)')
             .eq('exam_id', examId)
             .in('status', FINISHED_STATUSES);
-        const attempts = (attemptRows as any[]) || [];
+        const attempts = withoutSupersededAttempts((attemptRows as any[]) || []);
 
         const attemptIds = attempts.map((a) => a.id);
         const nameByAttempt = new Map(
@@ -442,10 +452,13 @@ export class AnalyticsService {
             .in('status', FINISHED_STATUSES)
             .order('total_score', { ascending: false });
 
+        // Rekap memakai nilai resmi: pengerjaan terakhir tiap siswa.
+        const official = withoutSupersededAttempts((attempts as any[]) ?? []);
+        const passResults = await examPassStatuses(this.db, exam, official);
         return {
             exam,
             questions,
-            attempts: (attempts as any[]) ?? [],
+            attempts: official.map(attempt => ({ ...attempt, pass_result: passResults.get(attempt.id) || null })),
         };
     }
 }

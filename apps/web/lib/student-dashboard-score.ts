@@ -16,8 +16,13 @@ export function dashboardAverageScore(results: StudentResult[]): number | null {
 }
 
 /** Summaries never average IRT (200–800) and classical points, or different IRT models. */
+/** Pengerjaan ulang ujian berbayar: hanya pengerjaan terakhir yang menjadi nilai resmi. */
+export function officialResults(results: StudentResult[]): StudentResult[] {
+    return results.filter(result => result.is_latest_attempt !== false);
+}
+
 export function dashboardScoreSummaries(results: StudentResult[]) {
-    const valid = results.filter(result => dashboardResultScore(result) !== null);
+    const valid = officialResults(results).filter(result => dashboardResultScore(result) !== null);
     return STUDENT_SCORE_TYPES.flatMap(type => {
         const scores = valid.filter(result => (result.score_type || studentScoreType(result.exams)) === type)
             .map(result => dashboardResultScore(result)!);
@@ -29,7 +34,7 @@ export function dashboardScoreSummaries(results: StudentResult[]) {
 }
 
 export function dashboardScoreSummary(results: StudentResult[]) {
-    const first = results.find(result => dashboardResultScore(result) !== null);
+    const first = officialResults(results).find(result => dashboardResultScore(result) !== null);
     const type = first?.score_type || studentScoreType(first?.exams);
     return dashboardScoreSummaries(results).find(summary => summary.type === type) ?? {
         type, label: STUDENT_SCORE_LABELS[type], count: 0, average: null,

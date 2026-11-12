@@ -87,7 +87,6 @@ export class QuestionBanksService {
         const sharedIds = [...grants.keys()];
         const collaboration = await this.authz.collaborationListContext(user, organizationId, 'bank');
         const publicFolders = new Map<string, string | null>();
-        const validationByBank = new Map<string, string>();
         if (catalog) {
             const { data: folders, error: folderError } = await this.db.from('bank_folders')
                 .select('id, created_by').eq('organization_id', organizationId).eq('is_public', true);
@@ -97,28 +96,12 @@ export class QuestionBanksService {
             }
         }
         const publicFolderIds = [...publicFolders.keys()];
-        if (!elevated && catalog) {
-            const { data: assignments, error: assignmentError } = await this.db.from('cbt_question_bank_validators')
-                .select('validation_id').eq('validator_id', user.id);
-            if (assignmentError) throw new BadRequestException('Penugasan validasi belum dapat dibaca.');
-            if (assignments?.length) {
-                const { data: sessions, error: sessionError } = await this.db.from('cbt_question_bank_validations')
-                    .select('id, bank_id').eq('organization_id', organizationId)
-                    .in('id', assignments.map((assignment: { validation_id: string }) => assignment.validation_id))
-                    .order('created_at', { ascending: false });
-                if (sessionError) throw new BadRequestException('Sesi validasi belum dapat dibaca.');
-                for (const session of sessions || []) {
-                    if (!validationByBank.has(session.bank_id)) validationByBank.set(session.bank_id, session.id);
-                }
-            }
-        }
         // Selain Admin (termasuk Proktor): bank sendiri, bank yang dibagikan,
-        // kartu folder publik, dan bank yang ditugaskan untuk divalidasi.
+        // dan kartu folder publik.
         if (!elevated) {
             const clauses = [`created_by.eq.${user.id}`];
             if (sharedIds.length) clauses.push(`id.in.(${sharedIds.join(',')})`);
             if (publicFolderIds.length) clauses.push(`folder_id.in.(${publicFolderIds.join(',')})`);
-            if (validationByBank.size) clauses.push(`id.in.(${[...validationByBank.keys()].join(',')})`);
             query = clauses.length > 1 ? query.or(clauses.join(',')) : query.eq('created_by', user.id);
         }
 
@@ -130,9 +113,8 @@ export class QuestionBanksService {
         }
 
         const banks = ((data as any[]) || []).filter(bank => elevated || bank.created_by === user.id || grants.has(bank.id) ||
-            publicFolderIds.includes(bank.folder_id) || validationByBank.has(bank.id));
+            publicFolderIds.includes(bank.folder_id));
         const counts = await collaboratorCounts(this.db, 'bank', banks.map(bank => bank.id));
-        const validationSummaries = await this.validationSummaries(banks.map(bank => bank.id));
 
         // Nama pembuat ditampilkan pada kartu bank. Profil bisa belum terisi —
         // akun yang datang lewat SSO sering hanya punya email — jadi awalan
@@ -163,9 +145,6 @@ export class QuestionBanksService {
             return {
                 ...visibleBank,
                 canRead,
-                validationId: validationByBank.get(bank.id) || null,
-                // Hanya informasi: hasil validasi tidak membatasi publikasi/pemakaian bank.
-                validation_summary: canRead ? validationSummaries.get(bank.id) || null : null,
                 canManage: access.owner || access.admin || !!grant && ['editor', 'manager'].includes(grant.permission),
                 canPublish: access.canShare,
                 isOwner: access.owner, canShare: access.canShare, canDelete: access.canDelete,
@@ -181,36 +160,6 @@ export class QuestionBanksService {
         });
     }
 
-    /**
-     * Ringkasan sesi validasi terbaru per bank untuk label status di kartu bank.
-     * Kegagalan membaca tidak menggagalkan daftar bank; labelnya saja yang hilang.
-     */
-    private async validationSummaries(bankIds: string[]) {
-        const summaries = new Map<string, { id: string; status: string; round: number; openNotes: number; fixedNotes: number }>();
-        if (!bankIds.length) return summaries;
-        const { data, error } = await this.db.from('cbt_question_bank_validations')
-            .select('id, bank_id, status, round, created_at, notes:cbt_question_validation_notes(status_item, is_resolved, verification)')
-            .in('bank_id', bankIds)
-            .order('created_at', { ascending: false });
-        if (error) {
-            this.logger.warn(`Ringkasan validasi bank soal belum dapat dibaca: ${error.message}`);
-            return summaries;
-        }
-        for (const row of (data as any[]) || []) {
-            if (summaries.has(row.bank_id)) continue;
-            const notes = ((row.notes || []) as Array<{ status_item?: string; is_resolved?: boolean; verification?: string | null }>)
-                .filter(note => note.status_item !== 'valid');
-            summaries.set(row.bank_id, {
-                id: row.id,
-                status: row.status,
-                round: row.round ?? 1,
-                openNotes: notes.filter(note => !note.is_resolved).length,
-                fixedNotes: notes.filter(note => note.is_resolved && note.verification !== 'accepted').length,
-            });
-        }
-        return summaries;
-    }
-
     async get(user: AuthUser, bankId: string) {
         await this.authz.assertBankAccess(user, bankId, 'read');
 
@@ -224,8 +173,7 @@ export class QuestionBanksService {
         const bank = data as any;
         const access = await this.authz.collaborationPermissions(user, 'bank', bankId);
         const counts = await collaboratorCounts(this.db, 'bank', [bankId]);
-        const validationSummary = (await this.validationSummaries([bankId])).get(bankId) || null;
-        return { ...bank, validation_summary: validationSummary, canManage: access.owner || access.admin || !!access.grant && ['editor', 'manager'].includes(access.grant.permission),
+        return { ...bank, canManage: access.owner || access.admin || !!access.grant && ['editor', 'manager'].includes(access.grant.permission),
             canPublish: access.canShare,
             isOwner: access.owner, canShare: access.canShare, canDelete: access.canDelete, collaborationPermission: access.grant?.permission || null,
             collaboratorCount: counts.get(bankId) || 0 };

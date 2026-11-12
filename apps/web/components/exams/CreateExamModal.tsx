@@ -1,6 +1,8 @@
 'use client';
 
 import { isFolderExamCategory } from '@/lib/exam-types';
+import { getExamTypeCatalog } from '@/lib/api/settings';
+import { customExamTypeLabel, PASS_STATE_LABELS, SCORE_MODE_LABELS, type ExamTypeDefinition } from '@/lib/exam-type-catalog';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { availableStudentScoreTypes, studentScoreType, STUDENT_SCORE_LABELS, type StudentScoreType } from '@acca-cbt/shared';
@@ -45,7 +47,8 @@ import { alertDialog } from '@/lib/confirm-dialog';
 import { learningPrograms, type LearningProgram } from '@/lib/learning-catalog';
 import { DEFAULT_SCHOOL_TIME_ZONE, getSchoolTimeZone, getSchoolTimeZoneLabel, schoolTodayDate, utcToSchoolLocalDateTime, addMinutesToLocalDateTime } from '@/lib/school-time';
 
-export type ExamType = 'daily' | 'am' | 'asas_asat' | 'tryout' | 'assignment' | 'lainnya';
+/** Jenis bawaan, atau kode jenis kustom dari Pengaturan → Jenis Ujian (mis. `skd_cpns`). */
+export type ExamType = 'daily' | 'am' | 'asas_asat' | 'tryout' | 'assignment' | 'lainnya' | (string & {});
 
 export const SCORING_OPTIONS = [
     { value: 'classical', label: 'Penilaian Klasik', info: 'Nilai dihitung berdasarkan proporsi jawaban benar (0-100).' },
@@ -396,12 +399,30 @@ export const CreateExamModal: React.FC<CreateExamModalProps> = ({
         }
     }, [isOpen, formData.selectedClassIds, localClassStudents]);
 
+    // Jenis ujian kustom dari Pengaturan → Jenis Ujian (mis. SKD CPNS).
+    const [customExamTypes, setCustomExamTypes] = useState<ExamTypeDefinition[]>([]);
+    useEffect(() => {
+        if (!isOpen) return;
+        let cancelled = false;
+        void getExamTypeCatalog().then(result => {
+            if (!cancelled && result.success) setCustomExamTypes(result.catalog.types);
+        });
+        return () => { cancelled = true; };
+    }, [isOpen]);
+
     const examTypeOptions = useMemo(() => {
+        const custom = customExamTypes.filter(type => type.active).map(type => ({ value: type.code, label: type.label }));
+        // Ujian lama yang jenis kustomnya sudah dinonaktifkan tetap bisa disunting.
+        const currentLabel = customExamTypeLabel(exam);
+        if (exam?.exam_type && currentLabel && !custom.some(option => option.value === exam.exam_type)) {
+            custom.push({ value: exam.exam_type, label: `${currentLabel} (nonaktif)` });
+        }
         // ASAS/ASAT & Asesmen Madrasah adalah urusan sekolah: hanya Admin yang membuat foldernya.
         if (role === 'guru' || role === 'proktor') {
             return [
                 { value: 'daily', label: 'Ulangan Harian' },
                 { value: 'tryout', label: 'Try Out' },
+                ...custom,
                 { value: 'assignment', label: 'Tugas' },
                 { value: 'lainnya', label: 'Lainnya' },
             ];
@@ -411,10 +432,13 @@ export const CreateExamModal: React.FC<CreateExamModalProps> = ({
             { value: 'asas_asat', label: 'ASAS/ASAT (Folder Ujian)' },
             { value: 'am', label: 'Asesmen Madrasah (Folder Ujian)' },
             { value: 'tryout', label: 'Try Out' },
+            ...custom,
             { value: 'assignment', label: 'Tugas' },
             { value: 'lainnya', label: 'Lainnya' },
         ];
-    }, [role]);
+    }, [role, customExamTypes, exam]);
+
+    const selectedCustomType = customExamTypes.find(type => type.code === formData.examType) || null;
 
     const isPasFolderCreate = !isEdit && isFolderExamCategory(formData.examType);
     const isBankRequired = !isFolderExamCategory(formData.examType) && (formData.examType !== 'assignment' || formData.requireBank);
@@ -755,6 +779,14 @@ export const CreateExamModal: React.FC<CreateExamModalProps> = ({
                                 }}
                             />
                         </ModalField>
+                            {selectedCustomType && (
+                                <p className="sm:col-span-2 text-[11px] text-slate-500 -mt-1">
+                                    Penilaian: {SCORE_MODE_LABELS[selectedCustomType.score_mode]}
+                                    {selectedCustomType.pass_rule.mode === 'kkm' && ` · ${PASS_STATE_LABELS.passed} bila nilai ≥ KKM ${selectedCustomType.pass_rule.kkm}`}
+                                    {selectedCustomType.pass_rule.mode === 'passing_grade' && ` · Passing grade: ${selectedCustomType.pass_rule.subtests.map(subtest => `${subtest.name.split(' (')[0]} ${subtest.passing_grade}`).join(', ')}${selectedCustomType.pass_rule.total_passing_grade != null ? `, total ${selectedCustomType.pass_rule.total_passing_grade}` : ''} (subtes dari materi kisi-kisi soal)`}
+                                    {isEdit && exam?.exam_type === formData.examType && ' · aturan yang tersimpan di ujian ini tidak berubah'}
+                                </p>
+                            )}
                             {!isFolderExamCategory(formData.examType) && formData.examType !== 'assignment' && (
                             <ModalField
                                 label="Bank Soal"

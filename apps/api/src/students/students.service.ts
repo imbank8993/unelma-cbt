@@ -1,3 +1,5 @@
+import { examPassStatuses, publicPassResult, type ExamPassResult } from '../common/exam-pass-status';
+import { examTypeRule } from '../common/exam-type-catalog';
 import { assertAnswerKeysReleased } from '../common/answer-key-release';
 import { withQuestionTopics } from '../common/exam-question-topics';
 import { readExamQuestionVersion } from '../common/exam-question-snapshots';
@@ -17,6 +19,8 @@ import { DbService } from '../prisma/prisma-db-adapter';
 import { assertExamAccess, canAccessExam, loadExamAudience } from './exam-access';
 import { studentExamMetadata } from './student-exam-metadata';
 import { findScreenShareException } from '../common/screen-share-exceptions';
+import { allowsPaidRetake } from '../common/paid-content';
+import { finishedAttemptOrder } from '../common/attempt-history';
 
 /** Status attempt yang berarti siswa sudah selesai mengerjakan. */
 const FINISHED_STATUSES = ['submitted', 'auto_submitted'];
@@ -303,6 +307,9 @@ export class StudentsService {
                 metadata: studentExamMetadata(exam.metadata),
                 isCompleted: completed.has(exam.id),
                 isInProgress: inProgress.has(exam.id),
+                // Ujian berbayar yang sudah dibuka boleh dikerjakan ulang tanpa batas.
+                canRetake: completed.has(exam.id) && tokenPrice > 0 && unlocked.has(exam.id) &&
+                    allowsPaidRetake({ is_paid: true, token_price: tokenPrice }),
                 ...(recovery.get(exam.id) || {}),
             };
         });
@@ -353,12 +360,17 @@ export class StudentsService {
 
         // Pemeriksaan ini hanya membaca status; membuka layar persiapan tidak
         // boleh membuat attempt atau mengubah batas waktu siswa.
+        // Ujian berbayar boleh dikerjakan ulang: pengerjaan yang sudah selesai
+        // tidak dihitung "sudah dimulai", sehingga pengerjaan ulang tetap melewati
+        // layar persiapan (konfirmasi, layar penuh) seperti pengerjaan pertama.
         const { data: startedAttempt, error: attemptError } = await this.db
             .from('cbt_exam_attempts')
             .select('id, status, metadata, device_fingerprint')
             .eq('exam_id', examId)
             .eq('user_id', user.id)
-            .in('status', ['in_progress', 'submitted', 'auto_submitted'])
+            .in('status', allowsPaidRetake(data as { is_paid?: boolean; token_price?: number })
+                ? ['in_progress'] : ['in_progress', 'submitted', 'auto_submitted'])
+            .order('started_at', { ascending: false })
             .limit(1)
             .maybeSingle();
         if (attemptError) throw new BadRequestException('Status pengerjaan belum dapat diperiksa.');
@@ -418,8 +430,8 @@ export class StudentsService {
         const { data, error } = await this.db
             .from('cbt_exam_attempts')
             .select(
-                `id, total_score, score_irt, detailed_scores, finished_at, status, needs_manual_grading, metadata,
-                 exams:cbt_exams(title, duration_minutes, show_results, scoring_type, metadata)`,
+                `id, exam_id, total_score, score_irt, detailed_scores, finished_at, status, needs_manual_grading, metadata,
+                 exams:cbt_exams(title, duration_minutes, show_results, scoring_type, metadata, exam_type)`,
             )
             .eq('user_id', user.id)
             .in('status', FINISHED_STATUSES)
@@ -429,12 +441,39 @@ export class StudentsService {
             this.logger.error(`Gagal membaca riwayat nilai: ${error.message}`);
             throw new InternalServerErrorException('Hasil ujian belum dapat dimuat. Silakan coba lagi.');
         }
-        return ((data as any[]) || []).map(row => ({
+        const rows = (data as any[]) || [];
+        const attemptOrder = finishedAttemptOrder(rows);
+        const passResults = await this.studentPassResults(rows);
+        return rows.map(row => ({
             id: row.id, finished_at: row.finished_at, status: row.status, needs_manual_grading: row.needs_manual_grading,
+            // Ujian berbayar dapat dikerjakan ulang: semua pengerjaan tetap tampil
+            // sebagai riwayat, tetapi hanya yang terakhir menjadi nilai resmi.
+            ...attemptOrder.get(row.id),
             ...publicStudentScores(row, row.exams),
             exams: row.exams ? { title: row.exams.title, duration_minutes: row.exams.duration_minutes,
                 show_results: row.exams.show_results, scoring_type: row.exams.scoring_type } : null,
+            pass_result: publicPassResult(passResults.get(row.id)),
         }));
+    }
+
+    /**
+     * Status kelulusan/skor mentah jenis ujian kustom, hanya untuk ujian yang
+     * hasilnya sudah dibuka (aturan yang sama dengan nilai di `publicStudentScores`).
+     */
+    private async studentPassResults(rows: any[]): Promise<Map<string, ExamPassResult>> {
+        const byExam = new Map<string, any[]>();
+        for (const row of rows) {
+            if (row.exams?.show_results !== true || !examTypeRule(row.exams)) continue;
+            const list = byExam.get(row.exam_id) || [];
+            list.push(row);
+            byExam.set(row.exam_id, list);
+        }
+        const merged = new Map<string, ExamPassResult>();
+        for (const [examId, attempts] of byExam) {
+            const statuses = await examPassStatuses(this.db, { id: examId, ...attempts[0].exams }, attempts);
+            for (const [id, status] of statuses) merged.set(id, status);
+        }
+        return merged;
     }
 
     /**
@@ -449,7 +488,7 @@ export class StudentsService {
             .select(
                 `id, total_score, status, needs_manual_grading, user_id, started_at, finished_at,
                  personal_end_time, score_irt, detailed_scores, metadata,
-                 exams:cbt_exams(id, title, show_results, question_bank_id, scoring_type, end_time, duration_minutes, metadata)`,
+                 exams:cbt_exams(id, title, show_results, question_bank_id, scoring_type, end_time, duration_minutes, metadata, exam_type)`,
             )
             .eq('id', attemptId)
             .maybeSingle();
@@ -468,8 +507,10 @@ export class StudentsService {
             throw new ForbiddenException('Hasil ujian ini belum dibuka oleh guru.');
         }
 
+        const passResult = publicPassResult((await examPassStatuses(this.db, row.exams, [row])).get(row.id));
         // Never return exam configuration or submission metadata in a score summary.
         const publicAttempt = {
+            pass_result: passResult,
             id: row.id, ...publicStudentScores(row, row.exams),
             status: row.status, needs_manual_grading: row.needs_manual_grading,
             started_at: row.started_at, finished_at: row.finished_at,
@@ -478,6 +519,11 @@ export class StudentsService {
             exams: { id: row.exams.id, title: row.exams.title, show_results: true,
                 question_bank_id: row.exams.question_bank_id, scoring_type: row.exams.scoring_type },
         };
+        const bankId = row.exams?.question_bank_id;
+        // Profil kepribadian adalah hasil, bukan kunci jawaban: skornya sudah
+        // ikut di `publicAttempt.metadata`, jadi nama dimensi dan teks
+        // interpretasinya mengikuti show_results, bukan izin pembahasan.
+        const { dimensions, interpretations } = await this.loadPersonalityProfile(bankId);
         try {
             await assertAnswerKeysReleased(this.db, row.exams);
         } catch (error) {
@@ -485,7 +531,7 @@ export class StudentsService {
             return {
                 attempt: publicAttempt, answerKeysReleased: false,
                 answerKeysMessage: error.message,
-                dimensions: [], interpretations: [], answers: [],
+                dimensions, interpretations, answers: [],
             };
         }
 
@@ -502,28 +548,6 @@ export class StudentsService {
         const questions = await withQuestionTopics(this.db, await readExamQuestionVersion(this.db, row.exams.id));
         const answersByQuestion = new Map(((answers as any[]) || []).map(answer => [answer.question_id, answer]));
 
-        const bankId = row.exams?.question_bank_id;
-
-        // Dimensi dibatasi ke bank soal ujian ini. Versi lama membaca SELURUH
-        // baris `cbt_question_dimensions` tanpa filter, yang pada basis data
-        // dengan banyak bank berarti mengirimkan dimensi milik bank lain ke
-        // browser siswa.
-        const [{ data: dimensions }, { data: interpretations }] = await Promise.all([
-            bankId
-                ? this.db
-                      .from('cbt_question_dimensions')
-                      .select('id, name')
-                      .eq('bank_id', bankId)
-                : Promise.resolve({ data: [] }),
-            bankId
-                ? this.db
-                      .from('cbt_dimension_interpretations')
-                      .select('*, question_dimensions:cbt_question_dimensions!inner(bank_id)')
-                      .eq('question_dimensions.bank_id', bankId)
-                      .order('min_score', { ascending: true })
-                : Promise.resolve({ data: [] }),
-        ]);
-
         return {
             attempt: publicAttempt,
             answerKeysReleased: true,
@@ -532,8 +556,8 @@ export class StudentsService {
                 participantId: attemptId, questionId: answer.question_id,
                 answered: hasStoredAnswer(answer), isCorrect: answer.is_correct,
             }))),
-            dimensions: (dimensions as any[]) || [],
-            interpretations: (interpretations as any[]) || [],
+            dimensions,
+            interpretations,
             answers: questions.map(question => {
                 const answer = answersByQuestion.get(question.id);
                 return {
@@ -551,6 +575,26 @@ export class StudentsService {
                     },
                 };
             }),
+        };
+    }
+
+    /**
+     * Dimensi dan interpretasi kepribadian, dibatasi ke bank soal ujian ini.
+     * Versi lama membaca SELURUH `cbt_question_dimensions` tanpa filter, yang
+     * berarti mengirimkan dimensi milik bank lain ke browser siswa.
+     */
+    private async loadPersonalityProfile(bankId: string | null | undefined) {
+        if (!bankId) return { dimensions: [] as any[], interpretations: [] as any[] };
+        const [{ data: dimensions }, { data: interpretations }] = await Promise.all([
+            this.db.from('cbt_question_dimensions').select('id, name').eq('bank_id', bankId),
+            this.db.from('cbt_dimension_interpretations')
+                .select('*, question_dimensions:cbt_question_dimensions!inner(bank_id)')
+                .eq('question_dimensions.bank_id', bankId)
+                .order('min_score', { ascending: true }),
+        ]);
+        return {
+            dimensions: (dimensions as any[]) || [],
+            interpretations: (interpretations as any[]) || [],
         };
     }
 }

@@ -7,7 +7,6 @@ import './question-bank-layout.css';
 import { registerPageFab, unregisterPageFab } from '@/app/components/mobile/page-fab';
 import { collectQuestionGroups, questionGroupLabel } from '@/lib/question-groups';
 
-import { getBankValidationFeedback } from '@/lib/api/validations';
 import { FilterSearch } from '@/components/ui/filtertoolbar';
 import { Button } from '@/components/ui/button';
 import { InlineSelectIndicator } from '@/components/ui/InlineSelect';
@@ -61,7 +60,6 @@ import { InlineMath } from '@/app/components/questions/InlineMath';
 import { getSessionUser } from '@/lib/session';
 import { useMemoryState } from '@/lib/useMemoryState';
 import { getQuestionTypeLabel } from '@/app/types/question';
-import { ValidationBadge } from '@/app/components/validations/ValidationBadge';
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import { useParams,useRouter,useSearchParams } from 'next/navigation';
@@ -70,8 +68,6 @@ const InstructionManager = dynamic(() => import('@/app/components/questions/Inst
 const QuestionEditorModal = dynamic(() => import('@/app/components/questions/QuestionEditorModal'), { ssr: false });
 const BulkImportModal = dynamic(() => import('@/app/components/questions/BulkImportModal'), { ssr: false });
 const PreviewModal = dynamic(() => import('@/app/components/questions/PreviewModal'), { ssr: false });
-const BankValidationFeedbackTab = dynamic(() => import('@/app/components/questions/BankValidationFeedbackTab'), { ssr: false });
-const BankValidationSummary = dynamic(() => import('@/app/components/questions/BankValidationSummary'), { ssr: false });
 
 type QuestionBankRole = 'admin' | 'guru' | 'proktor';
 
@@ -94,38 +90,12 @@ export default function QuestionBankDetailPage({ role }: QuestionBankDetailPageP
     const [org, setOrg] = useState<ProctorOrganization | null>(null);
     const [bankInfo, setBankInfo] = useState<QuestionBank | null>(null);
     const canManage = bankInfo?.canManage === true;
-    const [validationNoteCount, setValidationNoteCount] = useState<number | null>(null);
-    useEffect(() => {
-        if (!canManage) return;
-        let active = true;
-        const refresh = async () => {
-            try {
-                const sessions = await getBankValidationFeedback(bankId);
-                if (active) setValidationNoteCount(sessions.reduce((total, session) => total + (session.notes?.length || 0), 0));
-            } catch {
-                if (active) setValidationNoteCount(null);
-            }
-        };
-        void refresh();
-        window.addEventListener('focus', refresh);
-        window.addEventListener('validation-feedback-updated', refresh);
-        return () => {
-            active = false;
-            window.removeEventListener('focus', refresh);
-            window.removeEventListener('validation-feedback-updated', refresh);
-        };
-    }, [bankId, canManage]);
     const [searchQuery, setSearchQuery] = useState('');
     const [filterType, setFilterType] = useState<string>('all');
 
     const [isEditorOpen, setIsEditorOpen] = useState(false);
-    const [requestedTab, setActiveTab] = useState<'questions' | 'stimuli' | 'instructions' | 'dimensions' | 'kisikisi' | 'validations'>(searchParams.get('tab') === 'validations' ? 'validations' : 'questions');
+    const [requestedTab, setActiveTab] = useState<'questions' | 'stimuli' | 'instructions' | 'dimensions' | 'kisikisi'>('questions');
     const activeTab = canManage ? requestedTab : 'questions';
-    useEffect(() => {
-        if (searchParams.get('tab') !== 'validations') return;
-        const timer = window.setTimeout(() => setActiveTab('validations'), 0);
-        return () => window.clearTimeout(timer);
-    }, [searchParams]);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [editingQuestion, setEditingQuestion] = useState<QuestionRecord | null>(null);
     const [selectedType, setSelectedType] = useState<QuestionType>('mcq');
@@ -603,7 +573,6 @@ export default function QuestionBankDetailPage({ role }: QuestionBankDetailPageP
                                     <BookOpen size={13} className="text-white" />
                                 </div>
                                 <h1 className="text-sm font-semibold text-slate-900 truncate max-w-[200px] sm:max-w-xs">{bankInfo?.title || 'Bank Soal'}</h1>
-                                <ValidationBadge summary={bankInfo?.validation_summary} className="hidden sm:inline-flex" />
                             </div>
                         </div>
                         <div className="question-bank-header-actions flex flex-wrap items-center gap-2 w-full sm:w-auto shrink-0">
@@ -698,31 +667,12 @@ export default function QuestionBankDetailPage({ role }: QuestionBankDetailPageP
                         >
                             Kisi-kisi Soal {kisiKisiList.length > 0 && <span className={`ml-1.5 inline-flex min-w-5 items-center justify-center rounded-full px-1.5 py-0.5 text-[11px] font-semibold tabular-nums ${activeTab === 'kisikisi' ? 'bg-primary text-white' : 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300'}`}>{kisiKisiList.length}</span>}
                         </button>)}
-                        {canManage && (<button
-                            onClick={() => setActiveTab('validations')}
-                            className={`pb-3 text-xs sm:text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${activeTab === 'validations' ? 'border-primary text-primary' : 'border-transparent text-slate-500 hover:text-slate-700'}`}
-                        >
-                            Catatan Validasi {(validationNoteCount ?? 0) > 0 && <span className={`ml-1.5 inline-flex min-w-5 items-center justify-center rounded-full px-1.5 py-0.5 text-[11px] font-semibold tabular-nums ${activeTab === 'validations' ? 'bg-primary text-white' : 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300'}`}>{validationNoteCount}</span>}
-                        </button>)}
                     </div>
                 </div>
             </div>
 
             {/* Content */}
             <div className="max-w-6xl mx-auto px-4 md:px-6 py-6 space-y-6 print:hidden">
-                {canManage && activeTab === 'questions' && <BankValidationSummary
-                    key={bankId}
-                    bankId={bankId}
-                    questions={questions}
-                    onEditQuestion={handleOpenEditor}
-                    onOpenFeedback={sessionId => {
-                        const url = new URL(window.location.href);
-                        url.searchParams.set('tab', 'validations');
-                        url.searchParams.set('validation', sessionId);
-                        window.history.replaceState({}, '', url);
-                        setActiveTab('validations');
-                    }}
-                />}
                 {activeTab === 'stimuli' ? (
                     <StimulusManager bankId={bankId} onItemsChange={setStimuliList} />
                 ) : activeTab === 'instructions' ? (
@@ -731,12 +681,6 @@ export default function QuestionBankDetailPage({ role }: QuestionBankDetailPageP
                     <DimensionManager bankId={bankId} onItemsChange={setDimensionsList} />
                 ) : activeTab === 'kisikisi' ? (
                     <KisiKisiTab bankId={bankId} onItemsChange={setKisiKisiList} />
-                ) : activeTab === 'validations' ? (
-                    <BankValidationFeedbackTab
-                        bankId={bankId}
-                        questions={questions}
-                        onEditQuestion={handleOpenEditor}
-                    />
                 ) : (
                     <div className="question-bank-workspace flex flex-col gap-4 sm:gap-5">
                         {/* Stats */}

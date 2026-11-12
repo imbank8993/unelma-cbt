@@ -1,4 +1,5 @@
 import { apiGet,apiSend,type ApiResult } from './client';
+import { EXAM_TYPE_CATALOG_SETTING_KEY, type ExamTypeCatalog } from '../exam-type-catalog';
 
 export interface SettingRow {
     id: string;
@@ -93,4 +94,13 @@ export async function updateSetting(key: string, value: unknown) {
     // Nilai yang tersimpan sementara sudah tidak sesuai setelah penulisan.
     if (result.success) cached = null;
     return result;
+}
+
+/** Katalog jenis ujian kustom yang berlaku (bawaan SKD CPNS bila belum pernah disimpan). */
+export function getExamTypeCatalog() {
+    return apiGet<{ catalog: ExamTypeCatalog }>('/api/settings/exam-types');
+}
+
+export function saveExamTypeCatalog(catalog: ExamTypeCatalog) {
+    return updateSetting(EXAM_TYPE_CATALOG_SETTING_KEY, catalog);
 }

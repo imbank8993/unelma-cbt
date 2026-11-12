@@ -1,3 +1,5 @@
+import { examPassStatuses } from '../common/exam-pass-status';
+import { finishedAttemptOrder, withoutSupersededAttempts } from '../common/attempt-history';
 import { buildTopicAnalysis, hasStoredAnswer } from '@acca-cbt/shared';
 import { withQuestionTopics } from '../common/exam-question-topics';
 import { attemptHealth } from '../common/attempt-health';
@@ -99,6 +101,10 @@ export class ExamMonitoringService {
         }
 
         const attempts = ((data as any[]) || []).filter(attempt => !allowedStudents || allowedStudents.has(attempt.user_id));
+        // Ujian berbayar dapat dikerjakan ulang: tandai urutan pengerjaan dan
+        // pengerjaan terakhir (nilai resmi). Pengerjaan lama tetap ditampilkan.
+        const attemptOrder = finishedAttemptOrder(attempts);
+        for (const attempt of attempts) Object.assign(attempt, attemptOrder.get(attempt.id) || {});
         const attemptIds = attempts.map((a) => a.id);
         const attemptUserIds = new Set(attempts.map((a) => a.user_id).filter(Boolean));
 
@@ -124,9 +130,13 @@ export class ExamMonitoringService {
         }
 
         const [{ data: exam }, questions] = await Promise.all([
-            this.db.from('cbt_exams').select('id, organization_id, created_by, exam_type, start_time, end_time, duration_minutes').eq('id', examId).maybeSingle(),
+            this.db.from('cbt_exams').select('id, organization_id, created_by, exam_type, start_time, end_time, duration_minutes, metadata').eq('id', examId).maybeSingle(),
             readExamQuestionVersion(this.db, examId),
         ]);
+        // Jenis ujian kustom: skor mentah dan status Lulus/Tidak Lulus per pengerjaan.
+        const passResults = exam
+            ? await examPassStatuses(this.db, { ...exam, id: examId }, attempts, { questions: questions as any })
+            : new Map();
         const resetScope = exam ? await this.authz.getExamResetScope?.(user, { ...exam, id: examId }) : null;
         const resetStudents = new Set(resetScope?.studentIds || []);
         const canReset = (studentId: string) => Boolean(resetScope?.allParticipants || resetStudents.has(studentId));
@@ -187,6 +197,7 @@ export class ExamMonitoringService {
                     logs.get(attempt.id) || []),
                 // ID perangkat mentah tidak perlu sampai ke browser pengawas.
                 device_fingerprint: undefined,
+                pass_result: passResults.get(attempt.id) || null,
                 monitoring_history: history,
             };
         });
@@ -622,13 +633,15 @@ export class ExamMonitoringService {
 
         const attemptQuery = this.db
             .from('cbt_exam_attempts')
-            .select('id, exam_id, user_id, status, total_score, profiles:cbt_profiles(full_name, identity_number)');
+            .select('id, exam_id, user_id, status, total_score, finished_at, profiles:cbt_profiles(full_name, identity_number)');
         const { data: attemptRows, error: attemptError } = examIds.length > 1
             ? await attemptQuery.in('exam_id', examIds)
             : await attemptQuery.eq('exam_id', examId);
 
         if (attemptError) throw new BadRequestException('Data peserta analisis belum dapat dibaca.');
-        const attemptList = ((attemptRows as any[]) || []).filter(attempt => {
+        // Pengerjaan ulang ujian berbayar: hanya pengerjaan terakhir tiap siswa
+        // (nilai resmi) yang masuk analisis butir, supaya siswa tidak terhitung ganda.
+        const attemptList = withoutSupersededAttempts((attemptRows as any[]) || []).filter(attempt => {
             const scope = examIds.length > 1 ? scopes.get(attempt.exam_id) ?? null : allowedStudents;
             return !scope || scope.has(attempt.user_id);
         });
