@@ -218,7 +218,10 @@ body {
   width: 100vw !important;
   height: 100vh !important;
   height: 100dvh !important;
-  z-index: 0 !important;
+  /* Di BELAKANG konten. Dulu z-index 0: lapisan tetap ini dilukis di atas semua
+     elemen yang tidak diposisikan (judul, teks, kartu biasa), sehingga di layar
+     < 1024px bagian halaman tampak kosong abu-abu saat digulir. */
+  z-index: -1 !important;
   pointer-events: none !important;
   background: #EBECF1 !important;
   background-color: #EBECF1 !important;
@@ -1704,7 +1707,7 @@ html body .rich-content .katex-inline {
     display: none !important;
   }
 
-  /* Latar ambient adalah lapisan position:fixed (z-index 0). Lebar kertas A4
+  /* Latar ambient adalah lapisan position:fixed. Lebar kertas A4
      (±794px) masuk breakpoint "layar kecil", sehingga lapisan ini muncul saat
      mencetak dan MENUTUPI isi halaman di setiap lembar (hasil PDF putih). */
   .acca-ambient-bg {
