@@ -130,9 +130,9 @@ mjx-container svg {
   --n-surface: #ffffff;
   --n-primary: #030C4D;
   --n-border: rgba(3, 12, 77, 0.16);
-  --font-sans: var(--font-poppins), 'Poppins', system-ui, -apple-system, sans-serif;
-  --font-poppins: var(--font-poppins), 'Poppins', system-ui, -apple-system, sans-serif;
-  --font-exam: var(--font-open-sans), 'Open Sans', system-ui, -apple-system, sans-serif;
+  /* Satu font untuk seluruh aplikasi: Poppins (variabel next/font dipasang di <html>). */
+  --font-sans: var(--font-poppins, 'Poppins'), 'Poppins', system-ui, -apple-system, sans-serif;
+  --font-exam: var(--font-sans);
 }
 
 /* Theme Variables */
@@ -162,11 +162,11 @@ mjx-container svg {
   --color-acca-navy-light: #0a1a5c;
 
   /* Fonts */
-  --font-sans: var(--font-poppins), 'Poppins', system-ui, -apple-system, sans-serif;
-  --font-poppins: var(--font-poppins), 'Poppins', system-ui, -apple-system, sans-serif;
-  --font-exam: var(--font-open-sans), 'Open Sans', system-ui, -apple-system, sans-serif;
-  --font-heading: var(--font-cinzel), system-ui, -apple-system, sans-serif;
-  --font-display: var(--font-cinzel), system-ui, -apple-system, sans-serif;
+  /* Satu font untuk seluruh aplikasi: Poppins (variabel next/font dipasang di <html>). */
+  --font-sans: var(--font-poppins, 'Poppins'), 'Poppins', system-ui, -apple-system, sans-serif;
+  --font-exam: var(--font-sans);
+  --font-heading: var(--font-sans);
+  --font-display: var(--font-sans);
   --font-mono: 'JetBrains Mono', 'Courier New', monospace;
 }
 
@@ -291,7 +291,7 @@ textarea {
 }
 
 .font-poppins {
-  font-family: var(--font-poppins), 'Poppins', sans-serif !important;
+  font-family: var(--font-sans) !important;
 }
 
 .font-exam {
@@ -301,7 +301,7 @@ textarea {
 /* ========================================================
    CBT EXAM & QUESTION/ANSWER TYPOGRAPHY EXEMPTION
    Questions, options, and student answers retain readable
-   typography (Open Sans / Serif) rather than Poppins.
+   typography: kini Poppins, sama dengan seluruh aplikasi.
    ======================================================== */
 .question-content,
 .latex-renderer,
@@ -315,7 +315,7 @@ textarea {
 .cbt-option-content,
 .cbt-question-text,
 .cbt-answer-text {
-  font-family: 'Merriweather', 'Source Serif 4', var(--font-open-sans), 'Open Sans', Georgia, serif;
+  font-family: var(--font-sans);
 }
 
 /* Isi rumus KaTeX dikecualikan (lihat aturan .katex di bawah). */
@@ -338,7 +338,7 @@ textarea {
 .cbt-student-answer,
 input.short-answer-input,
 textarea.essay-answer-input {
-  font-family: var(--font-open-sans), 'Open Sans', system-ui, -apple-system, sans-serif !important;
+  font-family: var(--font-sans) !important;
 }
 
 /* Ensure Math / KaTeX rendering stays untouched.
@@ -1278,7 +1278,7 @@ div.rich-content[style*="justify"],
    Satu ukuran untuk rumus blok ($$...$$) dan inline ($...$) di semua tampilan
    (bank soal, ujian, editor, pratinjau, cetak). Huruf matematika KaTeX tampak
    lebih kecil dari teks pada ukuran yang sama (standar KaTeX 1.21em), jadi 1.2em
-   membuatnya seimbang dengan teks Merriweather. Ubah ukuran HANYA lewat
+   membuatnya seimbang dengan teks soal. Ubah ukuran HANYA lewat
    --cbt-math-scale; jangan beri font-size pada .katex di tempat lain. */
 html body {
   --cbt-math-scale: 1.2em;

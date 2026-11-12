@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { GradingModule } from '../grading/grading.module';
 import { SettingsModule } from '../settings/settings.module';
 import { ExamAttemptsService } from './exam-attempts.service';
+import { LearningGoalsService } from './learning-goals.service';
 import { StudentsController } from './students.controller';
 import { StudentsService } from './students.service';
 
@@ -14,7 +15,7 @@ import { StudentsService } from './students.service';
 @Module({
     imports: [GradingModule, SettingsModule],
     controllers: [StudentsController],
-    providers: [StudentsService, ExamAttemptsService],
+    providers: [StudentsService, ExamAttemptsService, LearningGoalsService],
     exports: [StudentsService, ExamAttemptsService],
 })
 export class StudentsModule {}

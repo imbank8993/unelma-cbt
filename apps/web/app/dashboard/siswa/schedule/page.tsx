@@ -1,7 +1,7 @@
 "use client";
 import { Spinner } from '@/app/components/ui/Spinner';
 import { getStudentExamsResult,type StudentScheduledExam } from '@/lib/api/students';
-import { formatSchoolDate,formatSchoolDateTime,formatSchoolTimeRange } from '@/lib/school-time';
+import { formatSchoolDate,formatSchoolDateTime,formatSchoolTimeRange,utcToSchoolLocalDateTime } from '@/lib/school-time';
 import { useSchoolTimeZone } from '@/lib/useSchoolTimeZone';
 import { getSessionUser } from '@/lib/session';
 import { examTypeLabel } from '@/lib/exam-types';
@@ -11,13 +11,17 @@ import { motion } from 'framer-motion';
 import {
 AlertCircle,
 ArrowRight,
+BookOpen,
 CalendarDays,
 CheckCircle2,
 Clock,
-Ghost,
+Hourglass,
 Lock,RefreshCw,
     Coins,
+    Users,
 } from 'lucide-react';
+import Link from 'next/link';
+import { BANNER_BUTTON, StudentBanner } from '@/app/components/student/StudentBanner';
 import { useRouter } from 'next/navigation';
 import { useCallback,useEffect,useRef,useState } from 'react';
 
@@ -40,6 +44,7 @@ const SchedulePage = () => {
     const clock = useRef<{ time: number; tick: number } | null>(null);
     const opening = useRef(false);
     const [historyLimit, setHistoryLimit] = useState(10);
+    const [filter, setFilter] = useState<'all' | 'open' | 'upcoming' | 'closed'>('all');
 
     const loadData = useCallback(async () => {
         if (inFlight.current) return;
@@ -144,32 +149,70 @@ const SchedulePage = () => {
     const openExams = sortedExams.filter(isOpenNow);
     const upcomingExams = sortedExams.filter(e => scheduleState(e, now.getTime()) === 'upcoming');
     const closedExams = sortedExams.filter(e => ['closed', 'invalid'].includes(scheduleState(e, now.getTime())));
+    const nextExam = openExams[0] || upcomingExams[0];
+    const nextOpen = Boolean(openExams[0]);
     return (
         <div className="max-w-7xl mx-auto pb-24 space-y-6">
             {timeZoneError && <div role="alert" className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{timeZoneError}</div>}
 
-            {/* Stats bar */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <div className="bg-white border border-slate-100 rounded-2xl p-4 text-center shadow-sm hover:shadow-md transition-shadow">
-                    <p className="text-2xl font-black text-[#4B78B8] font-mono">{loadError ? '—' : openExams.length}</p>
-                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Tersedia</p>
+            {/* Banner agenda: ujian terdekat, hitung mundur, dan strip 7 hari */}
+            <StudentBanner
+                eyebrow={nextOpen ? 'Sedang berlangsung' : nextExam ? 'Ujian terdekat' : 'Agenda ujian'}
+                title={loading ? 'Memuat agenda…' : nextExam ? nextExam.title : 'Belum ada ujian terjadwal'}
+                description={nextExam ? `${formatDay(nextExam.start_time)} · ${formatTimeRange(nextExam.start_time, nextExam.end_time)}` : 'Ujian dari sekolah, kelas, dan tryout akan muncul di sini.'}
+                actions={nextExam && (nextOpen ? (
+                    <button type="button" onClick={() => { void openExam(nextExam); }} className={BANNER_BUTTON}>
+                        Kerjakan sekarang <ArrowRight size={16} />
+                    </button>
+                ) : (
+                    <div className="flex items-center gap-3 text-left">
+                        <Hourglass size={20} className="text-amber-300" />
+                        <div>
+                            <p className="text-[11px] font-medium text-blue-200/90">Dimulai dalam</p>
+                            <p className="text-lg font-semibold tabular-nums">{formatTimeUntil(nextExam.start_time || '').replace(/ lagi$/, '')}</p>
+                        </div>
+                    </div>
+                ))}
+            >
+                {/* Strip 7 hari ke depan; titik menandai hari yang punya ujian. */}
+                <div className="grid grid-cols-7 gap-1.5 border-t border-white/10 pt-5 sm:gap-2">
+                    {Array.from({ length: 7 }, (_, offset) => {
+                        const day = new Date(now.getTime() + offset * 86_400_000);
+                        const key = utcToSchoolLocalDateTime(day.toISOString(), timeZone).slice(0, 10);
+                        const count = sortedExams.filter(exam => exam.start_time && utcToSchoolLocalDateTime(exam.start_time, timeZone).slice(0, 10) === key).length;
+                        const weekday = new Intl.DateTimeFormat('id-ID', { weekday: 'short', timeZone }).format(day);
+                        const date = new Intl.DateTimeFormat('id-ID', { day: 'numeric', timeZone }).format(day);
+                        return (
+                            <div key={offset} className={`flex flex-col items-center rounded-xl py-2 ${offset === 0 ? 'bg-white/10 ring-1 ring-white/40' : ''}`}>
+                                <span className="text-[10px] font-medium text-blue-200/90">{offset === 0 ? 'Hari ini' : weekday}</span>
+                                <span className="mt-0.5 text-base font-semibold tabular-nums">{date}</span>
+                                <span className={`mt-1 h-1 w-1 rounded-full ${count ? 'bg-amber-300' : 'bg-transparent'}`} title={count ? `${count} ujian` : undefined} />
+                            </div>
+                        );
+                    })}
                 </div>
-                <div className="bg-white border border-slate-100 rounded-2xl p-4 text-center shadow-sm hover:shadow-md transition-shadow">
-                    <p className="text-2xl font-black text-blue-600 font-mono">{loadError ? '—' : upcomingExams.length}</p>
-                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Akan Datang</p>
-                </div>
-                <div className="bg-white border border-slate-100 rounded-2xl p-4 text-center shadow-sm hover:shadow-md transition-shadow">
-                    <p className="text-2xl font-black text-[#030C4D] font-mono">{loadError ? '—' : sortedExams.filter(e => e.isCompleted).length}</p>
-                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Selesai</p>
-                </div>
-                <div className="bg-white border border-slate-100 rounded-2xl p-4 text-center shadow-sm hover:shadow-md transition-shadow">
-                    <p className="text-2xl font-black text-slate-500 font-mono">{loadError ? '—' : sortedExams.length}</p>
-                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Total Jadwal</p>
-                </div>
+            </StudentBanner>
+
+            {/* Filter status: menggantikan empat kartu angka. */}
+            <div role="group" aria-label="Filter jadwal" className="flex gap-2 overflow-x-auto pb-1">
+                {([
+                    { value: 'all', label: 'Total Jadwal', count: sortedExams.length },
+                    { value: 'open', label: 'Tersedia', count: openExams.length },
+                    { value: 'upcoming', label: 'Akan Datang', count: upcomingExams.length },
+                    { value: 'closed', label: 'Selesai', count: closedExams.length },
+                ] as const).map(item => (
+                    <button key={item.value} type="button" aria-pressed={filter === item.value} onClick={() => setFilter(item.value)}
+                        className={`inline-flex shrink-0 items-center gap-2 rounded-full border px-4 py-2 text-xs font-bold transition-all ${filter === item.value
+                            ? 'border-[#030C4D] bg-[#030C4D] text-white shadow-md shadow-[#030C4D]/15'
+                            : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300'}`}>
+                        {item.label}
+                        <span className={`rounded-full px-1.5 py-0.5 text-[10px] tabular-nums ${filter === item.value ? 'bg-white/20' : 'bg-slate-100 dark:bg-slate-800'}`}>{loadError ? '—' : item.count}</span>
+                    </button>
+                ))}
             </div>
 
             {/* Open / Available exams */}
-            {openExams.length > 0 && (
+            {openExams.length > 0 && (filter === 'all' || filter === 'open') && (
                 <section className="space-y-4">
                     <div className="flex items-center gap-2 px-1">
                         <div className="w-2 h-2 bg-[#6B9FE8] rounded-full animate-pulse" />
@@ -233,7 +276,7 @@ const SchedulePage = () => {
             )}
 
             {/* Upcoming */}
-            {upcomingExams.length > 0 && (
+            {upcomingExams.length > 0 && (filter === 'all' || filter === 'upcoming') && (
                 <section className="space-y-4">
                     <div className="flex items-center gap-2 px-1">
                         <div className="w-2 h-2 bg-blue-500 rounded-full" />
@@ -282,7 +325,7 @@ const SchedulePage = () => {
             )}
 
             {/* Completed */}
-            {closedExams.length > 0 && (
+            {closedExams.length > 0 && (filter === 'all' || filter === 'closed') && (
                 <section className="space-y-4">
                     <div className="flex items-center gap-2 px-1">
                         <CheckCircle2 size={14} className="text-slate-400" />
@@ -324,7 +367,7 @@ const SchedulePage = () => {
                 </section>
             )}
 
-            {closedExams.length > historyLimit && <button onClick={() => setHistoryLimit(value => value + 10)} className="rounded-lg border px-4 py-2 text-sm">Tampilkan riwayat lainnya</button>}
+            {closedExams.length > historyLimit && (filter === 'all' || filter === 'closed') && <button onClick={() => setHistoryLimit(value => value + 10)} className="rounded-lg border px-4 py-2 text-sm">Tampilkan riwayat lainnya</button>}
             {/* Empty state */}
             {loading ? (
                 <div className="p-16 bg-white border border-slate-100 rounded-2xl shadow-sm flex flex-col items-center justify-center space-y-3">
@@ -344,12 +387,23 @@ const SchedulePage = () => {
                     </button>
                 </div>
             ) : exams.length === 0 ? (
-                <div className="p-16 bg-white border border-dashed border-slate-200 rounded-2xl shadow-sm text-center max-w-xl mx-auto w-full flex flex-col items-center">
-                    <div className="w-16 h-16 bg-slate-50 rounded-2xl flex items-center justify-center mb-4 border border-slate-100">
-                        <Ghost size={28} className="text-slate-300" />
+                <div className="grid gap-4 md:grid-cols-2">
+                    <div className="rounded-2xl border border-slate-200/80 bg-white p-6 text-left shadow-xs dark:border-slate-800 dark:bg-slate-900">
+                        <div className="mb-3 flex h-11 w-11 items-center justify-center rounded-2xl bg-blue-50 text-[#030C4D] dark:bg-slate-800 dark:text-blue-300"><Users size={22} /></div>
+                        <h3 className="text-base font-bold text-slate-800 dark:text-slate-100">Ujian datang dari kelasmu</h3>
+                        <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Gabung ke kelas guru dengan kode akses agar ujian dan tryout kelas otomatis tampil di agenda ini.</p>
+                        <Link href="/dashboard/siswa/classes" className="mt-4 inline-flex items-center gap-1.5 rounded-xl bg-[#030C4D] px-4 py-2 text-xs font-bold text-white transition-all hover:bg-[#2563EB] active:scale-95">Gabung kelas <ArrowRight size={14} /></Link>
                     </div>
-                    <h3 className="text-lg font-bold text-slate-700 mb-1">Belum Ada Jadwal Ujian</h3>
-                    <p className="text-slate-500 text-sm max-w-sm mb-0">Tidak ada jadwal ujian untuk saat ini. Hubungi proktor jika ada kesalahan.</p>
+                    <div className="rounded-2xl border border-slate-200/80 bg-white p-6 text-left shadow-xs dark:border-slate-800 dark:bg-slate-900">
+                        <div className="mb-3 flex h-11 w-11 items-center justify-center rounded-2xl bg-amber-50 text-amber-600 dark:bg-slate-800"><BookOpen size={22} /></div>
+                        <h3 className="text-base font-bold text-slate-800 dark:text-slate-100">Manfaatkan waktu luang</h3>
+                        <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Belum ada ujian. Saat yang tepat untuk mencicil materi di Ruang Belajar.</p>
+                        <Link href="/dashboard/learning" className="mt-4 inline-flex items-center gap-1.5 rounded-xl bg-amber-500 px-4 py-2 text-xs font-bold text-white transition-all hover:bg-amber-600 active:scale-95">Mulai belajar <ArrowRight size={14} /></Link>
+                    </div>
+                </div>
+            ) : (filter === 'open' && !openExams.length) || (filter === 'upcoming' && !upcomingExams.length) || (filter === 'closed' && !closedExams.length) ? (
+                <div className="rounded-2xl border border-dashed border-slate-200 bg-white p-10 text-center text-sm text-slate-500 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-400">
+                    Tidak ada ujian di kategori ini.
                 </div>
             ) : null}
 

@@ -5,7 +5,7 @@ import { ErrorBoundary } from "@/app/components/ui/ErrorBoundary";
 import { ToastProvider } from "@/app/components/ui/Toast";
 import { getSettingServer } from "@/lib/api/settings.server";
 import type { Metadata, Viewport } from "next";
-import { Open_Sans, Poppins } from "next/font/google";
+import { Poppins } from "next/font/google";
 import "./globals.css";
 
 export const viewport: Viewport = {
@@ -15,14 +15,6 @@ export const viewport: Viewport = {
   userScalable: false,
   viewportFit: "cover",
 };
-
-const openSans = Open_Sans({
-  variable: "--font-open-sans",
-  subsets: ["latin"],
-  weight: ["300", "400", "500", "600", "700", "800"],
-  display: "swap",
-  preload: true,
-});
 
 const poppins = Poppins({
   variable: "--font-poppins",
@@ -56,7 +48,7 @@ export default async function RootLayout({
   const appConfig = await getSettingServer<{ maintenance_mode?: boolean }>('app_config');
   const isMaintenance = appConfig?.maintenance_mode || false;
   return (
-    <html lang="id" suppressHydrationWarning>
+    <html lang="id" className={poppins.variable} suppressHydrationWarning>
       <head>
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
@@ -71,7 +63,7 @@ export default async function RootLayout({
           dangerouslySetInnerHTML={{
             __html: `
               try {
-                var d = localStorage.getItem('darkMode') === '1' || localStorage.theme === 'dark' || (!('theme' in localStorage) && !('darkMode' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches);
+                var d = location.pathname !== '/' && (localStorage.getItem('darkMode') === '1' || localStorage.theme === 'dark' || (!('theme' in localStorage) && !('darkMode' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches));
                 if (d) {
                   document.documentElement.classList.add('dark');
                 } else {
@@ -96,7 +88,7 @@ export default async function RootLayout({
         <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet" />
       </head>
       <body
-        className={`${openSans.variable} ${poppins.variable} antialiased`}
+        className="antialiased font-sans"
       >
         <div className="acca-ambient-bg" aria-hidden="true" />
         <ExamPwaRegistration />

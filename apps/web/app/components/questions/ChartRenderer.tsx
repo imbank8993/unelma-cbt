@@ -56,7 +56,7 @@ const getDefaultOptions = (type: 'bar' | 'pie' | 'line') => ({
             labels: {
                 boxWidth: 12,
                 padding: 15,
-                font: { size: 11, family: 'Inter, system-ui, sans-serif' },
+                font: { size: 11, family: 'Poppins, system-ui, sans-serif' },
                 color: '#64748b',
             },
         },

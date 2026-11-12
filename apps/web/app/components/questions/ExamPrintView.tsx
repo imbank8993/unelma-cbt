@@ -328,7 +328,7 @@ export function ExamPrintView({ bankInfo, questions, rootRef }: ExamPrintViewPro
 
     return (
         <div ref={rootRef} id="exam-pdf-content" style={{
-            fontFamily: "'Merriweather','Source Serif 4',Georgia,'Segoe UI',Arial,sans-serif",
+            fontFamily: "var(--font-sans)",
             fontSize: '13px',
             lineHeight: 1.6,
             color: '#1e293b',

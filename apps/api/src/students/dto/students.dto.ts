@@ -3,6 +3,7 @@ import { Type } from 'class-transformer';
 import {
     IsArray,
     ArrayMaxSize,
+    ArrayMinSize,
     IsDateString,
     IsBoolean,
     IsNotEmpty,
@@ -17,8 +18,31 @@ import {
     Min,
     Max,
     ValidateNested,
+    Matches,
 } from 'class-validator';
 import { STUDENT_SECURITY_EVENTS, SUBMISSION_SECURITY_EVENT_LIMIT } from '../../common/student-security-events';
+
+export const LEARNING_GOAL_PROGRAMS = ['sekolah', 'utbk', 'cpns', 'pppk', 'kedinasan', 'bahasa', 'umum'];
+
+export class LearningGoalDto {
+    @ApiProperty({ example: ['cpns'], enum: LEARNING_GOAL_PROGRAMS, isArray: true })
+    @IsArray()
+    @ArrayMaxSize(7)
+    @IsIn(LEARNING_GOAL_PROGRAMS, { each: true })
+    @ArrayMinSize(1, { message: 'Pilih minimal satu tujuan belajar.' })
+    programs!: string[];
+
+    @ApiPropertyOptional({ example: 'Lolos SKD dengan nilai 400' })
+    @IsOptional()
+    @IsString()
+    @MaxLength(120)
+    target?: string;
+
+    @ApiPropertyOptional({ example: '2027-10-01' })
+    @IsOptional()
+    @Matches(/^\d{4}-\d{2}-\d{2}$/, { message: 'Tanggal target harus berformat YYYY-MM-DD.' })
+    targetDate?: string;
+}
 
 export class JoinClassDto {
     @ApiProperty({ example: 'X7K2QM' })

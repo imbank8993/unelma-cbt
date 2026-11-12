@@ -24,6 +24,7 @@ import { RateLimit, RateLimitGuard } from '../common/rate-limit';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
 import {
     JoinClassDto,
+    LearningGoalDto,
     BeginSubmitDto,
     SaveAnswerDto,
     StartAttemptDto,
@@ -32,6 +33,7 @@ import {
     SyncLateAnswersDto,
 } from './dto/students.dto';
 import { ExamAttemptsService } from './exam-attempts.service';
+import { LearningGoalsService } from './learning-goals.service';
 import { StudentsService } from './students.service';
 
 /**
@@ -52,6 +54,7 @@ export class StudentsController {
     constructor(
         private readonly students: StudentsService,
         private readonly attempts: ExamAttemptsService,
+        private readonly goals: LearningGoalsService,
     ) {}
 
     // ── Kelas ────────────────────────────────────────────────────────────────
@@ -74,6 +77,21 @@ export class StudentsController {
     @ApiOperation({ summary: 'Keluar dari kelas tambahan' })
     leaveClass(@CurrentUser() user: AuthUser, @Param('classId', ParseUUIDPipe) classId: string) {
         return this.students.leaveClass(user, classId);
+    }
+
+    // ── Tujuan belajar ───────────────────────────────────────────────────────
+
+    @Get('learning-goal')
+    @ApiOperation({ summary: 'Tujuan belajar milik pengguna (Sekolah, UTBK, CPNS, PPPK, ...)' })
+    getLearningGoal(@CurrentUser() user: AuthUser) {
+        return this.goals.get(user);
+    }
+
+    @RateLimit({ name: 'student-learning-goal', limit: 30, windowMs: 15 * 60_000 })
+    @Put('learning-goal')
+    @ApiOperation({ summary: 'Simpan tujuan belajar milik pengguna' })
+    saveLearningGoal(@CurrentUser() user: AuthUser, @Body() dto: LearningGoalDto) {
+        return this.goals.save(user, dto);
     }
 
     // ── Jadwal & hasil ───────────────────────────────────────────────────────

@@ -1688,7 +1688,7 @@ export default function TipTapEditorCore({
           overflow-wrap: anywhere;
           word-break: normal;
           white-space: pre-wrap;
-          font-family: 'Merriweather', 'Source Serif 4', Georgia, serif;
+          font-family: var(--font-sans);
           font-size: 15px;
           line-height: 1.85;
           letter-spacing: 0.01em;
