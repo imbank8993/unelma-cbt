@@ -3,8 +3,7 @@
 import React, { useState } from 'react';
 import Script from 'next/script';
 import Link from 'next/link';
-import { motion } from 'framer-motion';
-import { ArrowRight, ShieldCheck, Sparkles, CheckCircle2, LayoutDashboard, ChevronDown, Check, Lock } from 'lucide-react';
+import { ArrowRight, BookOpen, LayoutDashboard, Lock } from 'lucide-react';
 import { setActiveRoleInStorage, lockActiveRole, getDashboardPath, type Role } from '@/lib/rbac';
 
 const GOOGLE_CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || '15496733034-vlkqs2ft95fgi3nnkbdm7eiq6i1ommem.apps.googleusercontent.com';
@@ -16,12 +15,6 @@ interface LandingHeroProps {
 export default function LandingHero({ currentUser }: LandingHeroProps) {
     const [loading, setLoading] = useState(false);
     const [errorMsg, setErrorMsg] = useState<string | null>(null);
-
-    const highlights = [
-        'Ujian CBT modern & responsif dengan auto-save realtime setiap detik.',
-        'Sistem pengawasan terpadu dengan fullscreen lock & deteksi keluar jendela.',
-        'Autentikasi akun Google resmi — akses cepat, aman, tanpa perlu kata sandi terpisah.',
-    ];
 
     const handleGoogleAuth = async (credential: string) => {
         setLoading(true);
@@ -96,169 +89,105 @@ export default function LandingHero({ currentUser }: LandingHeroProps) {
     };
 
     return (
-        <section id="home" className="relative min-h-[92vh] md:min-h-screen flex items-center bg-white overflow-hidden pt-24 pb-16 md:pt-32 md:pb-20">
+        <section id="home" className="relative flex items-center overflow-hidden bg-gradient-to-b from-[#FFFBF2] to-white pb-4 pt-24 md:pb-20 md:pt-32 lg:min-h-[88vh]">
             <Script
                 src="https://accounts.google.com/gsi/client"
                 strategy="afterInteractive"
                 onLoad={initGoogleGsi}
             />
 
-            {/* Subtle elegant background radial gradient blobs */}
-            <div className="absolute top-10 left-1/2 -translate-x-1/2 w-[1000px] h-[550px] bg-gradient-to-b from-blue-50/50 via-amber-50/30 to-transparent rounded-full blur-3xl pointer-events-none -z-10" />
-            <div className="absolute -top-24 -left-24 w-96 h-96 bg-blue-100/30 rounded-full blur-3xl pointer-events-none -z-10" />
-            <div className="absolute top-1/2 -right-24 w-96 h-96 bg-amber-100/30 rounded-full blur-3xl pointer-events-none -z-10" />
+            {/* Satu sentuhan warna lembut di latar */}
+            <div className="pointer-events-none absolute -right-32 top-10 h-[26rem] w-[26rem] rounded-full bg-amber-100/60 blur-3xl" />
 
-            <div className="container mx-auto px-4 md:px-6 relative z-10 w-full">
-                <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-14 items-center">
-                    
-                    {/* Left Column: Clean & Punchy Headlines */}
-                    <motion.div
-                        initial={{ opacity: 0, y: 24 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.6 }}
-                        className="lg:col-span-7 space-y-6 md:space-y-7"
-                    >
-                        {/* Title */}
-                        <div className="space-y-3">
-                            <h1 className="text-3xl sm:text-5xl lg:text-6xl font-black text-slate-900 tracking-tight leading-[1.12]">
-                                Asesmen Digital Andal,{' '}
-                                <span className="text-[#030C4D]">Cepat</span> &{' '}
-                                <span className="text-[#F8A01B]">Berintegritas</span>
+            <div className="container relative z-10 mx-auto w-full px-4 md:px-6">
+                <div className="grid grid-cols-1 items-center gap-10 lg:grid-cols-12">
+
+                    {/* Kiri: pesan utama */}
+                    <div className="space-y-6 lg:col-span-6">
+                        <div className="space-y-4">
+                            <h1 className="text-4xl font-extrabold leading-[1.12] tracking-tight text-[#030C4D] sm:text-5xl xl:text-[3.4rem]">
+                                Belajar seru,{' '}
+                                <span className="text-[#F8A01B]">latihan terarah</span>, siap hadapi ujian apa pun.
                             </h1>
-                            <p className="text-slate-600 text-sm sm:text-base lg:text-lg leading-relaxed max-w-2xl font-normal">
-                                Solusi ujian berbasis komputer modern dari <strong className="text-[#030C4D] font-bold">Unelma Edu Indonesia</strong>. Dirancang bersih, akurat, dan stabil untuk kelancaran evaluasi pembelajaran.
+                            <p className="max-w-lg text-base leading-relaxed text-slate-600 sm:text-lg">
+                                Materi mudah dipahami dan latihan soal yang seru, dari pelajaran SD hingga persiapan UTBK, CPNS, dan PPPK.
                             </p>
                         </div>
 
-                        {/* Bullet Highlights */}
-                        <ul className="space-y-3 pt-1 max-w-xl">
-                            {highlights.map((item, idx) => (
-                                <li key={idx} className="flex items-start gap-3 text-slate-700 text-xs sm:text-sm leading-relaxed">
-                                    <div className="w-5 h-5 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0 mt-0.5 border border-emerald-200">
-                                        <Check size={12} strokeWidth={3} />
-                                    </div>
-                                    <span>{item}</span>
-                                </li>
-                            ))}
-                        </ul>
+                        {errorMsg && (
+                            <div className="max-w-xl rounded-xl border border-red-200 bg-red-50 p-3 text-xs text-red-600">{errorMsg}</div>
+                        )}
 
-                        {/* Action Buttons */}
-                        <div className="flex flex-wrap items-center gap-4 pt-3">
-                            <button
-                                type="button"
-                                onClick={triggerGoogleSignIn}
-                                className="px-6 py-3.5 rounded-xl bg-[#030C4D] hover:bg-[#0a1a5c] text-white font-bold text-xs uppercase tracking-wider transition-all shadow-md hover:shadow-lg shadow-[#030C4D]/15 flex items-center gap-2.5 cursor-pointer"
-                            >
-                                <span>Mulai Masuk CBT</span>
-                                <ArrowRight size={15} className="text-[#F8A01B]" />
-                            </button>
-
-                            <a
-                                href="#keunggulan"
-                                className="px-6 py-3.5 rounded-xl bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 hover:text-[#030C4D] font-bold text-xs uppercase tracking-wider transition-all cursor-pointer flex items-center gap-2"
-                            >
-                                <span>Lihat Keunggulan</span>
-                                <ChevronDown size={15} />
+                        <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+                            {currentUser ? (
+                                <Link href="/dashboard"
+                                    className="inline-flex items-center justify-center gap-2.5 rounded-2xl bg-[#030C4D] px-6 py-3.5 text-sm font-bold text-white shadow-lg shadow-[#030C4D]/20 transition-all hover:-translate-y-0.5 hover:bg-[#0a1a5c]">
+                                    <LayoutDashboard size={17} className="text-[#F8A01B]" />
+                                    Lanjut belajar, {currentUser.name?.split(' ')[0] || 'kamu'}
+                                </Link>
+                            ) : (
+                                <button type="button" onClick={triggerGoogleSignIn} disabled={loading}
+                                    className="inline-flex cursor-pointer items-center justify-center gap-2.5 rounded-2xl bg-[#030C4D] px-6 py-3.5 text-sm font-bold text-white shadow-lg shadow-[#030C4D]/20 transition-all hover:-translate-y-0.5 hover:bg-[#0a1a5c] disabled:opacity-60">
+                                    <GoogleMark />
+                                    {loading ? 'Memproses…' : 'Mulai belajar gratis'}
+                                    <ArrowRight size={16} className="text-[#F8A01B]" />
+                                </button>
+                            )}
+                            <a href="#coba-soal"
+                                className="inline-flex items-center justify-center gap-2 rounded-2xl border-2 border-slate-200 bg-white px-6 py-3 text-sm font-bold text-[#030C4D] transition-all hover:border-[#F8A01B] hover:text-[#c97d06]">
+                                Coba 5 soal dulu
                             </a>
                         </div>
-                    </motion.div>
+                        {!currentUser && (
+                            <Link href="/login" className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-500 hover:text-[#030C4D]"><Lock size={12} />Login sekolah / proktor</Link>
+                        )}
+                    </div>
 
-                    {/* Right Column: Clean White Authentication Card */}
-                    <motion.div
-                        initial={{ opacity: 0, scale: 0.96 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        transition={{ duration: 0.6, delay: 0.15 }}
-                        className="lg:col-span-5 flex justify-center lg:justify-end"
-                    >
-                        <div className="w-full max-w-md bg-white rounded-3xl border border-slate-200/90 p-7 sm:p-9 shadow-xl shadow-slate-200/50 relative overflow-hidden">
-                            {/* Accent top bar */}
-                            <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-[#030C4D] via-[#0a1a5c] to-[#F8A01B]" />
-
-                            {currentUser ? (
-                                /* Logged-in State Card */
-                                <div className="space-y-6 text-center py-2">
-                                    <div className="w-16 h-16 rounded-2xl bg-amber-50 border border-amber-200 text-[#030C4D] flex items-center justify-center mx-auto shadow-sm">
-                                        <CheckCircle2 size={36} className="text-[#F8A01B]" />
-                                    </div>
-
-                                    <div className="space-y-1">
-                                        <div className="flex items-center justify-center gap-1.5 text-xs text-emerald-600 font-semibold mb-1">
-                                            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                                            <span>Sesi Masuk Aktif</span>
-                                        </div>
-                                        <h3 className="text-xl font-bold text-slate-900 truncate">
-                                            {currentUser.name || currentUser.email}
-                                        </h3>
-                                        <p className="text-xs text-slate-500">
-                                            Peran Aktif: <strong className="text-[#030C4D] font-bold uppercase">{currentUser.role || 'Pengguna'}</strong>
-                                        </p>
-                                    </div>
-
-                                    <Link
-                                        href="/dashboard"
-                                        className="w-full py-3.5 px-4 rounded-xl bg-[#030C4D] hover:bg-[#0a1a5c] text-white font-bold text-xs uppercase tracking-wider transition-all shadow-md flex items-center justify-center gap-2"
-                                    >
-                                        <LayoutDashboard size={16} className="text-[#F8A01B]" />
-                                        <span>Buka Halaman Dashboard</span>
-                                    </Link>
+                    {/* Kanan: pratinjau suasana belajar */}
+                    <div className="relative mx-auto hidden w-full max-w-md md:block lg:col-span-6" aria-hidden="true">
+                        <div className="absolute inset-6 rotate-3 rounded-[2.5rem] bg-gradient-to-br from-[#030C4D] to-[#2563EB]" />
+                        <div className="relative space-y-4 rounded-[2.5rem] border border-slate-200 bg-white p-6 shadow-2xl shadow-slate-300/50 sm:p-7">
+                            <div className="flex items-center justify-between">
+                                <div>
+                                    <p className="text-xs font-semibold text-slate-400">Selamat pagi,</p>
+                                    <p className="text-lg font-extrabold text-[#030C4D]">Nadia 👋</p>
                                 </div>
-                            ) : (
-                                /* Guest Login Card */
-                                <div className="space-y-5">
-                                    <div className="space-y-1.5 text-center">
-                                        <div className="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-[#030C4D]/5 text-[#030C4D] mb-2 border border-[#030C4D]/10">
-                                            <ShieldCheck size={26} className="text-[#030C4D]" />
-                                        </div>
-                                        <h3 className="text-xl font-bold text-slate-900 tracking-tight">
-                                            Masuk Portal CBT
-                                        </h3>
-                                        <p className="text-xs text-slate-500 leading-relaxed">
-                                            Gunakan akun Google resmi Anda untuk masuk atau mendaftar otomatis sebagai peserta.
-                                        </p>
-                                    </div>
-
-                                    {errorMsg && (
-                                        <div className="p-3 rounded-xl bg-red-50 border border-red-200 text-red-600 text-xs">
-                                            {errorMsg}
-                                        </div>
-                                    )}
-
-                                    {/* Google Sign-In Button */}
-                                    <button
-                                        type="button"
-                                        onClick={triggerGoogleSignIn}
-                                        disabled={loading}
-                                        className="w-full py-3.5 px-4 rounded-xl bg-white hover:bg-slate-50 border border-slate-300 text-slate-800 font-semibold transition-all shadow-xs hover:shadow-md flex items-center justify-center gap-3 cursor-pointer disabled:opacity-60 text-xs sm:text-sm"
-                                    >
-                                        <svg className="w-4 h-4 sm:w-5 sm:h-5 shrink-0" viewBox="0 0 24 24">
-                                            <path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.66-5.17 3.66-9.17z" />
-                                            <path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.25v3.15C3.26 21.36 7.34 24 12 24z" />
-                                            <path fill="#FBBC05" d="M5.28 14.27c-.25-.72-.38-1.49-.38-2.27s.13-1.55.38-2.27V6.58H1.25C.45 8.18 0 10.04 0 12s.45 3.82 1.25 5.42l4.03-3.15z" />
-                                            <path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.34 0 3.26 2.64 1.25 6.58l4.03 3.15c.95-2.83 3.6-4.98 6.72-4.98z" />
-                                        </svg>
-                                        <span>{loading ? 'Memproses Masuk...' : 'Masuk dengan Akun Google'}</span>
-                                    </button>
-
-                                    {/* Fallback to Manual Admin Login */}
-                                    <div className="pt-2 text-center border-t border-slate-100 space-y-2">
-                                        <p className="text-[11px] text-slate-500 leading-relaxed">
-                                            Akun baru dibuat otomatis saat pertama login Google.
-                                        </p>
-                                        <Link
-                                            href="/login"
-                                            className="inline-flex items-center gap-1.5 text-[11px] font-bold text-[#030C4D] hover:text-[#F8A01B] transition-colors"
-                                        >
-                                            <Lock size={12} />
-                                            <span>Opsi Masuk Manual / Proktor</span>
-                                        </Link>
+                                <span className="rounded-full bg-emerald-50 px-3 py-1 text-[11px] font-bold text-emerald-700">🎯 UTBK · 87 hari lagi</span>
+                            </div>
+                            <div className="rounded-2xl bg-gradient-to-br from-sky-50 to-blue-50 p-4">
+                                <div className="flex items-center gap-3">
+                                    <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-white text-[#2563EB] shadow-sm"><BookOpen size={20} /></span>
+                                    <div className="min-w-0 flex-1">
+                                        <p className="text-[11px] font-bold uppercase tracking-wider text-[#2563EB]">Lanjutkan belajar</p>
+                                        <p className="truncate text-sm font-bold text-slate-800">Penalaran Matematika · Barisan</p>
                                     </div>
                                 </div>
-                            )}
+                                <div className="mt-3 h-2 overflow-hidden rounded-full bg-white"><div className="h-full w-2/3 rounded-full bg-gradient-to-r from-[#2563EB] to-sky-400" /></div>
+                            </div>
+                            <div className="flex items-center justify-between rounded-2xl bg-[#030C4D] px-4 py-3 text-white">
+                                <span className="text-sm font-bold">Tryout Nasional #4</span>
+                                <span className="rounded-lg bg-[#F8A01B] px-3 py-1 text-xs font-extrabold text-[#030C4D]">Mulai</span>
+                            </div>
                         </div>
-                    </motion.div>
+
+                    </div>
 
                 </div>
             </div>
         </section>
+    );
+}
+
+/** Logo Google kecil untuk tombol masuk. */
+function GoogleMark() {
+    return (
+        <span className="flex h-6 w-6 items-center justify-center rounded-full bg-white">
+            <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" aria-hidden="true">
+                <path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.66-5.17 3.66-9.17z" />
+                <path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.25v3.15C3.26 21.36 7.34 24 12 24z" />
+                <path fill="#FBBC05" d="M5.28 14.27c-.25-.72-.38-1.49-.38-2.27s.13-1.55.38-2.27V6.58H1.25C.45 8.18 0 10.04 0 12s.45 3.82 1.25 5.42l4.03-3.15z" />
+                <path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.34 0 3.26 2.64 1.25 6.58l4.03 3.15c.95-2.83 3.6-4.98 6.72-4.98z" />
+            </svg>
+        </span>
     );
 }

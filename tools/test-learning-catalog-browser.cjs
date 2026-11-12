@@ -86,6 +86,8 @@ const { chromium } = require('playwright');
             const require = name => {
                 if (name.endsWith('.css')) return {};
                 if (name === './button') name = '@/app/components/ui/button';
+                // Alias lama yang hanya mengekspor ulang komponen yang sama.
+                if (name === '@/components/ui/InlineSelect') name = '@/app/components/ui/inlineselect';
                 if (name === './learning-converter') name = '@/lib/learning-converter';
                 if (name === './learning-api') name = '@/lib/learning-api';
                 if (name === './MaterialPreview') name = '@/app/components/learning/MaterialPreview';

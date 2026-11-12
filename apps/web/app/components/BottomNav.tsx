@@ -59,7 +59,7 @@ const PAGE_ICONS: Record<string, string> = {
 const PAGE_LABELS: Record<string, string> = {
     'dashboard': 'Beranda',
     'beranda': 'Beranda',
-    'learning': 'Bahan Ajar',
+    'learning': 'Ruang Belajar',
     'classes': 'Kelas',
     'questions': 'Bank Soal',
     'exams': 'Ujian',

@@ -77,7 +77,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     }, [mobileOpen]);
 
     const pageTitle = useMemo(() => {
-        if (pathname.includes('/learning')) return 'Bahan Ajar';
+        if (pathname.includes('/learning')) return 'Ruang Belajar';
         if (pathname.includes('/validations')) return 'Validasi Soal';
         if (pathname.includes('/classes')) return 'Kelas';
         if (pathname.includes('/questions')) return 'Bank Soal';

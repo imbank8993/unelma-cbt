@@ -3,7 +3,7 @@
 import React from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { Mail, Phone, MapPin, MessageCircle, ArrowUp } from 'lucide-react';
+import { Mail, MapPin, MessageCircle, ArrowUp, Instagram } from 'lucide-react';
 
 export default function LandingFooter() {
     const scrollToTop = () => {
@@ -41,7 +41,7 @@ export default function LandingFooter() {
                         </div>
 
                         <p className="text-xs sm:text-sm text-slate-300 leading-relaxed max-w-sm">
-                            Platform Ujian Berbasis Komputer (CBT) dan Evaluasi Belajar Digital yang bersih, andal, dan berintegritas untuk kemajuan pendidikan modern.
+                            Platform belajar dan latihan soal untuk semua usia: dari pelajaran SD hingga persiapan UTBK, CPNS, PPPK, dan kedinasan.
                         </p>
                     </div>
 
@@ -57,18 +57,18 @@ export default function LandingFooter() {
                                 </a>
                             </li>
                             <li>
-                                <a href="#keunggulan" className="hover:text-white transition-colors">
-                                    Keunggulan Platform
+                                <a href="#program" className="hover:text-white transition-colors">
+                                    Program Belajar
                                 </a>
                             </li>
                             <li>
-                                <a href="#alur" className="hover:text-white transition-colors">
-                                    Alur Pelaksanaan Ujian
+                                <a href="#coba-soal" className="hover:text-white transition-colors">
+                                    Coba Latihan Soal
                                 </a>
                             </li>
                             <li>
                                 <Link href="/login" className="hover:text-white transition-colors">
-                                    Masuk Aplikasi CBT
+                                    Login
                                 </Link>
                             </li>
                         </ul>
@@ -93,6 +93,17 @@ export default function LandingFooter() {
                                     className="hover:text-white underline decoration-white/30"
                                 >
                                     WhatsApp: +62 812-3456-7890
+                                </a>
+                            </li>
+                            <li className="flex items-start gap-2.5">
+                                <Instagram size={15} className="text-[#F8A01B] shrink-0 mt-0.5" />
+                                <a
+                                    href="https://www.instagram.com/unelma_id/"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="hover:text-white underline decoration-white/30"
+                                >
+                                    Instagram: @unelma_id
                                 </a>
                             </li>
                             <li className="flex items-start gap-2.5">

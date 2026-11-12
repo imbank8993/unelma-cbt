@@ -85,7 +85,7 @@ export default function Sidebar({
     const menuConfig: Record<string, MenuItem[]> = useMemo(() => ({
         'Superadmin': [
             { icon: 'fa-house', label: 'Dashboard', href: '/dashboard/admin' },
-            { icon: 'fa-graduation-cap', label: 'Bahan Ajar', href: '/dashboard/learning' },
+            { icon: 'fa-graduation-cap', label: 'Ruang Belajar', href: '/dashboard/learning' },
             { icon: 'fa-users', label: 'Kelas', href: '/dashboard/admin/classes' },
             { icon: 'fa-book-open', label: 'Bank Soal', href: '/dashboard/admin/questions' },
             { icon: 'fa-shield-halved', label: 'Validasi Soal', href: '/dashboard/admin/questions/validations' },
@@ -107,7 +107,7 @@ export default function Sidebar({
         ],
         'Admin': [
             { icon: 'fa-house', label: 'Dashboard', href: '/dashboard/admin' },
-            { icon: 'fa-graduation-cap', label: 'Bahan Ajar', href: '/dashboard/learning' },
+            { icon: 'fa-graduation-cap', label: 'Ruang Belajar', href: '/dashboard/learning' },
             { icon: 'fa-users', label: 'Kelas', href: '/dashboard/admin/classes' },
             { icon: 'fa-book-open', label: 'Bank Soal', href: '/dashboard/admin/questions' },
             { icon: 'fa-shield-halved', label: 'Validasi Soal', href: '/dashboard/admin/questions/validations' },
@@ -129,7 +129,7 @@ export default function Sidebar({
         ],
         'Proktor': [
             { icon: 'fa-house', label: 'Dashboard', href: '/dashboard/proktor' },
-            { icon: 'fa-graduation-cap', label: 'Bahan Ajar', href: '/dashboard/learning' },
+            { icon: 'fa-graduation-cap', label: 'Ruang Belajar', href: '/dashboard/learning' },
             { icon: 'fa-users', label: 'Kelas', href: '/dashboard/proktor/classes' },
             { icon: 'fa-book-open', label: 'Bank Soal', href: '/dashboard/proktor/questions' },
             { icon: 'fa-shield-halved', label: 'Validasi Soal', href: '/dashboard/proktor/questions/validations' },
@@ -139,7 +139,7 @@ export default function Sidebar({
         ],
         'Siswa': [
             { icon: 'fa-house', label: 'Dashboard', href: '/dashboard/siswa' },
-            { icon: 'fa-graduation-cap', label: 'Bahan Ajar', href: '/dashboard/learning' },
+            { icon: 'fa-graduation-cap', label: 'Ruang Belajar', href: '/dashboard/learning' },
             { icon: 'fa-users', label: 'Kelas', href: '/dashboard/siswa/classes' },
             { icon: 'fa-calendar', label: 'Jadwal', href: '/dashboard/siswa/schedule' },
             { icon: 'fa-chart-column', label: 'Hasil', href: '/dashboard/siswa/results' },

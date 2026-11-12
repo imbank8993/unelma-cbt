@@ -5,8 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import LandingHeader from '@/app/components/landing/LandingHeader';
 import LandingHero from '@/app/components/landing/LandingHero';
-import LandingFeatures from '@/app/components/landing/LandingFeatures';
-import LandingWorkflow from '@/app/components/landing/LandingWorkflow';
+import { LandingAudience, LandingFaqCta, LandingFeatureGrid, LandingHowItWorks, LandingPaths, LandingTryQuestion } from '@/app/components/landing/LandingLearning';
 import LandingFooter from '@/app/components/landing/LandingFooter';
 import { fetchSessionUser, clearSessionCache } from '@/lib/session';
 import { clearActiveRoleInStorage, setActiveRoleInStorage, lockActiveRole, getDashboardPath, type Role } from '@/lib/rbac';
@@ -20,6 +19,22 @@ export default function Home() {
     const [failure, setFailure] = useState<SsoFailure | null>(null);
     const [resetting, setResetting] = useState(false);
     const [currentUser, setCurrentUser] = useState<{ id?: string; name?: string; email?: string; role?: string } | null>(null);
+
+    // Halaman utama selalu terang. Tema gelap pilihan pengguna dipulihkan saat pindah ke dashboard.
+    useEffect(() => {
+        const root = document.documentElement;
+        const wasDark = root.classList.contains('dark');
+        const previous = { scheme: root.style.colorScheme, background: root.style.backgroundColor };
+        root.classList.remove('dark');
+        root.style.colorScheme = 'light';
+        root.style.backgroundColor = '#ffffff';
+        return () => {
+            if (wasDark) root.classList.add('dark');
+            root.style.colorScheme = previous.scheme;
+            root.style.backgroundColor = previous.background;
+        };
+    }, []);
+    const startLearning = () => { window.location.href = currentUser ? '/dashboard' : '/login'; };
 
     useEffect(() => {
         let isRedirecting = false;
@@ -164,20 +179,32 @@ export default function Home() {
     }
 
     return (
-        <main className="min-h-screen bg-white text-slate-900 font-sans selection:bg-[#F8A01B] selection:text-[#030C4D]">
+        <main className="min-h-screen bg-white text-slate-900 font-sans [color-scheme:light] selection:bg-[#F8A01B] selection:text-[#030C4D]">
             {/* 1. Header Nav */}
             <LandingHeader currentUser={currentUser} />
 
-            {/* 2. Hero Section (White background with blue & orange accents) */}
+            {/* 2. Hero: belajar seru, latihan terarah */}
             <LandingHero currentUser={currentUser} />
 
-            {/* 3. Keunggulan Platform CBT */}
-            <LandingFeatures />
+            {/* 3. Jalur belajar: SD hingga CPNS/PPPK */}
+            <LandingPaths />
 
-            {/* 4. Alur Pelaksanaan Ujian */}
-            <LandingWorkflow />
+            {/* 4. Coba satu soal langsung */}
+            <LandingTryQuestion onStart={startLearning} />
 
-            {/* 5. Footer */}
+            {/* 5. Siklus belajar */}
+            <LandingHowItWorks />
+
+            {/* 6. Untuk siswa, orang tua, sekolah, dan pejuang ASN */}
+            <LandingAudience />
+
+            {/* 7. Fitur platform */}
+            <LandingFeatureGrid />
+
+            {/* 8. Tanya jawab & ajakan */}
+            <LandingFaqCta onStart={startLearning} loggedIn={!!currentUser} />
+
+            {/* 9. Footer */}
             <LandingFooter />
         </main>
     );

@@ -8,7 +8,7 @@ import { InlineSelect } from '@/app/components/ui/inlineselect';
 import { listSubjects } from '@/lib/api/proctor';
 import { learningRequest, type LearningMaterial } from '@/lib/learning-api';
 import { createSubchapterFromFile, planBulkDrafts, type BulkDraft } from '@/lib/learning-bulk';
-import { chapterKey, learningGrades, learningKey, type LearningChapter } from '@/lib/learning-catalog';
+import { chapterKey, learningGradeOptions, learningGrades, learningKey, type LearningChapter } from '@/lib/learning-catalog';
 
 const MANUAL = '__manual__';
 const NEW_CHAPTER = '__new__';
@@ -155,7 +155,7 @@ export function CreateSubchapterModal({ materials, chapter, initialGrade = '10',
                 <div className="lc-create-grid">
                     <ModalField label="Tingkatan kelas" required>
                         <InlineSelect aria-label="Tingkatan kelas" value={grade} disabled={busy} minWidth="100%" onChange={value => { setGrade(value); setTopic(''); setTopicManual(false); resetChapterDependents(); }}
-                            options={[...learningGrades.map(item => ({ value: item.value, label: item.label })), ...(grade && !learningGrades.some(item => item.value === grade) ? [{ value: grade, label: `Kelas ${grade}` }] : [])]} />
+                            options={[...learningGradeOptions, ...(grade && !learningGrades.some(item => item.value === grade) ? [{ value: grade, label: `Kelas ${grade}` }] : [])]} />
                     </ModalField>
                     <ModalField label="Mata pelajaran" required hint={showSubjectInput ? 'Ketik nama mapel bila tidak ada di master mapel.' : undefined}>
                         <InlineSelect aria-label="Mata pelajaran" value={showSubjectInput ? MANUAL : subject} disabled={busy} minWidth="100%" onChange={chooseSubject}

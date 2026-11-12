@@ -232,7 +232,7 @@ export const LatexRenderer = React.memo(({ text, className = '' }: LatexRenderer
 const WRAPPER_STYLE: React.CSSProperties = {
   color: 'inherit',
   overflowWrap: 'break-word',
-  fontFamily: "'Merriweather', 'Source Serif 4', Georgia, serif",
+  fontFamily: "var(--font-sans)",
   fontSize: '13.5px',
   lineHeight: '1.6',
   textRendering: 'optimizeLegibility',

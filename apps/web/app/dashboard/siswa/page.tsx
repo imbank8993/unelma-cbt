@@ -6,9 +6,18 @@ import { getSetting,pickAnnouncements,type Announcement } from '@/lib/api/settin
 import {
     getStudentExamsResult,
     getStudentResultsAction,
+    listStudentClasses,
     type StudentResult,
     type StudentScheduledExam,
 } from '@/lib/api/students';
+import { learningRequest, type LearningMaterial } from '@/lib/learning-api';
+import { groupLearningChapters, learningProgramOf, learningPrograms, type LearningProgram } from '@/lib/learning-catalog';
+import { daysUntil, loadLearningGoal, programLabel, saveLearningGoal, type LearningGoal } from '@/lib/learning-goal';
+import { useToast } from '@/app/components/ui/Toast';
+import { LearningGoalModal } from '@/app/components/student/LearningGoalModal';
+import { PROGRAM_VISUALS } from '@/app/components/student/programVisuals';
+import { BANNER_BUTTON, BannerStats, StudentBanner } from '@/app/components/student/StudentBanner';
+import Link from 'next/link';
 import { getSessionUser } from '@/lib/session';
 import { dashboardExams, recoveryActive, recoveryLabel, scheduleState } from '@/lib/student-schedule';
 import { formatSchoolDate, formatSchoolDateTime, formatSchoolTimeRange, getSchoolTimeZoneLabel } from '@/lib/school-time';
@@ -19,15 +28,19 @@ import {
 AlertCircle,
 ArrowRight,
 BookOpen,
-CheckCircle2,
+CalendarDays,
 ChevronRight,
 Clock,
+Coins,
 FileText,
-Ghost,
+Pencil,
+Sparkles,
+Rocket,
+Target,
 Timer,
 TrendingUp,
+Users,
 Zap,
-Coins,
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useCallback,useEffect,useRef,useState } from 'react';
@@ -40,6 +53,8 @@ function clockNow(clock: { time: number; tick: number } | null): number {
     return clock ? clock.time + performance.now() - clock.tick : NaN;
 }
 
+const NEXT_ACTION_CLASS = 'inline-flex shrink-0 items-center justify-center gap-1.5 rounded-xl bg-[#030C4D] px-5 py-2.5 text-xs font-bold text-white transition-all hover:bg-[#2563EB] active:scale-95 dark:bg-blue-600';
+
 export default function SiswaDashboard() {
     const { timeZone, error: timeZoneError } = useSchoolTimeZone();
     const [exams, setExams] = useState<StudentScheduledExam[]>([]);
@@ -49,10 +64,18 @@ export default function SiswaDashboard() {
     const [now, setNow] = useState(NaN);
     const [announcements, setAnnouncements] = useState<Announcement[]>([]);
     const [tokenBalance, setTokenBalance] = useState<number>(0);
+    const [userId, setUserId] = useState<string | null>(null);
+    const [firstName, setFirstName] = useState('');
+    const [materials, setMaterials] = useState<LearningMaterial[]>([]);
+    const [classCount, setClassCount] = useState<number | null>(null);
+    const [goal, setGoal] = useState<LearningGoal | null>(null);
+    const [goalOpen, setGoalOpen] = useState(false);
     const router = useRouter();
     const inFlight = useRef(false);
     const clock = useRef<{ time: number; tick: number } | null>(null);
     const opening = useRef(false);
+    const goalUser = useRef<string | null>(null);
+    const toast = useToast();
 
     const loadData = useCallback(async () => {
         if (inFlight.current) return;
@@ -62,6 +85,13 @@ export default function SiswaDashboard() {
             if (!user) {
                 router.replace('/');
                 return;
+            }
+            setUserId(user.id);
+            setFirstName((user.fullName || '').trim().split(/\s+/)[0] || '');
+            // Tujuan belajar cukup dimuat sekali per akun, bukan pada setiap penyegaran berkala.
+            if (goalUser.current !== user.id) {
+                goalUser.current = user.id;
+                void loadLearningGoal(user.id).then(loaded => { if (goalUser.current === user.id) setGoal(loaded); });
             }
             const response = await getStudentExamsResult();
             if (!response.success) throw new Error(response.error || 'Daftar ujian belum dapat dimuat.');
@@ -73,11 +103,15 @@ export default function SiswaDashboard() {
             setExams(response.exams);
             setLoadError('');
 
-            const [resultResponse, announcementResponse, tokenResponse] = await Promise.allSettled([
+            const [resultResponse, announcementResponse, tokenResponse, learningResponse, classResponse] = await Promise.allSettled([
                 getStudentResultsAction(),
                 getSetting<Announcement | Announcement[]>('announcement_config'),
                 getUserTokenBalance(),
+                learningRequest<{ materials: LearningMaterial[] }>(''),
+                listStudentClasses(),
             ]);
+            if (learningResponse.status === 'fulfilled') setMaterials(learningResponse.value.materials || []);
+            if (classResponse.status === 'fulfilled') setClassCount(classResponse.value.length);
             if (resultResponse.status === 'fulfilled') setResults(resultResponse.value);
             if (announcementResponse.status === 'fulfilled') {
                 setAnnouncements(pickAnnouncements(announcementResponse.value, 'show_siswa'));
@@ -154,6 +188,41 @@ export default function SiswaDashboard() {
 
     const completedExamsCount = results.filter(r => r.status === 'submitted' || r.status === 'auto_submitted').length;
     const visibleExams = dashboardExams(exams, now);
+    const activeExam = visibleExams.find(exam => scheduleState(exam, now) === 'open');
+
+    // Ruang belajar: progres dan subbab berikutnya, diutamakan dari program tujuan siswa.
+    const goalPrograms = goal?.programs ?? [];
+    const inGoal = (grade: string) => !goalPrograms.length || goalPrograms.includes(learningProgramOf(grade));
+    const chapters = groupLearningChapters(materials);
+    const completedMaterials = materials.filter(item => item.completed).length;
+    const continueChapters = [
+        ...chapters.filter(chapter => chapter.completed > 0 && chapter.completed < chapter.items.length),
+        ...chapters.filter(chapter => chapter.completed === 0 && inGoal(chapter.grade)),
+    ].slice(0, 3);
+    const programCards = (goalPrograms.length ? learningPrograms.filter(item => goalPrograms.includes(item.value)) : learningPrograms.slice(0, 4))
+        .map(item => ({ ...item, chapters: chapters.filter(chapter => learningProgramOf(chapter.grade) === item.value).length }));
+    const daysLeft = daysUntil(goal?.targetDate, now);
+    const hour = Number.isFinite(now) ? new Date(now).getHours() : 8;
+    const greeting = hour < 11 ? 'Selamat pagi' : hour < 15 ? 'Selamat siang' : hour < 19 ? 'Selamat sore' : 'Selamat malam';
+    const saveGoal = async (next: LearningGoal) => {
+        setGoal(next);
+        setGoalOpen(false);
+        if (!userId) return;
+        const result = await saveLearningGoal(userId, next);
+        if (result.synced) toast.success('Tujuan tersimpan', 'Beranda dan materi kini menyesuaikan tujuanmu.');
+        else toast.error('Tersimpan di perangkat ini saja', result.error || 'Server belum dapat dihubungi. Coba simpan lagi nanti.');
+    };
+    const learnHref = (program?: LearningProgram) => program ? `/dashboard/learning?program=${program}` : '/dashboard/learning';
+    // Langkah berikutnya: satu aksi paling penting saat ini.
+    const resume = continueChapters[0];
+    const resumeItem = resume?.items.find(item => !item.completed) || resume?.items[0];
+    const nextStep: { icon: typeof Zap; tone: string; label: string; title: string; sub?: string; action: string; href: string } = activeExam
+        ? { icon: Zap, tone: 'from-rose-500 to-orange-500', label: 'Ujian sedang berlangsung', title: activeExam.title, action: 'Kerjakan sekarang', href: '/dashboard/siswa/schedule' }
+        : resume && resumeItem
+            ? { icon: BookOpen, tone: 'from-[#2563EB] to-sky-500', label: resume.completed ? 'Lanjutkan belajar' : 'Rekomendasi untukmu', title: resumeItem.subtopic || resumeItem.title, sub: `${resume.subject} · ${resume.title}`, action: resume.completed ? 'Lanjutkan' : 'Mulai', href: `/dashboard/learning/${resumeItem.id}` }
+            : classCount === 0
+                ? { icon: Users, tone: 'from-violet-500 to-fuchsia-500', label: 'Langkah pertama', title: 'Gabung ke kelas gurumu', sub: 'Ujian dan materi kelas akan muncul otomatis.', action: 'Gabung kelas', href: '/dashboard/siswa/classes' }
+                : { icon: Rocket, tone: 'from-amber-500 to-orange-500', label: 'Siap belajar?', title: goalPrograms.length ? `Jelajahi materi ${programLabel(goalPrograms[0])}` : 'Jelajahi Ruang Belajar', sub: 'Pelajari materi dulu sebelum ujian berikutnya.', action: 'Jelajahi', href: learnHref(goalPrograms[0]) };
 
 
     const renderExamCard = (exam: StudentScheduledExam, i: number) => {
@@ -163,7 +232,7 @@ export default function SiswaDashboard() {
         return (
             <div
                 key={exam.id || i}
-                className="p-4 bg-white border border-slate-100 hover:border-indigo-100/80 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-4 transition-all duration-300 relative overflow-hidden group shadow-sm hover:shadow-md"
+                className="p-4 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 hover:border-indigo-100/80 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-4 transition-all duration-300 relative overflow-hidden group shadow-sm hover:shadow-md"
             >
                 <div className={`absolute left-0 top-0 h-full w-1 ${isReady ? 'bg-[#030C4D]' : 'bg-blue-400'}`} />
                 
@@ -209,7 +278,7 @@ export default function SiswaDashboard() {
                             )}
                         </div>
 
-                        <h3 className="font-bold text-slate-800 text-sm group-hover:text-[#030C4D] transition-colors line-clamp-1 leading-snug">{exam.title}</h3>
+                        <h3 className="font-bold text-slate-800 dark:text-slate-100 text-sm group-hover:text-[#030C4D] transition-colors line-clamp-1 leading-snug">{exam.title}</h3>
                         
                         <p className="text-xs text-slate-400 flex items-center gap-1.5 font-sans font-medium">
                             <Clock size={12} className="text-slate-300" />
@@ -256,147 +325,200 @@ export default function SiswaDashboard() {
                 </div>
             )}
 
-            {/* ── Stats Grid ── */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <StudentScoreAverages results={results} />
-
-                {/* Ujian Selesai */}
-                <div className="bg-white border border-slate-100 rounded-2xl p-5 hover:shadow-xl hover:shadow-[#030C4D]/5 transition-all duration-300 relative overflow-hidden flex items-center justify-between gap-4">
-                    <div className="absolute left-0 top-0 h-full w-1.5 bg-[#030C4D]" />
-                    <div className="flex items-center gap-3.5">
-                        <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center text-[#030C4D] border border-blue-100/50">
-                            <CheckCircle2 size={18} />
-                        </div>
-                        <div className="text-left">
-                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none mb-1.5">Ujian Selesai</p>
-                            <p className="text-2xl font-black text-slate-800 leading-none font-mono">{completedExamsCount}</p>
-                        </div>
+            {/* ── Banner: sapaan, tujuan belajar, dan ringkasan ── */}
+            <StudentBanner
+                icon={Sparkles}
+                eyebrow={`${greeting}${firstName ? ',' : ''}`}
+                title={firstName || 'Pejuang ilmu'}
+                description={goal ? (
+                    <div className="flex flex-wrap items-center gap-x-2 gap-y-1.5">
+                        <span className="inline-flex items-center gap-1.5 text-slate-500 dark:text-slate-400"><Target size={14} className="text-[#F8A01B]" />Tujuan</span>
+                        {goal.programs.map((program, index) => (
+                            <span key={program} className="inline-flex items-center gap-2">
+                                {index > 0 && <span className="text-slate-300 dark:text-slate-600">·</span>}
+                                <Link href={learnHref(program)} className="rounded-md bg-slate-100 px-2 py-0.5 text-xs font-semibold text-[#030C4D] transition-colors hover:bg-slate-200 dark:bg-slate-800 dark:text-blue-200 dark:hover:bg-slate-700">{programLabel(program)}</Link>
+                            </span>
+                        ))}
+                        {daysLeft !== null && <span className="rounded-md bg-amber-50 px-2 py-0.5 text-xs font-semibold text-amber-700 dark:bg-amber-500/10 dark:text-amber-300">{daysLeft === 0 ? 'Hari ini' : `${daysLeft} hari lagi`}</span>}
+                        <button type="button" onClick={() => setGoalOpen(true)} aria-label="Ubah tujuan belajar"
+                            className="inline-flex items-center gap-1 text-xs font-medium text-slate-500 hover:text-[#030C4D] dark:text-slate-400 dark:hover:text-white">
+                            <Pencil size={12} /> Ubah
+                        </button>
+                        {goal.target && <p className="w-full text-slate-500 dark:text-slate-400">{goal.target}</p>}
                     </div>
-                </div>
-
-                {/* Saldo Token */}
-                <div className="bg-white border border-slate-100 rounded-2xl p-5 hover:shadow-xl hover:shadow-amber-500/10 transition-all duration-300 relative overflow-hidden flex items-center justify-between gap-4">
-                    <div className="absolute left-0 top-0 h-full w-1.5 bg-amber-500" />
-                    <div className="flex items-center gap-3.5">
-                        <div className="w-10 h-10 rounded-xl bg-amber-50 flex items-center justify-center text-amber-600 border border-amber-100/50">
-                            <Coins size={18} />
-                        </div>
-                        <div className="text-left">
-                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none mb-1.5">Saldo Token Anda</p>
-                            <p className="text-2xl font-black text-amber-600 leading-none font-mono">{tokenBalance} <span className="text-xs font-semibold text-slate-400 font-sans">Token</span></p>
-                        </div>
+                ) : (
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+                        <span>Pilih tujuan belajarmu agar beranda dan materi menyesuaikan.</span>
+                        <button type="button" onClick={() => setGoalOpen(true)} className={`${BANNER_BUTTON} self-start`}>
+                            <Target size={15} /> Tentukan tujuan
+                        </button>
                     </div>
-                    <button
-                        onClick={() => router.push('/dashboard/siswa/tokens')}
-                        className="px-3 py-1.5 bg-amber-500 hover:bg-amber-600 text-white text-[10px] font-bold rounded-xl transition-all shadow-sm active:scale-95 shrink-0"
-                    >
-                        Top Up
-                    </button>
-                </div>
-            </div>
-            {/* ── Layout: Ujian dan Riwayat ── */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {/* ── Left: Exam List ── */}
-                <div className="space-y-4">
-                    <div className="bg-white rounded-2xl border border-slate-100 overflow-hidden shadow-sm">
-                        <div className="px-5 py-4 border-b border-slate-100 flex justify-between items-center gap-4">
-                            <div className="text-left">
-                                <h2 className="text-base font-bold text-slate-800 flex items-center gap-2">
-                                    <BookOpen size={16} className="text-[#030C4D]" />
-                                    Ujian Sekolah Anda
-                                </h2>
-                                <p className="text-xs text-slate-400 mt-0.5">Ujian aktif dan terjadwal dari sekolah</p>
+                )}
+                aside={<BannerStats items={[
+                    { label: 'Ujian selesai', value: completedExamsCount },
+                    { label: 'Subbab dipelajari', value: <>{completedMaterials}<span className="text-sm font-normal text-slate-400">/{materials.length}</span></> },
+                    {
+                        label: 'Token',
+                        value: tokenBalance,
+                        action: <button type="button" onClick={() => router.push('/dashboard/siswa/tokens')} className="block font-semibold text-[#2563EB] hover:underline sm:ml-1.5 sm:inline dark:text-blue-300">Top up</button>,
+                    },
+                ]} />}
+            />
+
+            {/* ── Langkah berikutnya: satu aksi paling penting saat ini ── */}
+            {!loading && (
+                <section className="flex flex-col gap-4 rounded-2xl border border-slate-100 bg-white p-4 text-left shadow-sm dark:border-slate-800 dark:bg-slate-900 sm:flex-row sm:items-center sm:p-5">
+                    <span className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br ${nextStep.tone} text-white shadow-md`}><nextStep.icon size={22} /></span>
+                    <div className="min-w-0 flex-1">
+                        <p className="text-[11px] font-bold uppercase tracking-widest text-slate-400">{nextStep.label}</p>
+                        <p className="truncate text-base font-bold text-slate-800 dark:text-slate-100">{nextStep.title}</p>
+                        {nextStep.sub && <p className="truncate text-xs text-slate-500 dark:text-slate-400">{nextStep.sub}</p>}
+                    </div>
+                    {activeExam
+                        ? <button type="button" onClick={() => { void openExam(activeExam); }} className={NEXT_ACTION_CLASS}>{nextStep.action} <ArrowRight size={14} /></button>
+                        : <Link href={nextStep.href} className={NEXT_ACTION_CLASS}>{nextStep.action} <ArrowRight size={14} /></Link>}
+                </section>
+            )}
+
+            {/* ── Ujian & nilai ── */}
+            <div className="grid grid-cols-1 gap-6 lg:grid-cols-5">
+                <div className="lg:col-span-3 rounded-2xl border border-slate-100 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900 overflow-hidden">
+                    <div className="flex items-center justify-between gap-4 border-b border-slate-100 px-5 py-4 dark:border-slate-800">
+                        <div className="text-left">
+                            <h2 className="flex items-center gap-2 text-base font-bold text-slate-800 dark:text-slate-100">
+                                <CalendarDays size={16} className="text-[#2563EB]" />
+                                Ujian & Tryout
+                            </h2>
+                            <p className="mt-0.5 text-xs text-slate-400">Yang sedang berlangsung dan akan datang</p>
+                        </div>
+                        <button
+                            onClick={() => router.push('/dashboard/siswa/schedule')}
+                            className="inline-flex shrink-0 items-center gap-1 rounded-xl bg-blue-50 px-3 py-1.5 text-[11px] font-bold text-[#030C4D] transition-all hover:bg-[#030C4D] hover:text-white active:scale-95 dark:bg-slate-800 dark:text-blue-300"
+                        >
+                            Lihat agenda <ChevronRight size={13} />
+                        </button>
+                    </div>
+
+                    <div className="space-y-3 p-4">
+                        {loading ? (
+                            <div className="flex flex-col items-center justify-center gap-3 py-12">
+                                <Spinner variant="buble" size={32} />
+                                <p className="text-xs font-bold uppercase tracking-wider text-slate-400">Memuat daftar ujian...</p>
                             </div>
-                            <button 
-                                onClick={() => router.push('/dashboard/siswa/schedule')} 
-                                className="inline-flex items-center gap-1 px-3 py-1.5 bg-blue-50 hover:bg-[#030C4D] text-[#030C4D] hover:text-white text-[10px] font-bold rounded-xl transition-all active:scale-95 shrink-0 font-sans"
-                            >
-                                <span className="w-1 h-1 bg-[#030C4D] rounded-full animate-pulse group-hover:bg-white"></span>
-                                Jadwal Anda
-                            </button>
-                        </div>
-
-                        <div className="p-4 space-y-3">
-                            {loading ? (
-                                <div className="py-12 flex flex-col items-center justify-center gap-3">
-                                    <Spinner variant="buble" size={32} />
-                                    <p className="text-xs text-slate-400 font-bold uppercase tracking-wider">Memuat daftar ujian...</p>
+                        ) : loadError ? (
+                            <div role="alert" className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-10 text-center">
+                                <AlertCircle size={24} className="mx-auto mb-3 text-rose-500" />
+                                <p className="text-sm font-bold text-slate-700">Daftar ujian belum dapat dimuat</p>
+                                <p className="mt-1 text-xs text-slate-500">{loadError}</p>
+                                <button type="button" onClick={() => void loadData()} className="mt-4 text-xs font-bold text-blue-600 hover:underline">Coba lagi</button>
+                            </div>
+                        ) : visibleExams.length === 0 ? (
+                            <div className="flex flex-col items-center gap-3 rounded-2xl bg-gradient-to-br from-slate-50 to-blue-50/60 px-6 py-10 text-center dark:from-slate-800/40 dark:to-slate-800/20">
+                                <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-white text-[#2563EB] shadow-sm dark:bg-slate-800"><CalendarDays size={26} /></span>
+                                <div>
+                                    <p className="text-sm font-bold text-slate-700 dark:text-slate-200">Belum ada ujian dalam waktu dekat</p>
+                                    <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Waktu yang pas untuk mencicil materi. Ujian baru akan muncul di sini.</p>
                                 </div>
-                            ) : loadError ? (
-                                <div role="alert" className="py-10 px-4 text-center border border-rose-200 bg-rose-50 rounded-2xl">
-                                    <AlertCircle size={24} className="text-rose-500 mx-auto mb-3" />
-                                    <p className="text-sm font-bold text-slate-700">Daftar ujian belum dapat dimuat</p>
-                                    <p className="text-xs text-slate-500 mt-1">{loadError}</p>
-                                    <button type="button" onClick={() => void loadData()} className="mt-4 text-xs font-bold text-blue-600 hover:underline">Coba lagi</button>
+                                <div className="flex flex-wrap justify-center gap-2">
+                                    <Link href={learnHref(goalPrograms[0])} className="inline-flex items-center gap-1.5 rounded-xl bg-[#030C4D] px-4 py-2 text-xs font-bold text-white hover:bg-[#2563EB]"><BookOpen size={14} /> Belajar sekarang</Link>
+                                    {classCount === 0 && <Link href="/dashboard/siswa/classes" className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-4 py-2 text-xs font-bold text-slate-600 hover:border-slate-300 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300"><Users size={14} /> Gabung kelas</Link>}
                                 </div>
-                            ) : visibleExams.length === 0 ? (
-                                <div className="py-12 text-center border border-dashed border-slate-200 rounded-2xl">
-                                    <Ghost size={28} className="text-slate-300 mx-auto mb-3" />
-                                    <p className="text-sm font-bold text-slate-700">Belum Ada Ujian Aktif</p>
-                                    <p className="text-xs text-slate-400 mt-1">Tidak ada ujian yang berlangsung atau akan datang.</p>
-                                </div>
-                            ) : (
-                                visibleExams.map((exam, i) => renderExamCard(exam, i))
-                            )}
-                        </div>
+                            </div>
+                        ) : (
+                            visibleExams.map((exam, i) => renderExamCard(exam, i))
+                        )}
                     </div>
                 </div>
 
-                {/* ── Right: Riwayat Nilai ── */}
-                <div className="bg-white rounded-2xl border border-slate-100 overflow-hidden shadow-sm flex flex-col">
-                    <div className="px-5 py-4 border-b border-slate-100 text-left">
-                        <h2 className="text-base font-bold text-slate-800 flex items-center gap-2">
-                            <TrendingUp size={16} className="text-[#030C4D]" />
-                            Riwayat Nilai
+                <div className="lg:col-span-2 flex flex-col overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
+                    <div className="border-b border-slate-100 px-5 py-4 text-left dark:border-slate-800">
+                        <h2 className="flex items-center gap-2 text-base font-bold text-slate-800 dark:text-slate-100">
+                            <TrendingUp size={16} className="text-emerald-500" />
+                            Progres Nilai
                         </h2>
-                        <p className="text-xs text-slate-400 mt-0.5">Performa ujian terakhir Anda</p>
+                        <p className="mt-0.5 text-xs text-slate-400">Performa ujian terakhirmu</p>
                     </div>
-                    <div className="p-5 flex-1 flex flex-col justify-between">
+                    <div className="flex flex-1 flex-col justify-between p-5">
                         <div className="space-y-4">
                             {results.length === 0 ? (
-                                <div className="text-center py-12 flex flex-col items-center justify-center h-full">
-                                    <FileText size={24} className="text-slate-300 mx-auto mb-2" />
-                                    <p className="text-xs text-slate-400 font-medium">Belum ada ujian diselesaikan.</p>
+                                <div className="flex flex-col items-center justify-center py-8 text-center">
+                                    <FileText size={24} className="mx-auto mb-2 text-slate-300" />
+                                    <p className="text-sm font-semibold text-slate-600 dark:text-slate-300">Grafik nilaimu akan tumbuh di sini</p>
+                                    <p className="mt-1 text-xs text-slate-400">Selesaikan ujian pertamamu untuk melihat perkembangan.</p>
                                 </div>
                             ) : (
-                                results.slice(0, 4).map((res, i) => {
-                                    const displayedScore = dashboardResultScore(res);
-                                    const gradingPending = displayedScore === null;
-                                    const score = displayedScore ?? 0;
-                                    const pendingLabel = !res.exams?.show_results ? 'Nilai belum dibuka'
-                                        : res.score_type?.startsWith('irt_') && !res.needs_manual_grading
-                                            ? 'Menunggu perhitungan IRT' : 'Menunggu penilaian';
-                                    const barColorClass = 'bg-[#030C4D]';
-                                    const textColorClass = gradingPending ? 'text-slate-400' : 'text-[#030C4D]';
+                                <>
+                                    <StudentScoreAverages results={results} />
+                                    {results.slice(0, 4).map((res, i) => {
+                                        const displayedScore = dashboardResultScore(res);
+                                        const gradingPending = displayedScore === null;
+                                        const score = displayedScore ?? 0;
+                                        const pendingLabel = !res.exams?.show_results ? 'Nilai belum dibuka'
+                                            : res.score_type?.startsWith('irt_') && !res.needs_manual_grading
+                                                ? 'Menunggu perhitungan IRT' : 'Menunggu penilaian';
+                                        const textColorClass = gradingPending ? 'text-slate-400' : 'text-[#030C4D] dark:text-blue-300';
 
-                                    return (
-                                        <div key={res.id || i} className="space-y-1.5 text-left">
-                                            <div className="flex justify-between items-start">
-                                                <p className="font-semibold text-slate-700 text-xs truncate pr-2 leading-none">{res.exams?.title || 'Ujian'}</p>
-                                                <p className="text-[10px] text-slate-400 shrink-0 leading-none">
-                                                    <span className={`text-xs font-black font-mono ${textColorClass}`}>{gradingPending ? pendingLabel : score.toFixed(2)}</span>{!gradingPending && (res.score_type?.startsWith('irt_') ? ' (200–800)' : '/100')}
-                                                </p>
+                                        return (
+                                            <div key={res.id || i} className="space-y-1.5 text-left">
+                                                <div className="flex items-start justify-between">
+                                                    <p className="truncate pr-2 text-xs font-semibold leading-none text-slate-700 dark:text-slate-200">{res.exams?.title || 'Ujian'}</p>
+                                                    <p className="shrink-0 text-[10px] leading-none text-slate-400">
+                                                        <span className={`font-mono text-xs font-black ${textColorClass}`}>{gradingPending ? pendingLabel : score.toFixed(2)}</span>{!gradingPending && (res.score_type?.startsWith('irt_') ? ' (200–800)' : '/100')}
+                                                    </p>
+                                                </div>
+                                                <div className="h-1.5 w-full overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
+                                                    {/* Skala IRT 200–800 dipetakan ke lebar 0–100%. */}
+                                                    <div className="h-full rounded-full bg-gradient-to-r from-[#030C4D] to-[#2563EB]" style={{ width: `${Math.min(100, Math.max(0, res.score_type?.startsWith('irt_') ? (score - 200) / 6 : score))}%` }}></div>
+                                                </div>
                                             </div>
-                                            <div className="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
-                                                {/* Skala IRT 200–800 dipetakan ke lebar 0–100%. */}
-                                                <div className={`h-full rounded-full ${barColorClass}`} style={{ width: `${Math.min(100, Math.max(0, res.score_type?.startsWith('irt_') ? (score - 200) / 6 : score))}%` }}></div>
-                                            </div>
-                                        </div>
-                                    );
-                                })
+                                        );
+                                    })}
+                                </>
                             )}
                         </div>
-                        
-                        <button 
-                            onClick={() => router.push('/dashboard/siswa/results')} 
-                            className="w-full text-center text-xs font-bold text-[#030C4D] hover:text-[#2563EB] pt-4 mt-6 border-t border-slate-100 flex items-center justify-center gap-1 group transition-colors active:scale-[0.98]"
+
+                        <button
+                            onClick={() => router.push('/dashboard/siswa/results')}
+                            className="group mt-6 flex w-full items-center justify-center gap-1 border-t border-slate-100 pt-4 text-center text-xs font-bold text-[#030C4D] transition-colors hover:text-[#2563EB] active:scale-[0.98] dark:border-slate-800 dark:text-blue-300"
                         >
                             Laporan Lengkap
-                            <ChevronRight size={13} className="group-hover:translate-x-0.5 transition-transform" />
+                            <ChevronRight size={13} className="transition-transform group-hover:translate-x-0.5" />
                         </button>
                     </div>
                 </div>
             </div>
+
+            {/* ── Jelajah program sesuai tujuan ── */}
+            <section className="space-y-3">
+                <div className="flex items-end justify-between gap-3 px-1 text-left">
+                    <div>
+                        <h2 className="text-base font-bold text-slate-800 dark:text-slate-100">{goalPrograms.length ? 'Materi untuk tujuanmu' : 'Jelajahi program belajar'}</h2>
+                        <p className="text-xs text-slate-400">Dari pelajaran sekolah hingga persiapan seleksi ASN</p>
+                    </div>
+                    <Link href="/dashboard/learning" className="inline-flex shrink-0 items-center gap-1 text-xs font-bold text-[#2563EB] hover:underline">Semua materi <ChevronRight size={13} /></Link>
+                </div>
+                <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+                    {programCards.map(item => {
+                        const visual = PROGRAM_VISUALS[item.value];
+                        const Icon = visual.icon;
+                        return (
+                            <Link key={item.value} href={learnHref(item.value)}
+                                className="group flex flex-col gap-3 rounded-2xl border border-slate-100 bg-white p-4 text-left shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md dark:border-slate-800 dark:bg-slate-900">
+                                <span className={`flex h-11 w-11 items-center justify-center rounded-2xl ${visual.tile}`}><Icon size={20} /></span>
+                                <span>
+                                    <span className="block text-sm font-bold text-slate-800 dark:text-slate-100">{item.label}</span>
+                                    <span className="mt-0.5 block text-[11px] leading-snug text-slate-500 line-clamp-2 dark:text-slate-400">{item.hint}</span>
+                                </span>
+                                <span className="mt-auto inline-flex items-center gap-1 text-[11px] font-bold text-[#2563EB]">
+                                    {item.chapters ? `${item.chapters} BAB tersedia` : 'Segera hadir'} <ArrowRight size={12} className="transition-transform group-hover:translate-x-0.5" />
+                                </span>
+                            </Link>
+                        );
+                    })}
+                </div>
+            </section>
+
+            <LearningGoalModal open={goalOpen} initial={goal} onClose={() => setGoalOpen(false)} onSave={next => { void saveGoal(next); }} />
         </div>
     );
 }

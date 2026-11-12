@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { Home, Sparkles, CheckCircle2, MessageCircle, X, Menu, LogIn, LayoutDashboard } from 'lucide-react';
+import { Compass, PencilLine, Route, Users, HelpCircle, X, Menu, LogIn, LayoutDashboard } from 'lucide-react';
 
 interface LandingHeaderProps {
     currentUser?: { name?: string; role?: string } | null;
@@ -22,10 +22,11 @@ export default function LandingHeader({ currentUser }: LandingHeaderProps) {
     }, []);
 
     const menuItems = [
-        { name: 'Beranda', href: '#home', icon: Home },
-        { name: 'Keunggulan', href: '#keunggulan', icon: Sparkles },
-        { name: 'Alur Ujian', href: '#alur', icon: CheckCircle2 },
-        { name: 'Kontak', href: '#footer', icon: MessageCircle },
+        { name: 'Program', href: '#program', icon: Compass },
+        { name: 'Coba Soal', href: '#coba-soal', icon: PencilLine },
+        { name: 'Cara Belajar', href: '#cara-belajar', icon: Route },
+        { name: 'Untuk Siapa', href: '#untuk-siapa', icon: Users },
+        { name: 'FAQ', href: '#faq', icon: HelpCircle },
     ];
 
     return (
@@ -72,7 +73,7 @@ export default function LandingHeader({ currentUser }: LandingHeaderProps) {
                                 <a
                                     key={item.name}
                                     href={item.href}
-                                    className="flex items-center gap-2 text-slate-700 hover:text-[#030C4D] hover:bg-slate-100/70 text-xs font-bold uppercase tracking-wider px-4 py-2 rounded-full transition-all"
+                                    className="flex items-center gap-2 text-slate-700 hover:text-[#030C4D] hover:bg-amber-50 text-sm font-semibold px-3.5 py-2 rounded-full transition-all"
                                 >
                                     <item.icon size={14} className="text-[#F8A01B]" />
                                     <span>{item.name}</span>
@@ -85,18 +86,18 @@ export default function LandingHeader({ currentUser }: LandingHeaderProps) {
                             {currentUser ? (
                                 <Link
                                     href="/dashboard"
-                                    className="flex items-center gap-2 px-5 py-2.5 rounded-full bg-[#030C4D] hover:bg-[#0a1a5c] text-white text-xs font-bold uppercase tracking-wider transition-all shadow-md shadow-[#030C4D]/15"
+                                    className="flex items-center gap-2 px-5 py-2.5 rounded-full bg-[#030C4D] hover:bg-[#0a1a5c] text-white text-sm font-bold transition-all shadow-md shadow-[#030C4D]/15"
                                 >
                                     <LayoutDashboard size={14} className="text-[#F8A01B]" />
-                                    <span>Dashboard ({currentUser.role || 'User'})</span>
+                                    <span>Lanjut Belajar</span>
                                 </Link>
                             ) : (
                                 <Link
                                     href="/login"
-                                    className="flex items-center gap-2 px-5 py-2.5 rounded-full bg-[#030C4D] hover:bg-[#0a1a5c] text-white text-xs font-bold uppercase tracking-wider transition-all shadow-md shadow-[#030C4D]/15"
+                                    className="flex items-center gap-2 px-5 py-2.5 rounded-full bg-[#030C4D] hover:bg-[#0a1a5c] text-white text-sm font-bold transition-all shadow-md shadow-[#030C4D]/15"
                                 >
                                     <LogIn size={14} className="text-[#F8A01B]" />
-                                    <span>Masuk CBT</span>
+                                    <span>Login</span>
                                 </Link>
                             )}
                         </div>
@@ -149,7 +150,7 @@ export default function LandingHeader({ currentUser }: LandingHeaderProps) {
                                 ) : (
                                     <>
                                         <LogIn size={16} className="text-[#F8A01B]" />
-                                        <span>Masuk Akun CBT</span>
+                                        <span>Login</span>
                                     </>
                                 )}
                             </Link>

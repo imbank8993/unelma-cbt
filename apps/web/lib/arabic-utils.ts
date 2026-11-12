@@ -185,13 +185,13 @@ export function segmentArabicAndLatin(text: string): TextSegment[] {
 /**
  * Mengembalikan font family yang sesuai:
  * - Jika teks mengandung bahasa Arab: prioritaskan font Naskh klasik (Amiri) & modern (Noto Naskh Arabic, Cairo)
- * - Jika teks Latin biasa: font serif CBT profesional
+ * - Jika teks Latin biasa: Poppins, sama dengan seluruh aplikasi
  */
 export function getFontFamilyForText(html: string): string {
   if (htmlContainsArabic(html)) {
     return "'Amiri', 'Noto Naskh Arabic', 'Cairo', 'Traditional Arabic', serif";
   }
-  return "'Merriweather', 'Source Serif 4', Georgia, serif";
+  return "var(--font-sans)";
 }
 
 /**

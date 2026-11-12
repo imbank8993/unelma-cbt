@@ -57,17 +57,17 @@ export const MathRenderer = React.memo(
           verticalAlign: 'baseline',
           lineHeight: '1',
           color: 'inherit',
-          fontFamily: "'Merriweather', 'Source Serif 4', Georgia, serif",
+          fontFamily: "var(--font-sans)",
         };
 
     const katexContainerStyle: React.CSSProperties = displayMode
-      ? { fontFamily: "'Source Serif 4', Georgia, serif" }
+      ? { fontFamily: "var(--font-sans)" }
       : {
           display: 'inline',
           verticalAlign: 'baseline',
           lineHeight: '1',
           position: 'relative',
-          fontFamily: "'Merriweather', 'Source Serif 4', Georgia, serif",
+          fontFamily: "var(--font-sans)",
         };
 
     // ── EDIT MODE ────────────────────────────────────────────────────────────
