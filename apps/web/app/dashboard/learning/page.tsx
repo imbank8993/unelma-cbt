@@ -119,10 +119,13 @@ function LearningLibraryContent({ manage, setManage }: { manage: boolean; setMan
 
     return <main className="learning learn-library">
         <header className={`lc-header${manage ? '' : ' lc-hero'}`}>
-            <div>
-                <h1>{manage ? 'Kelola materi' : 'Ruang belajar'}</h1>
-                {!manage && <p className="lc-hero-lead">Materi sekolah, UTBK, CPNS, PPPK, kedinasan, hingga bahasa dalam satu tempat.</p>}
-                <p>{summary}</p>
+            <div className="lc-hero-main">
+                {!manage && <span className="lc-hero-icon" aria-hidden="true"><BookOpen size={22} strokeWidth={1.75} /></span>}
+                <div>
+                    {!manage && <span className="lc-hero-eyebrow">{summary}</span>}
+                    <h1>{manage ? 'Kelola materi' : 'Mau belajar apa hari ini?'}</h1>
+                    {manage ? <p>{summary}</p> : <p className="lc-hero-lead">Materi sekolah, UTBK, CPNS, PPPK, kedinasan, hingga bahasa dalam satu tempat.</p>}
+                </div>
             </div>
             {canManage && <div className="lc-header-actions">
                 <div className="lc-segmented" role="group" aria-label="Tampilan bahan ajar">

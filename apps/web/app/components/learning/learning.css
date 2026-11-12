@@ -327,16 +327,6 @@
 @media(prefers-reduced-motion:reduce){.learn-reader-surface{transition:none}.learn-reader-progress::before{animation-duration:2.5s}}
 
 /* Ruang belajar siswa: hero dan kartu program (Sekolah, UTBK, CPNS, PPPK, ...). */
-.lc-hero{position:relative;overflow:hidden;align-items:center;padding:28px 32px;border:0;border-radius:16px;background:linear-gradient(135deg,#030C4D 0%,#0B1A66 55%,#1E3A8A 100%);color:#fff;box-shadow:0 8px 30px rgba(3,12,77,.18)}
-/* Ornamen cincin tipis, sama dengan banner halaman siswa lain. */
-.lc-hero::after{content:'';position:absolute;right:-40px;top:-64px;width:288px;height:288px;border-radius:50%;pointer-events:none;background:radial-gradient(circle,transparent 45px,rgba(255,255,255,.07) 46px,transparent 47px,transparent 71px,rgba(255,255,255,.07) 72px,transparent 73px,transparent 97px,rgba(255,255,255,.07) 98px,transparent 99px)}
-.lc-hero>*{position:relative}
-.learning .lc-hero h1{color:#fff;font-size:24px;font-weight:600}
-.learning .lc-hero p{color:rgba(219,234,254,.8)}
-.learning .lc-hero .lc-hero-lead{font-size:14px;color:rgba(219,234,254,.85);margin:6px 0 4px;max-width:560px}
-.learning .lc-hero .lc-segmented{background:rgba(255,255,255,.1);border-color:rgba(255,255,255,.18)}
-.learning .lc-hero .lc-segmented button{color:#c7d2fe}
-.learning .lc-hero .lc-segmented button[aria-pressed=true]{background:#fff;color:#030C4D}
 .lc-programs{display:flex;gap:10px;overflow-x:auto;padding:2px 2px 6px;scrollbar-width:thin;min-width:0}
 .learning .lc-program{flex:0 0 auto;justify-content:flex-start;gap:10px;min-width:150px;padding:10px 14px 10px 10px;border:1px solid var(--lc-line);border-radius:12px;background:var(--lc-surface);color:var(--lc-text);text-align:left;transition:border-color .15s,box-shadow .15s,transform .15s}
 .learning .lc-program:hover{border-color:hsl(var(--mark-hue) 60% 70%);transform:translateY(-1px)}
@@ -346,7 +336,24 @@
 .lc-program-text{display:flex;flex-direction:column;line-height:1.2}
 .lc-program-text strong{font-size:13px;font-weight:700;white-space:nowrap}
 .lc-program-text small{font-size:11px;color:var(--lc-muted);font-weight:500}
-.dark .lc-hero{background:linear-gradient(135deg,#0a1238 0%,#0f1d5c 55%,#1e3a8a 100%);box-shadow:none}
 .dark .learning .lc-program[aria-pressed=true]{background:hsl(var(--mark-hue) 40% 15%)}
 .dark .lc-program-icon{color:hsl(var(--mark-hue) 80% 78%);background:hsl(var(--mark-hue) 40% 18%)}
-@media(max-width:760px){.lc-hero{padding:24px 20px}.learning .lc-hero h1{font-size:20px}.learning .lc-program{min-width:132px}}
+@media(max-width:760px){.lc-hero{padding:22px 20px}.learning .lc-hero h1{font-size:20px}.lc-hero-icon{display:none}.learning .lc-program{min-width:132px}}
+
+/* Banner ruang belajar: kartu terang, sama dengan StudentBanner di halaman siswa lain. */
+.lc-hero{position:relative;overflow:hidden;align-items:center;padding:28px 32px;border:1px solid rgba(226,232,240,.8);border-radius:16px;background:#fff;box-shadow:0 1px 2px rgba(16,24,40,.04),0 8px 24px -12px rgba(3,12,77,.12)}
+.lc-hero::before{content:'';position:absolute;inset:0;pointer-events:none;background:radial-gradient(60% 120% at 100% 0%,rgba(37,99,235,.10),transparent 70%)}
+.lc-hero::after{content:'';position:absolute;inset:0;pointer-events:none;background-image:linear-gradient(to right,rgba(3,12,77,.05) 1px,transparent 1px),linear-gradient(to bottom,rgba(3,12,77,.05) 1px,transparent 1px);background-size:28px 28px;-webkit-mask-image:radial-gradient(70% 100% at 100% 0%,#000,transparent 75%);mask-image:radial-gradient(70% 100% at 100% 0%,#000,transparent 75%)}
+.lc-hero>*{position:relative;z-index:1}
+.lc-hero-main{display:flex;align-items:flex-start;gap:16px;min-width:0}
+.lc-hero-icon{display:grid;place-items:center;flex-shrink:0;width:48px;height:48px;border-radius:12px;background:#030C4D;color:#fff;box-shadow:0 6px 16px -6px rgba(3,12,77,.5)}
+.lc-hero-eyebrow{display:block;font-size:12px;font-weight:500;color:#64748b}
+.learning .lc-hero h1{margin:2px 0 0;font-size:24px;font-weight:600;letter-spacing:-.02em;color:#0f172a}
+.learning .lc-hero .lc-hero-lead{margin-top:6px;max-width:560px;font-size:14px;line-height:1.6;color:#475569}
+.dark .lc-hero{background:#0f172a;border-color:#1e293b;box-shadow:none}
+.dark .lc-hero::before{background:radial-gradient(60% 120% at 100% 0%,rgba(59,130,246,.16),transparent 70%)}
+.dark .lc-hero::after{background-image:linear-gradient(to right,rgba(255,255,255,.05) 1px,transparent 1px),linear-gradient(to bottom,rgba(255,255,255,.05) 1px,transparent 1px)}
+.dark .lc-hero-icon{background:#2563eb}
+.dark .lc-hero-eyebrow{color:#94a3b8}
+.dark .learning .lc-hero h1{color:#fff}
+.dark .learning .lc-hero .lc-hero-lead{color:#cbd5e1}

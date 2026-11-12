@@ -12,6 +12,7 @@ import {
 AlertCircle,
 ArrowRight,
 BookOpen,
+CalendarClock,
 CalendarDays,
 CheckCircle2,
 Clock,
@@ -157,6 +158,7 @@ const SchedulePage = () => {
 
             {/* Banner agenda: ujian terdekat, hitung mundur, dan strip 7 hari */}
             <StudentBanner
+                icon={CalendarClock}
                 eyebrow={nextOpen ? 'Sedang berlangsung' : nextExam ? 'Ujian terdekat' : 'Agenda ujian'}
                 title={loading ? 'Memuat agenda…' : nextExam ? nextExam.title : 'Belum ada ujian terjadwal'}
                 description={nextExam ? `${formatDay(nextExam.start_time)} · ${formatTimeRange(nextExam.start_time, nextExam.end_time)}` : 'Ujian dari sekolah, kelas, dan tryout akan muncul di sini.'}
@@ -165,17 +167,17 @@ const SchedulePage = () => {
                         Kerjakan sekarang <ArrowRight size={16} />
                     </button>
                 ) : (
-                    <div className="flex items-center gap-3 text-left">
-                        <Hourglass size={20} className="text-amber-300" />
+                    <div className="flex items-center gap-3 rounded-xl border border-amber-200/70 bg-amber-50/70 px-4 py-2.5 text-left dark:border-amber-500/20 dark:bg-amber-500/10">
+                        <Hourglass size={20} className="text-amber-600 dark:text-amber-300" />
                         <div>
-                            <p className="text-[11px] font-medium text-blue-200/90">Dimulai dalam</p>
-                            <p className="text-lg font-semibold tabular-nums">{formatTimeUntil(nextExam.start_time || '').replace(/ lagi$/, '')}</p>
+                            <p className="text-xs font-medium text-amber-700/80 dark:text-amber-300/80">Dimulai dalam</p>
+                            <p className="text-lg font-semibold tabular-nums text-slate-900 dark:text-white">{formatTimeUntil(nextExam.start_time || '').replace(/ lagi$/, '')}</p>
                         </div>
                     </div>
                 ))}
             >
                 {/* Strip 7 hari ke depan; titik menandai hari yang punya ujian. */}
-                <div className="grid grid-cols-7 gap-1.5 border-t border-white/10 pt-5 sm:gap-2">
+                <div className="grid grid-cols-7 gap-1.5 sm:gap-2">
                     {Array.from({ length: 7 }, (_, offset) => {
                         const day = new Date(now.getTime() + offset * 86_400_000);
                         const key = utcToSchoolLocalDateTime(day.toISOString(), timeZone).slice(0, 10);
@@ -183,10 +185,10 @@ const SchedulePage = () => {
                         const weekday = new Intl.DateTimeFormat('id-ID', { weekday: 'short', timeZone }).format(day);
                         const date = new Intl.DateTimeFormat('id-ID', { day: 'numeric', timeZone }).format(day);
                         return (
-                            <div key={offset} className={`flex flex-col items-center rounded-xl py-2 ${offset === 0 ? 'bg-white/10 ring-1 ring-white/40' : ''}`}>
-                                <span className="text-[10px] font-medium text-blue-200/90">{offset === 0 ? 'Hari ini' : weekday}</span>
+                            <div key={offset} className={`flex flex-col items-center rounded-xl py-2 ${offset === 0 ? 'bg-[#030C4D] text-white shadow-sm dark:bg-blue-600' : 'text-slate-700 dark:text-slate-300'}`}>
+                                <span className={`text-[10px] font-medium ${offset === 0 ? 'text-blue-100' : 'text-slate-400'}`}>{offset === 0 ? 'Hari ini' : weekday}</span>
                                 <span className="mt-0.5 text-base font-semibold tabular-nums">{date}</span>
-                                <span className={`mt-1 h-1 w-1 rounded-full ${count ? 'bg-amber-300' : 'bg-transparent'}`} title={count ? `${count} ujian` : undefined} />
+                                <span className={`mt-1 h-1.5 w-1.5 rounded-full ${count ? 'bg-[#F8A01B]' : 'bg-transparent'}`} title={count ? `${count} ujian` : undefined} />
                             </div>
                         );
                     })}

@@ -19,6 +19,7 @@ import {
     LogOut,
     Plus,
     School,
+    Users,
     X,
 } from 'lucide-react';
 import Link from 'next/link';
@@ -122,8 +123,9 @@ export default function SiswaClassesPage() {
 
             {/* ── Banner ── */}
             <StudentBanner
+                icon={Users}
                 eyebrow="Ruang kolaborasi bersama guru"
-                title="Kelasku"
+                title={isLoading ? 'Kelasku' : classes.length ? `${classes.length} kelas aktif` : 'Belum bergabung di kelas'}
                 description={isLoading ? 'Memuat kelas Anda…' : classes.length
                     ? `Kamu tergabung di ${classes.length} kelas. Ujian dan materi dari guru otomatis muncul di Jadwal dan Ruang Belajar.`
                     : 'Gabung ke kelas gurumu dengan kode akses agar ujian dan materi kelas muncul otomatis.'}

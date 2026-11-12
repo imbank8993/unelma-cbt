@@ -34,6 +34,7 @@ Clock,
 Coins,
 FileText,
 Pencil,
+Sparkles,
 Rocket,
 Target,
 Timer,
@@ -326,23 +327,24 @@ export default function SiswaDashboard() {
 
             {/* ── Banner: sapaan, tujuan belajar, dan ringkasan ── */}
             <StudentBanner
+                icon={Sparkles}
                 eyebrow={`${greeting}${firstName ? ',' : ''}`}
                 title={firstName || 'Pejuang ilmu'}
                 description={goal ? (
                     <div className="flex flex-wrap items-center gap-x-2 gap-y-1.5">
-                        <span className="inline-flex items-center gap-1.5"><Target size={14} className="text-amber-300" />Tujuan:</span>
+                        <span className="inline-flex items-center gap-1.5 text-slate-500 dark:text-slate-400"><Target size={14} className="text-[#F8A01B]" />Tujuan</span>
                         {goal.programs.map((program, index) => (
                             <span key={program} className="inline-flex items-center gap-2">
-                                {index > 0 && <span className="text-white/30">·</span>}
-                                <Link href={learnHref(program)} className="font-semibold text-white underline-offset-4 hover:underline">{programLabel(program)}</Link>
+                                {index > 0 && <span className="text-slate-300 dark:text-slate-600">·</span>}
+                                <Link href={learnHref(program)} className="rounded-md bg-slate-100 px-2 py-0.5 text-xs font-semibold text-[#030C4D] transition-colors hover:bg-slate-200 dark:bg-slate-800 dark:text-blue-200 dark:hover:bg-slate-700">{programLabel(program)}</Link>
                             </span>
                         ))}
-                        {daysLeft !== null && <span className="font-semibold text-amber-300">· {daysLeft === 0 ? 'hari ini' : `${daysLeft} hari lagi`}</span>}
+                        {daysLeft !== null && <span className="rounded-md bg-amber-50 px-2 py-0.5 text-xs font-semibold text-amber-700 dark:bg-amber-500/10 dark:text-amber-300">{daysLeft === 0 ? 'Hari ini' : `${daysLeft} hari lagi`}</span>}
                         <button type="button" onClick={() => setGoalOpen(true)} aria-label="Ubah tujuan belajar"
-                            className="inline-flex items-center gap-1 text-xs font-medium text-blue-200 hover:text-white">
+                            className="inline-flex items-center gap-1 text-xs font-medium text-slate-500 hover:text-[#030C4D] dark:text-slate-400 dark:hover:text-white">
                             <Pencil size={12} /> Ubah
                         </button>
-                        {goal.target && <p className="w-full text-blue-100/70">{goal.target}</p>}
+                        {goal.target && <p className="w-full text-slate-500 dark:text-slate-400">{goal.target}</p>}
                     </div>
                 ) : (
                     <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
@@ -354,11 +356,11 @@ export default function SiswaDashboard() {
                 )}
                 aside={<BannerStats items={[
                     { label: 'Ujian selesai', value: completedExamsCount },
-                    { label: 'Subbab dipelajari', value: <>{completedMaterials}<span className="text-sm font-normal text-blue-200/80">/{materials.length}</span></> },
+                    { label: 'Subbab dipelajari', value: <>{completedMaterials}<span className="text-sm font-normal text-slate-400">/{materials.length}</span></> },
                     {
                         label: 'Token',
-                        value: <span className="text-amber-300">{tokenBalance}</span>,
-                        action: <button type="button" onClick={() => router.push('/dashboard/siswa/tokens')} className="ml-1.5 font-semibold text-white underline-offset-2 hover:underline">Top up</button>,
+                        value: tokenBalance,
+                        action: <button type="button" onClick={() => router.push('/dashboard/siswa/tokens')} className="block font-semibold text-[#2563EB] hover:underline sm:ml-1.5 sm:inline dark:text-blue-300">Top up</button>,
                     },
                 ]} />}
             />
