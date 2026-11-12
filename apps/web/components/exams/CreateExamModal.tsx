@@ -42,6 +42,7 @@ import type {
 import type { QuestionBank } from '@/lib/api/questions';
 import { getSessionUser } from '@/lib/session';
 import { alertDialog } from '@/lib/confirm-dialog';
+import { learningPrograms, type LearningProgram } from '@/lib/learning-catalog';
 import { DEFAULT_SCHOOL_TIME_ZONE, getSchoolTimeZone, getSchoolTimeZoneLabel, schoolTodayDate, utcToSchoolLocalDateTime, addMinutesToLocalDateTime } from '@/lib/school-time';
 
 export type ExamType = 'daily' | 'am' | 'asas_asat' | 'tryout' | 'assignment' | 'lainnya';
@@ -102,6 +103,7 @@ interface ExamFormData {
     pasEndDate: string;
     isPaid: boolean;
     tokenPrice: number;
+    program: LearningProgram;
 }
 
 const DEFAULT_FORM_DATA: ExamFormData = {
@@ -140,6 +142,7 @@ const DEFAULT_FORM_DATA: ExamFormData = {
     pasSchoolYear: '',
     pasStartDate: '',
     pasEndDate: '',
+    program: 'umum',
 };
 
 /** Bagian bernomor di formulir ujian. */
@@ -278,6 +281,7 @@ export const CreateExamModal: React.FC<CreateExamModalProps> = ({
                 pasEndDate: todayDate,
                 isPaid: Boolean((exam as { is_paid?: boolean } | null | undefined)?.is_paid),
                 tokenPrice: Number((exam as { token_price?: number } | null | undefined)?.token_price) || 1,
+                program: learningPrograms.some((item) => item.value === exam.metadata?.program) ? exam.metadata?.program as LearningProgram : 'umum',
             };
             titleEdited.current = true;
             setShowAdvanced(false);
@@ -613,6 +617,7 @@ export const CreateExamModal: React.FC<CreateExamModalProps> = ({
                 requireBank: formData.examType === 'assignment' ? formData.requireBank : true,
                 isPaid: formData.isPaid,
                 tokenPrice: formData.isPaid ? formData.tokenPrice : 0,
+                program: formData.program,
             };
 
             let targetExamId = exam?.id;
@@ -860,6 +865,7 @@ export const CreateExamModal: React.FC<CreateExamModalProps> = ({
                             </div>
                         </>
                     ) : (
+                        <>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <ModalField
                             label={`Nama ${formData.examType === 'assignment' ? 'Tugas' : 'Ujian'}`}
@@ -878,6 +884,14 @@ export const CreateExamModal: React.FC<CreateExamModalProps> = ({
                                 onChange={(e) => { titleEdited.current = true; setFormData((prev) => ({ ...prev, title: e.target.value })); }}
                             />
                         </ModalField>
+                        <ModalField label="Program" hint="Siswa dengan tujuan belajar yang sama melihat ujian ini di filter Untukmu.">
+                            <InlineSelect
+                                value={formData.program}
+                                onChange={(value) => setFormData((prev) => ({ ...prev, program: value as LearningProgram }))}
+                                options={learningPrograms.map((item) => ({ value: item.value, label: item.value === 'umum' ? 'Umum (semua siswa)' : item.label }))}
+                            />
+                        </ModalField>
+                        </div>
                         <ModalField label="Deskripsi">
                             <input
                                 type="text"
@@ -886,7 +900,7 @@ export const CreateExamModal: React.FC<CreateExamModalProps> = ({
                                 onChange={(e) => setFormData((prev) => ({ ...prev, description: e.target.value }))}
                             />
                         </ModalField>
-                        </div>
+                        </>
                     )}
                     </FormSection>
 

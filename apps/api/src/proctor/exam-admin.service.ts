@@ -1087,6 +1087,8 @@ export class ExamAdminService {
             // Tidak dikirim = PERTAHANKAN. Sebelumnya `?? false` membuat setiap
             // penyuntingan tanpa bidang ini diam-diam menjadikan ujian umum privat.
             is_public: dto.isPublic ?? existing.is_public === true,
+            // Program sasaran; ujian lama tanpa program dianggap "umum" saat ditampilkan.
+            ...(dto.program ?? existing.program ? { program: dto.program ?? existing.program } : {}),
             document_url: isAssignment
                 ? (dto.documentUrl ?? existing.document_url ?? '')
                 : existing.document_url,

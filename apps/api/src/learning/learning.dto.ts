@@ -1,8 +1,8 @@
 import { IsBoolean, IsByteLength, IsIn, IsInt, IsObject, IsOptional, IsString, IsUUID, Max, MaxLength, Min, MinLength, Matches } from 'class-validator';
 import { Type } from 'class-transformer';
 
-/** Kelas 1–12, program persiapan (UTBK, CPNS, PPPK, kedinasan, bahasa), atau '' untuk umum. */
-export const LEARNING_GRADE_LEVELS = ['', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', 'utbk', 'cpns', 'pppk', 'kedinasan', 'bahasa'];
+/** Kelas 1–12, program persiapan (SNPDB, UTBK, CPNS, PPPK, kedinasan, bahasa), atau '' untuk umum. */
+export const LEARNING_GRADE_LEVELS = ['', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', 'snpdb', 'utbk', 'cpns', 'pppk', 'kedinasan', 'bahasa'];
 
 export class CreateMaterialDto {
     @IsUUID() id!: string;

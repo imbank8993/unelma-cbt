@@ -185,7 +185,13 @@ export default function SiswaDashboard() {
 
 
     const completedExamsCount = results.filter(r => r.status === 'submitted' || r.status === 'auto_submitted').length;
-    const visibleExams = dashboardExams(exams, now);
+    // Ujian wajib (dari kelas) selalu tampil; tryout pilihan hanya yang sesuai tujuan belajar.
+    const examGoals = goal?.programs ?? [];
+    const visibleExams = dashboardExams(exams, now).filter(exam => {
+        if (exam.metadata?.is_public !== true || !examGoals.length) return true;
+        const program = learningPrograms.some(item => item.value === exam.metadata?.program) ? exam.metadata?.program as LearningProgram : 'umum';
+        return program === 'umum' || examGoals.includes(program);
+    });
     const activeExam = visibleExams.find(exam => scheduleState(exam, now) === 'open');
 
     // Ruang belajar: progres dan subbab berikutnya, diutamakan dari program tujuan siswa.

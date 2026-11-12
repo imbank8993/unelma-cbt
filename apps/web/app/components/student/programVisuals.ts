@@ -1,9 +1,10 @@
-import { Briefcase, GraduationCap, Landmark, Languages, ShieldCheck, Sparkles, Target, type LucideIcon } from 'lucide-react';
+import { Briefcase, GraduationCap, Landmark, Languages, School, ShieldCheck, Sparkles, Target, type LucideIcon } from 'lucide-react';
 import type { LearningProgram } from '@/lib/learning-catalog';
 
 /** Ikon dan warna kartu tiap program belajar di beranda siswa. */
 export const PROGRAM_VISUALS: Record<LearningProgram, { icon: LucideIcon; tile: string }> = {
     sekolah: { icon: GraduationCap, tile: 'bg-blue-50 text-blue-700 dark:bg-blue-950/50 dark:text-blue-300' },
+    snpdb: { icon: School, tile: 'bg-teal-50 text-teal-700 dark:bg-teal-950/50 dark:text-teal-300' },
     utbk: { icon: Target, tile: 'bg-violet-50 text-violet-700 dark:bg-violet-950/50 dark:text-violet-300' },
     cpns: { icon: Landmark, tile: 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300' },
     pppk: { icon: Briefcase, tile: 'bg-orange-50 text-orange-700 dark:bg-orange-950/50 dark:text-orange-300' },

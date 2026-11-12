@@ -72,3 +72,31 @@ test('migrasi, rute proxy, dan katalog bahan ajar selaras dengan program tujuan'
     assert.match(dashboard, /loadLearningGoal\(user\.id\)/);
     assert.match(dashboard, /saveLearningGoal\(userId, next\)/);
 });
+
+test('program ujian: DTO menerima program yang dikenal (termasuk SNPDB) dan siswa menerimanya lewat metadata', async () => {
+    const { CreateExamDto } = require('../src/proctor/dto/proctor.dto.ts');
+    const { studentExamMetadata } = require('../src/students/student-exam-metadata.ts');
+    const base = { title: 'Tryout SNPDB #1', duration: 60 };
+    const errorsFor = async (program) => (await validate(plainToInstance(CreateExamDto, { ...base, program }))).map(e => e.property);
+    assert.ok(!(await errorsFor('snpdb')).includes('program'));
+    assert.ok(!(await errorsFor('utbk')).includes('program'));
+    assert.ok((await errorsFor('ujian-bebas')).includes('program'));
+    assert.deepEqual(studentExamMetadata({ is_public: true, program: 'snpdb', answer_keys: 'rahasia' }), { is_public: true, program: 'snpdb' });
+
+    const ok = plainToInstance(LearningGoalDto, { programs: ['snpdb', 'utbk'] });
+    assert.deepEqual(await validate(ok), []);
+    const migration = read('../../../database/migrations/20261113_01_learning_goals_snpdb.sql');
+    assert.match(migration, /'snpdb'/);
+    assert.match(migration, /cardinality\(programs\) BETWEEN 1 AND 8/);
+});
+
+test('jadwal siswa: ujian wajib selalu tampil, tryout pilihan disaring sesuai tujuan belajar', () => {
+    const schedule = read('../../web/app/dashboard/siswa/schedule/page.tsx');
+    assert.match(schedule, /const isRequired = \(exam: StudentScheduledExam\) => exam\.metadata\?\.is_public !== true;/);
+    assert.match(schedule, /if \(programFilter === 'untukmu'\) return !goalPrograms\.length \|\| program === 'umum' \|\| goalPrograms\.includes\(program\);/);
+    assert.match(schedule, /Wajib dari sekolah \/ kelas/);
+    const dashboard = read('../../web/app/dashboard/siswa/page.tsx');
+    assert.match(dashboard, /if \(exam\.metadata\?\.is_public !== true \|\| !examGoals\.length\) return true;/);
+    const modal = read('../../web/components/exams/CreateExamModal.tsx');
+    assert.match(modal, /program: formData\.program,/);
+});

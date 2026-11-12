@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
-import { ArrowRight, BookOpen, Briefcase, CheckCircle2, ChevronDown, Code2, GraduationCap, Landmark, Languages, LayoutGrid, Pencil, Plus, Search, ShieldCheck, Sparkles, Target, Trash2, type LucideIcon } from 'lucide-react';
+import { ArrowRight, BookOpen, Briefcase, CheckCircle2, ChevronDown, Code2, GraduationCap, Landmark, Languages, LayoutGrid, Pencil, Plus, School, Search, ShieldCheck, Sparkles, Target, Trash2, type LucideIcon } from 'lucide-react';
 import { deleteMaterial, learningRequest, type LearningMaterial } from '@/lib/learning-api';
 import { groupLearningChapters, learningGradeLabel, learningGrades, learningKey, learningProgramOf, learningPrograms, type LearningChapter, type LearningProgram } from '@/lib/learning-catalog';
 import { deleteConfirmDialog } from '@/lib/confirm-dialog';
@@ -31,7 +31,7 @@ function subjectMark(subject: string): { abbr: string; style: CSSProperties } {
 
 /** Ikon dan rona tiap program belajar. */
 const PROGRAM_STYLE: Record<LearningProgram | 'all', { icon: LucideIcon; hue: number }> = {
-    all: { icon: LayoutGrid, hue: 222 }, sekolah: { icon: GraduationCap, hue: 217 }, utbk: { icon: Target, hue: 262 },
+    all: { icon: LayoutGrid, hue: 222 }, sekolah: { icon: GraduationCap, hue: 217 }, snpdb: { icon: School, hue: 175 }, utbk: { icon: Target, hue: 262 },
     cpns: { icon: Landmark, hue: 160 }, pppk: { icon: Briefcase, hue: 24 }, kedinasan: { icon: ShieldCheck, hue: 200 },
     bahasa: { icon: Languages, hue: 330 }, umum: { icon: Sparkles, hue: 45 },
 };

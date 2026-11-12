@@ -4,7 +4,7 @@ export function studentExamMetadata(value: Record<string, unknown> | null | unde
         'is_public', 'is_safe_mode', 'screenshot_enabled', 'max_violations', 'question_order', 'show_answer_keys',
         'is_pas_exam', 'pas_period_id', 'pas_period_name', 'pas_schedule_id', 'bank_title',
         'window_open', 'window_close', 'exam_duration', 'document_url', 'video_url',
-        'assignment_description', 'allow_file_upload', 'allowed_file_types', 'require_bank',
+        'assignment_description', 'allow_file_upload', 'allowed_file_types', 'require_bank', 'program',
     ];
     return Object.fromEntries(keys.filter(key => Object.prototype.hasOwnProperty.call(value || {}, key))
         .map(key => [key, value![key]]));

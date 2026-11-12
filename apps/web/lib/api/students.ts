@@ -67,6 +67,8 @@ export interface StudentScheduledExam {
     token_price?: number;
     /** Siswa ini sudah membuka (membayar) ujian berbayar ini. */
     isUnlocked?: boolean;
+    /** Pengaturan ujian yang aman dibaca siswa; `is_public` = ujian pilihan, `program` = program sasaran. */
+    metadata?: { is_public?: boolean; program?: string } & Record<string, unknown>;
 }
 
 export async function listStudentClasses(): Promise<StudentClass[]> {

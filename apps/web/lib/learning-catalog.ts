@@ -4,9 +4,10 @@ import type { LearningMaterial } from './learning-api';
  * Program belajar: bahan ajar bukan hanya untuk SMA, tetapi juga SD/SMP,
  * persiapan UTBK, CPNS, PPPK, sekolah kedinasan, bahasa, dan keterampilan umum.
  */
-export type LearningProgram = 'sekolah' | 'utbk' | 'cpns' | 'pppk' | 'kedinasan' | 'bahasa' | 'umum';
+export type LearningProgram = 'sekolah' | 'snpdb' | 'utbk' | 'cpns' | 'pppk' | 'kedinasan' | 'bahasa' | 'umum';
 export const learningPrograms: { value: LearningProgram; label: string; hint: string }[] = [
     { value: 'sekolah', label: 'Sekolah', hint: 'SD · SMP · SMA/SMK' },
+    { value: 'snpdb', label: 'SNPDB/SPMB', hint: 'Seleksi masuk SMP/SMA · Tes Kemampuan Akademik' },
     { value: 'utbk', label: 'UTBK-SNBT', hint: 'TPS · Literasi · Penalaran Matematika' },
     { value: 'cpns', label: 'CPNS', hint: 'SKD: TWK · TIU · TKP, dan SKB' },
     { value: 'pppk', label: 'PPPK', hint: 'Teknis · Manajerial · Sosio-kultural · Wawancara' },
@@ -21,7 +22,7 @@ const stageOf = (grade: number) => grade <= 6 ? 'SD' : grade <= 9 ? 'SMP' : 'SMA
 /** Tingkatan yang tersimpan di `grade_level`: kelas 1–12, kode program persiapan, atau '' (umum). */
 export const learningGrades: { value: string; label: string; program: LearningProgram; stage?: string }[] = [
     ...[10, 11, 12, 7, 8, 9, 1, 2, 3, 4, 5, 6].map(grade => ({ value: String(grade), label: `Kelas ${ROMAN[grade - 1]}`, program: 'sekolah' as const, stage: stageOf(grade) })),
-    { value: 'utbk', label: 'UTBK-SNBT', program: 'utbk' }, { value: 'cpns', label: 'CPNS', program: 'cpns' },
+    { value: 'snpdb', label: 'SNPDB/SPMB', program: 'snpdb' }, { value: 'utbk', label: 'UTBK-SNBT', program: 'utbk' }, { value: 'cpns', label: 'CPNS', program: 'cpns' },
     { value: 'pppk', label: 'PPPK', program: 'pppk' }, { value: 'kedinasan', label: 'Kedinasan', program: 'kedinasan' },
     { value: 'bahasa', label: 'Bahasa & TOEFL', program: 'bahasa' }, { value: '', label: 'Umum', program: 'umum' },
 ];
