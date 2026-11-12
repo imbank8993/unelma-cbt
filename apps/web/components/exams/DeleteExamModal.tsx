@@ -1,5 +1,6 @@
 'use client';
 
+import { notify } from '@/lib/confirm-dialog';
 import React, { useState } from 'react';
 import { Modal, ModalBody, ModalFooter } from '@/components/ui/modal';
 import { Button } from '@/components/ui/button';
@@ -42,7 +43,7 @@ export const DeleteExamModal: React.FC<DeleteExamModalProps> = ({
                     if (confirmation !== null) {
                         const purge = await purgeTrialExam(exam.id, confirmation);
                         if (purge.success) {
-                            alert(`Ujian uji coba dan ${purge.purgedAttempts} pengerjaan berhasil dihapus.`);
+                            void notify(`Ujian uji coba dan ${purge.purgedAttempts} pengerjaan berhasil dihapus.`);
                             onClose();
                             await onSuccess();
                         } else {

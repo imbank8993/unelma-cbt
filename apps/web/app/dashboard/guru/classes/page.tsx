@@ -1,6 +1,6 @@
 "use client";
 import '@/app/components/classes/classes.css';
-import { alertDialog, deleteConfirmDialog } from '@/lib/confirm-dialog';
+import { alertDialog, deleteConfirmDialog, notify } from '@/lib/confirm-dialog';
 import { Spinner } from '@/app/components/ui/Spinner';
 import { editClassAction,getProctorOrganization,getStudentsByClassAction,type ClassStudent,type OrganizationClass,type ProctorOrganization } from '@/lib/api/proctor';
 import { createTambahanClass,deleteTambahanClass,listGuruClasses } from '@/lib/api/teachers';
@@ -157,7 +157,7 @@ export default function GuruClassesPage() {
             setClassForm({ name: '', type: 'tambahan', schoolYear: classForm.schoolYear });
             await loadData();
         } else {
-            alert(result.error || 'Gagal membuat kelas');
+            void notify(result.error || 'Gagal membuat kelas');
         }
         setIsSubmitting(false);
     };
@@ -185,7 +185,7 @@ export default function GuruClassesPage() {
             setClassForm({ name: '', type: 'tambahan', schoolYear: classForm.schoolYear });
             await loadData();
         } else {
-            alert(result.error || 'Gagal mengedit kelas');
+            void notify(result.error || 'Gagal mengedit kelas');
         }
         setIsSubmitting(false);
     };

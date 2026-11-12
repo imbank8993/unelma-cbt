@@ -7,7 +7,7 @@ import '@/components/exams/exams-mobile.css';
 import { AssignExamModal } from '@/components/exams/AssignExamModal';
 import { CreateExamModal } from '@/components/exams/CreateExamModal';
 import { DeleteExamModal } from '@/components/exams/DeleteExamModal';
-import { alertDialog, confirmDialog } from '@/lib/confirm-dialog';
+import { alertDialog, confirmDialog, notify } from '@/lib/confirm-dialog';
 import { Spinner } from '@/app/components/ui/Spinner';
 import { LIST_PAGE_SIZE, ListPagination } from '@/app/components/ui/list-pagination';
 import { addExamConfigBankAction,addExamConfigExamAction,createExamConfigAction,getExamConfig,listExamConfigs } from '@/lib/api/exam-configs';
@@ -244,7 +244,7 @@ const ExamsPage = () => {
             if (result.success) {
                 await loadData();
             } else {
-                alert(result.error || 'Gagal mengubah status');
+                void notify(result.error || 'Gagal mengubah status');
             }
         } finally {
             setPublishingId(null);
@@ -379,14 +379,14 @@ const ExamsPage = () => {
         e.preventDefault();
         const user = await getSessionUser();
         if (!org || !user) return;
-        if (!configForm.name.trim()) { alert('Isi nama folder.'); return; }
+        if (!configForm.name.trim()) { void notify('Isi nama folder.'); return; }
         setIsSubmittingConfig(true);
 
         const targetSchoolYear = configForm.school_year.trim();
         if (targetSchoolYear) {
             const yearPattern = /^\d{4}\/\d{4}$/;
             if (!yearPattern.test(targetSchoolYear)) {
-                alert('Format tahun ajaran harus YYYY/YYYY, contoh: 2024/2025');
+                void notify('Format tahun ajaran harus YYYY/YYYY, contoh: 2024/2025');
                 setIsSubmittingConfig(false);
                 return;
             }
@@ -395,7 +395,7 @@ const ExamsPage = () => {
             if (!exists) {
                 const addSyResult = await createSchoolYearAction({ year: targetSchoolYear });
                 if (!addSyResult.success) {
-                    alert('Gagal menambah tahun ajaran baru: ' + (addSyResult.error || 'Unknown error'));
+                    void notify('Gagal menambah tahun ajaran baru: ' + (addSyResult.error || 'Unknown error'));
                     setIsSubmittingConfig(false);
                     return;
                 }
@@ -411,7 +411,7 @@ const ExamsPage = () => {
         });
         setIsSubmittingConfig(false);
         if (!result.success) {
-            alert('Gagal: ' + result.error);
+            void notify('Gagal: ' + result.error);
             return;
         }
         setIsConfigModalOpen(false);
@@ -427,7 +427,7 @@ const ExamsPage = () => {
     const handleAddBankToConfig = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!selectedConfigId) return;
-        if (!addBankForm.bank_id) { alert('Pilih bank soal.'); return; }
+        if (!addBankForm.bank_id) { void notify('Pilih bank soal.'); return; }
         const result = await addExamConfigBankAction({
             exam_config_id: selectedConfigId,
             bank_id: addBankForm.bank_id,
@@ -438,18 +438,18 @@ const ExamsPage = () => {
             setIsAddBankModalOpen(false);
             setAddBankForm({ bank_id: '', subject_id: '' as string, duration_minutes: 90 });
             await openConfigDetail(selectedConfigId);
-        } else if (!result.success) alert('Gagal: ' + result.error);
+        } else if (!result.success) void notify('Gagal: ' + result.error);
     };
 
 
     const handleAddClassExam = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!selectedConfigId) return;
-        if (!addClassForm.bank_id) { alert('Pilih bank soal.'); return; }
-        if (addClassForm.class_ids.length === 0) { alert('Pilih minimal 1 kelas.'); return; }
-        if (!addClassForm.scheduled_date) { alert('Isi tanggal.'); return; }
-        if (!addClassForm.scheduled_time) { alert('Isi jam mulai.'); return; }
-        if (!addClassForm.window_end_time) { alert('Isi window tutup.'); return; }
+        if (!addClassForm.bank_id) { void notify('Pilih bank soal.'); return; }
+        if (addClassForm.class_ids.length === 0) { void notify('Pilih minimal 1 kelas.'); return; }
+        if (!addClassForm.scheduled_date) { void notify('Isi tanggal.'); return; }
+        if (!addClassForm.scheduled_time) { void notify('Isi jam mulai.'); return; }
+        if (!addClassForm.window_end_time) { void notify('Isi window tutup.'); return; }
         let added = 0;
         for (const classId of addClassForm.class_ids) {
             const result = await addExamConfigExamAction({
@@ -466,7 +466,7 @@ const ExamsPage = () => {
             setIsAddClassModalOpen(false);
             setAddClassForm({ bank_id: '', class_ids: [], scheduled_date: '', scheduled_time: '', window_end_time: '' });
             if (selectedConfigId) await openConfigDetail(selectedConfigId);
-        } else { alert('Gagal menyimpan jadwal.'); }
+        } else { void notify('Gagal menyimpan jadwal.'); }
     };
 
 

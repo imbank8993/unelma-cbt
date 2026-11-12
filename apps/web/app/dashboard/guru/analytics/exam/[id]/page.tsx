@@ -1,4 +1,5 @@
 "use client";
+import { notify } from '@/lib/confirm-dialog';
 import { motion } from 'framer-motion';
 import {
 ArrowLeft,
@@ -206,7 +207,7 @@ export default function ExamResultsDetailPage() {
 
     } catch (error) {
       console.error('Export error:', error);
-      alert('Gagal mengekspor data. Pastikan ada data hasil ujian.');
+      void notify('Gagal mengekspor data. Pastikan ada data hasil ujian.');
     } finally {
       setIsExporting(false);
     }

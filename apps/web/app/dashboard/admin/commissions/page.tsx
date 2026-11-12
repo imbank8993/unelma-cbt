@@ -1,5 +1,6 @@
 "use client";
 
+import { notify } from '@/lib/confirm-dialog';
 import React, { useEffect, useState } from 'react';
 import {
     AlertCircle,
@@ -83,7 +84,7 @@ export default function AdminCommissionsPage() {
 
     const handleTogglePermission = async (proc: ProctorSummaryItem, field: 'can_create_exams' | 'can_create_materials') => {
         if (!proc.profile_id) {
-            alert('Proktor ini belum melengkapi profil registrasi proktor.');
+            void notify('Proktor ini belum melengkapi profil registrasi proktor.');
             return;
         }
         try {
@@ -94,10 +95,10 @@ export default function AdminCommissionsPage() {
             if (res.success) {
                 await loadData();
             } else {
-                alert(res.error || 'Gagal memperbarui izin proktor.');
+                void notify(res.error || 'Gagal memperbarui izin proktor.');
             }
         } catch (err: any) {
-            alert(err.message || 'Gagal mengubah izin.');
+            void notify(err.message || 'Gagal mengubah izin.');
         }
     };
 
@@ -124,7 +125,7 @@ export default function AdminCommissionsPage() {
             if (url.protocol === 'https:' || url.protocol === 'http:') validProof = url.href;
         } catch { /* ditangani di bawah */ }
         if (!validProof) {
-            alert('Tautan bukti transfer harus berupa URL http(s) yang valid.');
+            void notify('Tautan bukti transfer harus berupa URL http(s) yang valid.');
             return;
         }
 
@@ -140,7 +141,7 @@ export default function AdminCommissionsPage() {
 
             if (res.success) {
                 const paid = res.payout;
-                alert(
+                void notify(
                     paid
                         ? `Pencairan ${Number(paid.proctor_tokens).toLocaleString('id-ID')} token (Rp ${Number(paid.total_idr).toLocaleString('id-ID')}) berhasil dicatat.`
                         : 'Pencairan komisi proktor berhasil diproses!',
@@ -151,7 +152,7 @@ export default function AdminCommissionsPage() {
                 throw new Error(res.error || 'Gagal memproses pencairan.');
             }
         } catch (err: any) {
-            alert(err.message || 'Terjadi kesalahan saat memproses pencairan.');
+            void notify(err.message || 'Terjadi kesalahan saat memproses pencairan.');
         } finally {
             setProcessingPayout(false);
         }

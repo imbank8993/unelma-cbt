@@ -11,7 +11,7 @@ import { useMonitoringExamClock } from '@/lib/useMonitoringExamClock';
 import { ActiveParticipantsPanel } from '@/app/components/ActiveParticipantsPanel';
 import { MonitoringHealthPanel } from '@/app/components/MonitoringHealthPanel';
 import { MonitoringPASAdministrationPanel } from '@/app/components/monitoring/MonitoringPASAdministrationPanel';
-import { alertDialog, confirmDialog } from '@/lib/confirm-dialog';
+import { alertDialog, confirmDialog, notify } from '@/lib/confirm-dialog';
 import { ResetExamModal } from '@/app/components/monitoring';
 import { Modal, ModalBody, ModalFooter, ModalHeader } from '@/app/components/ui/modal';
 import { compareItemAnalysisDifficulty } from '@/lib/item-analysis-order';
@@ -328,7 +328,7 @@ function MonitoringContent() {
                 questions: freshAnalysis.questions, answers: freshAnalysis.answers, irt: freshAnalysis.irt ?? null,
             });
         } catch (error) {
-            alert(error instanceof Error ? error.message : 'Export belum dapat dibuat.');
+            void notify(error instanceof Error ? error.message : 'Export belum dapat dibuat.');
         }
     };
     if (isLoading) return (

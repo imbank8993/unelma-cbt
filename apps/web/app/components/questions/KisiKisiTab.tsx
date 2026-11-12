@@ -1,5 +1,5 @@
 "use client";
-import { deleteConfirmDialog } from '@/lib/confirm-dialog';
+import { deleteConfirmDialog, notify } from '@/lib/confirm-dialog';
 import {
 createKisiKisi,
 deleteKisiKisi,
@@ -68,7 +68,7 @@ export default function KisiKisiTab({ bankId, onItemsChange }: KisiKisiTabProps)
 
     const handleSave = async () => {
         if (!materi.trim() && !indikatorSoal.trim()) {
-            return alert('Materi atau indikator soal wajib diisi');
+            return void notify('Materi atau indikator soal wajib diisi');
         }
         
         setIsSubmitting(true);
@@ -80,10 +80,10 @@ export default function KisiKisiTab({ bankId, onItemsChange }: KisiKisiTabProps)
 
         if (editingId) {
             const result = await updateKisiKisi(editingId, data);
-            if (!result.success) { alert('Gagal menyimpan: ' + result.error); setIsSubmitting(false); return; }
+            if (!result.success) { void notify('Gagal menyimpan: ' + result.error); setIsSubmitting(false); return; }
         } else {
             const result = await createKisiKisi(bankId, data);
-            if (!result.success) { alert('Gagal menyimpan: ' + result.error); setIsSubmitting(false); return; }
+            if (!result.success) { void notify('Gagal menyimpan: ' + result.error); setIsSubmitting(false); return; }
         }
         setIsSubmitting(false);
         setIsEditorOpen(false);

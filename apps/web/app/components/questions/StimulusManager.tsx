@@ -1,5 +1,5 @@
 "use client";
-import { deleteConfirmDialog } from '@/lib/confirm-dialog';
+import { deleteConfirmDialog, notify } from '@/lib/confirm-dialog';
 import { getErrorMessage } from '@/lib/errors';
 import { LatexRenderer } from '@/app/components/questions/LatexRenderer';
 import { TipTapEditor } from '@/app/components/questions/TipTapEditor';
@@ -130,14 +130,14 @@ export default function StimulusManager({ bankId, onItemsChange }: StimulusManag
 
     const handleSave = async () => {
         const strippedContent = content.replace(/<[^>]*>/g, '').trim();
-        if (!strippedContent) return alert("Konten stimulus tidak boleh kosong");
+        if (!strippedContent) return void notify("Konten stimulus tidak boleh kosong");
         setIsSubmitting(true);
         if (editingId) {
             const result = await updateStimulus(editingId, title, content);
-            if (!result.success) { alert('Gagal menyimpan stimulus: ' + result.error); setIsSubmitting(false); return; }
+            if (!result.success) { void notify('Gagal menyimpan stimulus: ' + result.error); setIsSubmitting(false); return; }
         } else {
             const result = await createStimulus(bankId, title, content);
-            if (!result.success) { alert('Gagal menyimpan stimulus: ' + result.error); setIsSubmitting(false); return; }
+            if (!result.success) { void notify('Gagal menyimpan stimulus: ' + result.error); setIsSubmitting(false); return; }
         }
         setIsSubmitting(false);
         setIsEditorOpen(false);

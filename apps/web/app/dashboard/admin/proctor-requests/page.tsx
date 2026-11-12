@@ -1,5 +1,6 @@
 "use client";
 
+import { confirmDialog } from '@/lib/confirm-dialog';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { AlertCircle, RefreshCw, X } from 'lucide-react';
 import {
@@ -72,7 +73,7 @@ export default function ProctorRequestsPage() {
 
     const approve = async () => {
         if (!selected || busy) return;
-        if (!confirm(`Setujui ${selected.full_name} sebagai Proktor? Peran Siswa-nya akan diganti Proktor.`)) return;
+        if (!await confirmDialog({ title: 'Setujui sebagai Proktor?', text: `${selected.full_name} akan menjadi Proktor. Peran Siswa-nya diganti Proktor.`, confirmText: 'Ya, Setujui' })) return;
         setBusy(true);
         const res = await approveProctorApplication(selected.id);
         setBusy(false);

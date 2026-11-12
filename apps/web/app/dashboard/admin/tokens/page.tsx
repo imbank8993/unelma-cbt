@@ -1,5 +1,6 @@
 "use client";
 
+import { deleteConfirmDialog, notify } from '@/lib/confirm-dialog';
 import React, { useEffect, useState } from 'react';
 import { Plus, Edit2, Trash2, X, AlertCircle, RefreshCw } from 'lucide-react';
 import {
@@ -131,15 +132,15 @@ export default function AdminTokensPage() {
         const tokenAmount = Number(pkgAmount);
         const priceIdr = Number(pkgPrice);
         if (!name) {
-            alert('Nama paket wajib diisi.');
+            void notify('Nama paket wajib diisi.');
             return;
         }
         if (!Number.isInteger(tokenAmount) || tokenAmount < 1 || tokenAmount > 100000) {
-            alert('Jumlah token harus bilangan bulat antara 1 dan 100.000.');
+            void notify('Jumlah token harus bilangan bulat antara 1 dan 100.000.');
             return;
         }
         if (!Number.isInteger(priceIdr) || priceIdr < 1 || priceIdr > 100000000) {
-            alert('Harga paket harus bilangan bulat rupiah antara 1 dan 100.000.000.');
+            void notify('Harga paket harus bilangan bulat rupiah antara 1 dan 100.000.000.');
             return;
         }
         const payload = {
@@ -162,23 +163,23 @@ export default function AdminTokensPage() {
             // Hanya daftar paket: memuat ulang Midtrans akan menghapus input yang belum disimpan.
             await refreshPackages();
         } catch (err: any) {
-            alert(err.message || 'Terjadi kesalahan.');
+            void notify(err.message || 'Terjadi kesalahan.');
         } finally {
             setSubmitting(false);
         }
     };
 
     const handleDeletePackage = async (id: string, name: string) => {
-        if (!confirm(`Hapus paket token "${name}"?`)) return;
+        if (!await deleteConfirmDialog('Hapus paket token?', `Paket "${name}" tidak lagi bisa dibeli siswa.`)) return;
         try {
             const res = await deleteTokenPackage(id);
             if (res.success) {
                 await refreshPackages();
             } else {
-                alert(res.error || 'Gagal menghapus paket.');
+                void notify(res.error || 'Gagal menghapus paket.');
             }
         } catch (err: any) {
-            alert(err.message);
+            void notify(err.message);
         }
     };
 
@@ -188,7 +189,7 @@ export default function AdminTokensPage() {
         try {
             const res = await updateTokenPackage(pkg.id, { is_active: !pkg.is_active });
             if (!res.success) {
-                alert(res.error || 'Gagal mengubah status paket.');
+                void notify(res.error || 'Gagal mengubah status paket.');
                 return;
             }
             await loadPackages();

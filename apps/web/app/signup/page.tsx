@@ -1,5 +1,6 @@
 "use client";
 
+import { notify } from '@/lib/confirm-dialog';
 import React, { useState } from 'react';
 import Link from 'next/link';
 import Script from 'next/script';
@@ -270,11 +271,11 @@ export default function SignupPage() {
                                 type="button"
                                 onClick={() => {
                                     if (!googleCredential) {
-                                        alert('Sesi Google tidak ditemukan. Klik tombol Google sekali lagi.');
+                                        void notify('Sesi Google tidak ditemukan. Klik tombol Google sekali lagi.');
                                         return;
                                     }
                                     if (!googleEmail || !googleName || !schoolName) {
-                                        alert('Email, Nama Lengkap, dan Asal Sekolah wajib diisi.');
+                                        void notify('Email, Nama Lengkap, dan Asal Sekolah wajib diisi.');
                                         return;
                                     }
                                     setShowGoogleModal(false);

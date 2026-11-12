@@ -10,7 +10,7 @@ import InlineSelect from '@/components/ui/InlineSelect';
 import type { BankTextItem,DimensionItem,KisiKisiItem,QuestionMetadata,QuestionOptionDraft,QuestionRecord } from '@/lib/api/questions';
 import type { ProctorOrganization } from '@/lib/api/proctor';
 import { uploadToHosting } from '@/lib/uploader';
-import { confirmDialog } from '@/lib/confirm-dialog';
+import { confirmDialog, notify } from '@/lib/confirm-dialog';
 import { AnimatePresence,motion } from 'framer-motion';
 import {
 AlertCircle,
@@ -451,7 +451,7 @@ export default function QuestionEditorModal({
         }
         if (!validateQuestion()) return;
         if (!org) {
-            alert('Sekolah belum dikonfigurasi');
+            void notify('Sekolah belum dikonfigurasi');
             return;
         }
         setIsSubmitting(true);
@@ -471,7 +471,7 @@ export default function QuestionEditorModal({
                 await onSaveSuccess();
             }
         } else {
-            alert('Gagal menyimpan soal: ' + result.error);
+            void notify('Gagal menyimpan soal: ' + result.error);
         }
         setIsSubmitting(false);
     };

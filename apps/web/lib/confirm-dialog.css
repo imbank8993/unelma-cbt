@@ -1,21 +1,57 @@
-/* Scoped to confirmation dialogs; match the shared modal shell. */
-/* Keep confirmation dialogs above table rows, sticky controls, and editor overlays. */
-.swal2-container.acca-confirm-overlay{z-index:2147483647!important;isolation:isolate;background:rgba(15,23,42,.55);backdrop-filter:blur(4px);padding:16px}
-.swal2-popup.acca-confirm{position:relative;z-index:1;grid-template-columns:56px minmax(0,1fr);width:440px;max-width:100%;padding:0!important;border:1px solid #030C4D;border-radius:16px;background:#fff;box-shadow:0 28px 80px rgba(2,6,23,.35);font-family:inherit;overflow:hidden}
-.acca-confirm .swal2-icon.acca-confirm-icon{grid-column:1;grid-row:1;align-self:center;width:28px;height:28px;margin:20px 0 20px 20px;border-width:2px;border-color:#030C4D;color:#030C4D;font-size:8px}
-.acca-confirm .swal2-icon .swal2-icon-content{font-size:22px;line-height:28px}
-.acca-confirm .swal2-title.acca-confirm-title{grid-column:2;grid-row:1;align-self:center;padding:20px 20px 20px 8px;margin:0;text-align:left;font-size:16px;line-height:24px;font-weight:700;color:#0f172a;overflow-wrap:anywhere}
-.acca-confirm .swal2-html-container.acca-confirm-body{grid-column:1/-1;grid-row:2;margin:0;padding:18px 20px;text-align:left;border-top:1px solid #dbeafe;background:#fff;font-size:14px;line-height:22px;color:#475569;overflow-wrap:anywhere}
-.acca-confirm .swal2-actions.acca-confirm-actions{grid-column:1/-1;grid-row:3;justify-content:flex-end;gap:8px;width:100%;margin:0;padding:14px 20px;background:#f8fafc;border-top:1px solid #e2e8f0}
-.acca-confirm-actions button{margin:0;min-width:72px;min-height:38px;padding:8px 16px;border-radius:8px;font-family:inherit;font-size:13px;font-weight:600;line-height:20px;cursor:pointer;transition:background .15s}
-.acca-confirm-actions .acca-confirm-yes{border:1px solid #030C4D;background:#030C4D;color:white}
-.acca-confirm-actions .acca-confirm-yes:hover{background:#2563eb}
-.acca-confirm-actions .acca-confirm-no{border:1px solid #cbd5e1;background:white;color:#475569}
-.acca-confirm-actions .acca-confirm-no:hover{background:#eff6ff}
-.acca-confirm-actions button:focus-visible{outline:2px solid #030C4D;outline-offset:3px}
-.dark .swal2-popup.acca-confirm{background:#0f172a}
-.dark .acca-confirm .acca-confirm-title{color:#f8fafc}
-.dark .acca-confirm .acca-confirm-body{color:#cbd5e1;border-color:#334155;background:#0f172a}
-.dark .acca-confirm .acca-confirm-actions{background:#1e293b;border-color:#334155}
-.dark .acca-confirm-actions .acca-confirm-no{background:#0f172a;color:#e2e8f0;border-color:#475569}
+/* Dialog konfirmasi & pemberitahuan bertema: kartu terpusat, ikon dalam lingkaran lembut. */
+/* Tetap di atas baris tabel, kontrol sticky, dan lapisan editor. */
+.swal2-container.acca-confirm-overlay{z-index:2147483647!important;isolation:isolate;background:rgba(15,23,42,.45)!important;backdrop-filter:blur(3px);padding:16px}
 
+.swal2-popup.acca-confirm{
+  --tone:#030C4D;--tone-soft:#eef2ff;
+  display:flex!important;flex-direction:column;align-items:center;
+  width:420px;max-width:100%;padding:28px 24px 20px!important;
+  border:0;border-radius:20px;background:#fff;
+  box-shadow:0 24px 64px -12px rgba(2,6,23,.28),0 0 0 1px rgba(15,23,42,.06);
+  font-family:inherit;text-align:center
+}
+.acca-confirm--danger{--tone:#dc2626;--tone-soft:#fef2f2}
+.acca-confirm--warning{--tone:#d97706;--tone-soft:#fffbeb}
+.acca-confirm--success{--tone:#059669;--tone-soft:#ecfdf5}
+.acca-confirm--info,.acca-confirm--primary{--tone:#030C4D;--tone-soft:#eef2ff}
+
+.acca-confirm .swal2-icon.acca-confirm-icon{
+  display:flex!important;align-items:center;justify-content:center;
+  width:52px;height:52px;margin:0 0 16px;border:0!important;border-radius:9999px;
+  background:var(--tone-soft);color:var(--tone)
+}
+.acca-confirm .swal2-icon.acca-confirm-icon .swal2-icon-content{display:flex;font-size:inherit;line-height:1}
+
+.acca-confirm .swal2-title.acca-confirm-title{padding:0;margin:0;font-size:18px;line-height:26px;font-weight:600;letter-spacing:-.01em;color:#0f172a;overflow-wrap:anywhere}
+.acca-confirm .swal2-html-container.acca-confirm-body{margin:8px 0 0;padding:0;font-size:14px;line-height:22px;color:#64748b;overflow-wrap:anywhere}
+
+.acca-confirm .swal2-actions.acca-confirm-actions{display:flex;flex-wrap:nowrap;gap:10px;width:100%;margin:24px 0 0;padding:0}
+.acca-confirm-actions button{flex:1 1 0;margin:0;min-height:42px;padding:10px 16px;border-radius:12px;font-family:inherit;font-size:14px;font-weight:600;line-height:20px;cursor:pointer;transition:background .15s,border-color .15s,box-shadow .15s}
+.acca-confirm-actions .acca-confirm-yes{border:1px solid var(--tone);background:var(--tone);color:#fff}
+.acca-confirm-actions .acca-confirm-yes:hover{filter:brightness(1.08)}
+.acca-confirm--info .acca-confirm-actions .acca-confirm-yes:hover,.acca-confirm--primary .acca-confirm-actions .acca-confirm-yes:hover{background:#0B1A66;filter:none}
+.acca-confirm-actions .acca-confirm-no{border:1px solid #e2e8f0;background:#fff;color:#334155}
+.acca-confirm-actions .acca-confirm-no:hover{background:#f8fafc;border-color:#cbd5e1}
+.acca-confirm-actions button:focus-visible{outline:2px solid var(--tone);outline-offset:2px}
+
+/* Animasi masuk/keluar yang halus. */
+.acca-confirm-in{animation:acca-confirm-in .18s cubic-bezier(.22,1,.36,1)}
+.acca-confirm-out{animation:acca-confirm-out .12s ease-in forwards}
+@keyframes acca-confirm-in{from{opacity:0;transform:translateY(8px) scale(.97)}to{opacity:1;transform:none}}
+@keyframes acca-confirm-out{to{opacity:0;transform:scale(.97)}}
+@media (prefers-reduced-motion:reduce){.acca-confirm-in,.acca-confirm-out{animation:none}}
+
+@media (max-width:480px){
+  .swal2-popup.acca-confirm{padding:24px 20px 18px!important;border-radius:18px}
+  .acca-confirm .swal2-actions.acca-confirm-actions{flex-direction:column-reverse}
+}
+
+.dark .swal2-popup.acca-confirm{background:#0f172a;box-shadow:0 24px 64px -12px rgba(0,0,0,.6),0 0 0 1px rgba(148,163,184,.15)}
+.dark .acca-confirm--info,.dark .acca-confirm--primary{--tone:#3b82f6;--tone-soft:rgba(59,130,246,.15)}
+.dark .acca-confirm--danger{--tone-soft:rgba(220,38,38,.15)}
+.dark .acca-confirm--warning{--tone-soft:rgba(217,119,6,.15)}
+.dark .acca-confirm--success{--tone-soft:rgba(5,150,105,.15)}
+.dark .acca-confirm .acca-confirm-title{color:#f8fafc}
+.dark .acca-confirm .acca-confirm-body{color:#94a3b8}
+.dark .acca-confirm-actions .acca-confirm-no{background:transparent;color:#e2e8f0;border-color:#334155}
+.dark .acca-confirm-actions .acca-confirm-no:hover{background:#1e293b}

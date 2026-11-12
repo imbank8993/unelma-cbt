@@ -11,7 +11,7 @@ import { ActiveParticipantsPanel } from '@/app/components/ActiveParticipantsPane
 import { MonitoringHealthPanel } from '@/app/components/MonitoringHealthPanel';
 import { ScreenShareExceptionsPanel } from '@/app/components/monitoring/ScreenShareExceptionsPanel';
 import { MonitoringPASAdministrationPanel } from '@/app/components/monitoring/MonitoringPASAdministrationPanel';
-import { alertDialog, confirmDialog } from '@/lib/confirm-dialog';
+import { alertDialog, confirmDialog, notify } from '@/lib/confirm-dialog';
 import { ResetExamModal } from '@/app/components/monitoring';
 import { IrtRecalculationNotice } from '@/app/components/monitoring/IrtRecalculationNotice';
 import { BulkResetPanel } from '@/app/components/monitoring/BulkResetPanel';
@@ -305,7 +305,7 @@ function MonitoringContent() {
                 questions: freshAnalysis.questions, answers: freshAnalysis.answers, irt: freshAnalysis.irt ?? null,
             });
         } catch (error) {
-            alert(error instanceof Error ? error.message : 'Export belum dapat dibuat.');
+            void notify(error instanceof Error ? error.message : 'Export belum dapat dibuat.');
         }
     };
 

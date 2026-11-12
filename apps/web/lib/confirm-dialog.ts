@@ -1,12 +1,14 @@
 import Swal, { SweetAlertIcon } from 'sweetalert2';
 import './confirm-dialog.css';
 
+export type DialogVariant = 'danger' | 'warning' | 'info' | 'primary' | 'success';
+
 export interface ConfirmOptions {
   title: string;
   text?: string;
   confirmText?: string;
   cancelText?: string;
-  variant?: 'danger' | 'warning' | 'info' | 'primary' | 'success';
+  variant?: DialogVariant;
   icon?: SweetAlertIcon;
 }
 
@@ -14,68 +16,70 @@ export interface AlertOptions {
   title: string;
   text?: string;
   confirmText?: string;
-  variant?: 'danger' | 'warning' | 'info' | 'primary' | 'success';
+  variant?: DialogVariant;
   icon?: SweetAlertIcon;
 }
 
-const variantStyles = {
-  danger: {
-    confirmBtn: '#ef4444',
-    icon: 'warning' as SweetAlertIcon,
-  },
-  warning: {
-    confirmBtn: '#f59e0b',
-    icon: 'warning' as SweetAlertIcon,
-  },
-  info: {
-    confirmBtn: '#030C4D',
-    icon: 'info' as SweetAlertIcon,
-  },
-  primary: {
-    confirmBtn: '#030C4D',
-    icon: 'question' as SweetAlertIcon,
-  },
-  success: {
-    confirmBtn: '#030C4D',
-    icon: 'success' as SweetAlertIcon,
-  },
+/* Ikon garis (gaya Lucide) di dalam lingkaran berwarna lembut, satu per jenis dialog. */
+const svg = (paths: string) =>
+  `<svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${paths}</svg>`;
+const ICONS: Record<DialogVariant, string> = {
+  danger: svg('<path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M10 11v6"/><path d="M14 11v6"/>'),
+  warning: svg('<path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><path d="M12 9v4"/><path d="M12 17h.01"/>'),
+  info: svg('<circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/>'),
+  primary: svg('<circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/>'),
+  success: svg('<circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/>'),
 };
+
+/** Ikon SweetAlert lama dipetakan ke jenis dialog agar pemanggil lama tetap konsisten. */
+function variantFor(variant: DialogVariant | undefined, icon: SweetAlertIcon | undefined, fallback: DialogVariant): DialogVariant {
+  if (variant) return variant;
+  if (icon === 'error') return 'danger';
+  if (icon === 'warning') return 'warning';
+  if (icon === 'success') return 'success';
+  if (icon === 'question') return 'primary';
+  if (icon === 'info') return 'info';
+  return fallback;
+}
+
+function dialogClasses(variant: DialogVariant) {
+  return {
+    container: 'acca-confirm-overlay',
+    popup: `acca-confirm acca-confirm--${variant}`,
+    icon: 'acca-confirm-icon',
+    title: 'acca-confirm-title',
+    htmlContainer: 'acca-confirm-body',
+    confirmButton: 'acca-confirm-yes',
+    cancelButton: 'acca-confirm-no',
+    actions: 'acca-confirm-actions',
+  };
+}
 
 export async function confirmDialog({
   title,
   text,
   confirmText = 'Ya, Lanjutkan',
   cancelText = 'Batal',
-  variant = 'primary',
+  variant,
   icon,
 }: ConfirmOptions): Promise<boolean> {
-  const style = variantStyles[variant] || variantStyles.primary;
-
+  const kind = variantFor(variant, icon, 'primary');
   const result = await Swal.fire({
     title,
     text,
-    icon: icon || style.icon,
+    icon: 'info',
+    iconHtml: ICONS[kind],
     showCancelButton: true,
-    confirmButtonColor: '#030C4D',
-    cancelButtonColor: '#ffffff',
     confirmButtonText: confirmText,
     cancelButtonText: cancelText,
     reverseButtons: true,
-    focusCancel: variant === 'danger',
-    width: 440,
+    focusCancel: kind === 'danger',
+    width: 420,
     padding: 0,
     buttonsStyling: false,
-    iconColor: '#030C4D',
-    customClass: {
-      container: 'acca-confirm-overlay',
-      popup: 'acca-confirm',
-      icon: 'acca-confirm-icon',
-      title: 'acca-confirm-title',
-      htmlContainer: 'acca-confirm-body',
-      confirmButton: 'acca-confirm-yes',
-      cancelButton: 'acca-confirm-no',
-      actions: 'acca-confirm-actions',
-    },
+    showClass: { popup: 'acca-confirm-in' },
+    hideClass: { popup: 'acca-confirm-out' },
+    customClass: dialogClasses(kind),
   });
 
   return result.isConfirmed;
@@ -86,56 +90,44 @@ export async function deleteConfirmDialog(
   text?: string
 ): Promise<boolean> {
   if (typeof titleOrOptions === 'string') {
-    return confirmDialog({
-      title: titleOrOptions,
-      text,
-      confirmText: 'Ya, Hapus',
-      cancelText: 'Batal',
-      variant: 'danger',
-      icon: 'warning',
-    });
+    return confirmDialog({ title: titleOrOptions, text, confirmText: 'Ya, Hapus', cancelText: 'Batal', variant: 'danger' });
   }
-
-  return confirmDialog({
-    confirmText: 'Ya, Hapus',
-    cancelText: 'Batal',
-    variant: 'danger',
-    icon: 'warning',
-    ...titleOrOptions,
-  });
+  return confirmDialog({ confirmText: 'Ya, Hapus', cancelText: 'Batal', ...titleOrOptions, variant: 'danger' });
 }
 
 export async function alertDialog({
   title,
   text,
-  confirmText = 'OK',
-  variant = 'info',
+  confirmText = 'Mengerti',
+  variant,
   icon,
 }: AlertOptions): Promise<void> {
-  const style = variantStyles[variant] || variantStyles.info;
-
+  const kind = variantFor(variant, icon, 'info');
   await Swal.fire({
     title,
     text,
-    icon: icon || style.icon,
-    confirmButtonColor: style.confirmBtn,
-    iconColor: (icon || style.icon) === 'success' ? '#030C4D' : undefined,
+    icon: 'info',
+    iconHtml: ICONS[kind],
     confirmButtonText: confirmText,
     buttonsStyling: false,
-    width: 440,
+    width: 420,
     padding: 0,
-    customClass: {
-      container: 'acca-confirm-overlay',
-      popup: 'acca-confirm',
-      icon: 'acca-confirm-icon',
-      title: 'acca-confirm-title',
-      htmlContainer: 'acca-confirm-body',
-      actions: 'acca-confirm-actions',
-      confirmButton: 'acca-confirm-yes',
-    },
-    didOpen: (popup) => {
-      const btn = popup.querySelector('.acca-confirm-yes') as HTMLElement | null;
-      if (btn) btn.style.backgroundColor = style.confirmBtn;
-    },
+    showClass: { popup: 'acca-confirm-in' },
+    hideClass: { popup: 'acca-confirm-out' },
+    customClass: dialogClasses(kind),
   });
+}
+
+/**
+ * Pengganti `alert()` bawaan browser: pesan singkat dengan dialog bertema.
+ * Jenis dan judul ditebak dari isi pesan ("Gagal…", "Berhasil…").
+ */
+export function notify(message: unknown, variant?: DialogVariant): Promise<void> {
+  const text = String(message ?? '');
+  const kind: DialogVariant = variant
+    ?? (/^(gagal|error|terjadi kesalahan)|tidak dapat|tidak bisa|tidak valid|belum dapat/i.test(text) ? 'danger'
+      : /^(berhasil|sukses|selesai)|berhasil/i.test(text) ? 'success'
+        : 'warning');
+  const title = kind === 'danger' ? 'Gagal' : kind === 'success' ? 'Berhasil' : 'Perhatian';
+  return alertDialog({ title, text, variant: kind });
 }

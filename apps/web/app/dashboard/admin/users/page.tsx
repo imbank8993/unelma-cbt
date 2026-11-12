@@ -1,5 +1,6 @@
 "use client";
 
+import { confirmDialog, deleteConfirmDialog } from '@/lib/confirm-dialog';
 import React, { useState, useEffect, useCallback } from 'react';
 import {
     Users,
@@ -105,7 +106,7 @@ export default function AdminUsersPage() {
     };
 
     const handleDeleteUser = async (userId: string, targetEmail: string) => {
-        if (!confirm(`Apakah Anda yakin ingin menghapus akun ${targetEmail}? Seluruh profil dan data akun ini akan dihapus permanen.`)) {
+        if (!await deleteConfirmDialog('Hapus akun pengguna?', `Akun ${targetEmail} beserta seluruh profil dan datanya akan dihapus permanen.`)) {
             return;
         }
 
@@ -384,9 +385,9 @@ export default function AdminUsersPage() {
                                                                 disabled={isActionLoading}
                                                                 minWidth="112px"
                                                                 value={primaryRole === 'Superadmin' ? 'Admin' : MANAGED_ROLES.includes(primaryRole) ? primaryRole : ''}
-                                                                onChange={(next) => {
+                                                                onChange={async (next) => {
                                                                     if (next === 'Siswa' && !MANAGED_ROLES.includes(primaryRole)
-                                                                        && !confirm(`Jadikan ${u.email} Siswa? Peran ${primaryRole} miliknya akan dicabut.`)) {
+                                                                        && !await confirmDialog({ title: 'Jadikan Siswa?', text: `Peran ${primaryRole} milik ${u.email} akan dicabut.`, confirmText: 'Ya, Jadikan Siswa', variant: 'warning' })) {
                                                                         return;
                                                                     }
                                                                     void handleRoleChange(u.id, u.email, next);

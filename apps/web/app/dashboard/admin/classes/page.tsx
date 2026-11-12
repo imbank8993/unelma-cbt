@@ -1,4 +1,5 @@
 "use client";
+import { notify } from '@/lib/confirm-dialog';
 import '@/app/components/classes/classes.css';
 import { Button } from '@/app/components/ui/button';
 import { FilterActions,FilterSearch,FilterSelect,FilterToolbar } from '@/app/components/ui/filtertoolbar';
@@ -177,7 +178,7 @@ export default function SettingsClassesPage() {
             setClassForm({ name: '', type: 'reguler', schoolYear: classForm.schoolYear });
             await loadData();
         } else {
-            alert(result.error || 'Gagal membuat kelas');
+            void notify(result.error || 'Gagal membuat kelas');
         }
         setIsSubmitting(false);
     };
@@ -190,7 +191,7 @@ export default function SettingsClassesPage() {
             setDeleteClassTarget(null);
             await loadData();
         } else {
-            alert(result.error || 'Gagal menghapus kelas');
+            void notify(result.error || 'Gagal menghapus kelas');
         }
         setIsSubmitting(false);
     };
@@ -206,7 +207,7 @@ export default function SettingsClassesPage() {
             setClassForm({ name: '', type: 'reguler', schoolYear: classForm.schoolYear });
             await loadData();
         } else {
-            alert(result.error || 'Gagal mengedit kelas');
+            void notify(result.error || 'Gagal mengedit kelas');
         }
         setIsSubmitting(false);
     };
@@ -269,7 +270,7 @@ export default function SettingsClassesPage() {
                 schoolYear: String(row['Tahun Ajaran'] || row.schoolYear || '').trim() || undefined
             })).filter(r => r.name);
             if (formattedData.length === 0) {
-                alert('Tidak ada data valid ditemukan dalam file.');
+                void notify('Tidak ada data valid ditemukan dalam file.');
                 return;
             }
             setIsSubmitting(true);
@@ -278,9 +279,9 @@ export default function SettingsClassesPage() {
             await loadData();
             setIsSubmitting(false);
             if (result.failedCount > 0) {
-                alert(`Impor selesai: ${result.successCount} berhasil, ${result.failedCount} gagal.`);
+                void notify(`Impor selesai: ${result.successCount} berhasil, ${result.failedCount} gagal.`);
             } else {
-                alert(`Berhasil mengimpor ${result.successCount} kelas.`);
+                void notify(`Berhasil mengimpor ${result.successCount} kelas.`);
             }
         };
         reader.readAsArrayBuffer(file);

@@ -1,5 +1,5 @@
 "use client";
-import { deleteConfirmDialog } from '@/lib/confirm-dialog';
+import { deleteConfirmDialog, notify } from '@/lib/confirm-dialog';
 import {
 createDimension,
 createDimensionInterpretation,
@@ -85,7 +85,7 @@ export default function DimensionManager({ bankId, onItemsChange }: DimensionMan
     };
 
     const handleSave = async () => {
-        if (!name.trim()) return alert("Nama dimensi tidak boleh kosong");
+        if (!name.trim()) return void notify("Nama dimensi tidak boleh kosong");
         setIsSubmitting(true);
         if (editingId) {
             await updateDimension(editingId, name, description);
@@ -125,7 +125,7 @@ export default function DimensionManager({ bankId, onItemsChange }: DimensionMan
 
     const handleSaveInterp = async () => {
         if (!interpDimensionId) return;
-        if (!iMin || !iMax || !iTitle.trim() || !iDesc.trim()) return alert("Semua kolom harus diisi");
+        if (!iMin || !iMax || !iTitle.trim() || !iDesc.trim()) return void notify("Semua kolom harus diisi");
         setIsSubmitting(true);
         if (editingInterpId) {
             await updateDimensionInterpretation(editingInterpId, Number(iMin), Number(iMax), iTitle, iDesc);

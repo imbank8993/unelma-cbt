@@ -2,7 +2,7 @@
 import '@/app/components/questions/bank-folder-menu.css';
 
 import { CollaborationButton } from '@/app/components/CollaborationButton';
-import { confirmDialog } from '@/lib/confirm-dialog';
+import { confirmDialog, notify } from '@/lib/confirm-dialog';
 import { getErrorMessage } from '@/lib/errors';
 import { ActionButton } from '@/app/components/ui/actionbutton';
 import { Button } from '@/app/components/ui/button';
@@ -210,8 +210,8 @@ export default function ProktorQuestionBankPage() {
         try {
             const result = await deleteQuestionBank(bankToDelete.id);
             if (result.success) { setIsDeleteModalOpen(false); setBankToDelete(null); await loadData(); }
-            else { alert('Gagal: ' + result.error); }
-        } catch { alert('Error.'); }
+            else { void notify('Gagal: ' + result.error); }
+        } catch { void notify('Error.'); }
         finally { setIsSubmitting(false); }
     };
 
@@ -227,7 +227,7 @@ export default function ProktorQuestionBankPage() {
         })) return;
         const result = await toggleQuestionBankPublishAction(bank.id, newStatus);
         if (result.success) await loadData();
-        else alert('Gagal: ' + result.error);
+        else void notify('Gagal: ' + result.error);
     };
 
 
@@ -267,8 +267,8 @@ export default function ProktorQuestionBankPage() {
                 setNewFolderName('');
                 setEditingFolder(null);
                 await loadData();
-            } else { alert('Gagal: ' + result.error); }
-        } catch (err) { alert('Error: ' + getErrorMessage(err)); }
+            } else { void notify('Gagal: ' + result.error); }
+        } catch (err) { void notify('Error: ' + getErrorMessage(err)); }
         finally { setIsSubmitting(false); }
     };
 
@@ -276,7 +276,7 @@ export default function ProktorQuestionBankPage() {
         if (!org) return;
         setFolderMenuId(null);
         if (folder.canDelete !== true) {
-            alert('Folder masih berisi bank soal. Pindahkan semua bank soal keluar dari folder sebelum menghapusnya.');
+            void notify('Folder masih berisi bank soal. Pindahkan semua bank soal keluar dari folder sebelum menghapusnya.');
             return;
         }
         setIsSubmitting(true);
@@ -285,8 +285,8 @@ export default function ProktorQuestionBankPage() {
             if (result.success) {
                 setFolderMenuId(null);
                 await loadData();
-            } else { alert('Gagal: ' + result.error); }
-        } catch (err) { alert('Error: ' + getErrorMessage(err)); }
+            } else { void notify('Gagal: ' + result.error); }
+        } catch (err) { void notify('Error: ' + getErrorMessage(err)); }
         finally { setIsSubmitting(false); }
     };
 
@@ -307,8 +307,8 @@ export default function ProktorQuestionBankPage() {
                 setTargetFolder(null);
                 setSelectedAddToFolderIds(new Set());
                 await loadData();
-            } else { alert('Gagal: ' + result.error); }
-        } catch (err) { alert('Error: ' + getErrorMessage(err)); }
+            } else { void notify('Gagal: ' + result.error); }
+        } catch (err) { void notify('Error: ' + getErrorMessage(err)); }
         finally { setIsSubmitting(false); }
     };
 
@@ -327,8 +327,8 @@ export default function ProktorQuestionBankPage() {
                 setIsMoveModalOpen(false);
                 setBankToMove(null);
                 await loadData();
-            } else { alert('Gagal: ' + result.error); }
-        } catch (err) { alert('Error: ' + getErrorMessage(err)); }
+            } else { void notify('Gagal: ' + result.error); }
+        } catch (err) { void notify('Error: ' + getErrorMessage(err)); }
         finally { setIsSubmitting(false); }
     };
 
@@ -368,8 +368,8 @@ export default function ProktorQuestionBankPage() {
                 setSelectedBankIds(new Set());
                 setBulkMode(false);
                 await loadData();
-            } else { alert('Gagal: ' + result.error); }
-        } catch (err) { alert('Error: ' + getErrorMessage(err)); }
+            } else { void notify('Gagal: ' + result.error); }
+        } catch (err) { void notify('Error: ' + getErrorMessage(err)); }
         finally { setIsSubmitting(false); }
     };
 
