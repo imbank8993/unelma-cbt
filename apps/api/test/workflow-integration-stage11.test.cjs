@@ -13,6 +13,7 @@ const { StudentsController } = require('../src/students/students.controller.ts')
 const { CancelledAttemptInterceptor } = require('../src/common/interceptors/cancelled-attempt.interceptor.ts');
 const { StudentsService } = require('../src/students/students.service.ts');
 const { ExamAttemptsService } = require('../src/students/exam-attempts.service.ts');
+const { LearningGoalsService } = require('../src/students/learning-goals.service.ts');
 const { ExamReviewService } = require('../src/analytics/exam-review.service.ts');
 const { QuestionsService } = require('../src/questions/questions.service.ts');
 
@@ -137,6 +138,7 @@ test('QA-02: HTTP contract validates DTOs and takes identity from the guard', as
         providers: [
             { provide: StudentsService, useValue: {} },
             { provide: ExamAttemptsService, useValue: attemptsMock },
+            { provide: LearningGoalsService, useValue: {} },
         ],
     })
         // Kontrak HTTP saja; penerjemahan 410 ujian dibatalkan diuji di stage113.
