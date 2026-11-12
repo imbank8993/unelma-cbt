@@ -3,6 +3,7 @@ import { SettingsService } from '../settings/settings.service';
 import { advisoryTransactionLock } from '../common/transaction-lock';
 import type { AuthUser } from '@acca-cbt/shared';
 import { PrismaService } from '../prisma/prisma.service';
+import { MailService } from '../common/mail.service';
 import {
   ApplyProctorDto,
   ProcessPayoutDto,
@@ -136,7 +137,37 @@ export class CommissionsService {
   constructor(
     private readonly prisma: PrismaService,
     @Optional() private readonly settings?: SettingsService,
+    @Optional() private readonly mail?: MailService,
   ) {}
+
+  /** Beri tahu pengaju hasil peninjauan lewat email. Tidak pernah menggagalkan peninjauan. */
+  private notifyApplicant(row: { email?: string | null; full_name?: string | null } | undefined, approved: boolean, reason?: string) {
+    if (!this.mail || !row?.email) return;
+    const name = (row.full_name || '').trim() || 'Bapak/Ibu';
+    const url = `${this.mail.appUrl}/login`;
+    void this.mail.send(approved ? {
+      to: row.email,
+      subject: 'Pengajuan Proktor Anda disetujui',
+      heading: 'Selamat, Anda kini Proktor',
+      paragraphs: [
+        `Halo ${name},`,
+        'Pengajuan Anda sebagai Proktor di Unelma telah disetujui. Anda sekarang dapat membuat bank soal, ujian, dan bahan ajar.',
+        'Silakan masuk kembali dengan akun Google yang sama untuk mulai menggunakan menu Proktor.',
+      ],
+      action: { label: 'Masuk ke Unelma', url },
+    } : {
+      to: row.email,
+      subject: 'Pengajuan Proktor Anda belum dapat disetujui',
+      heading: 'Pengajuan Proktor belum disetujui',
+      paragraphs: [
+        `Halo ${name},`,
+        'Terima kasih atas minat Anda menjadi Proktor di Unelma. Setelah ditinjau, pengajuan Anda belum dapat kami setujui saat ini.',
+        ...(reason ? [`Alasan: ${reason}`] : []),
+        'Anda dapat memperbaiki data lalu mengajukan kembali kapan saja.',
+      ],
+      action: { label: 'Ajukan kembali', url: `${this.mail.appUrl}/ajukan-proktor` },
+    });
+  }
 
   /** Tabel riwayat aturan ada (migrasi 20261111_04)? Positif disimpan permanen, negatif dicek ulang tiap menit. */
   private async hasRuleHistory(): Promise<boolean> {
@@ -681,9 +712,10 @@ export class CommissionsService {
 
   /** Setujui: status approved + peran Proktor diberikan (menggantikan Siswa), dalam satu transaksi. */
   async approveApplication(admin: AuthUser, profileId: string) {
-    return this.prisma.$transaction(async (tx) => {
+    let applicant: { email?: string | null; full_name?: string | null } | undefined;
+    const result = await this.prisma.$transaction(async (tx) => {
       const [application] = await tx.$queryRawUnsafe<any[]>(`
-        SELECT id, user_id, status FROM public.proctor_profiles WHERE id = $1::uuid FOR UPDATE
+        SELECT id, user_id, status, email, full_name FROM public.proctor_profiles WHERE id = $1::uuid FOR UPDATE
       `, profileId);
       if (!application) throw new NotFoundException('Pengajuan tidak ditemukan.');
       if (application.status !== 'pending') {
@@ -720,8 +752,12 @@ export class CommissionsService {
         WHERE id = $1::uuid
         RETURNING id, user_id, status, reviewed_at
       `, profileId, admin.id);
+      applicant = application;
       return { success: true, application: updated };
     });
+    // Email dikirim setelah transaksi tersimpan, agar tidak memberi tahu persetujuan yang batal.
+    this.notifyApplicant(applicant, true);
+    return result;
   }
 
   async rejectApplication(admin: AuthUser, profileId: string, reason: string) {
@@ -729,9 +765,11 @@ export class CommissionsService {
       UPDATE public.proctor_profiles
       SET status = 'rejected', rejection_reason = $3, reviewed_at = NOW(), reviewed_by = $2::uuid, updated_at = NOW()
       WHERE id = $1::uuid AND status = 'pending'
-      RETURNING id, user_id, status, reviewed_at, rejection_reason
+      RETURNING id, user_id, status, reviewed_at, rejection_reason, email, full_name
     `, profileId, admin.id, reason);
     if (!rows.length) throw new BadRequestException('Pengajuan tidak ditemukan atau sudah diproses.');
-    return { success: true, application: rows[0] };
+    this.notifyApplicant(rows[0], false, reason);
+    const { email: _email, full_name: _fullName, ...application } = rows[0];
+    return { success: true, application };
   }
 }

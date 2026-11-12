@@ -109,3 +109,11 @@
 @media (prefers-reduced-motion: reduce) {
     .ui-tabs .ui-tabs-item { transition: none; }
 }
+
+/* Tab dalam halaman memakai <button>: samakan dengan tab tautan. */
+.ui-tabs button.ui-tabs-item {
+    border: 0;
+    background: transparent;
+    font-family: inherit;
+    cursor: pointer;
+}

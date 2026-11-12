@@ -1,0 +1,28 @@
+/* Tombol aksi utama melayang (desktop). Di HP aksi yang sama tampil sebagai FAB tengah BottomNav. */
+.ui-fab {
+    position: fixed;
+    right: 28px;
+    bottom: 28px;
+    z-index: 60;
+    display: none;
+    align-items: center;
+    gap: 10px;
+    height: 56px;
+    padding: 0 22px 0 18px;
+    border: 0;
+    border-radius: 9999px;
+    background: #030C4D;
+    color: #fff;
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 600;
+    box-shadow: 0 12px 28px -8px rgba(3, 12, 77, 0.55), 0 0 0 1px rgba(255, 255, 255, 0.06) inset;
+    cursor: pointer;
+    transition: transform 160ms ease, box-shadow 160ms ease, background-color 160ms ease;
+}
+.ui-fab:hover { background: #0B1A66; transform: translateY(-2px); box-shadow: 0 16px 32px -8px rgba(3, 12, 77, 0.6); }
+.ui-fab:focus-visible { outline: 3px solid #93c5fd; outline-offset: 3px; }
+.ui-fab-icon { display: inline-flex; }
+@media (min-width: 1024px) { .ui-fab { display: inline-flex; } }
+.dark .ui-fab { background: #2563eb; box-shadow: 0 12px 28px -8px rgba(37, 99, 235, 0.55); }
+.dark .ui-fab:hover { background: #3b82f6; }

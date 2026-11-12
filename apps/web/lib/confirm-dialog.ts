@@ -30,6 +30,8 @@ const ICONS: Record<DialogVariant, string> = {
   primary: svg('<circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/>'),
   success: svg('<circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/>'),
 };
+/** Pesan kesalahan (bukan konfirmasi hapus) memakai ikon silang. */
+const ERROR_ICON = svg('<circle cx="12" cy="12" r="10"/><path d="m15 9-6 6"/><path d="m9 9 6 6"/>');
 
 /** Ikon SweetAlert lama dipetakan ke jenis dialog agar pemanggil lama tetap konsisten. */
 function variantFor(variant: DialogVariant | undefined, icon: SweetAlertIcon | undefined, fallback: DialogVariant): DialogVariant {
@@ -107,7 +109,7 @@ export async function alertDialog({
     title,
     text,
     icon: 'info',
-    iconHtml: ICONS[kind],
+    iconHtml: kind === 'danger' ? ERROR_ICON : ICONS[kind],
     confirmButtonText: confirmText,
     buttonsStyling: false,
     width: 420,

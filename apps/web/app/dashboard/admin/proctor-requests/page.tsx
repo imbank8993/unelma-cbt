@@ -2,7 +2,9 @@
 
 import { confirmDialog } from '@/lib/confirm-dialog';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { AlertCircle, RefreshCw, X } from 'lucide-react';
+import { AlertCircle, RefreshCw } from 'lucide-react';
+import { Modal, ModalBody, ModalField, ModalFooter } from '@/app/components/ui/modal';
+import { Button } from '@/app/components/ui/button';
 import {
     approveProctorApplication,
     listProctorApplications,
@@ -128,14 +130,24 @@ export default function ProctorRequestsPage() {
                 </div>
             )}
 
-            <div className="inline-flex p-1 rounded-lg bg-slate-100 max-w-fit">
-                {TABS.map((tab) => (
-                    <button key={tab.key} type="button" onClick={() => setFilter(tab.key)}
-                        className={`px-4 py-2 rounded-md text-xs font-medium transition-colors cursor-pointer ${filter === tab.key ? 'bg-white text-slate-900 ring-1 ring-slate-200' : 'text-slate-500 hover:text-slate-900'}`}>
-                        {tab.label}
-                        {tab.key !== 'all' && <span className="ml-1.5 text-[10px] text-slate-400">{counts[tab.key as ProctorApplicationStatus] ?? 0}</span>}
-                    </button>
-                ))}
+            {/* Ringkasan status: kartu yang sekaligus menjadi filter */}
+            <div className="grid grid-cols-2 gap-3 lg:grid-cols-4" role="group" aria-label="Filter status pengajuan">
+                {TABS.map((tab) => {
+                    const total = counts.pending + counts.approved + counts.rejected;
+                    const value = tab.key === 'all' ? total : counts[tab.key as ProctorApplicationStatus] ?? 0;
+                    const tone = { pending: 'bg-amber-500', approved: 'bg-emerald-500', rejected: 'bg-red-500', all: 'bg-[#030C4D]' }[tab.key];
+                    const active = filter === tab.key;
+                    return (
+                        <button key={tab.key} type="button" aria-pressed={active} onClick={() => setFilter(tab.key)}
+                            className={`rounded-2xl border bg-white p-4 text-left transition-all hover:shadow-sm ${active ? 'border-[#030C4D] ring-1 ring-[#030C4D]' : 'border-slate-200 hover:border-slate-300'}`}>
+                            <span className="flex items-center gap-2 text-sm font-medium text-slate-600">
+                                <span className={`h-2 w-2 rounded-full ${tone}`} aria-hidden="true" />
+                                {tab.label}
+                            </span>
+                            <span className="mt-2 block text-3xl font-semibold tabular-nums text-slate-900">{value}</span>
+                        </button>
+                    );
+                })}
             </div>
 
             <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
@@ -184,13 +196,10 @@ export default function ProctorRequestsPage() {
                 )}
             </div>
 
-            {selected && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40">
-                    <div className="bg-white rounded-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto p-6 shadow-lg border border-slate-100 space-y-5">
-                        <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-                            <h3 className="font-semibold text-base text-slate-900">Pengajuan Proktor</h3>
-                            <button type="button" onClick={() => setSelected(null)} className="text-slate-400 hover:text-slate-600 p-1"><X size={20} /></button>
-                        </div>
+            <Modal open={Boolean(selected)} onClose={() => setSelected(null)} size="lg" icon="person-badge" title="Pengajuan Proktor"
+                subtitle={selected ? selected.full_name : undefined}>
+                {selected && (<>
+                    <ModalBody>
 
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
                             {[
@@ -230,28 +239,22 @@ export default function ProctorRequestsPage() {
                         </div>
 
                         {selected.status === 'pending' && (
-                            <div className="space-y-3 border-t border-slate-100 pt-4">
-                                <div>
-                                    <label className="block text-xs font-medium text-slate-700 mb-1.5">Alasan penolakan (wajib bila menolak)</label>
-                                    <textarea rows={2} maxLength={1000} value={rejectReason} onChange={(e) => setRejectReason(e.target.value)}
-                                        className="w-full px-3.5 py-2 rounded-lg border border-slate-300 text-xs text-slate-900 outline-none focus:border-[#030C4D]"
-                                        placeholder="Contoh: NIK tidak sesuai nama, mohon perbaiki." />
-                                </div>
-                                <div className="flex items-center justify-end gap-3">
-                                    <button type="button" onClick={() => void reject()} disabled={busy}
-                                        className="px-4 py-2 rounded-lg border border-slate-300 text-red-600 hover:bg-red-50 text-xs font-medium disabled:opacity-60 cursor-pointer">
-                                        Tolak
-                                    </button>
-                                    <button type="button" onClick={() => void approve()} disabled={busy}
-                                        className="px-5 py-2 rounded-lg bg-[#030C4D] hover:bg-[#030C4D]/90 text-white text-xs font-medium disabled:opacity-60 cursor-pointer">
-                                        {busy ? 'Memproses...' : 'Setujui jadi Proktor'}
-                                    </button>
-                                </div>
-                            </div>
+                            <ModalField label="Alasan penolakan" hint="Wajib diisi bila menolak. Pengaju menerima email pemberitahuan saat disetujui maupun ditolak.">
+                                <textarea rows={2} maxLength={1000} value={rejectReason} onChange={(e) => setRejectReason(e.target.value)}
+                                    placeholder="Contoh: NIK tidak sesuai nama, mohon perbaiki." />
+                            </ModalField>
                         )}
-                    </div>
-                </div>
-            )}
+                    </ModalBody>
+                    <ModalFooter>
+                        {selected.status === 'pending' ? (<>
+                            <Button type="button" variant="danger" onClick={() => void reject()} disabled={busy}>Tolak</Button>
+                            <Button type="button" variant="primary" onClick={() => void approve()} isLoading={busy} disabled={busy}>Setujui jadi Proktor</Button>
+                        </>) : (
+                            <Button type="button" variant="cancel" onClick={() => setSelected(null)}>Tutup</Button>
+                        )}
+                    </ModalFooter>
+                </>)}
+            </Modal>
         </div>
     );
 }

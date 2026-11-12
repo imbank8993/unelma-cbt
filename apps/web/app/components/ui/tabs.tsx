@@ -8,7 +8,8 @@ export interface TabItem<T extends string = string> {
     key: T;
     label: string;
     shortLabel?: string;
-    href: string;
+    /** Tab rute: tautan biasa. Kosongkan bila memakai `onSelect` (tab dalam halaman). */
+    href?: string;
     icon?: ReactNode;
     badge?: ReactNode;
     disabled?: boolean;
@@ -19,10 +20,16 @@ interface TabsProps<T extends string> {
     activeTab: T;
     ariaLabel: string;
     className?: string;
+    /** Tab dalam halaman: dipanggil saat tab dipilih (tanpa berpindah rute). */
+    onSelect?: (key: T) => void;
 }
 
-/** Route tabs use native links and aria-current so browser history and opening a new tab work. */
-export function Tabs<T extends string>({ tabs, activeTab, ariaLabel, className = '' }: TabsProps<T>) {
+/**
+ * Satu komponen tab untuk seluruh aplikasi.
+ * - Tab rute (`href`): tautan biasa dengan aria-current, riwayat browser tetap jalan.
+ * - Tab dalam halaman (`onSelect`): tombol, untuk memecah satu halaman menjadi beberapa bagian.
+ */
+export function Tabs<T extends string>({ tabs, activeTab, ariaLabel, className = '', onSelect }: TabsProps<T>) {
     return (
         <nav aria-label={ariaLabel} className={`ui-tabs ${className}`}>
             <div className="ui-tabs-list">
@@ -36,9 +43,14 @@ export function Tabs<T extends string>({ tabs, activeTab, ariaLabel, className =
                         {tab.badge !== undefined && <span className="ui-tabs-badge">{tab.badge}</span>}
                     </>;
 
-                    return tab.disabled ? (
-                        <span key={tab.key} className={className} aria-disabled="true">{content}</span>
-                    ) : (
+                    if (tab.disabled) return <span key={tab.key} className={className} aria-disabled="true">{content}</span>;
+                    if (onSelect || !tab.href) return (
+                        <button key={tab.key} type="button" className={className} aria-current={active ? 'page' : undefined}
+                            aria-label={tab.label} onClick={() => onSelect?.(tab.key)}>
+                            {content}
+                        </button>
+                    );
+                    return (
                         <Link key={tab.key} href={tab.href} className={className}
                             aria-current={active ? 'page' : undefined} aria-label={tab.label}>
                             {content}
