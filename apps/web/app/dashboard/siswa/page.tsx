@@ -53,8 +53,6 @@ function clockNow(clock: { time: number; tick: number } | null): number {
     return clock ? clock.time + performance.now() - clock.tick : NaN;
 }
 
-const NEXT_ACTION_CLASS = 'inline-flex shrink-0 items-center justify-center gap-1.5 rounded-xl bg-[#030C4D] px-5 py-2.5 text-xs font-bold text-white transition-all hover:bg-[#2563EB] active:scale-95 dark:bg-blue-600';
-
 export default function SiswaDashboard() {
     const { timeZone, error: timeZoneError } = useSchoolTimeZone();
     const [exams, setExams] = useState<StudentScheduledExam[]>([]);
@@ -187,7 +185,13 @@ export default function SiswaDashboard() {
 
 
     const completedExamsCount = results.filter(r => r.status === 'submitted' || r.status === 'auto_submitted').length;
-    const visibleExams = dashboardExams(exams, now);
+    // Ujian wajib (dari kelas) selalu tampil; tryout pilihan hanya yang sesuai tujuan belajar.
+    const examGoals = goal?.programs ?? [];
+    const visibleExams = dashboardExams(exams, now).filter(exam => {
+        if (exam.metadata?.is_public !== true || !examGoals.length) return true;
+        const program = learningPrograms.some(item => item.value === exam.metadata?.program) ? exam.metadata?.program as LearningProgram : 'umum';
+        return program === 'umum' || examGoals.includes(program);
+    });
     const activeExam = visibleExams.find(exam => scheduleState(exam, now) === 'open');
 
     // Ruang belajar: progres dan subbab berikutnya, diutamakan dari program tujuan siswa.
@@ -347,12 +351,12 @@ export default function SiswaDashboard() {
                         {goal.target && <p className="w-full text-slate-500 dark:text-slate-400">{goal.target}</p>}
                     </div>
                 ) : (
-                    <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-                        <span>Pilih tujuan belajarmu agar beranda dan materi menyesuaikan.</span>
-                        <button type="button" onClick={() => setGoalOpen(true)} className={`${BANNER_BUTTON} self-start`}>
-                            <Target size={15} /> Tentukan tujuan
+                    <p>
+                        Pilih tujuan belajarmu agar beranda dan materi menyesuaikan.{' '}
+                        <button type="button" onClick={() => setGoalOpen(true)} className="inline-flex items-center gap-1 font-semibold text-[#2563EB] hover:underline dark:text-blue-300">
+                            Tentukan tujuan <ArrowRight size={14} />
                         </button>
-                    </div>
+                    </p>
                 )}
                 aside={<BannerStats items={[
                     { label: 'Ujian selesai', value: completedExamsCount },
@@ -363,37 +367,39 @@ export default function SiswaDashboard() {
                         action: <button type="button" onClick={() => router.push('/dashboard/siswa/tokens')} className="block font-semibold text-[#2563EB] hover:underline sm:ml-1.5 sm:inline dark:text-blue-300">Top up</button>,
                     },
                 ]} />}
-            />
-
-            {/* ── Langkah berikutnya: satu aksi paling penting saat ini ── */}
-            {!loading && (
-                <section className="flex flex-col gap-4 rounded-2xl border border-slate-100 bg-white p-4 text-left shadow-sm dark:border-slate-800 dark:bg-slate-900 sm:flex-row sm:items-center sm:p-5">
-                    <span className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br ${nextStep.tone} text-white shadow-md`}><nextStep.icon size={22} /></span>
-                    <div className="min-w-0 flex-1">
-                        <p className="text-[11px] font-bold uppercase tracking-widest text-slate-400">{nextStep.label}</p>
-                        <p className="truncate text-base font-bold text-slate-800 dark:text-slate-100">{nextStep.title}</p>
-                        {nextStep.sub && <p className="truncate text-xs text-slate-500 dark:text-slate-400">{nextStep.sub}</p>}
+            >
+                {/* Langkah berikutnya: satu aksi paling penting saat ini */}
+                {loading ? (
+                    <div className="h-12 animate-pulse rounded-xl bg-slate-100 dark:bg-slate-800" />
+                ) : (
+                    <div className="flex flex-wrap items-center gap-3 sm:flex-nowrap">
+                        <span className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br ${nextStep.tone} text-white shadow-sm`}><nextStep.icon size={20} /></span>
+                        <div className="min-w-0 flex-1 text-left">
+                            <p className="text-xs font-medium text-slate-500 dark:text-slate-400">{nextStep.label}</p>
+                            <p className="truncate text-sm font-semibold text-slate-900 dark:text-white">{nextStep.title}</p>
+                            {nextStep.sub && <p className="truncate text-xs text-slate-500 dark:text-slate-400">{nextStep.sub}</p>}
+                        </div>
+                        {activeExam
+                            ? <button type="button" onClick={() => { void openExam(activeExam); }} className={`${BANNER_BUTTON} w-full sm:w-auto`}>{nextStep.action} <ArrowRight size={15} /></button>
+                            : <Link href={nextStep.href} className={`${BANNER_BUTTON} w-full sm:w-auto`}>{nextStep.action} <ArrowRight size={15} /></Link>}
                     </div>
-                    {activeExam
-                        ? <button type="button" onClick={() => { void openExam(activeExam); }} className={NEXT_ACTION_CLASS}>{nextStep.action} <ArrowRight size={14} /></button>
-                        : <Link href={nextStep.href} className={NEXT_ACTION_CLASS}>{nextStep.action} <ArrowRight size={14} /></Link>}
-                </section>
-            )}
+                )}
+            </StudentBanner>
 
             {/* ── Ujian & nilai ── */}
             <div className="grid grid-cols-1 gap-6 lg:grid-cols-5">
-                <div className="lg:col-span-3 rounded-2xl border border-slate-100 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900 overflow-hidden">
+                <div className="lg:col-span-3 overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-xs dark:border-slate-800 dark:bg-slate-900">
                     <div className="flex items-center justify-between gap-4 border-b border-slate-100 px-5 py-4 dark:border-slate-800">
                         <div className="text-left">
-                            <h2 className="flex items-center gap-2 text-base font-bold text-slate-800 dark:text-slate-100">
+                            <h2 className="flex items-center gap-2 text-base font-semibold text-slate-900 dark:text-slate-100">
                                 <CalendarDays size={16} className="text-[#2563EB]" />
                                 Ujian & Tryout
                             </h2>
-                            <p className="mt-0.5 text-xs text-slate-400">Yang sedang berlangsung dan akan datang</p>
+                            <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">Yang sedang berlangsung dan akan datang</p>
                         </div>
                         <button
                             onClick={() => router.push('/dashboard/siswa/schedule')}
-                            className="inline-flex shrink-0 items-center gap-1 rounded-xl bg-blue-50 px-3 py-1.5 text-[11px] font-bold text-[#030C4D] transition-all hover:bg-[#030C4D] hover:text-white active:scale-95 dark:bg-slate-800 dark:text-blue-300"
+                            className="inline-flex shrink-0 items-center gap-1 text-xs font-semibold text-[#2563EB] hover:underline dark:text-blue-300"
                         >
                             Lihat agenda <ChevronRight size={13} />
                         </button>
@@ -430,13 +436,13 @@ export default function SiswaDashboard() {
                     </div>
                 </div>
 
-                <div className="lg:col-span-2 flex flex-col overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
+                <div className="lg:col-span-2 flex flex-col overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-xs dark:border-slate-800 dark:bg-slate-900">
                     <div className="border-b border-slate-100 px-5 py-4 text-left dark:border-slate-800">
-                        <h2 className="flex items-center gap-2 text-base font-bold text-slate-800 dark:text-slate-100">
+                        <h2 className="flex items-center gap-2 text-base font-semibold text-slate-900 dark:text-slate-100">
                             <TrendingUp size={16} className="text-emerald-500" />
                             Progres Nilai
                         </h2>
-                        <p className="mt-0.5 text-xs text-slate-400">Performa ujian terakhirmu</p>
+                        <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">Performa ujian terakhirmu</p>
                     </div>
                     <div className="flex flex-1 flex-col justify-between p-5">
                         <div className="space-y-4">

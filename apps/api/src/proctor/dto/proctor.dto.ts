@@ -19,6 +19,7 @@ import {
     ValidateIf,
     ValidateNested,
 } from 'class-validator';
+import { LEARNING_PROGRAMS } from '../../common/learning-programs';
 
 export const EXAM_TYPES = ['daily', 'pas', 'pat', 'am', 'tryout', 'lainnya', 'assignment'] as const;
 export const CLASS_TYPES = ['reguler', 'tambahan'] as const;
@@ -134,6 +135,11 @@ class ExamFieldsDto {
     @IsOptional()
     @IsBoolean()
     isPublic?: boolean;
+
+    @ApiPropertyOptional({ enum: LEARNING_PROGRAMS, description: 'Program sasaran ujian (SNPDB, UTBK, CPNS, ...); dipakai siswa untuk menyaring ujian.' })
+    @IsOptional()
+    @IsIn(LEARNING_PROGRAMS)
+    program?: string;
 
     @ApiPropertyOptional()
     @IsOptional()

@@ -76,6 +76,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         };
     }, [mobileOpen]);
 
+    // Halaman siswa yang sudah punya banner berjudul sendiri tidak perlu judul di header.
+    const hideHeaderTitle = activeRoleCtx?.role === 'Siswa' && [
+        '/dashboard/siswa', '/dashboard/siswa/classes', '/dashboard/siswa/schedule', '/dashboard/siswa/results',
+        '/dashboard/siswa/analytics', '/dashboard/siswa/tokens', '/dashboard/learning',
+    ].includes(pathname.replace(/\/$/, ''));
+
     const pageTitle = useMemo(() => {
         if (pathname.includes('/learning')) return 'Ruang Belajar';
         if (pathname.includes('/validations')) return 'Validasi Soal';
@@ -346,6 +352,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                     onCollapse={() => setIsCollapsed(!isCollapsed)}
                     pageTitle={pageTitle}
                     pageSubtitle={appSubtitle}
+                    hideTitle={hideHeaderTitle}
                 />
                 <main
                     className={`dashboard-main transition-all duration-300 ${

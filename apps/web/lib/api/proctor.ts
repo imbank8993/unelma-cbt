@@ -153,6 +153,7 @@ export interface OrganizationExam {
         allowed_file_types?: string[];
         document_url?: string;
         is_public?: boolean;
+        program?: string;
         is_safe_mode?: boolean;
         max_violations?: number | null;
         screenshot_enabled?: boolean;
@@ -578,6 +579,8 @@ export interface ExamInput {
     requireBank?: boolean;
     isPaid?: boolean;
     tokenPrice?: number;
+    /** Program sasaran (snpdb, utbk, cpns, ...); siswa menyaring ujian pilihan dengan ini. */
+    program?: string;
 }
 
 export function createExamAction(

@@ -20,9 +20,15 @@ Hourglass,
 Lock,RefreshCw,
     Coins,
     Users,
+    School,
+    Search,
+    Target,
+    type LucideIcon,
 } from 'lucide-react';
 import Link from 'next/link';
 import { BANNER_BUTTON, StudentBanner } from '@/app/components/student/StudentBanner';
+import { learningPrograms, type LearningProgram } from '@/lib/learning-catalog';
+import { loadLearningGoal, programLabel } from '@/lib/learning-goal';
 import { useRouter } from 'next/navigation';
 import { useCallback,useEffect,useRef,useState } from 'react';
 
@@ -31,6 +37,19 @@ import { needsTokenUnlock, unlockPaidExamBeforeStart } from '@/lib/paid-exam-gat
 /** Waktu server terkini dari jangkar jam (dibaca saat diklik, bukan saat render). */
 function clockNow(clock: { time: number; tick: number } | null): number {
     return clock ? clock.time + performance.now() - clock.tick : NaN;
+}
+
+/** Judul kelompok daftar ujian (Wajib / Tryout & latihan). */
+function GroupHeading({ icon: Icon, title, note, count }: { icon: LucideIcon; title: string; note: string; count: number }) {
+    return (
+        <div className="flex items-start gap-3 border-b border-slate-200 pb-3 dark:border-slate-800">
+            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#030C4D] text-white dark:bg-blue-600"><Icon size={16} /></span>
+            <div className="min-w-0 flex-1">
+                <h2 className="text-sm font-semibold text-slate-900 dark:text-white">{title} <span className="ml-1 text-xs font-medium text-slate-400">{count}</span></h2>
+                <p className="text-xs text-slate-500 dark:text-slate-400">{note}</p>
+            </div>
+        </div>
+    );
 }
 
 const SchedulePage = () => {
@@ -46,6 +65,10 @@ const SchedulePage = () => {
     const opening = useRef(false);
     const [historyLimit, setHistoryLimit] = useState(10);
     const [filter, setFilter] = useState<'all' | 'open' | 'upcoming' | 'closed'>('all');
+    const [goalPrograms, setGoalPrograms] = useState<LearningProgram[]>([]);
+    const [programFilter, setProgramFilter] = useState<'untukmu' | 'all' | LearningProgram>('untukmu');
+    const [query, setQuery] = useState('');
+    const goalUser = useRef<string | null>(null);
 
     const loadData = useCallback(async () => {
         if (inFlight.current) return;
@@ -55,6 +78,11 @@ const SchedulePage = () => {
         try {
             const user = await getSessionUser({ refresh: true });
             if (!user) throw new Error('Sesi berakhir. Silakan login kembali.');
+            // Tujuan belajar dimuat sekali per akun untuk filter "Untukmu".
+            if (goalUser.current !== user.id) {
+                goalUser.current = user.id;
+                void loadLearningGoal(user.id).then(goal => { if (goalUser.current === user.id) setGoalPrograms(goal?.programs ?? []); });
+            }
             const response = await getStudentExamsResult();
             if (request !== generation.current) return;
             if (!response.success) throw new Error(response.error || 'Jadwal ujian tidak dapat dimuat.');
@@ -137,7 +165,7 @@ const SchedulePage = () => {
     const isOpenNow = (exam: StudentScheduledExam) => scheduleState(exam, now.getTime()) === 'open';
 
     // Sort exams: yang benar-benar sedang terbuka lebih dulu, lalu waktu mulai.
-    const sortedExams = [...(loading || loadError ? [] : exams)].sort((a, b) => {
+    const allSortedExams = [...(loading || loadError ? [] : exams)].sort((a, b) => {
         const aOpen = isOpenNow(a);
         const bOpen = isOpenNow(b);
         if (aOpen && !bOpen) return -1;
@@ -147,81 +175,45 @@ const SchedulePage = () => {
         return aStart - bStart;
     });
 
+    // Ujian dari kelas/siswa = wajib (selalu tampil); ujian umum = pilihan (disaring per program).
+    const isRequired = (exam: StudentScheduledExam) => exam.metadata?.is_public !== true;
+    const programOf = (exam: StudentScheduledExam): LearningProgram =>
+        learningPrograms.some(item => item.value === exam.metadata?.program) ? exam.metadata?.program as LearningProgram : 'umum';
+    const keyword = query.trim().toLocaleLowerCase('id-ID');
+    const matchesQuery = (exam: StudentScheduledExam) => !keyword || exam.title.toLocaleLowerCase('id-ID').includes(keyword);
+    const matchesFocus = (exam: StudentScheduledExam) => {
+        const program = programOf(exam);
+        if (programFilter === 'all') return true;
+        if (programFilter === 'untukmu') return !goalPrograms.length || program === 'umum' || goalPrograms.includes(program);
+        return program === programFilter;
+    };
+    const optionalAll = allSortedExams.filter(exam => !isRequired(exam));
+    const requiredShown = allSortedExams.filter(exam => isRequired(exam) && matchesQuery(exam));
+    const optionalShown = optionalAll.filter(exam => matchesQuery(exam) && matchesFocus(exam));
+    const hiddenOptional = optionalAll.filter(matchesQuery).length - optionalShown.length;
+    const sortedExams = allSortedExams.filter(exam => requiredShown.includes(exam) || optionalShown.includes(exam));
     const openExams = sortedExams.filter(isOpenNow);
     const upcomingExams = sortedExams.filter(e => scheduleState(e, now.getTime()) === 'upcoming');
     const closedExams = sortedExams.filter(e => ['closed', 'invalid'].includes(scheduleState(e, now.getTime())));
     const nextExam = openExams[0] || upcomingExams[0];
     const nextOpen = Boolean(openExams[0]);
-    return (
-        <div className="max-w-7xl mx-auto pb-24 space-y-6">
-            {timeZoneError && <div role="alert" className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{timeZoneError}</div>}
 
-            {/* Banner agenda: ujian terdekat, hitung mundur, dan strip 7 hari */}
-            <StudentBanner
-                icon={CalendarClock}
-                eyebrow={nextOpen ? 'Sedang berlangsung' : nextExam ? 'Ujian terdekat' : 'Agenda ujian'}
-                title={loading ? 'Memuat agenda…' : nextExam ? nextExam.title : 'Belum ada ujian terjadwal'}
-                description={nextExam ? `${formatDay(nextExam.start_time)} · ${formatTimeRange(nextExam.start_time, nextExam.end_time)}` : 'Ujian dari sekolah, kelas, dan tryout akan muncul di sini.'}
-                actions={nextExam && (nextOpen ? (
-                    <button type="button" onClick={() => { void openExam(nextExam); }} className={BANNER_BUTTON}>
-                        Kerjakan sekarang <ArrowRight size={16} />
-                    </button>
-                ) : (
-                    <div className="flex items-center gap-3 rounded-xl border border-amber-200/70 bg-amber-50/70 px-4 py-2.5 text-left dark:border-amber-500/20 dark:bg-amber-500/10">
-                        <Hourglass size={20} className="text-amber-600 dark:text-amber-300" />
-                        <div>
-                            <p className="text-xs font-medium text-amber-700/80 dark:text-amber-300/80">Dimulai dalam</p>
-                            <p className="text-lg font-semibold tabular-nums text-slate-900 dark:text-white">{formatTimeUntil(nextExam.start_time || '').replace(/ lagi$/, '')}</p>
-                        </div>
-                    </div>
-                ))}
-            >
-                {/* Strip 7 hari ke depan; titik menandai hari yang punya ujian. */}
-                <div className="grid grid-cols-7 gap-1.5 sm:gap-2">
-                    {Array.from({ length: 7 }, (_, offset) => {
-                        const day = new Date(now.getTime() + offset * 86_400_000);
-                        const key = utcToSchoolLocalDateTime(day.toISOString(), timeZone).slice(0, 10);
-                        const count = sortedExams.filter(exam => exam.start_time && utcToSchoolLocalDateTime(exam.start_time, timeZone).slice(0, 10) === key).length;
-                        const weekday = new Intl.DateTimeFormat('id-ID', { weekday: 'short', timeZone }).format(day);
-                        const date = new Intl.DateTimeFormat('id-ID', { day: 'numeric', timeZone }).format(day);
-                        return (
-                            <div key={offset} className={`flex flex-col items-center rounded-xl py-2 ${offset === 0 ? 'bg-[#030C4D] text-white shadow-sm dark:bg-blue-600' : 'text-slate-700 dark:text-slate-300'}`}>
-                                <span className={`text-[10px] font-medium ${offset === 0 ? 'text-blue-100' : 'text-slate-400'}`}>{offset === 0 ? 'Hari ini' : weekday}</span>
-                                <span className="mt-0.5 text-base font-semibold tabular-nums">{date}</span>
-                                <span className={`mt-1 h-1.5 w-1.5 rounded-full ${count ? 'bg-[#F8A01B]' : 'bg-transparent'}`} title={count ? `${count} ujian` : undefined} />
-                            </div>
-                        );
-                    })}
-                </div>
-            </StudentBanner>
-
-            {/* Filter status: menggantikan empat kartu angka. */}
-            <div role="group" aria-label="Filter jadwal" className="flex gap-2 overflow-x-auto pb-1">
-                {([
-                    { value: 'all', label: 'Total Jadwal', count: sortedExams.length },
-                    { value: 'open', label: 'Tersedia', count: openExams.length },
-                    { value: 'upcoming', label: 'Akan Datang', count: upcomingExams.length },
-                    { value: 'closed', label: 'Selesai', count: closedExams.length },
-                ] as const).map(item => (
-                    <button key={item.value} type="button" aria-pressed={filter === item.value} onClick={() => setFilter(item.value)}
-                        className={`inline-flex shrink-0 items-center gap-2 rounded-full border px-4 py-2 text-xs font-bold transition-all ${filter === item.value
-                            ? 'border-[#030C4D] bg-[#030C4D] text-white shadow-md shadow-[#030C4D]/15'
-                            : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300'}`}>
-                        {item.label}
-                        <span className={`rounded-full px-1.5 py-0.5 text-[10px] tabular-nums ${filter === item.value ? 'bg-white/20' : 'bg-slate-100 dark:bg-slate-800'}`}>{loadError ? '—' : item.count}</span>
-                    </button>
-                ))}
-            </div>
-
+    const splitByState = (list: StudentScheduledExam[]): [StudentScheduledExam[], StudentScheduledExam[], StudentScheduledExam[]] => [
+        list.filter(isOpenNow),
+        list.filter(e => scheduleState(e, now.getTime()) === 'upcoming'),
+        list.filter(e => ['closed', 'invalid'].includes(scheduleState(e, now.getTime()))),
+    ];
+    const renderSections = (openList: StudentScheduledExam[], upcomingList: StudentScheduledExam[], closedList: StudentScheduledExam[]) => (
+        <>
             {/* Open / Available exams */}
-            {openExams.length > 0 && (filter === 'all' || filter === 'open') && (
+            {openList.length > 0 && (filter === 'all' || filter === 'open') && (
                 <section className="space-y-4">
                     <div className="flex items-center gap-2 px-1">
                         <div className="w-2 h-2 bg-[#6B9FE8] rounded-full animate-pulse" />
                         <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest">Tersedia Sekarang</h3>
                     </div>
                     <div className="space-y-3">
-                        {openExams.map((exam) => {
+                        {openList.map((exam) => {
                             return (
                                 <motion.div
                                     key={exam.id}
@@ -278,14 +270,14 @@ const SchedulePage = () => {
             )}
 
             {/* Upcoming */}
-            {upcomingExams.length > 0 && (filter === 'all' || filter === 'upcoming') && (
+            {upcomingList.length > 0 && (filter === 'all' || filter === 'upcoming') && (
                 <section className="space-y-4">
                     <div className="flex items-center gap-2 px-1">
                         <div className="w-2 h-2 bg-blue-500 rounded-full" />
                         <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest">Akan Datang</h3>
                     </div>
                     <div className="space-y-3">
-                        {upcomingExams.map((exam) => {
+                        {upcomingList.map((exam) => {
                             const until = formatTimeUntil(exam.start_time || '');
                             return (
                                 <div key={exam.id}
@@ -327,14 +319,14 @@ const SchedulePage = () => {
             )}
 
             {/* Completed */}
-            {closedExams.length > 0 && (filter === 'all' || filter === 'closed') && (
+            {closedList.length > 0 && (filter === 'all' || filter === 'closed') && (
                 <section className="space-y-4">
                     <div className="flex items-center gap-2 px-1">
                         <CheckCircle2 size={14} className="text-slate-400" />
                         <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest">Selesai / Waktu Habis</h3>
                     </div>
                     <div className="space-y-3">
-                        {closedExams.slice(0, historyLimit).map((exam) => {
+                        {closedList.slice(0, historyLimit).map((exam) => {
                             const status = getStatus(exam);
                             const Icon = status.icon || CheckCircle2;
                             return (
@@ -369,7 +361,125 @@ const SchedulePage = () => {
                 </section>
             )}
 
-            {closedExams.length > historyLimit && (filter === 'all' || filter === 'closed') && <button onClick={() => setHistoryLimit(value => value + 10)} className="rounded-lg border px-4 py-2 text-sm">Tampilkan riwayat lainnya</button>}
+            {closedList.length > historyLimit && (filter === 'all' || filter === 'closed') && <button onClick={() => setHistoryLimit(value => value + 10)} className="rounded-lg border px-4 py-2 text-sm">Tampilkan riwayat lainnya</button>}
+        </>
+    );
+    return (
+        <div className="max-w-7xl mx-auto pb-24 space-y-6">
+            {timeZoneError && <div role="alert" className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{timeZoneError}</div>}
+
+            {/* Banner agenda: ujian terdekat, hitung mundur, dan strip 7 hari */}
+            <StudentBanner
+                icon={CalendarClock}
+                eyebrow={nextOpen ? 'Sedang berlangsung' : nextExam ? 'Ujian terdekat' : 'Agenda ujian'}
+                title={loading ? 'Memuat agenda…' : nextExam ? nextExam.title : 'Belum ada ujian terjadwal'}
+                description={nextExam ? `${formatDay(nextExam.start_time)} · ${formatTimeRange(nextExam.start_time, nextExam.end_time)}` : 'Ujian dari sekolah, kelas, dan tryout akan muncul di sini.'}
+                actions={nextExam && (nextOpen ? (
+                    <button type="button" onClick={() => { void openExam(nextExam); }} className={BANNER_BUTTON}>
+                        Kerjakan sekarang <ArrowRight size={16} />
+                    </button>
+                ) : (
+                    <div className="flex items-center gap-3 rounded-xl border border-amber-200/70 bg-amber-50/70 px-4 py-2.5 text-left dark:border-amber-500/20 dark:bg-amber-500/10">
+                        <Hourglass size={20} className="text-amber-600 dark:text-amber-300" />
+                        <div>
+                            <p className="text-xs font-medium text-amber-700/80 dark:text-amber-300/80">Dimulai dalam</p>
+                            <p className="text-lg font-semibold tabular-nums text-slate-900 dark:text-white">{formatTimeUntil(nextExam.start_time || '').replace(/ lagi$/, '')}</p>
+                        </div>
+                    </div>
+                ))}
+            >
+                {/* Strip 7 hari ke depan; titik menandai hari yang punya ujian. */}
+                <div className="grid grid-cols-7 gap-1.5 sm:gap-2">
+                    {Array.from({ length: 7 }, (_, offset) => {
+                        const day = new Date(now.getTime() + offset * 86_400_000);
+                        const key = utcToSchoolLocalDateTime(day.toISOString(), timeZone).slice(0, 10);
+                        const count = sortedExams.filter(exam => exam.start_time && utcToSchoolLocalDateTime(exam.start_time, timeZone).slice(0, 10) === key).length;
+                        const weekday = new Intl.DateTimeFormat('id-ID', { weekday: 'short', timeZone }).format(day);
+                        const date = new Intl.DateTimeFormat('id-ID', { day: 'numeric', timeZone }).format(day);
+                        const month = new Intl.DateTimeFormat('id-ID', { month: 'short', timeZone }).format(day).replace('.', '');
+                        return (
+                            <div key={offset} className={`flex flex-col items-center rounded-xl py-2 ${offset === 0 ? 'bg-[#030C4D] text-white shadow-sm dark:bg-blue-600' : 'text-slate-700 dark:text-slate-300'}`}>
+                                <span className={`text-[10px] font-medium ${offset === 0 ? 'text-blue-100' : 'text-slate-400'}`}>{offset === 0 ? 'Hari ini' : weekday}</span>
+                                <span className="mt-0.5 text-base font-semibold tabular-nums">{date}</span>
+                                <span className={`text-[10px] font-medium ${offset === 0 ? 'text-blue-100' : 'text-slate-400'}`}>{month}</span>
+                                <span className={`mt-1 h-1.5 w-1.5 rounded-full ${count ? 'bg-[#F8A01B]' : 'bg-transparent'}`} title={count ? `${count} ujian` : undefined} />
+                            </div>
+                        );
+                    })}
+                </div>
+            </StudentBanner>
+
+            {/* Filter status: menggantikan empat kartu angka. */}
+            <div role="group" aria-label="Filter jadwal" className="flex gap-2 overflow-x-auto pb-1">
+                {([
+                    { value: 'all', label: 'Total Jadwal', count: sortedExams.length },
+                    { value: 'open', label: 'Tersedia', count: openExams.length },
+                    { value: 'upcoming', label: 'Akan Datang', count: upcomingExams.length },
+                    { value: 'closed', label: 'Selesai', count: closedExams.length },
+                ] as const).map(item => (
+                    <button key={item.value} type="button" aria-pressed={filter === item.value} onClick={() => setFilter(item.value)}
+                        className={`inline-flex shrink-0 items-center gap-2 rounded-full border px-4 py-2 text-xs font-bold transition-all ${filter === item.value
+                            ? 'border-[#030C4D] bg-[#030C4D] text-white shadow-md shadow-[#030C4D]/15'
+                            : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300'}`}>
+                        {item.label}
+                        <span className={`rounded-full px-1.5 py-0.5 text-[10px] tabular-nums ${filter === item.value ? 'bg-white/20' : 'bg-slate-100 dark:bg-slate-800'}`}>{loadError ? '—' : item.count}</span>
+                    </button>
+                ))}
+            </div>
+
+            {/* Fokus program & pencarian */}
+            {!loading && !loadError && exams.length > 0 && (
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                    <div role="group" aria-label="Fokus program" className="flex gap-2 overflow-x-auto pb-1">
+                        {[
+                            ...(goalPrograms.length ? [{ value: 'untukmu', label: 'Untukmu' }] : []),
+                            { value: 'all', label: 'Semua program' },
+                            ...learningPrograms.filter((item) => optionalAll.some((exam) => programOf(exam) === item.value)),
+                        ].map((item) => (
+                            <button key={item.value} type="button" aria-pressed={programFilter === item.value} onClick={() => setProgramFilter(item.value as 'untukmu' | 'all' | LearningProgram)}
+                                className={`inline-flex shrink-0 items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-semibold transition-colors ${programFilter === item.value
+                                    ? 'border-[#2563EB] bg-blue-50 text-[#1D4ED8] dark:border-blue-400 dark:bg-blue-500/10 dark:text-blue-200'
+                                    : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300'}`}>
+                                {item.value === 'untukmu' && <Target size={13} />}
+                                {item.label}
+                            </button>
+                        ))}
+                    </div>
+                    <label className="relative block w-full sm:w-64">
+                        <span className="sr-only">Cari ujian</span>
+                        <Search size={15} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                        <input type="search" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Cari ujian…"
+                            className="h-9 w-full rounded-lg border border-slate-200 bg-white pl-9 pr-3 text-sm text-slate-800 outline-none focus:border-[#2563EB] dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" />
+                    </label>
+                </div>
+            )}
+
+            {/* Kelompok 1: ujian wajib dari sekolah/kelas, selalu tampil */}
+            {requiredShown.length > 0 && (
+                <section className="space-y-4">
+                    <GroupHeading icon={School} title="Wajib dari sekolah / kelas" note="Ditugaskan guru atau proktor untuk kelasmu." count={requiredShown.length} />
+                    {renderSections(...splitByState(requiredShown))}
+                </section>
+            )}
+
+            {/* Kelompok 2: tryout & latihan pilihan, disaring sesuai fokus program */}
+            {(optionalShown.length > 0 || hiddenOptional > 0) && (
+                <section className="space-y-4">
+                    <GroupHeading icon={Target} title="Tryout & latihan"
+                        note={programFilter === 'untukmu' && goalPrograms.length
+                            ? `Sesuai tujuanmu: ${goalPrograms.map(programLabel).join(', ')}.`
+                            : programFilter === 'all' ? 'Semua program.' : `Program ${programLabel(programFilter as LearningProgram)}.`}
+                        count={optionalShown.length} />
+                    {renderSections(...splitByState(optionalShown))}
+                    {hiddenOptional > 0 && (
+                        <div className="flex flex-col gap-2 rounded-xl border border-dashed border-slate-300 px-4 py-3 text-sm text-slate-600 sm:flex-row sm:items-center sm:justify-between dark:border-slate-700 dark:text-slate-400">
+                            <span>{hiddenOptional} tryout dari program lain disembunyikan.</span>
+                            <button type="button" onClick={() => setProgramFilter('all')} className="font-semibold text-[#2563EB] hover:underline dark:text-blue-300">Tampilkan semua</button>
+                        </div>
+                    )}
+                </section>
+            )}
+
             {/* Empty state */}
             {loading ? (
                 <div className="p-16 bg-white border border-slate-100 rounded-2xl shadow-sm flex flex-col items-center justify-center space-y-3">
@@ -409,13 +519,6 @@ const SchedulePage = () => {
                 </div>
             ) : null}
 
-            {/* Refresh button */}
-            <div className="flex justify-center">
-                <button onClick={loadData}
-                    className="px-5 py-2.5 bg-white border border-slate-200 text-slate-500 rounded-xl font-bold text-xs hover:bg-slate-50 flex items-center gap-2 transition-all shadow-sm active:scale-95">
-                    <RefreshCw size={13} className={loading ? "animate-spin" : ""} /> Perbarui Jadwal
-                </button>
-            </div>
         </div>
     );
 };
