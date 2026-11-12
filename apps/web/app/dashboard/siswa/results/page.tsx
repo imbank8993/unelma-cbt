@@ -6,8 +6,9 @@ import { formatSchoolDateTime } from '@/lib/school-time';
 import { useSchoolTimeZone } from '@/lib/useSchoolTimeZone';
 import { getSessionUser } from '@/lib/session';
 import { useMemoryState } from '@/lib/useMemoryState';
-import { motion } from 'framer-motion';
-import { Award,BookOpen,ChevronRight,Clock,Loader2,RefreshCw } from 'lucide-react';
+import { Award,ChevronRight,Clock,History,Loader2,TrendingUp } from 'lucide-react';
+import { BannerStats, StudentBanner } from '@/app/components/student/StudentBanner';
+import StudentAnalyticsPanel from '@/app/components/student/StudentAnalyticsPanel';
 import { useRouter } from 'next/navigation';
 import { useCallback,useEffect,useState } from 'react';
 
@@ -17,6 +18,13 @@ export default function StudentResultsPage() {
     const [isLoading, setIsLoading] = useMemoryState('siswa_results_isLoading', true);
     const [, setFullName] = useState<string>('');
     const [loadError, setLoadError] = useState('');
+    // Bawaan: riwayat (hasil terbaru langsung terlihat setelah ujian). Tautan lama /analytics membuka ?tab=analisis.
+    const [tab, setTab] = useState<'analisis' | 'riwayat'>(() =>
+        typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('tab') === 'analisis' ? 'analisis' : 'riwayat');
+    const chooseTab = (value: 'analisis' | 'riwayat') => {
+        setTab(value);
+        window.history.replaceState(null, '', `?tab=${value}`);
+    };
     const router = useRouter();
 
     const loadResults = useCallback(async () => {
@@ -54,28 +62,46 @@ export default function StudentResultsPage() {
         };
     }, [results]);
 
+    const opened = results.filter(result => result.exams?.show_results === true).length;
+    const pending = results.filter(result => result.needs_manual_grading).length;
+    const tabs = [
+        { value: 'riwayat' as const, label: 'Riwayat ujian', icon: History, count: results.length },
+        { value: 'analisis' as const, label: 'Analisis', icon: TrendingUp },
+    ];
+
     return (
-        <div className="max-w-7xl mx-auto pb-24 space-y-6 animate-in fade-in duration-700">
+        <div className="max-w-7xl mx-auto pb-24 space-y-6">
             {timeZoneError && <div role="alert" className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{timeZoneError}</div>}
-            {/* Top Stat & Refresh Bar */}
-            <div className="flex items-center justify-between gap-4 bg-white border border-slate-200 rounded-2xl p-4 shadow-xs">
-                <div className="flex items-center gap-2">
-                    <span className="text-xs font-bold text-slate-600">Total Ujian Selesai:</span>
-                    <span className="text-base font-black text-[#030C4D] font-mono bg-blue-50 border border-blue-100 px-2.5 py-0.5 rounded-lg leading-none">{results.length}</span>
-                </div>
-                <button
-                    onClick={loadResults}
-                    className="flex items-center gap-1.5 bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-700 px-3.5 py-2 rounded-xl font-bold text-xs transition-all shadow-xs active:scale-95 shrink-0"
-                >
-                    <RefreshCw size={14} className={isLoading ? "animate-spin" : ""} />
-                    Muat Ulang
-                </button>
+
+            <StudentBanner
+                icon={Award}
+                eyebrow="Hasil & analisis"
+                title={isLoading ? 'Memuat hasil…' : results.length ? `${results.length} ujian selesai` : 'Belum ada hasil ujian'}
+                description="Lihat nilai setiap ujian dan perkembangan kemampuanmu dari waktu ke waktu."
+                aside={<BannerStats items={[
+                    { label: 'Ujian selesai', value: results.length },
+                    { label: 'Nilai dibuka', value: opened },
+                    { label: 'Menunggu penilaian', value: pending },
+                ]} />}
+            />
+
+            <div role="tablist" aria-label="Hasil dan analisis" className="inline-flex rounded-xl border border-slate-200 bg-white p-1 shadow-xs dark:border-slate-800 dark:bg-slate-900">
+                {tabs.map(item => (
+                    <button key={item.value} type="button" role="tab" aria-selected={tab === item.value} onClick={() => chooseTab(item.value)}
+                        className={`inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold transition-colors ${tab === item.value
+                            ? 'bg-[#030C4D] text-white shadow-sm dark:bg-blue-600'
+                            : 'text-slate-600 hover:text-[#030C4D] dark:text-slate-300 dark:hover:text-white'}`}>
+                        <item.icon size={15} />
+                        {item.label}
+                        {item.count !== undefined && <span className={`rounded-md px-1.5 text-xs tabular-nums ${tab === item.value ? 'bg-white/20' : 'bg-slate-100 dark:bg-slate-800'}`}>{item.count}</span>}
+                    </button>
+                ))}
             </div>
 
-            {isLoading ? (
+            {tab === 'analisis' ? <StudentAnalyticsPanel /> : isLoading ? (
                 <div className="flex flex-col items-center justify-center py-24 space-y-3">
-                    <Loader2 size={36} className="text-[#030C4D] animate-spin" />
-                    <p className="text-slate-400 font-bold text-xs tracking-wider uppercase font-sans">Memuat hasil studi...</p>
+                    <Loader2 size={32} className="text-[#030C4D] animate-spin" />
+                    <p className="text-slate-400 font-semibold text-xs">Memuat hasil ujian…</p>
                 </div>
             ) : loadError ? (
                 <div role="alert" className="rounded-2xl border border-red-200 bg-red-50 p-8 text-center">
@@ -83,97 +109,59 @@ export default function StudentResultsPage() {
                     <p className="mt-1 text-sm text-red-600">{loadError}</p>
                     <button type="button" onClick={loadResults} className="mt-4 px-4 py-2 rounded-lg bg-red-600 text-white text-sm font-semibold">Coba Lagi</button>
                 </div>
+            ) : results.length === 0 ? (
+                <div className="py-16 px-6 text-center bg-white border border-slate-200/80 rounded-2xl max-w-xl mx-auto w-full flex flex-col items-center dark:border-slate-800 dark:bg-slate-900">
+                    <div className="w-14 h-14 bg-blue-50 rounded-2xl flex items-center justify-center mb-4 text-[#030C4D] dark:bg-slate-800 dark:text-blue-300">
+                        <Award size={26} />
+                    </div>
+                    <h3 className="text-base font-bold text-slate-800 mb-1 dark:text-slate-100">Belum ada hasil ujian</h3>
+                    <p className="text-slate-500 text-sm max-w-sm dark:text-slate-400">Hasil akan muncul di sini setelah kamu mengumpulkan ujian pertamamu.</p>
+                </div>
             ) : (
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
                     {results.map((attempt) => {
                         const displayedScore = attempt.display_score !== undefined ? attempt.display_score : selectedStudentScore(attempt, attempt.exams);
                         const scoreLabel = attempt.score_label || STUDENT_SCORE_LABELS[studentScoreType(attempt.exams)];
                         const canViewDetails = attempt.exams?.show_results === true;
+                        const classical = (attempt.score_type || studentScoreType(attempt.exams)) === 'classical';
 
                         return (
-                            <motion.button
+                            <button
                                 type="button"
-                                layout
                                 key={attempt.id}
                                 disabled={!canViewDetails}
                                 aria-label={canViewDetails ? `Buka hasil ${attempt.exams?.title || 'ujian'}` : undefined}
                                 onClick={() => canViewDetails ? router.push(`/dashboard/siswa/results/${attempt.id}`) : null}
-                                className={`w-full text-left bg-white border border-slate-100 rounded-2xl p-5 flex flex-col sm:flex-row gap-4 transition-all duration-300 group relative overflow-hidden shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#030C4D] focus-visible:ring-offset-2 ${
-                                    canViewDetails 
-                                        ? 'cursor-pointer hover:border-blue-100 hover:shadow-xl hover:shadow-[#030C4D]/5'
-                                        : 'opacity-90'
-                                }`}
+                                className={`group flex w-full items-center gap-4 rounded-2xl border border-slate-200/80 bg-white p-4 text-left transition-all sm:p-5 dark:border-slate-800 dark:bg-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#030C4D] ${canViewDetails ? 'hover:border-slate-300 hover:shadow-md' : 'cursor-default'}`}
                             >
-                                <div className="absolute top-0 left-0 w-1 h-full bg-[#030C4D]"></div>
-
-                                <div className="flex items-start gap-4 flex-1 pl-1 min-w-0">
-                                    <div className="w-10 h-10 bg-blue-50 border border-blue-100/50 rounded-xl flex items-center justify-center shrink-0 group-hover:bg-[#030C4D] group-hover:border-[#030C4D] transition-colors text-[#030C4D] group-hover:text-white">
-                                        <BookOpen size={18} />
+                                <div className="min-w-0 flex-1 space-y-1.5">
+                                    <h3 className="font-semibold text-slate-800 text-sm leading-snug line-clamp-2 group-hover:text-[#030C4D] dark:text-slate-100">
+                                        {attempt.exams?.title || 'Ujian Tidak Diketahui'}
+                                    </h3>
+                                    <p className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400">
+                                        <Clock size={12} />
+                                        {formatSchoolDateTime(attempt.finished_at, timeZone)}
+                                    </p>
+                                    <div className="flex flex-wrap gap-1.5">
+                                        {attempt.needs_manual_grading && <span className="rounded-md bg-amber-50 px-2 py-0.5 text-[11px] font-semibold text-amber-700 dark:bg-amber-500/10 dark:text-amber-300">Menunggu penilaian</span>}
+                                        {!canViewDetails && <span className="rounded-md bg-slate-100 px-2 py-0.5 text-[11px] font-semibold text-slate-600 dark:bg-slate-800 dark:text-slate-300">Nilai belum dibuka guru</span>}
                                     </div>
-                                    <div className="space-y-1 min-w-0 flex-1">
-                                        <div className="flex flex-wrap items-center gap-1.5 mb-1">
-                                            <span className="px-2 py-0.5 rounded-md text-[9px] font-bold bg-blue-50 text-[#030C4D] border border-blue-100 flex items-center gap-1 leading-none">
-                                                SELESAI
-                                            </span>
-                                            {attempt.needs_manual_grading && (
-                                                <span className="px-2 py-0.5 rounded-md text-[9px] font-bold bg-amber-50 text-amber-600 border border-amber-100 leading-none">
-                                                    MENUNGGU PENILAIAN
-                                                </span>
-                                            )}
-                                            {!canViewDetails && (
-                                                <span className="px-2 py-0.5 rounded-md text-[9px] font-bold bg-slate-100 text-slate-600 border border-slate-200 leading-none">
-                                                    NILAI BELUM DIBUKA GURU
-                                                </span>
-                                            )}
-                                        </div>
-                                        <h3 className="font-bold text-slate-800 text-sm group-hover:text-[#030C4D] transition-colors line-clamp-2 leading-snug">
-                                            {attempt.exams?.title || 'Ujian Tidak Diketahui'}
-                                        </h3>
-                                        <p className="text-xs text-slate-400 flex items-center gap-1 font-medium font-sans">
-                                            <Clock size={12} className="text-slate-300" />
-                                            {formatSchoolDateTime(attempt.finished_at, timeZone)}
+                                </div>
+
+                                {canViewDetails && (
+                                    <div className="shrink-0 text-right">
+                                        <p className="text-[11px] font-medium text-slate-500 dark:text-slate-400">{scoreLabel}</p>
+                                        <p className="mt-0.5 text-2xl font-semibold tabular-nums text-[#030C4D] dark:text-white">
+                                            {displayedScore == null ? '—' : Number(displayedScore).toFixed(2)}
+                                            <span className="ml-0.5 text-xs font-normal text-slate-400">{classical ? '/100' : ' 200–800'}</span>
                                         </p>
+                                        {displayedScore == null && <p className="text-[11px] text-slate-500">{scoreLabel.startsWith('IRT') && !attempt.needs_manual_grading ? 'Menunggu perhitungan IRT' : 'Menunggu penilaian'}</p>}
                                     </div>
-                                </div>
-
-                                <div className="shrink-0 flex items-center justify-between sm:justify-start gap-4 border-t sm:border-t-0 sm:border-l border-slate-100 pt-3.5 sm:pt-0 sm:pl-4 mt-2 sm:mt-0">
-                                    {attempt.exams?.show_results === true && (
-                                        <div className="flex items-center gap-4">
-                                            <div className="text-center min-w-[70px]">
-                                                <p className={`text-[8px] font-extrabold uppercase tracking-widest mb-0.5 ${attempt.needs_manual_grading ? 'text-amber-600' : 'text-slate-400'}`}>
-                                                    {scoreLabel}
-                                                </p>
-                                                <div className="flex items-baseline justify-center gap-0.5">
-                                                    <span className="text-xl font-black text-[#030C4D] font-mono">{displayedScore == null ? '—' : Number(displayedScore).toFixed(2)}</span>
-                                                    <span className="text-[9px] font-bold text-slate-400">{(attempt.score_type || studentScoreType(attempt.exams)) === 'classical' ? '/100' : '200–800'}</span>
-                                                </div>
-                                                {displayedScore == null && <p className="mt-1 text-[9px] text-slate-500">{scoreLabel.startsWith('IRT') && !attempt.needs_manual_grading ? 'Menunggu perhitungan IRT' : 'Menunggu penilaian'}</p>}
-                                                {attempt.needs_manual_grading && (
-                                                    <p className="text-[8px] font-semibold text-amber-600 mt-0.5 leading-none whitespace-nowrap">Uraian pending</p>
-                                                )}
-                                            </div>
-
-                                        </div>
-                                    )}
-                                    {canViewDetails && (
-                                        <div className="w-8 h-8 rounded-full bg-slate-50 border border-slate-200 flex items-center justify-center group-hover:bg-[#030C4D] group-hover:border-[#030C4D] transition-colors shrink-0">
-                                            <ChevronRight size={16} className="text-slate-400 group-hover:text-white transition-colors" />
-                                        </div>
-                                    )}
-                                </div>
-                            </motion.button>
-                        )
+                                )}
+                                {canViewDetails && <ChevronRight size={18} className="shrink-0 text-slate-300 transition-transform group-hover:translate-x-0.5 group-hover:text-[#030C4D]" />}
+                            </button>
+                        );
                     })}
-
-                    {results.length === 0 && (
-                        <div className="col-span-full py-20 px-6 text-center bg-white border border-dashed border-slate-200 rounded-2xl max-w-xl mx-auto w-full flex flex-col items-center">
-                            <div className="w-16 h-16 bg-slate-50 rounded-2xl flex items-center justify-center mb-4 border border-slate-100">
-                                <Award size={28} className="text-slate-300" />
-                            </div>
-                            <h3 className="text-lg font-bold text-slate-700 mb-1">Belum Ada Hasil Ujian</h3>
-                            <p className="text-slate-500 text-sm max-w-sm mb-0">Anda belum menyelesaikan ujian apapun. Hasil ujian akan muncul di sini setelah Anda mengumpulkannya.</p>
-                        </div>
-                    )}
                 </div>
             )}
         </div>

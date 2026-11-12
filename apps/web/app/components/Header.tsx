@@ -28,6 +28,8 @@ interface HeaderProps {
     onCollapse?: () => void;
     pageTitle?: string;
     pageSubtitle?: string;
+    /** Sembunyikan judul halaman bila halaman sudah punya banner berjudul sendiri. */
+    hideTitle?: boolean;
     onScrollHiddenChange?: (hidden: boolean) => void;
 }
 
@@ -37,6 +39,7 @@ export default function Header({
     isCollapsed,
     pageTitle,
     pageSubtitle,
+    hideTitle = false,
 }: HeaderProps) {
     const router = useRouter();
     const pathname = usePathname();
@@ -137,7 +140,7 @@ export default function Header({
                         </button>
                     )}
 
-                    <div className="header-title-wrapper">
+                    {!hideTitle && <div className="header-title-wrapper">
                         <h1 className="header-title" title={isDashboard ? 'Selamat Datang 👋' : pageTitle}>
                             {isDashboard ? 'Selamat Datang 👋' : (pageTitle || 'ACCA CBT Portal')}
                         </h1>
@@ -147,7 +150,7 @@ export default function Header({
                         >
                             {isDashboard ? displayName : (pageSubtitle || 'Unelma Edu Indonesia')}
                         </span>
-                    </div>
+                    </div>}
 
                     {/* Mobile: judul halaman + tombol menu sidebar */}
                     <div className="header-pageTitle-wrap">
@@ -160,7 +163,7 @@ export default function Header({
                         >
                             <Menu size={18} />
                         </button>
-                        {isDashboard ? (
+                        {hideTitle ? null : isDashboard ? (
                             <div className="header-greeting-container">
                                 <div className="header-greeting-title">
                                     <h1 className="header-pageTitle header-pageTitle--stacked" title="Selamat Datang 👋">

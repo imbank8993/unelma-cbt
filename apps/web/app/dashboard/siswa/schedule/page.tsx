@@ -184,10 +184,12 @@ const SchedulePage = () => {
                         const count = sortedExams.filter(exam => exam.start_time && utcToSchoolLocalDateTime(exam.start_time, timeZone).slice(0, 10) === key).length;
                         const weekday = new Intl.DateTimeFormat('id-ID', { weekday: 'short', timeZone }).format(day);
                         const date = new Intl.DateTimeFormat('id-ID', { day: 'numeric', timeZone }).format(day);
+                        const month = new Intl.DateTimeFormat('id-ID', { month: 'short', timeZone }).format(day).replace('.', '');
                         return (
                             <div key={offset} className={`flex flex-col items-center rounded-xl py-2 ${offset === 0 ? 'bg-[#030C4D] text-white shadow-sm dark:bg-blue-600' : 'text-slate-700 dark:text-slate-300'}`}>
                                 <span className={`text-[10px] font-medium ${offset === 0 ? 'text-blue-100' : 'text-slate-400'}`}>{offset === 0 ? 'Hari ini' : weekday}</span>
                                 <span className="mt-0.5 text-base font-semibold tabular-nums">{date}</span>
+                                <span className={`text-[10px] font-medium ${offset === 0 ? 'text-blue-100' : 'text-slate-400'}`}>{month}</span>
                                 <span className={`mt-1 h-1.5 w-1.5 rounded-full ${count ? 'bg-[#F8A01B]' : 'bg-transparent'}`} title={count ? `${count} ujian` : undefined} />
                             </div>
                         );
@@ -409,13 +411,6 @@ const SchedulePage = () => {
                 </div>
             ) : null}
 
-            {/* Refresh button */}
-            <div className="flex justify-center">
-                <button onClick={loadData}
-                    className="px-5 py-2.5 bg-white border border-slate-200 text-slate-500 rounded-xl font-bold text-xs hover:bg-slate-50 flex items-center gap-2 transition-all shadow-sm active:scale-95">
-                    <RefreshCw size={13} className={loading ? "animate-spin" : ""} /> Perbarui Jadwal
-                </button>
-            </div>
         </div>
     );
 };

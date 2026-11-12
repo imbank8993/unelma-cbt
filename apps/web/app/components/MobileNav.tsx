@@ -59,7 +59,6 @@ const MobileNav = () => {
             { icon: Calendar, label: 'Jadwal', href: '/dashboard/siswa/schedule' },
             { icon: BarChart3, label: 'Hasil', href: '/dashboard/siswa/results' },
             { icon: Users, label: 'Kelas', href: '/dashboard/siswa/classes' },
-            { icon: Activity, label: 'Analisis', href: '/dashboard/siswa/analytics' },
         ],
         'User': [
             { icon: LayoutDashboard, label: 'Dash', href: '/dashboard' },
