@@ -1,7 +1,8 @@
 "use client";
 
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { Search, RefreshCw, AlertCircle, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Search, RefreshCw, AlertCircle, ChevronLeft, ChevronRight, Coins, ShoppingCart } from 'lucide-react';
+import { Tabs } from '@/app/components/ui/tabs';
 import { getAdminPurchasesTracker, getAdminUsagesTracker, type PaymentTransaction, type TokenTransaction } from '@/lib/api/tokens';
 import { formatSchoolDateTime } from '@/lib/school-time';
 import { useSchoolTimeZone } from '@/lib/useSchoolTimeZone';
@@ -147,35 +148,20 @@ export default function AdminTransactionsTrackerPage() {
                 </p>
             </div>
 
-            {/* Navigation Tabs */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <div className="inline-flex p-1 rounded-lg bg-slate-100 max-w-fit">
-                    <button
-                        type="button"
-                        onClick={() => switchTab('purchases')}
-                        className={`px-4 py-2 rounded-md text-xs md:text-sm font-medium transition-colors cursor-pointer ${
-                            activeTab === 'purchases'
-                                ? 'bg-white text-slate-900 ring-1 ring-slate-200'
-                                : 'text-slate-500 hover:text-slate-900'
-                        }`}
-                    >
-                        Pembelian Token
-                    </button>
-                    <button
-                        type="button"
-                        onClick={() => switchTab('usages')}
-                        className={`px-4 py-2 rounded-md text-xs md:text-sm font-medium transition-colors cursor-pointer ${
-                            activeTab === 'usages'
-                                ? 'bg-white text-slate-900 ring-1 ring-slate-200'
-                                : 'text-slate-500 hover:text-slate-900'
-                        }`}
-                    >
-                        Pemakaian Token
-                    </button>
-                </div>
+            {/* Tab bersama */}
+            <Tabs
+                ariaLabel="Jenis transaksi"
+                activeTab={activeTab}
+                onSelect={switchTab}
+                tabs={[
+                    { key: 'purchases', label: 'Pembelian Token', icon: <ShoppingCart size={16} /> },
+                    { key: 'usages', label: 'Pemakaian Token', icon: <Coins size={16} /> },
+                ]}
+            />
 
+            <div className="flex justify-end">
                 {/* Search Bar */}
-                <form onSubmit={handleSearch} className="flex items-center gap-2">
+                <form onSubmit={handleSearch} className="flex w-full items-center gap-2 sm:w-auto">
                     <div className="relative flex-1 sm:w-72">
                         <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" size={15} />
                         <input

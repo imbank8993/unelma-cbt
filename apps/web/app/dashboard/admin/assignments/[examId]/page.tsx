@@ -1,4 +1,5 @@
 "use client";
+import { notify } from '@/lib/confirm-dialog';
 import { getAssignmentSubmissionsAction,gradeAssignmentAction } from '@/lib/api/proctor';
 import type { AssignmentSubmission as Submission,OrganizationExam } from '@/lib/api/proctor';
 import { formatStudentName } from '@/lib/monitoring-health';
@@ -71,7 +72,7 @@ export default function AssignmentReviewPage() {
         if (!data) return;
         const score = parseFloat(data.score);
         if (isNaN(score) || score < 0 || score > 100) {
-            alert('Nilai harus antara 0 dan 100.');
+            void notify('Nilai harus antara 0 dan 100.');
             return;
         }
         setSavingAttemptId(submission.attemptId);
@@ -85,7 +86,7 @@ export default function AssignmentReviewPage() {
                     : s
             ));
         } else {
-            alert('Gagal menyimpan nilai: ' + result.error);
+            void notify('Gagal menyimpan nilai: ' + result.error);
         }
         setSavingAttemptId(null);
     };

@@ -1,11 +1,16 @@
 "use client";
 
+import { notify } from '@/lib/confirm-dialog';
 import React, { useEffect, useState } from 'react';
 import {
     AlertCircle,
     Search,
-    X
+    Settings2,
+    Wallet,
 } from 'lucide-react';
+import { Tabs } from '@/app/components/ui/tabs';
+import { Modal, ModalBody, ModalField, ModalFooter } from '@/app/components/ui/modal';
+import { Button } from '@/app/components/ui/button';
 import {
     getAdminCommissionsSummary,
     processAdminPayout,
@@ -27,6 +32,7 @@ export default function AdminCommissionsPage() {
         min_material_token_price: 1,
     });
     const [proctors, setProctors] = useState<ProctorSummaryItem[]>([]);
+    const [tab, setTab] = useState<'proktor' | 'pengaturan'>('proktor');
     const [search, setSearch] = useState('');
     const [savingConfig, setSavingConfig] = useState(false);
     const [feedback, setFeedback] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
@@ -83,7 +89,7 @@ export default function AdminCommissionsPage() {
 
     const handleTogglePermission = async (proc: ProctorSummaryItem, field: 'can_create_exams' | 'can_create_materials') => {
         if (!proc.profile_id) {
-            alert('Proktor ini belum melengkapi profil registrasi proktor.');
+            void notify('Proktor ini belum melengkapi profil registrasi proktor.');
             return;
         }
         try {
@@ -94,10 +100,10 @@ export default function AdminCommissionsPage() {
             if (res.success) {
                 await loadData();
             } else {
-                alert(res.error || 'Gagal memperbarui izin proktor.');
+                void notify(res.error || 'Gagal memperbarui izin proktor.');
             }
         } catch (err: any) {
-            alert(err.message || 'Gagal mengubah izin.');
+            void notify(err.message || 'Gagal mengubah izin.');
         }
     };
 
@@ -124,7 +130,7 @@ export default function AdminCommissionsPage() {
             if (url.protocol === 'https:' || url.protocol === 'http:') validProof = url.href;
         } catch { /* ditangani di bawah */ }
         if (!validProof) {
-            alert('Tautan bukti transfer harus berupa URL http(s) yang valid.');
+            void notify('Tautan bukti transfer harus berupa URL http(s) yang valid.');
             return;
         }
 
@@ -140,7 +146,7 @@ export default function AdminCommissionsPage() {
 
             if (res.success) {
                 const paid = res.payout;
-                alert(
+                void notify(
                     paid
                         ? `Pencairan ${Number(paid.proctor_tokens).toLocaleString('id-ID')} token (Rp ${Number(paid.total_idr).toLocaleString('id-ID')}) berhasil dicatat.`
                         : 'Pencairan komisi proktor berhasil diproses!',
@@ -151,7 +157,7 @@ export default function AdminCommissionsPage() {
                 throw new Error(res.error || 'Gagal memproses pencairan.');
             }
         } catch (err: any) {
-            alert(err.message || 'Terjadi kesalahan saat memproses pencairan.');
+            void notify(err.message || 'Terjadi kesalahan saat memproses pencairan.');
         } finally {
             setProcessingPayout(false);
         }
@@ -188,8 +194,18 @@ export default function AdminCommissionsPage() {
                 </div>
             )}
 
+            <Tabs
+                ariaLabel="Komisi proktor"
+                activeTab={tab}
+                onSelect={setTab}
+                tabs={[
+                    { key: 'proktor', label: 'Komisi Proktor', icon: <Wallet size={16} />, badge: proctors.length },
+                    { key: 'pengaturan', label: 'Pengaturan Bagi Hasil', icon: <Settings2 size={16} /> },
+                ]}
+            />
+
             {/* Panel Pengaturan Komisi (Admin & Superadmin) */}
-            <div className="bg-white rounded-xl border border-slate-200 p-6 space-y-5">
+            {tab === 'pengaturan' && <div className="bg-white rounded-xl border border-slate-200 p-6 space-y-5">
                 <div className="flex items-center justify-between border-b border-slate-100 pb-4">
                     <div>
                         <h2 className="text-base font-semibold text-slate-900">Konfigurasi Pembagian Komisi</h2>
@@ -346,10 +362,10 @@ export default function AdminCommissionsPage() {
                         </div>
                     </div>
                 )}
-            </div>
+            </div>}
 
             {/* Daftar Rekap Proktor & Pencairan */}
-            <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
+            {tab === 'proktor' && <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
                 <div className="p-5 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                     <div>
                         <h2 className="text-base font-semibold text-slate-900">Daftar Komisi Proktor</h2>
@@ -513,24 +529,13 @@ export default function AdminCommissionsPage() {
                         </tbody>
                     </table>
                 </div>
-            </div>
+            </div>}
 
             {/* Modal Pencairan Komisi Proktor */}
-            {selectedProc && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40">
-                    <div className="bg-white rounded-xl max-w-lg w-full p-6 shadow-lg border border-slate-100 space-y-5 animate-in fade-in zoom-in duration-150">
-                        <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-                            <h3 className="font-semibold text-base text-slate-900">
-                                Proses Pencairan Komisi Proktor
-                            </h3>
-                            <button
-                                onClick={() => setSelectedProc(null)}
-                                className="text-slate-400 hover:text-slate-600 p-1"
-                            >
-                                <X size={20} />
-                            </button>
-                        </div>
-
+            <Modal open={Boolean(selectedProc)} onClose={() => setSelectedProc(null)} size="md" variant="default" icon="cash-coin" title="Proses Pencairan Komisi">
+                {selectedProc && (
+                    <form onSubmit={handleSubmitPayout}>
+                        <ModalBody>
                         <div className="bg-slate-50 rounded-xl p-4 space-y-2 text-xs">
                             <div className="flex justify-between">
                                 <span className="text-slate-500">Nama Proktor:</span>
@@ -555,69 +560,23 @@ export default function AdminCommissionsPage() {
                             </p>
                         </div>
 
-                        <form onSubmit={handleSubmitPayout} className="space-y-4">
-                            <div>
-                                <label className="block text-xs font-medium text-slate-700 mb-1.5">
-                                    Periode Pencairan (Bulan)
-                                </label>
-                                <input
-                                    type="month"
-                                    value={payoutPeriod}
-                                    onChange={(e) => handleChangePeriod(e.target.value)}
-                                    className="w-full px-3.5 py-2 rounded-lg border border-slate-300 text-xs text-slate-900"
-                                    required
-                                />
-                            </div>
-
-                            <div>
-                                <label className="block text-xs font-medium text-slate-700 mb-1.5">
-                                    URL / Tautan Bukti Transfer *
-                                </label>
-                                <input
-                                    type="url"
-                                    placeholder="https://... (link upload atau gambar bukti transfer)"
-                                    value={proofUrl}
-                                    onChange={(e) => setProofUrl(e.target.value)}
-                                    className="w-full px-3.5 py-2 rounded-lg border border-slate-300 text-xs text-slate-900"
-                                    required
-                                />
-                                <span className="text-[11px] text-slate-400 mt-1 block">
-                                    Salin link bukti transfer perbankan agar dapat dilihat oleh proktor
-                                </span>
-                            </div>
-
-                            <div>
-                                <label className="block text-xs font-medium text-slate-700 mb-1.5">
-                                    Catatan Tambahan (Opsional)
-                                </label>
-                                <textarea
-                                    value={payoutNotes}
-                                    onChange={(e) => setPayoutNotes(e.target.value)}
-                                    rows={2}
-                                    className="w-full px-3.5 py-2 rounded-lg border border-slate-300 text-xs text-slate-900"
-                                />
-                            </div>
-
-                            <div className="flex items-center justify-end gap-3 pt-2">
-                                <button
-                                    type="button"
-                                    onClick={() => setSelectedProc(null)}
-                                    className="px-4 py-2 border border-slate-300 text-slate-700 hover:bg-slate-50 text-xs font-medium rounded-lg"
-                                >
-                                    Batal
-                                </button>
-                                <button
-                                    type="submit"
-                                    disabled={processingPayout}
-                                    className="px-5 py-2 bg-[#030C4D] hover:bg-[#030C4D]/90 text-white text-xs font-medium rounded-lg disabled:opacity-60"
-                                >
-                                    {processingPayout ? 'Memproses...' : 'Tandai Sudah Dicairkan'}
-                                </button>
-                            </div>
-                        </form>
-                    </div>
-                </div>
-            )}
+                            <ModalField label="Periode pencairan (bulan)" required>
+                                <input type="month" value={payoutPeriod} onChange={(e) => handleChangePeriod(e.target.value)} required />
+                            </ModalField>
+                            <ModalField label="Tautan bukti transfer" required hint="Salin link bukti transfer agar dapat dilihat proktor.">
+                                <input type="url" placeholder="https://..." value={proofUrl} onChange={(e) => setProofUrl(e.target.value)} required />
+                            </ModalField>
+                            <ModalField label="Catatan tambahan">
+                                <textarea value={payoutNotes} onChange={(e) => setPayoutNotes(e.target.value)} rows={2} />
+                            </ModalField>
+                        </ModalBody>
+                        <ModalFooter>
+                            <Button type="button" variant="cancel" icon="cancel" onClick={() => setSelectedProc(null)}>Batal</Button>
+                            <Button type="submit" variant="primary" icon="save" isLoading={processingPayout} disabled={processingPayout}>Tandai Sudah Dicairkan</Button>
+                        </ModalFooter>
+                    </form>
+                )}
+            </Modal>
         </div>
     );
 }

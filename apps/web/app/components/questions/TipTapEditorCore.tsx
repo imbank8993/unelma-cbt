@@ -2,7 +2,7 @@
 import './question-editor-dark.css';
 import { Modal, ModalBody, ModalFooter, ModalField } from '@/app/components/ui/modal';
 import { Button } from '@/app/components/ui/button';
-import { deleteConfirmDialog } from '@/lib/confirm-dialog';
+import { deleteConfirmDialog, notify } from '@/lib/confirm-dialog';
 import { Extension, Node, type Editor, type JSONContent } from '@tiptap/core';
 import BulletList from '@tiptap/extension-bullet-list';
 import { Color } from '@tiptap/extension-color';
@@ -866,7 +866,7 @@ export default function TipTapEditorCore({
     }
     if (editor && uploadedImageNodes.current.length > 0) {
       if (!insertAdjacentBlocks(editor, uploadedImageNodes.current)) {
-        window.alert('Gambar sudah diunggah, tetapi gagal disisipkan ke editor. Silakan coba lagi.');
+        void notify('Gambar sudah diunggah, tetapi gagal disisipkan ke editor. Silakan coba lagi.');
       }
       uploadedImageNodes.current = [];
     }

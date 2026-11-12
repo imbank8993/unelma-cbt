@@ -1,7 +1,13 @@
 "use client";
 
+import { deleteConfirmDialog, notify } from '@/lib/confirm-dialog';
 import React, { useEffect, useState } from 'react';
-import { Plus, Edit2, Trash2, X, AlertCircle, RefreshCw } from 'lucide-react';
+import { Plus, AlertCircle, RefreshCw, Coins, CreditCard } from 'lucide-react';
+import { Tabs } from '@/app/components/ui/tabs';
+import { FloatingActionButton } from '@/app/components/ui/fab';
+import { ActionButton, ActionGroup } from '@/app/components/ui/actionbutton';
+import { Modal, ModalBody, ModalField, ModalFooter } from '@/app/components/ui/modal';
+import { Button } from '@/app/components/ui/button';
 import {
     getAdminTokenPackages,
     createTokenPackage,
@@ -14,6 +20,7 @@ import {
 
 export default function AdminTokensPage() {
     const [packages, setPackages] = useState<TokenPackage[]>([]);
+    const [tab, setTab] = useState<'paket' | 'midtrans'>('paket');
     const [loading, setLoading] = useState(true);
     const [modalOpen, setModalOpen] = useState(false);
     const [editingPkg, setEditingPkg] = useState<TokenPackage | null>(null);
@@ -131,15 +138,15 @@ export default function AdminTokensPage() {
         const tokenAmount = Number(pkgAmount);
         const priceIdr = Number(pkgPrice);
         if (!name) {
-            alert('Nama paket wajib diisi.');
+            void notify('Nama paket wajib diisi.');
             return;
         }
         if (!Number.isInteger(tokenAmount) || tokenAmount < 1 || tokenAmount > 100000) {
-            alert('Jumlah token harus bilangan bulat antara 1 dan 100.000.');
+            void notify('Jumlah token harus bilangan bulat antara 1 dan 100.000.');
             return;
         }
         if (!Number.isInteger(priceIdr) || priceIdr < 1 || priceIdr > 100000000) {
-            alert('Harga paket harus bilangan bulat rupiah antara 1 dan 100.000.000.');
+            void notify('Harga paket harus bilangan bulat rupiah antara 1 dan 100.000.000.');
             return;
         }
         const payload = {
@@ -162,23 +169,23 @@ export default function AdminTokensPage() {
             // Hanya daftar paket: memuat ulang Midtrans akan menghapus input yang belum disimpan.
             await refreshPackages();
         } catch (err: any) {
-            alert(err.message || 'Terjadi kesalahan.');
+            void notify(err.message || 'Terjadi kesalahan.');
         } finally {
             setSubmitting(false);
         }
     };
 
     const handleDeletePackage = async (id: string, name: string) => {
-        if (!confirm(`Hapus paket token "${name}"?`)) return;
+        if (!await deleteConfirmDialog('Hapus paket token?', `Paket "${name}" tidak lagi bisa dibeli siswa.`)) return;
         try {
             const res = await deleteTokenPackage(id);
             if (res.success) {
                 await refreshPackages();
             } else {
-                alert(res.error || 'Gagal menghapus paket.');
+                void notify(res.error || 'Gagal menghapus paket.');
             }
         } catch (err: any) {
-            alert(err.message);
+            void notify(err.message);
         }
     };
 
@@ -188,7 +195,7 @@ export default function AdminTokensPage() {
         try {
             const res = await updateTokenPackage(pkg.id, { is_active: !pkg.is_active });
             if (!res.success) {
-                alert(res.error || 'Gagal mengubah status paket.');
+                void notify(res.error || 'Gagal mengubah status paket.');
                 return;
             }
             await loadPackages();
@@ -229,29 +236,26 @@ export default function AdminTokensPage() {
     return (
         <div className="max-w-7xl mx-auto space-y-8 pb-16">
             
-            {/* Page Header (Clean & Elegan) */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <div>
-                    <h1 className="text-xl font-semibold text-slate-900">
-                        <span>Paket Token & Midtrans</span>
-                    </h1>
-                    <p className="text-sm text-slate-500 mt-1">
-                        Atur harga paket token siswa dan kredensial payment gateway Midtrans.
-                    </p>
-                </div>
-
-                <button
-                    type="button"
-                    onClick={openAddModal}
-                    className="px-4 py-2.5 rounded-xl bg-[#030C4D] hover:bg-[#030C4D]/90 text-white font-semibold text-xs transition-all flex items-center gap-2 self-start sm:self-auto cursor-pointer"
-                >
-                    <Plus size={16} />
-                    <span>Tambah Paket Token</span>
-                </button>
+            {/* Header */}
+            <div>
+                <h1 className="text-xl font-semibold text-slate-900">Paket Token & Pembayaran</h1>
+                <p className="text-sm text-slate-500 mt-1">Atur harga paket token siswa dan kredensial payment gateway Midtrans.</p>
             </div>
 
+            <Tabs
+                ariaLabel="Pengaturan token"
+                activeTab={tab}
+                onSelect={setTab}
+                tabs={[
+                    { key: 'paket', label: 'Paket Token', icon: <Coins size={16} />, badge: packages.length },
+                    { key: 'midtrans', label: 'Pembayaran Midtrans', icon: <CreditCard size={16} /> },
+                ]}
+            />
+
+            {tab === 'paket' && <FloatingActionButton label="Tambah Paket" icon={<Plus size={20} />} onClick={openAddModal} />}
+
             {/* Token Packages Table */}
-            <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
+            {tab === 'paket' && <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
                 <div className="p-5 md:p-6 border-b border-slate-100 flex items-center justify-between">
                     <div>
                         <h2 className="text-base font-semibold text-slate-900">
@@ -334,20 +338,10 @@ export default function AdminTokensPage() {
                                             </button>
                                         </td>
                                         <td className="py-4 px-6 text-right space-x-2">
-                                            <button
-                                                onClick={() => openEditModal(pkg)}
-                                                className="p-2 text-slate-500 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
-                                                title="Edit Paket"
-                                            >
-                                                <Edit2 size={16} />
-                                            </button>
-                                            <button
-                                                onClick={() => handleDeletePackage(pkg.id, pkg.name)}
-                                                className="p-2 text-slate-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
-                                                title="Hapus Paket"
-                                            >
-                                                <Trash2 size={16} />
-                                            </button>
+                                            <ActionGroup>
+                                                <ActionButton action="edit" iconOnly tooltip="Edit paket" onClick={() => openEditModal(pkg)} />
+                                                <ActionButton action="delete" iconOnly tooltip="Hapus paket" onClick={() => handleDeletePackage(pkg.id, pkg.name)} />
+                                            </ActionGroup>
                                         </td>
                                     </tr>
                                 ))
@@ -355,10 +349,10 @@ export default function AdminTokensPage() {
                         </tbody>
                     </table>
                 </div>
-            </div>
+            </div>}
 
             {/* Midtrans Settings Card */}
-            <div className="bg-white rounded-xl border border-slate-200 p-6 md:p-8">
+            {tab === 'midtrans' && <div className="bg-white rounded-xl border border-slate-200 p-6 md:p-8">
                 <div className="flex items-center justify-between pb-6 border-b border-slate-100 mb-6">
                     <div className="space-y-1">
                         <h2 className="text-base font-semibold text-slate-900">
@@ -532,121 +526,38 @@ export default function AdminTokensPage() {
                         {savingMidtrans ? 'Menyimpan...' : 'Simpan Pengaturan Midtrans'}
                     </button>
                 </form>
-            </div>
+            </div>}
 
             {/* Modal Tambah / Edit Paket Token */}
-            {modalOpen && (
-                <div className="fixed inset-0 z-50 bg-slate-900/40 flex items-center justify-center p-4">
-                    <div className="bg-white rounded-xl max-w-md w-full p-6 shadow-lg relative border border-slate-100">
-                        <div className="flex items-center justify-between pb-4 border-b border-slate-100 mb-4">
-                            <h3 className="text-base font-semibold text-slate-900">
-                                {editingPkg ? 'Edit Paket Token' : 'Tambah Paket Token Baru'}
-                            </h3>
-                            <button
-                                onClick={() => setModalOpen(false)}
-                                className="p-1.5 text-slate-400 hover:text-slate-700 rounded-lg hover:bg-slate-100"
-                            >
-                                <X size={18} />
-                            </button>
+            <Modal open={modalOpen} onClose={() => setModalOpen(false)} size="md" variant={editingPkg ? 'edit' : 'add'}
+                icon={editingPkg ? 'pencil-square' : 'plus-lg'} title={editingPkg ? 'Edit Paket Token' : 'Tambah Paket Token'}>
+                <form onSubmit={handleSavePackage}>
+                    <ModalBody>
+                        <ModalField label="Nama paket" required>
+                            <input type="text" required maxLength={100} value={pkgName} onChange={(e) => setPkgName(e.target.value)} placeholder="contoh: Paket Hemat 10 Token" />
+                        </ModalField>
+                        <div className="grid grid-cols-2 gap-3">
+                            <ModalField label="Jumlah token" required>
+                                <input type="number" min="1" max="100000" step="1" required value={pkgAmount} onChange={(e) => setPkgAmount(e.target.value)} />
+                            </ModalField>
+                            <ModalField label="Harga (Rp)" required>
+                                <input type="number" min="1" max="100000000" step="1" required value={pkgPrice} onChange={(e) => setPkgPrice(e.target.value)} />
+                            </ModalField>
                         </div>
-
-                        <form onSubmit={handleSavePackage} className="space-y-4 text-xs">
-                            <div>
-                                <label className="block font-semibold text-slate-700 mb-1">
-                                    Nama Paket
-                                </label>
-                                <input
-                                    type="text"
-                                    required
-                                    maxLength={100}
-                                    value={pkgName}
-                                    onChange={(e) => setPkgName(e.target.value)}
-                                    placeholder="contoh: Paket Hemat 10 Token"
-                                    className="w-full px-3.5 py-2.5 rounded-lg border border-slate-300 focus:border-[#030C4D] outline-none text-slate-800"
-                                />
-                            </div>
-
-                            <div className="grid grid-cols-2 gap-3">
-                                <div>
-                                    <label className="block font-semibold text-slate-700 mb-1">
-                                        Jumlah Token (Koin)
-                                    </label>
-                                    <input
-                                        type="number"
-                                        min="1"
-                                        required
-                                        value={pkgAmount}
-                                        max="100000"
-                                        step="1"
-                                        onChange={(e) => setPkgAmount(e.target.value)}
-                                        className="w-full px-3.5 py-2.5 rounded-lg border border-slate-300 focus:border-[#030C4D] outline-none text-slate-800 font-semibold"
-                                    />
-                                </div>
-                                <div>
-                                    <label className="block font-semibold text-slate-700 mb-1">
-                                        Harga Paket (Rp)
-                                    </label>
-                                    <input
-                                        type="number"
-                                        min="1"
-                                        max="100000000"
-                                        step="1"
-                                        required
-                                        value={pkgPrice}
-                                        onChange={(e) => setPkgPrice(e.target.value)}
-                                        className="w-full px-3.5 py-2.5 rounded-lg border border-slate-300 focus:border-[#030C4D] outline-none text-slate-800 font-semibold"
-                                    />
-                                </div>
-                            </div>
-
-                            <div>
-                                <label className="block font-semibold text-slate-700 mb-1">
-                                    Deskripsi Singkat (Opsional)
-                                </label>
-                                <textarea
-                                    rows={2}
-                                    maxLength={500}
-                                    value={pkgDesc}
-                                    onChange={(e) => setPkgDesc(e.target.value)}
-                                    placeholder="Keterangan manfaat atau rincian paket"
-                                    className="w-full px-3.5 py-2.5 rounded-lg border border-slate-300 focus:border-[#030C4D] outline-none text-slate-800"
-                                />
-                            </div>
-
-                            <div className="flex items-center gap-2 pt-1">
-                                <input
-                                    type="checkbox"
-                                    id="pkg-active"
-                                    checked={pkgActive}
-                                    onChange={(e) => setPkgActive(e.target.checked)}
-                                    className="w-4 h-4 text-[#030C4D] rounded cursor-pointer"
-                                />
-                                <label htmlFor="pkg-active" className="font-semibold text-slate-700 cursor-pointer">
-                                    Aktifkan paket ini (dapat dibeli siswa)
-                                </label>
-                            </div>
-
-                            <div className="flex items-center justify-end gap-2 pt-4 border-t border-slate-100">
-                                <button
-                                    type="button"
-                                    onClick={() => setModalOpen(false)}
-                                    className="px-4 py-2 rounded-lg border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 font-medium"
-                                >
-                                    Batal
-                                </button>
-                                <button
-                                    type="submit"
-                                    disabled={submitting}
-                                    className="px-5 py-2 rounded-lg bg-[#030C4D] hover:bg-[#030C4D]/90 text-white font-semibold disabled:opacity-60"
-                                >
-                                    {submitting ? 'Menyimpan...' : 'Simpan Paket'}
-                                </button>
-                            </div>
-                        </form>
-                    </div>
-                </div>
-            )}
-
+                        <ModalField label="Deskripsi singkat" hint='Tulis "(Bonus N token)" agar siswa melihat label bonus.'>
+                            <textarea rows={2} maxLength={500} value={pkgDesc} onChange={(e) => setPkgDesc(e.target.value)} placeholder="Keterangan manfaat atau rincian paket" />
+                        </ModalField>
+                        <label className="flex items-center gap-2 text-sm text-slate-700 cursor-pointer">
+                            <input type="checkbox" checked={pkgActive} onChange={(e) => setPkgActive(e.target.checked)} className="h-4 w-4 rounded" />
+                            Aktifkan paket ini (dapat dibeli siswa)
+                        </label>
+                    </ModalBody>
+                    <ModalFooter>
+                        <Button type="button" variant="cancel" icon="cancel" onClick={() => setModalOpen(false)}>Batal</Button>
+                        <Button type="submit" variant="primary" icon="save" isLoading={submitting} disabled={submitting}>Simpan Paket</Button>
+                    </ModalFooter>
+                </form>
+            </Modal>
         </div>
     );
 }

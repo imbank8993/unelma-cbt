@@ -1,5 +1,5 @@
 "use client";
-import { deleteConfirmDialog } from '@/lib/confirm-dialog';
+import { deleteConfirmDialog, notify } from '@/lib/confirm-dialog';
 import { LatexRenderer } from '@/app/components/questions/LatexRenderer';
 import { TipTapEditor } from '@/app/components/questions/TipTapEditor';
 import {
@@ -137,7 +137,7 @@ export default function InstructionManager({ bankId, onItemsChange }: Instructio
     };
 
     const handleSave = async () => {
-        if (!content.trim()) return alert("Konten petunjuk tidak boleh kosong");
+        if (!content.trim()) return void notify("Konten petunjuk tidak boleh kosong");
         setIsSubmitting(true);
         if (editingId) {
             await updateInstruction(editingId, title, content);

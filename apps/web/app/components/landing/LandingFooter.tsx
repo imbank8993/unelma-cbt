@@ -87,12 +87,12 @@ export default function LandingFooter() {
                             <li className="flex items-start gap-2.5">
                                 <MessageCircle size={15} className="text-[#F8A01B] shrink-0 mt-0.5" />
                                 <a
-                                    href="https://wa.me/6281234567890"
+                                    href="https://wa.me/6285151263063"
                                     target="_blank"
                                     rel="noopener noreferrer"
                                     className="hover:text-white underline decoration-white/30"
                                 >
-                                    WhatsApp: +62 812-3456-7890
+                                    WhatsApp: +62 851-5126-3063
                                 </a>
                             </li>
                             <li className="flex items-start gap-2.5">

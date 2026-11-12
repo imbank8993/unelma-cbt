@@ -3,7 +3,7 @@ import { AnswerOutcomeIndicator } from '@/app/components/AnswerOutcomeIndicator'
 import { AnswerOutcomeFilters } from '@/app/components/AnswerOutcomeFilters';
 import { QuestionSearchBar } from '@/app/components/QuestionSearchBar';
 import { matchesQuestionSearch } from '@/lib/question-search';
-import { alertDialog, confirmDialog } from '@/lib/confirm-dialog';
+import { alertDialog, confirmDialog, notify } from '@/lib/confirm-dialog';
 import { AttemptAnalyticsHeader } from '@/app/components/AttemptAnalyticsHeader';
 import { ParticipantRoomInfo } from '@/app/components/monitoring/ParticipantRoomInfo';
 import { AttemptScoreCard } from '@/app/components/AttemptScoreCard';
@@ -91,7 +91,7 @@ export default function AttemptAnalyticsPage() {
             const updated = await getAttemptFullDetailsAction(attemptId);
             if (updated) setData(updated);
         } else {
-            alert('Gagal: ' + res.error);
+            void notify('Gagal: ' + res.error);
         }
         setSubmitting(false);
     };

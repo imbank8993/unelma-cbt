@@ -7,7 +7,7 @@ import '@/components/exams/exams-mobile.css';
 import { AssignExamModal } from '@/components/exams/AssignExamModal';
 import { CreateExamModal } from '@/components/exams/CreateExamModal';
 import { DeleteExamModal } from '@/components/exams/DeleteExamModal';
-import { alertDialog, confirmDialog } from '@/lib/confirm-dialog';
+import { alertDialog, confirmDialog, notify } from '@/lib/confirm-dialog';
 import { Spinner } from '@/app/components/ui/Spinner';
 import { LIST_PAGE_SIZE, ListPagination } from '@/app/components/ui/list-pagination';
 import { FilterActions, FilterSearch, FilterSelect, FilterToolbar } from '@/app/components/ui/filtertoolbar';
@@ -214,7 +214,7 @@ const ExamsPage = () => {
             if (result.success) {
                 await loadData();
             } else {
-                alert(result.error || 'Gagal mengubah status');
+                void notify(result.error || 'Gagal mengubah status');
             }
         } finally {
             setPublishingId(null);

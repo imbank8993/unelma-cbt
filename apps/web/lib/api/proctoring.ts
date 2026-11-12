@@ -1,3 +1,4 @@
+import { notify } from '@/lib/confirm-dialog';
 import { getDeviceId } from '../device-id';
 import { apiIdempotentMutation, apiSend } from './client';
 
@@ -115,11 +116,11 @@ export function promptRecoveryReason(studentName: string): string | null {
     if (value === null) return null;
     const reason = value.trim();
     if (reason.length < 5) {
-        window.alert('Alasan pemulihan minimal 5 karakter.');
+        void notify('Alasan pemulihan minimal 5 karakter.');
         return null;
     }
     if (reason.length > 500) {
-        window.alert('Alasan pemulihan maksimal 500 karakter.');
+        void notify('Alasan pemulihan maksimal 500 karakter.');
         return null;
     }
     return reason;
@@ -136,7 +137,7 @@ export function promptRecoveryDuration(studentName: string, purpose: 'susulan' |
     if (value === null) return null;
     const duration = Number(value);
     if (!Number.isInteger(duration) || duration < 1 || duration > 1440) {
-        window.alert('Waktu ujian susulan harus berupa angka bulat antara 1 dan 1440 menit.');
+        void notify('Waktu ujian susulan harus berupa angka bulat antara 1 dan 1440 menit.');
         return null;
     }
     return duration;

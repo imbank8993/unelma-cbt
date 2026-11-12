@@ -148,7 +148,7 @@ export default function MaterialEditor() {
     };
     return <main className="learning">
         <div className="learn-editor-topbar">
-            <Link className="learn-back" href="/dashboard/learning" onClick={event => { if (dirty && !window.confirm('Perubahan belum disimpan. Tetap keluar?')) event.preventDefault(); }}><ArrowLeft size={16} />Kembali ke bahan ajar</Link>
+            <Link className="learn-back" href="/dashboard/learning" onClick={event => { if (!dirty) return; event.preventDefault(); void confirmDialog({ title: 'Keluar tanpa menyimpan?', text: 'Perubahan yang belum disimpan akan hilang.', confirmText: 'Ya, Keluar', variant: 'warning' }).then(ok => { if (ok) router.push('/dashboard/learning'); }); }}><ArrowLeft size={16} />Kembali ke bahan ajar</Link>
             {material && <div className="learn-actions">
                 {busy && <span className="learn-status-pill saving" role="status">{busy}</span>}
                 {notice && <span className="learn-status-pill saved" role="status">{notice}</span>}
@@ -222,7 +222,7 @@ export default function MaterialEditor() {
                         <ExternalLink size={16} />Buka langsung di browser
                     </button>
                 )}
-                <Link className="learn-button" href={`/dashboard/learning/${id}`} onClick={event => { if (dirty && !window.confirm('Pratinjau siswa memakai versi tersimpan. Tetap lanjut?')) event.preventDefault(); }}>Buka halaman baca</Link></div>
+                <Link className="learn-button" href={`/dashboard/learning/${id}`} onClick={event => { if (!dirty) return; event.preventDefault(); void confirmDialog({ title: 'Buka halaman baca?', text: 'Halaman baca memakai versi yang sudah tersimpan, bukan perubahan terbaru.', confirmText: 'Tetap buka', variant: 'warning' }).then(ok => { if (ok) router.push(`/dashboard/learning/${id}`); }); }}>Buka halaman baca</Link></div>
                 {material.format === 'latex' && !material.hasRenderedPdf && <div className="learn-notes">Materi ini masih memakai konversi HTML lama. Simpan sebagai draf lalu unggah ulang file TeX untuk mendapatkan tata letak PDF asli.</div>}
                 {material.conversion_notes && <details className="learn-notes" open><summary>Catatan konversi</summary><ul>{material.conversion_notes.split('\n').filter(Boolean).map((note, index) => <li key={index}>{note}</li>)}</ul></details>}
                 {preview && <MaterialPreview material={preview} />}

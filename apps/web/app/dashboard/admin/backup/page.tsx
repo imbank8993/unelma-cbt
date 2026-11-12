@@ -1,5 +1,5 @@
 "use client";
-import { confirmDialog } from '@/lib/confirm-dialog';
+import { confirmDialog, notify } from '@/lib/confirm-dialog';
 import { getErrorMessage } from '@/lib/errors';
 
 import { motion } from 'framer-motion';
@@ -48,7 +48,7 @@ export default function BackupRestorePage() {
 
     } catch (error) {
       console.error(error);
-      alert(getErrorMessage(error) || 'Terjadi kesalahan saat memproses backup.');
+      void notify(getErrorMessage(error) || 'Terjadi kesalahan saat memproses backup.');
     } finally {
       setIsExporting(false);
     }

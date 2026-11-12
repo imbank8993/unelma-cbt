@@ -12,7 +12,7 @@ import { FilterSearch } from '@/components/ui/filtertoolbar';
 import { Button } from '@/components/ui/button';
 import { InlineSelectIndicator } from '@/components/ui/InlineSelect';
 import { CollaborationButton } from '@/app/components/CollaborationButton';
-import { alertDialog,confirmDialog } from '@/lib/confirm-dialog';
+import { alertDialog, confirmDialog, notify } from '@/lib/confirm-dialog';
 import { getErrorMessage } from '@/lib/errors';
 import { getProctorOrganization,type ProctorOrganization } from '@/lib/api/proctor';
 import {
@@ -415,7 +415,7 @@ export default function QuestionBankDetailPage({ role }: QuestionBankDetailPageP
                 if (result.success) {
                     await loadData();
                 } else {
-                    alert('Gagal menghapus soal: ' + result.error);
+                    void notify('Gagal menghapus soal: ' + result.error);
                 }
             }
         } else if (deleteConfirm.type === 'bulk') {
@@ -433,7 +433,7 @@ export default function QuestionBankDetailPage({ role }: QuestionBankDetailPageP
             await loadData();
             setSelectedQuestions(new Set());
             setIsBulkDeleting(false);
-            if (failCount > 0) alert(`Berhasil menghapus ${successCount} soal. Gagal menghapus ${failCount} soal.`);
+            if (failCount > 0) void notify(`Berhasil menghapus ${successCount} soal. Gagal menghapus ${failCount} soal.`);
         }
         setDeleteConfirm(null);
     };
@@ -558,7 +558,7 @@ export default function QuestionBankDetailPage({ role }: QuestionBankDetailPageP
             }
         } catch (err) {
             console.error('Export failed:', err);
-            alert('Gagal mengexport dokumen: ' + (getErrorMessage(err) || String(err)));
+            void notify('Gagal mengexport dokumen: ' + (getErrorMessage(err) || String(err)));
         } finally {
             setIsExporting(false);
         }

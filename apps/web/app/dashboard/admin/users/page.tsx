@@ -1,5 +1,6 @@
 "use client";
 
+import { confirmDialog, deleteConfirmDialog } from '@/lib/confirm-dialog';
 import React, { useState, useEffect, useCallback } from 'react';
 import {
     Users,
@@ -47,6 +48,7 @@ export default function AdminUsersPage() {
     const [users, setUsers] = useState<ManagedUser[]>([]);
     const [loading, setLoading] = useState(true);
     const [search, setSearch] = useState('');
+    const [roleFilter, setRoleFilter] = useState('');
     const [actionLoadingId, setActionLoadingId] = useState<string | null>(null);
     const [toastMsg, setToastMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
@@ -105,7 +107,7 @@ export default function AdminUsersPage() {
     };
 
     const handleDeleteUser = async (userId: string, targetEmail: string) => {
-        if (!confirm(`Apakah Anda yakin ingin menghapus akun ${targetEmail}? Seluruh profil dan data akun ini akan dihapus permanen.`)) {
+        if (!await deleteConfirmDialog('Hapus akun pengguna?', `Akun ${targetEmail} beserta seluruh profil dan datanya akan dihapus permanen.`)) {
             return;
         }
 
@@ -161,16 +163,6 @@ export default function AdminUsersPage() {
         }
     };
 
-    const filteredUsers = users.filter((u) => {
-        const query = search.toLowerCase();
-        return (
-            (u.email || '').toLowerCase().includes(query) ||
-            (u.fullName || '').toLowerCase().includes(query) ||
-            (u.schoolName || '').toLowerCase().includes(query) ||
-            u.roles.some((r) => r.toLowerCase().includes(query))
-        );
-    });
-
     const getPrimaryRole = (u: ManagedUser): string => {
         if (u.isSuperadmin) return 'Superadmin';
         if (u.isPlatformAdmin || u.roles.some(r => r.toUpperCase() === 'ADMIN')) return 'Admin';
@@ -178,6 +170,19 @@ export default function AdminUsersPage() {
         if (u.roles.some(r => r.toUpperCase() === 'PENGAWAS')) return 'Pengawas';
         return 'Siswa';
     };
+
+    const filteredUsers = users.filter((u) => {
+        const query = search.toLowerCase();
+        const role = getPrimaryRole(u);
+        // Superadmin ikut kelompok Admin pada filter peran.
+        if (roleFilter && (role === 'Superadmin' ? 'Admin' : role) !== roleFilter) return false;
+        return (
+            (u.email || '').toLowerCase().includes(query) ||
+            (u.fullName || '').toLowerCase().includes(query) ||
+            (u.schoolName || '').toLowerCase().includes(query) ||
+            u.roles.some((r) => r.toLowerCase().includes(query))
+        );
+    });
 
     const getRoleBadge = (role: string) => {
         // Satu gaya netral; Admin/Superadmin cukup dibedakan dengan aksen navy.
@@ -277,6 +282,7 @@ export default function AdminUsersPage() {
                 {/* Search & Table Card */}
                 <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
                     <div className="p-4 sm:p-5 border-b border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-3">
+                        <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center">
                         <div className="relative w-full sm:w-80">
                             <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
                             <input
@@ -286,6 +292,20 @@ export default function AdminUsersPage() {
                                 placeholder="Cari nama, email, sekolah..."
                                 className="w-full bg-white border border-slate-300 focus:border-[#030C4D] text-slate-800 rounded-lg py-2 pl-10 pr-4 text-sm outline-none placeholder:text-slate-400"
                             />
+                        </div>
+                        <InlineSelect
+                            aria-label="Filter peran"
+                            value={roleFilter}
+                            onChange={setRoleFilter}
+                            minWidth="160px"
+                            options={[
+                                { value: '', label: 'Semua peran' },
+                                { value: 'Admin', label: 'Admin' },
+                                { value: 'Proktor', label: 'Proktor' },
+                                { value: 'Pengawas', label: 'Pengawas' },
+                                { value: 'Siswa', label: 'Siswa' },
+                            ]}
+                        />
                         </div>
                         <div className="text-xs text-slate-500 font-medium">
                             Menampilkan {filteredUsers.length} dari {users.length} pengguna
@@ -300,7 +320,7 @@ export default function AdminUsersPage() {
                     ) : filteredUsers.length === 0 ? (
                         <div className="py-20 text-center text-slate-500 text-sm">
                             <Users className="w-10 h-10 text-slate-300 mx-auto mb-2" />
-                            {search ? 'Tidak ada pengguna yang cocok dengan pencarian.' : 'Belum ada pengguna terdaftar.'}
+                            {search || roleFilter ? 'Tidak ada pengguna yang cocok dengan pencarian atau filter peran.' : 'Belum ada pengguna terdaftar.'}
                         </div>
                     ) : (
                         <div className="overflow-x-auto">
@@ -384,9 +404,9 @@ export default function AdminUsersPage() {
                                                                 disabled={isActionLoading}
                                                                 minWidth="112px"
                                                                 value={primaryRole === 'Superadmin' ? 'Admin' : MANAGED_ROLES.includes(primaryRole) ? primaryRole : ''}
-                                                                onChange={(next) => {
+                                                                onChange={async (next) => {
                                                                     if (next === 'Siswa' && !MANAGED_ROLES.includes(primaryRole)
-                                                                        && !confirm(`Jadikan ${u.email} Siswa? Peran ${primaryRole} miliknya akan dicabut.`)) {
+                                                                        && !await confirmDialog({ title: 'Jadikan Siswa?', text: `Peran ${primaryRole} milik ${u.email} akan dicabut.`, confirmText: 'Ya, Jadikan Siswa', variant: 'warning' })) {
                                                                         return;
                                                                     }
                                                                     void handleRoleChange(u.id, u.email, next);

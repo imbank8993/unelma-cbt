@@ -1,4 +1,5 @@
 "use client";
+import { notify } from '@/lib/confirm-dialog';
 import { InlineMath } from '@/app/components/questions/InlineMath';
 import {
     type ExamAttemptRecord,
@@ -137,7 +138,7 @@ function GradingContent() {
     };
 
     const exportResultsToExcel = async () => {
-        if (!attempts || attempts.length === 0) return alert('Tidak ada data untuk diekspor');
+        if (!attempts || attempts.length === 0) return void notify('Tidak ada data untuk diekspor');
         const XLSX = await import('xlsx');
 
         const dataToExport = attempts.map(a => ({
@@ -158,7 +159,7 @@ function GradingContent() {
     };
 
     const exportAnalysisToExcel = async () => {
-        if (!analysis || analysis.length === 0) return alert('Tidak ada data untuk diekspor');
+        if (!analysis || analysis.length === 0) return void notify('Tidak ada data untuk diekspor');
         const XLSX = await import('xlsx');
 
         const dataToExport = analysis.map((a, index) => {
