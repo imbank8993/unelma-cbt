@@ -39,7 +39,6 @@ ToggleLeft,
 X
 } from 'lucide-react';
 import React,{ Dispatch,SetStateAction,useEffect,useState } from 'react';
-import { ValidationNotesPanel } from './ValidationNotesPanel';
 import { LatexRenderer } from './LatexRenderer';
 import { MathToolbar } from './MathToolbar';
 import { TipTapEditor } from './TipTapEditor';
@@ -385,6 +384,8 @@ export default function QuestionEditorModal({
                 pembahasan: pembahasan,
                 // Label tampilan Benar-Salah; null berarti Benar/Salah bawaan.
                 true_false_labels: selectedType === 'true_false' ? normalizeTrueFalseLabels(metadata?.true_false_labels) : null,
+                // Skor berbobot per opsi (mis. TKP SKD) hanya berlaku untuk Pilihan Ganda biasa.
+                option_scoring: selectedType === 'mcq' && metadata?.option_scoring === 'weighted' ? 'weighted' : undefined,
             },
             // Esai multi-topik menyimpan daftar topiknya sebagai options. Dulu
             // seluruh tipe 'essay' selalu mengirim [] sehingga topik yang sudah
@@ -395,7 +396,8 @@ export default function QuestionEditorModal({
                 text: opt.text,
                 isCorrect: opt.isCorrect,
                 order: i,
-                weight: ['sjt', 'likert', 'forced_choice', 'checklist', 'ranking', 'paired_comparison'].includes(selectedType) ? (opt.weight ?? 0) : 1,
+                weight: ['sjt', 'likert', 'forced_choice', 'checklist', 'ranking', 'paired_comparison'].includes(selectedType)
+                    || (selectedType === 'mcq' && metadata?.option_scoring === 'weighted') ? (opt.weight ?? 0) : 1,
                 // Pertahankan metadata opsi lain (mis. dari impor/transfer bank);
                 // hanya tiga kunci yang dikelola editor ini yang ditulis ulang.
                 metadata: {
@@ -991,6 +993,47 @@ export default function QuestionEditorModal({
                                         onToggleCorrect={(idx) => updateOption(idx, { isCorrect: !options[idx].isCorrect })}
                                     />
                                 )}
+                                {selectedType === 'mcq' && (
+                                    <div className="mt-3 rounded-lg border border-slate-200 bg-slate-50 p-3 space-y-2">
+                                        <label className="flex items-center gap-2 text-xs font-semibold text-slate-700">
+                                            <input
+                                                type="checkbox"
+                                                checked={metadata?.option_scoring === 'weighted'}
+                                                onChange={(event) => {
+                                                    const next = { ...metadata };
+                                                    if (event.target.checked) next.option_scoring = 'weighted';
+                                                    else delete next.option_scoring;
+                                                    setMetadata(next);
+                                                }}
+                                            />
+                                            Skor berbobot per opsi (mis. TKP SKD: bobot 1–5)
+                                        </label>
+                                        {metadata?.option_scoring === 'weighted' && (
+                                            <>
+                                                <p className="text-[11px] text-slate-500">
+                                                    Skor siswa = bobot opsi yang dipilih (maksimal {scoreDefault} poin, sesuai skor soal).
+                                                    Tanda “benar” tetap dipakai sebagai kunci tampilan; isi bobot tertinggi pada opsi itu.
+                                                </p>
+                                                <div className="flex flex-wrap gap-2">
+                                                    {options.map((opt, idx) => (
+                                                        <label key={opt.id || idx} className="flex items-center gap-1 text-xs text-slate-700">
+                                                            <span className="font-semibold">{'ABCDEFGHIJKLMNOPQRSTUVWXYZ'[idx] || idx + 1}</span>
+                                                            <input
+                                                                type="number"
+                                                                min={0}
+                                                                step="any"
+                                                                aria-label={`Bobot opsi ${'ABCDEFGHIJKLMNOPQRSTUVWXYZ'[idx] || idx + 1}`}
+                                                                className="w-16 rounded border border-slate-300 px-2 py-1 text-xs"
+                                                                value={Number.isFinite(opt.weight) ? opt.weight : ''}
+                                                                onChange={(event) => updateOption(idx, { weight: event.target.value === '' ? 0 : Number(event.target.value) })}
+                                                            />
+                                                        </label>
+                                                    ))}
+                                                </div>
+                                            </>
+                                        )}
+                                    </div>
+                                )}
 
                                 {/* Matching */}
                                 {selectedType === 'matching' && (
@@ -1249,7 +1292,6 @@ export default function QuestionEditorModal({
                         </div>
                     </div>
                 </main>
-                {editingQuestion?.id && <ValidationNotesPanel key={editingQuestion.id} bankId={bankId} questionId={editingQuestion.id} />}
             </div>
 
             {/* ── LaTeX Editor Modal (Elegan) ── */}

@@ -88,7 +88,6 @@ export default function Sidebar({
             { icon: 'fa-graduation-cap', label: 'Ruang Belajar', href: '/dashboard/learning' },
             { icon: 'fa-users', label: 'Kelas', href: '/dashboard/admin/classes' },
             { icon: 'fa-book-open', label: 'Bank Soal', href: '/dashboard/admin/questions' },
-            { icon: 'fa-shield-halved', label: 'Validasi Soal', href: '/dashboard/admin/questions/validations' },
             { icon: 'fa-clipboard-check', label: 'Ujian', href: '/dashboard/admin/exams' },
             { icon: 'fa-chart-line', label: 'Monitoring', href: '/dashboard/admin/monitoring' },
             {
@@ -97,6 +96,7 @@ export default function Sidebar({
                 href: '/dashboard/admin/tokens',
                 children: [
                     { icon: 'fa-coins', label: 'Paket Token', href: '/dashboard/admin/tokens' },
+                    { icon: 'fa-list-check', label: 'Jenis Ujian', href: '/dashboard/admin/exam-types' },
                     { icon: 'fa-receipt', label: 'Tracker Transaksi', href: '/dashboard/admin/transactions' },
                     { icon: 'fa-hand-holding-dollar', label: 'Komisi & Pencairan', href: '/dashboard/admin/commissions' },
                     { icon: 'fa-user-check', label: 'Permintaan Proktor', href: '/dashboard/admin/proctor-requests' },
@@ -110,7 +110,6 @@ export default function Sidebar({
             { icon: 'fa-graduation-cap', label: 'Ruang Belajar', href: '/dashboard/learning' },
             { icon: 'fa-users', label: 'Kelas', href: '/dashboard/admin/classes' },
             { icon: 'fa-book-open', label: 'Bank Soal', href: '/dashboard/admin/questions' },
-            { icon: 'fa-shield-halved', label: 'Validasi Soal', href: '/dashboard/admin/questions/validations' },
             { icon: 'fa-clipboard-check', label: 'Ujian', href: '/dashboard/admin/exams' },
             { icon: 'fa-chart-line', label: 'Monitoring', href: '/dashboard/admin/monitoring' },
             {
@@ -119,6 +118,7 @@ export default function Sidebar({
                 href: '/dashboard/admin/tokens',
                 children: [
                     { icon: 'fa-coins', label: 'Paket Token', href: '/dashboard/admin/tokens' },
+                    { icon: 'fa-list-check', label: 'Jenis Ujian', href: '/dashboard/admin/exam-types' },
                     { icon: 'fa-receipt', label: 'Tracker Transaksi', href: '/dashboard/admin/transactions' },
                     { icon: 'fa-hand-holding-dollar', label: 'Komisi & Pencairan', href: '/dashboard/admin/commissions' },
                     { icon: 'fa-user-check', label: 'Permintaan Proktor', href: '/dashboard/admin/proctor-requests' },
@@ -132,7 +132,6 @@ export default function Sidebar({
             { icon: 'fa-graduation-cap', label: 'Ruang Belajar', href: '/dashboard/learning' },
             { icon: 'fa-users', label: 'Kelas', href: '/dashboard/proktor/classes' },
             { icon: 'fa-book-open', label: 'Bank Soal', href: '/dashboard/proktor/questions' },
-            { icon: 'fa-shield-halved', label: 'Validasi Soal', href: '/dashboard/proktor/questions/validations' },
             { icon: 'fa-clipboard-check', label: 'Ujian', href: '/dashboard/proktor/exams' },
             { icon: 'fa-chart-line', label: 'Monitoring', href: '/dashboard/proktor/monitoring' },
             { icon: 'fa-hand-holding-dollar', label: 'Komisi Saya', href: '/dashboard/proktor/commissions' },

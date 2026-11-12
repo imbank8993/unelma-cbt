@@ -36,7 +36,7 @@ import { SettingsService } from '../settings/settings.service';
 import { DbService, type DbSession } from '../prisma/prisma-db-adapter';
 import { ScoringClient } from '../scoring/scoring.client';
 import { assertExamAccess } from './exam-access';
-import { isPaidItemLocked, PAID_LOCKED_MESSAGE } from '../common/paid-content';
+import { allowsPaidRetake, isPaidItemLocked, PAID_LOCKED_MESSAGE } from '../common/paid-content';
 import { studentQuestion } from './student-question';
 
 /** Batas waktu sesi yang sudah digantikan oleh reset proktor pada attempt yang sama. */
@@ -297,6 +297,10 @@ export class ExamAttemptsService {
         if (!existing && await isPaidItemLocked(this.db, user.id, 'exam', exam as { id: string; is_paid?: boolean; token_price?: number })) {
             return this.refuse(PAID_LOCKED_MESSAGE.exam, { paymentRequired: true });
         }
+        // Ujian berbayar yang sudah dibuka boleh dikerjakan ulang tanpa batas
+        // (tanpa potong token lagi). Pengerjaan lama tetap tersimpan; nilai resmi
+        // mengikuti pengerjaan terakhir. Ujian gratis/sekolah tetap sekali kerjakan.
+        const retakeAllowed = allowsPaidRetake(exam as { is_paid?: boolean; token_price?: number });
         const recoveryUntil = this.proctorRecoveryUntil(existing as any);
         const recoveryActive = recoveryUntil !== null && now < recoveryUntil;
         // Hanya intent yang terikat ke isi kiriman (digest) yang boleh menunda penutupan.
@@ -323,7 +327,7 @@ export class ExamAttemptsService {
             });
         }
 
-        const { data: completed } = await this.db
+        const { data: completed } = retakeAllowed ? { data: null } : await this.db
             .from('cbt_exam_attempts')
             .select('id, status, started_at, finished_at')
             .eq('user_id', user.id)
@@ -344,7 +348,7 @@ export class ExamAttemptsService {
         // siswa-ujian, lalu periksa ulang di dalam transaksi sebelum INSERT.
         // Dengan begitu retry start bersifat idempoten dan selalu kembali ke
         // attempt yang sudah menang.
-        const decision = await this.createAttemptSafely(user, examId, row, now, device, clientContext);
+        const decision = await this.createAttemptSafely(user, examId, row, now, device, clientContext, retakeAllowed);
         if (decision.kind === 'unpublished') {
             return this.refuse('Ujian belum dipublikasikan oleh proktor.');
         }
@@ -373,6 +377,7 @@ export class ExamAttemptsService {
         now: Date,
         device: string,
         clientContext?: DeviceContext | null,
+        retakeAllowed = false,
     ) {
         return this.db.transaction(async db => {
             await advisoryTransactionLock(db, `${examId}:${user.id}`);
@@ -399,8 +404,9 @@ export class ExamAttemptsService {
             }
 
             // Sesi dapat selesai di antara pemeriksaan awal dan saat lock
-            // didapatkan. Jangan membuat attempt baru untuk retry semacam itu.
-            const { data: completed, error: completedError } = await db
+            // didapatkan. Jangan membuat attempt baru untuk retry semacam itu —
+            // kecuali ujian berbayar yang memang boleh dikerjakan ulang.
+            const { data: completed, error: completedError } = retakeAllowed ? { data: null, error: null } : await db
                 .from('cbt_exam_attempts')
                 .select('id')
                 .eq('user_id', user.id)

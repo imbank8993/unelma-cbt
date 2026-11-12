@@ -39,13 +39,13 @@ const FILES = [
     '20261102_02_validation_review_rounds.sql',
     '20261102_03_learning_subchapters.sql',
     '20261102_04_validation_folders.sql',
+    '20261114_01_drop_question_bank_validation.sql',
 ];
 
 /** Tabel yang harus ada setelah migrasi pertama. */
 const EXPECTED_TABLES = [
     'platform_admins', 'acca_settings', 'school_years', 'bank_categories',
     'exam_classes', 'exam_configs', 'exam_config_banks', 'exam_config_exams',
-    'cbt_validation_folders',
 ];
 
 /** Tabel yang harus SUDAH TIDAK ADA setelah migrasi ketiga. */
@@ -55,6 +55,10 @@ const EXPECTED_DROPPED_TABLES = [
     'cbt_role_permissions', 'cbt_permissions',
     'unelma_posts', 'unelma_post_categories', 'unelma_post_tags',
     'unelma_post_category_links', 'unelma_post_tag_links',
+    // Fitur Validasi Soal dihapus (20261114_01_drop_question_bank_validation.sql).
+    'cbt_question_validation_items', 'cbt_question_validation_notes',
+    'cbt_question_bank_validators', 'cbt_question_bank_validations',
+    'cbt_validation_folders',
 ];
 
 // cbt_token_transactions, cbt_unlocked_exams, token_balance, is_paid, dan
@@ -85,13 +89,6 @@ const EXPECTED_COLUMNS = [
     ['bank_folders', 'client_request_id'],
     ['bank_folders', 'is_public'],
     ['cbt_learning_materials', 'subtopic_order'],
-    ['cbt_question_bank_validations', 'round'],
-    ['cbt_question_bank_validations', 'folder_id'],
-    ['cbt_question_validation_notes', 'round'],
-    ['cbt_question_validation_notes', 'question_revision'],
-    ['cbt_question_validation_notes', 'verification'],
-    ['cbt_question_validation_notes', 'owner_response'],
-    ['cbt_question_validation_items', 'status'],
     ['cbt_organization_labels', 'client_request_id'],
     ['cbt_pas_sessions', 'client_request_id'],
     ['cbt_pas_rooms', 'client_request_id'],

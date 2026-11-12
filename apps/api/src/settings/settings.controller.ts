@@ -46,6 +46,13 @@ export class SettingsController {
         return this.settings.getSchoolTimeZoneInfo();
     }
 
+    @Get('exam-types')
+    @ApiOperation({ summary: 'Katalog jenis ujian kustom beserta aturan kelulusannya' })
+    async getExamTypes() {
+        // Dibaca form pembuatan ujian (Guru/Proktor/Admin); tidak memuat data sensitif.
+        return { catalog: await this.settings.getExamTypeCatalog() };
+    }
+
     @Get(':key')
     @ApiOperation({ summary: 'Satu pengaturan berdasarkan key' })
     async findOne(@CurrentUser() user: AuthUser, @Param('key') key: string) {

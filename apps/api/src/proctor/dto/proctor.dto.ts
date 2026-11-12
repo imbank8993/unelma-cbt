@@ -20,6 +20,7 @@ import {
     ValidateNested,
 } from 'class-validator';
 import { LEARNING_PROGRAMS } from '../../common/learning-programs';
+import { EXAM_TYPE_CODE_PATTERN } from '../../common/exam-type-catalog';
 
 export const EXAM_TYPES = ['daily', 'pas', 'pat', 'am', 'tryout', 'lainnya', 'assignment'] as const;
 export const CLASS_TYPES = ['reguler', 'tambahan'] as const;
@@ -42,10 +43,11 @@ class ExamFieldsDto {
     @MaxLength(5000, { message: 'Deskripsi ujian maksimal 5000 karakter.' })
     description?: string;
 
-    @ApiPropertyOptional({ enum: EXAM_TYPES })
+    @ApiPropertyOptional({ description: `Salah satu dari ${EXAM_TYPES.join(', ')}, atau kode jenis ujian kustom dari Pengaturan → Jenis Ujian.` })
     @IsOptional()
-    @IsIn(EXAM_TYPES, { message: 'Jenis ujian tidak dikenal' })
-    examType?: (typeof EXAM_TYPES)[number];
+    @IsString()
+    @Matches(EXAM_TYPE_CODE_PATTERN, { message: 'Jenis ujian tidak dikenal' })
+    examType?: string;
 
     @ApiProperty({ description: 'Dalam menit. Diabaikan untuk ujian bertipe assignment.' })
     @IsInt({ message: 'Durasi ujian harus berupa bilangan bulat menit.' })

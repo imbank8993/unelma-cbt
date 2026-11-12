@@ -123,6 +123,7 @@ test('monitoring results expose calculated IRT scores in their own column', () =
   '@/lib/monitoring-score-models':{monitoringScoreModels},
   '@/lib/monitoring-answer-count':{savedAnswerCount:()=>1},
   './ParticipantRoomInfo':{ParticipantRoomInfo:()=>null},
+  '@/components/exams/PassResultBadge':{PassResultBadge:()=>null,PassResultDetail:()=>null,passResultSummary:()=>null},
  };
  new Function('require','module','exports',code)(name=>name.endsWith('.css')?{}:dependencies[name]||require(name),loaded,loaded.exports);
  const render=overrides=>renderToStaticMarkup(React.createElement(loaded.exports.MonitoringResultsTable,{

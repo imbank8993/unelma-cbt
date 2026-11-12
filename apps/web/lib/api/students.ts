@@ -1,3 +1,4 @@
+import type { ExamPassResult } from '../exam-type-catalog';
 import type { TopicAnalysis } from '@acca-cbt/shared';
 import { withExamSubmissionLock } from '../exam-submission-lock';
 import { getDeviceId } from '../device-id';
@@ -67,6 +68,8 @@ export interface StudentScheduledExam {
     token_price?: number;
     /** Siswa ini sudah membuka (membayar) ujian berbayar ini. */
     isUnlocked?: boolean;
+    /** Ujian berbayar yang sudah selesai dan boleh dikerjakan ulang (tanpa bayar lagi). */
+    canRetake?: boolean;
     /** Pengaturan ujian yang aman dibaca siswa; `is_public` = ujian pilihan, `program` = program sasaran. */
     metadata?: { is_public?: boolean; program?: string } & Record<string, unknown>;
 }
@@ -119,7 +122,14 @@ export interface StudentResult {
     finished_at: string | null;
     status: string;
     needs_manual_grading: boolean;
+    /** Urutan pengerjaan untuk ujian yang sama (ujian berbayar dapat dikerjakan ulang). */
+    attempt_number?: number;
+    attempt_count?: number;
+    /** Pengerjaan terakhir = nilai resmi; yang lebih lama hanya riwayat. */
+    is_latest_attempt?: boolean;
     exams?: StudentResultExam | null;
+    /** Jenis ujian kustom: skor mentah & status Lulus/Tidak Lulus (hanya bila hasil dibuka). */
+    pass_result?: ExamPassResult | null;
 }
 
 export interface StudentResultQuestion extends Omit<Question, 'bank_question_options'> {
@@ -144,6 +154,7 @@ export interface StudentAttemptDetails {
     answerKeysReleased: boolean;
     answerKeysMessage?: string | null;
     attempt: {
+        pass_result?: ExamPassResult | null;
         display_score?: number | null;
         score_type?: 'classical' | 'irt_1pl' | 'irt_2pl' | 'irt_3pl';
         score_label?: string;

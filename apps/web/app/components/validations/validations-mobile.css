@@ -1,7 +1,0 @@
-/* Keep folder management available; BottomNav supplies the new-validation action. */
-@media (max-width: 1023.98px) {
-  .validation-toolbar .validation-create-actions .validation-create-action,
-  .validation-create-action {
-    display: none !important;
-  }
-}

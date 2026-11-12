@@ -8,7 +8,6 @@ const { AuthorizationService } = require('../src/auth/authorization.service.ts')
 const { CollaborationService } = require('../src/auth/collaboration.service.ts');
 const { QuestionBanksService } = require('../src/questions/question-banks.service.ts');
 const { ExamAdminService } = require('../src/proctor/exam-admin.service.ts');
-const { ValidationsService } = require('../src/validations/validations.service.ts');
 const { collaboratorCounts } = require('../src/common/collaboration-access.ts');
 
 const user = id => ({ id, isPlatformAdmin: false });
@@ -22,7 +21,7 @@ function fixture({ banks = 1, exams = 1 } = {}) {
         cbt_organization_members: staff.map(id => ({ id: 'member-' + id, user_id: id, organization_id: 'school', is_active: true, profiles: { full_name: id },
             member_roles: [{ roles: { name: id === 'admin' ? 'Admin' : 'Proktor' } }] })),
         cbt_bank_collaborators: [], cbt_exam_collaborators: [], cbt_collaboration_events: [],
-        cbt_exam_question_sources: [], cbt_question_bank_validations: [], cbt_question_bank_validators: [],
+        cbt_exam_question_sources: [],
     });
     const roles = { hasOrgRole: async (id, org, allowed) => org === 'school' && staff.includes(id) && allowed.includes(id === 'admin' ? 'Admin' : 'Proktor') };
     const auth = new AuthorizationService(db, roles, { assertSchoolId: async id => id });
@@ -150,17 +149,6 @@ test('collaborator counts use bounded batches and report database failures inste
     assert.equal((await collaboratorCounts(empty, 'exam', [])).size, 0);
     assert.equal(empty.queries.length, 0);
     await assert.rejects(collaboratorCounts(fixtureDb({}, ['cbt_bank_collaborators']), 'bank', ['bank']), /Jumlah kolaborator belum dapat diperiksa/);
-});
-
-test('co-editors of a bank cannot be assigned as its validators', async () => {
-    const f = fixture();
-    await f.service.save(user('a'), 'bank', 'bank', 'b', { permission: 'editor' });
-    await f.service.save(user('a'), 'bank', 'bank', 'c', { permission: 'viewer' });
-    const authz = { assertProktor: async () => {}, assertOrgRole: async () => {}, assertBankAccess: async () => 'school', hasOrgStaffRole: async () => true };
-    const validations = new ValidationsService(f.db, authz);
-    await assert.rejects(validations.create(user('admin'), { bankId: 'bank', validatorIds: ['b'] }), /Editor atau pengelola bank soal ini/);
-    // A reader is not a co-author and stays eligible.
-    await validations.create(user('admin'), { bankId: 'bank', validatorIds: ['c'] });
 });
 
 test('backup restore skips collaborators whose accounts are not in the target environment', () => {

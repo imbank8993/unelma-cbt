@@ -65,14 +65,7 @@ export class StorageAccessService {
                 try { await this.authz.assertBankAccess(user, bank.id, 'read'); }
                 catch (error) {
                     if (!(error instanceof ForbiddenException)) throw error;
-                    await this.authz.assertOrgStaff(user, audience.organizationId);
-                    const { data: sessions, error: sessionError } = await this.db.from('cbt_question_bank_validations')
-                        .select('id').eq('bank_id', bank.id).eq('organization_id', audience.organizationId);
-                    if (sessionError) throw new ForbiddenException('Izin validator belum dapat diperiksa.');
-                    const { data: assignments, error: assignmentError } = await this.db.from('cbt_question_bank_validators')
-                        .select('id').eq('validator_id', user.id).in('validation_id', (sessions || []).map((session: { id: string }) => session.id));
-                    if (assignmentError) throw new ForbiddenException('Izin validator belum dapat diperiksa.');
-                    if (!assignments?.length) continue;
+                    continue;
                 }
                 if (key.startsWith(`banks/${bank.id}/`) || this.references(bank, key)) return;
                 const { data: questions, error: readError } = await this.db.from('cbt_bank_questions')

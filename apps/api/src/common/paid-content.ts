@@ -54,6 +54,22 @@ export async function assertPaidContentAllowed(
   }
 }
 
+/** Item berbayar sungguhan: ditandai berbayar DAN harganya lebih dari nol. */
+export function isPaidItem(item: { is_paid?: boolean | null; token_price?: number | string | null }): boolean {
+  return item.is_paid === true && Number(item.token_price) > 0;
+}
+
+/**
+ * Aturan pengerjaan ulang: ujian BERBAYAR yang sudah dibuka boleh dikerjakan ulang
+ * tanpa batas (tanpa potong token lagi) selama jadwalnya masih buka. Ujian gratis /
+ * sekolah tetap sekali kerjakan. Nilai resmi = pengerjaan TERAKHIR; pengerjaan lama
+ * tetap tersimpan sebagai riwayat. Status "sudah dibuka" diperiksa terpisah
+ * (`isPaidItemLocked`).
+ */
+export function allowsPaidRetake(exam: { is_paid?: boolean | null; token_price?: number | string | null }): boolean {
+  return isPaidItem(exam);
+}
+
 /**
  * Apakah item berbayar MASIH TERKUNCI bagi pengguna ini.
  * Item gratis (is_paid=false atau harga 0) tidak pernah terkunci — sama dengan
@@ -65,7 +81,7 @@ export async function isPaidItemLocked(
   kind: PaidContentKind,
   item: { id: string; is_paid?: boolean | null; token_price?: number | string | null },
 ): Promise<boolean> {
-  if (!item.is_paid || !(Number(item.token_price) > 0)) return false;
+  if (!isPaidItem(item)) return false;
   const { data, error } = await db
     .from('unlocked_items')
     .select('id')

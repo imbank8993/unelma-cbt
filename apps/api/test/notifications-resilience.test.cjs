@@ -8,8 +8,8 @@ const { fixtureDb } = require('./fixture-db.cjs');
 for (const input of ['javascript:alert(1)', '//evil.test/x', 'https://evil.test', '/dashboard/../../login', '/dashboard/\\evil.test', '/dashboard/\nattack']) {
     test(`Reject unsafe notification destination ${JSON.stringify(input)}`, () => assert.equal(safeNotificationUrl(input), null));
 }
-test('Preserve validation deep link and replace duplicate rows on paging', () => {
-    const link = '/dashboard/guru/questions/bank?tab=validations&validation=session';
+test('Preserve bank deep link and replace duplicate rows on paging', () => {
+    const link = '/dashboard/guru/questions/bank?tab=questions&q=item';
     assert.equal(safeNotificationUrl(link), link);
     assert.deepEqual(mergeNotifications([{ id: '1', read: false }], [{ id: '1', read: true }, { id: '2' }]), [{ id: '1', read: true }, { id: '2' }]);
 });

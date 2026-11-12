@@ -37,7 +37,6 @@ Trash2
 import Link from 'next/link';
 import React,{ useCallback,useEffect,useRef,useState } from 'react';
 import { CreateBankModal } from '@/components/questions/CreateBankModal';
-import { ValidationBadge } from '@/app/components/validations/ValidationBadge';
 import { QuestionBankCover } from '@/app/components/questions/QuestionBankCover';
 import { FolderBankContents } from '@/app/components/questions/FolderBankContents';
 import { MobileBankFolder } from '@/app/components/questions/MobileBankFolder';
@@ -465,7 +464,6 @@ export default function ProktorQuestionBankPage() {
                         <span className={`px-2 py-0.5 rounded-lg text-xs font-semibold ${bank.is_published ? 'bg-[#030C4D]/10 text-[#030C4D] border border-[#030C4D]/30' : 'bg-red-50 text-red-600 border border-red-200'}`}>
                             {bank.is_published ? 'Published' : 'Draft'}
                         </span>
-                        <ValidationBadge summary={bank.validation_summary} />
                         {bank.subject && <span className="text-xs text-slate-400">{bank.subject}</span>}
                         {bank.class_level && <span className="text-xs text-slate-400">• {bank.class_level}</span>}
                     </div>
@@ -538,7 +536,6 @@ export default function ProktorQuestionBankPage() {
                         <span className={`px-2 py-0.5 rounded-lg text-[10px] font-semibold ${bank.is_published ? 'bg-[#030C4D]/10 text-[#030C4D] border border-[#030C4D]/30' : 'bg-red-50 text-red-600 border border-red-200'}`}>
                             {bank.is_published ? 'Published' : 'Draft'}
                         </span>
-                        <ValidationBadge summary={bank.validation_summary} />
                         {bank.subject && <span className="text-xs text-slate-400">{bank.subject}</span>}
                         {bank.class_level && <span className="text-xs text-slate-400">• {bank.class_level}</span>}
                     </div>

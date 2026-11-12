@@ -66,4 +66,10 @@ export function BannerStats({ items }: { items: { label: string; value: ReactNod
 }
 
 /** Tombol utama di banner. */
+/**
+ * Tombol aksi ujian (Kerjakan/Mulai/Lanjutkan). Sengaja oranye brand agar
+ * tidak tertukar dengan ikon dan label yang berwarna biru.
+ */
+export const EXAM_ACTION_BUTTON = 'inline-flex items-center justify-center gap-2 rounded-xl bg-[#F8A01B] px-4 py-2.5 text-sm font-semibold text-[#030C4D] shadow-sm transition-colors hover:bg-[#E8900A] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#F8A01B]/60 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-900';
+
 export const BANNER_BUTTON = 'inline-flex items-center justify-center gap-2 rounded-xl bg-[#030C4D] px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-[#0B1A66] dark:bg-blue-600 dark:hover:bg-blue-500';

@@ -329,7 +329,19 @@ def calculate_single_answer_score(question: Question, raw_answer: str | None) ->
         # sini adalah padanan yang setia. Mengembalikan False akan membuat soal
         # tak terjawab terhitung sebagai jawaban SALAH di analisis butir.
         correct_option = next((o for o in options if o.is_correct), None)
-        if not raw_answer or correct_option is None:
+        if qtype == "mcq" and uses_weighted_options(question):
+            # PG berbobot (mis. TKP SKD): skor = bobot opsi yang dipilih, dibatasi
+            # 0..skor soal. Jawaban "benar" = opsi berbobot tertinggi, hanya untuk
+            # analisis butir. Kosong tetap None seperti PG biasa.
+            selected = next((o for o in options if o.id == raw_answer), None) if raw_answer else None
+            if selected is None:
+                is_correct = None
+                score_earned = 0
+            else:
+                weights = [_option_weight(o) for o in options]
+                score_earned = min(max(_option_weight(selected), 0), default_score)
+                is_correct = bool(weights) and _option_weight(selected) >= max(weights)
+        elif not raw_answer or correct_option is None:
             is_correct = None
             score_earned = 0
         else:
@@ -352,6 +364,19 @@ def is_score_excluded(question) -> bool:
     """
     metadata = getattr(question, "metadata", None) or {}
     return isinstance(metadata, dict) and metadata.get("score_excluded") is True
+
+
+WEIGHTED_OPTION_SCORING = "weighted"
+
+
+def uses_weighted_options(question: Any) -> bool:
+    """PG yang skornya diambil dari bobot opsi (``metadata.option_scoring``)."""
+    metadata = getattr(question, "metadata", None) or {}
+    return isinstance(metadata, dict) and metadata.get("option_scoring") == WEIGHTED_OPTION_SCORING
+
+
+def _option_weight(option: QuestionOption) -> float:
+    return float(option.weight) if option.weight is not None else 0.0
 
 
 def is_academic_type(qtype: str) -> bool:

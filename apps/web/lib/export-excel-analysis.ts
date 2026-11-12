@@ -1,3 +1,4 @@
+import { PASS_STATE_LABELS } from './exam-type-catalog';
 import { formatAnswerKey, formatStudentAnswer, type DisplayQuestion } from './answer-display';
 import { gradingLabel } from './monitoring-health';
 import type {
@@ -224,7 +225,16 @@ export async function buildAnalysisWorkbook({
                 'NIS / ID': a.profiles?.identity_number || '-',
                 'Kelas': a.kelas_name || '-',
                 'Status': statusLabel,
+                // Ujian berbayar dapat dikerjakan ulang; nilai resmi = pengerjaan terakhir.
+                'Pengerjaan': (a.attempt_count ?? 1) > 1
+                    ? `Ke-${a.attempt_number} dari ${a.attempt_count}${a.is_latest_attempt ? ' (nilai resmi)' : ' (riwayat)'}` : '-',
                 'Nilai Klasik': !['submitted', 'auto_submitted'].includes(a.status) ? 'Belum dikumpulkan' : a.total_score == null ? 'Menunggu penilaian' : Number(a.detailed_scores?.classical ?? a.total_score).toFixed(2),
+                // Jenis ujian kustom (Pengaturan → Jenis Ujian): skor mentah, subtes, status kelulusan.
+                ...(a.pass_result ? {
+                    ...(a.pass_result.score_mode === 'raw' ? { 'Skor Mentah': a.pass_result.raw_score } : {}),
+                    ...Object.fromEntries((a.pass_result.subtests || []).map(subtest => [`Skor ${subtest.name} (PG ${subtest.passing_grade})`, subtest.score])),
+                    ...(a.pass_result.status !== 'none' ? { 'Status Kelulusan': PASS_STATE_LABELS[a.pass_result.status] } : {}),
+                } : {}),
                 // Satu kolom per model IRT yang dipakai ujian, agar jelas nilai mana yang berasal dari model apa.
                 // Nilai skala 200–800 untuk dilaporkan, θ mentah tetap disertakan untuk analisis guru.
                 ...Object.fromEntries(irtModels.flatMap((model, index) => {

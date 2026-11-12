@@ -23,7 +23,14 @@ import { assertNoActiveAttempts } from '../common/exam-active-attempts';
 import { assertPeriodExceptionsAvailable, examPasPeriods, type ScreenShareExceptionScope } from '../common/screen-share-exceptions';
 import { COMPLEX_SCORING_RULE_KEY, examComplexScoringRule, MATCHING_SCORING_RULE_KEY, examMatchingScoringRule } from '../common/complex-scoring';
 import { ALLOWED_EXTENSIONS } from '../storage/storage.service';
-import type { CreateExamDto, UpdateExamDto } from './dto/proctor.dto';
+import { EXAM_TYPES, type CreateExamDto, type UpdateExamDto } from './dto/proctor.dto';
+import {
+    DEFAULT_EXAM_TYPE_CATALOG,
+    EXAM_TYPE_RULE_METADATA_KEY,
+    examTypeRuleSnapshot,
+    isBuiltinExamType,
+    type ExamTypeRuleSnapshot,
+} from '../common/exam-type-catalog';
 
 /** Jenis ujian yang hanya boleh dibuat dan diubah Proktor/Admin. */
 
@@ -197,6 +204,7 @@ export class ExamAdminService {
         // untuk ditutup.
         const examType = dto.examType || 'pas';
         await this.assertMayUseExamType(user, organizationId, examType);
+        const examTypeRule = await this.resolveExamTypeRule(examType);
         this.assertPublicAllowedForType(examType, dto.isPublic);
 
         this.assertValidDuration(examType, dto.duration);
@@ -262,7 +270,7 @@ export class ExamAdminService {
                 scoring_type: dto.scoringType || 'classical',
                 is_paid: dto.isPaid ?? false,
                 token_price: dto.tokenPrice ?? 0,
-                metadata: this.buildMetadata(examType, dto, {}),
+                metadata: this.withExamTypeRule(this.buildMetadata(examType, dto, {}), examTypeRule),
             },
         });
 
@@ -331,6 +339,13 @@ export class ExamAdminService {
             if (examType !== existing.exam_type) {
                 await this.assertMayUseExamType(user, existing.organization_id, examType);
             }
+            // Aturan kelulusan dibekukan saat jenis dipilih. Menyunting ujian tanpa
+            // mengganti jenisnya mempertahankan aturan lama, supaya perubahan
+            // passing grade di Pengaturan tidak menggeser hasil yang sudah keluar.
+            const examTypeRule = examType !== existing.exam_type
+                || (!isBuiltinExamType(examType) && !existing.metadata?.[EXAM_TYPE_RULE_METADATA_KEY])
+                ? await this.resolveExamTypeRule(examType)
+                : undefined;
             this.assertPublicAllowedForType(examType, dto.isPublic);
 
             // Ujian umum → privat: akses siswa langsung bergantung pada penugasan,
@@ -393,7 +408,7 @@ export class ExamAdminService {
                     // lama tertinggal.
                     start_time: startTime,
                     end_time: endTime,
-                    metadata: this.buildMetadata(examType, dto, existing.metadata || {}),
+                    metadata: this.withExamTypeRule(this.buildMetadata(examType, dto, existing.metadata || {}), examTypeRule),
                 })
                 .eq('id', examId);
 
@@ -970,6 +985,33 @@ export class ExamAdminService {
         if (isSemesterAssessmentExam({ exam_type: examType })) {
             throw new BadRequestException('Ujian ASAS/ASAT dan Asesmen Madrasah tidak boleh berbayar.');
         }
+    }
+
+    /**
+     * Jenis bawaan → null. Jenis kustom harus ada dan aktif di Pengaturan →
+     * Jenis Ujian; salinan aturannya disimpan pada metadata ujian.
+     */
+    private async resolveExamTypeRule(examType: string): Promise<ExamTypeRuleSnapshot | null> {
+        if ((EXAM_TYPES as readonly string[]).includes(examType)) return null;
+        if (isBuiltinExamType(examType)) throw new BadRequestException('Jenis ujian tidak dikenal');
+        const catalog = (await this.settings?.getExamTypeCatalog?.()) ?? DEFAULT_EXAM_TYPE_CATALOG;
+        const definition = catalog.types.find(type => type.code === examType && type.active);
+        if (!definition) {
+            throw new BadRequestException('Jenis ujian ini tidak tersedia atau sudah dinonaktifkan. Periksa Pengaturan → Jenis Ujian.');
+        }
+        return examTypeRuleSnapshot(definition);
+    }
+
+    /** `undefined` = pertahankan; `null` = hapus (jenis bawaan); selain itu = tulis. */
+    private withExamTypeRule(
+        metadata: Record<string, unknown>,
+        rule: ExamTypeRuleSnapshot | null | undefined,
+    ): Record<string, unknown> {
+        if (rule === undefined) return metadata;
+        const next = { ...metadata };
+        if (rule) next[EXAM_TYPE_RULE_METADATA_KEY] = rule;
+        else delete next[EXAM_TYPE_RULE_METADATA_KEY];
+        return next;
     }
 
     private async assertMayUseExamType(

@@ -26,7 +26,7 @@ Lock,RefreshCw,
     type LucideIcon,
 } from 'lucide-react';
 import Link from 'next/link';
-import { BANNER_BUTTON, StudentBanner } from '@/app/components/student/StudentBanner';
+import { EXAM_ACTION_BUTTON, StudentBanner } from '@/app/components/student/StudentBanner';
 import { learningPrograms, type LearningProgram } from '@/lib/learning-catalog';
 import { loadLearningGoal, programLabel } from '@/lib/learning-goal';
 import { useRouter } from 'next/navigation';
@@ -134,7 +134,7 @@ const SchedulePage = () => {
         }
 
         // Check if completed
-        if (exam.isCompleted) {
+        if (exam.isCompleted && !exam.canRetake) {
             return { label: 'Selesai', color: 'text-[#4B78B8]', bg: 'bg-[#EFF5FD] border-[#C6D9F3]', icon: CheckCircle2, enabled: false };
         }
 
@@ -154,7 +154,10 @@ const SchedulePage = () => {
         }
 
         // Window open — student can start
-        return { label: 'Kerjakan Sekarang', color: 'text-white', bg: 'bg-[#030C4D] hover:bg-[#2563EB]', icon: ArrowRight, enabled: true };
+        if (exam.isCompleted && !exam.isInProgress) {
+            return { label: 'Kerjakan Ulang', color: 'text-[#030C4D]', bg: 'bg-[#F8A01B] hover:bg-[#E8900A]', icon: ArrowRight, enabled: true };
+        }
+        return { label: 'Kerjakan Sekarang', color: 'text-[#030C4D]', bg: 'bg-[#F8A01B] hover:bg-[#E8900A]', icon: ArrowRight, enabled: true };
     };
 
     const formatDay = (date: string | null | undefined) => formatSchoolDate(date, timeZone);
@@ -226,14 +229,14 @@ const SchedulePage = () => {
                                     <div className="absolute left-0 top-0 h-full w-1 bg-[#6B9FE8]" />
                                     
                                     <div className="flex items-center gap-4 flex-1 w-full min-w-0 pl-1.5">
-                                        <div className="w-12 h-12 bg-[#EFF5FD] border border-[#D8E6F8] rounded-xl flex items-center justify-center shrink-0 group-hover:bg-[#030C4D] group-hover:border-[#030C4D] transition-all text-[#4B78B8] group-hover:text-white">
+                                        <div className="w-12 h-12 bg-[#EFF5FD] border border-[#D8E6F8] rounded-xl flex items-center justify-center shrink-0 group-hover:bg-[#DCE9FA] group-hover:border-[#C6D9F3] transition-all text-[#4B78B8]">
                                             <Clock size={18} />
                                         </div>
                                         <div className="min-w-0 flex-1">
                                             <div className="flex flex-wrap items-center gap-2 mb-1">
                                                 <h3 className="font-bold text-slate-800 text-base truncate group-hover:text-[#030C4D] transition-colors">{exam.title}</h3>
                                                 {exam.exam_type && exam.exam_type !== 'daily' && (
-                                                    <span className="px-2.5 py-0.5 bg-violet-50 text-violet-600 text-[9px] font-bold uppercase rounded-md border border-violet-100/50">{examTypeLabel(exam.exam_type)}</span>
+                                                    <span className="px-2.5 py-0.5 bg-violet-50 text-violet-600 text-[9px] font-bold uppercase rounded-md border border-violet-100/50">{examTypeLabel(exam.exam_type, exam.metadata)}</span>
                                                 )}
                                             </div>
                                             <div className="flex flex-wrap items-center gap-3 text-xs text-slate-500 font-medium font-sans">
@@ -258,8 +261,8 @@ const SchedulePage = () => {
                                         </div>
                                     </div>
                                     <div className="w-full md:w-auto">
-                                        <div className="bg-[#030C4D] text-white font-bold text-xs px-5 py-2.5 rounded-xl flex items-center justify-center gap-1.5 shadow-md shadow-[#030C4D]/10 group-hover:bg-[#2563EB] group-hover:shadow-lg group-hover:shadow-[#030C4D]/20 transition-all active:scale-95">
-                                            {recoveryActive(exam, now.getTime()) ? recoveryLabel(exam).button : exam.isInProgress ? 'Lanjutkan Ujian' : needsTokenUnlock(exam) ? 'Bayar & Kerjakan' : 'Kerjakan'} <ArrowRight size={14} />
+                                        <div className="bg-[#F8A01B] text-[#030C4D] font-bold text-xs px-5 py-2.5 rounded-xl flex items-center justify-center gap-1.5 shadow-md shadow-[#F8A01B]/20 group-hover:bg-[#E8900A] group-hover:shadow-lg group-hover:shadow-[#F8A01B]/30 transition-all active:scale-95">
+                                            {recoveryActive(exam, now.getTime()) ? recoveryLabel(exam).button : exam.isInProgress ? 'Lanjutkan Ujian' : needsTokenUnlock(exam) ? 'Bayar & Kerjakan' : exam.canRetake ? 'Kerjakan Ulang' : 'Kerjakan'} <ArrowRight size={14} />
                                         </div>
                                     </div>
                                 </motion.div>
@@ -293,7 +296,7 @@ const SchedulePage = () => {
                                             <div className="flex flex-wrap items-center gap-2 mb-1">
                                                 <h3 className="font-bold text-slate-800 text-base truncate">{exam.title}</h3>
                                                 {exam.exam_type && exam.exam_type !== 'daily' && (
-                                                    <span className="px-2.5 py-0.5 bg-violet-50 text-violet-600 text-[9px] font-bold uppercase rounded-md border border-violet-100/50">{examTypeLabel(exam.exam_type)}</span>
+                                                    <span className="px-2.5 py-0.5 bg-violet-50 text-violet-600 text-[9px] font-bold uppercase rounded-md border border-violet-100/50">{examTypeLabel(exam.exam_type, exam.metadata)}</span>
                                                 )}
                                             </div>
                                             <div className="flex flex-wrap items-center gap-3 text-xs text-slate-500 font-medium font-sans">
@@ -375,7 +378,7 @@ const SchedulePage = () => {
                 title={loading ? 'Memuat agenda…' : nextExam ? nextExam.title : 'Belum ada ujian terjadwal'}
                 description={nextExam ? `${formatDay(nextExam.start_time)} · ${formatTimeRange(nextExam.start_time, nextExam.end_time)}` : 'Ujian dari sekolah, kelas, dan tryout akan muncul di sini.'}
                 actions={nextExam && (nextOpen ? (
-                    <button type="button" onClick={() => { void openExam(nextExam); }} className={BANNER_BUTTON}>
+                    <button type="button" onClick={() => { void openExam(nextExam); }} className={EXAM_ACTION_BUTTON}>
                         Kerjakan sekarang <ArrowRight size={16} />
                     </button>
                 ) : (

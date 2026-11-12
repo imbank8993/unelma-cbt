@@ -1,6 +1,6 @@
 "use client";
 import { Spinner } from '@/app/components/ui/Spinner';
-import { dashboardResultScore } from '@/lib/student-dashboard-score';
+import { dashboardResultScore, officialResults } from '@/lib/student-dashboard-score';
 import { StudentScoreAverages } from '@/app/components/student/StudentScoreAverages';
 import { getSetting,pickAnnouncements,type Announcement } from '@/lib/api/settings';
 import {
@@ -16,7 +16,7 @@ import { daysUntil, loadLearningGoal, programLabel, saveLearningGoal, type Learn
 import { useToast } from '@/app/components/ui/Toast';
 import { LearningGoalModal } from '@/app/components/student/LearningGoalModal';
 import { PROGRAM_VISUALS } from '@/app/components/student/programVisuals';
-import { BANNER_BUTTON, BannerStats, StudentBanner } from '@/app/components/student/StudentBanner';
+import { BANNER_BUTTON, BannerStats, EXAM_ACTION_BUTTON, StudentBanner } from '@/app/components/student/StudentBanner';
 import Link from 'next/link';
 import { getSessionUser } from '@/lib/session';
 import { dashboardExams, recoveryActive, recoveryLabel, scheduleState } from '@/lib/student-schedule';
@@ -184,7 +184,7 @@ export default function SiswaDashboard() {
     };
 
 
-    const completedExamsCount = results.filter(r => r.status === 'submitted' || r.status === 'auto_submitted').length;
+    const completedExamsCount = officialResults(results).filter(r => r.status === 'submitted' || r.status === 'auto_submitted').length;
     // Ujian wajib (dari kelas) selalu tampil; tryout pilihan hanya yang sesuai tujuan belajar.
     const examGoals = goal?.programs ?? [];
     const visibleExams = dashboardExams(exams, now).filter(exam => {
@@ -221,7 +221,7 @@ export default function SiswaDashboard() {
     const resume = continueChapters[0];
     const resumeItem = resume?.items.find(item => !item.completed) || resume?.items[0];
     const nextStep: { icon: typeof Zap; tone: string; label: string; title: string; sub?: string; action: string; href: string } = activeExam
-        ? { icon: Zap, tone: 'from-rose-500 to-orange-500', label: 'Ujian sedang berlangsung', title: activeExam.title, action: 'Kerjakan sekarang', href: '/dashboard/siswa/schedule' }
+        ? { icon: Zap, tone: 'from-[#030C4D] to-[#2563EB]', label: 'Ujian sedang berlangsung', title: activeExam.title, action: 'Kerjakan sekarang', href: '/dashboard/siswa/schedule' }
         : resume && resumeItem
             ? { icon: BookOpen, tone: 'from-[#2563EB] to-sky-500', label: resume.completed ? 'Lanjutkan belajar' : 'Rekomendasi untukmu', title: resumeItem.subtopic || resumeItem.title, sub: `${resume.subject} · ${resume.title}`, action: resume.completed ? 'Lanjutkan' : 'Mulai', href: `/dashboard/learning/${resumeItem.id}` }
             : classCount === 0
@@ -242,7 +242,7 @@ export default function SiswaDashboard() {
                 
                 <div className="flex items-center gap-3.5 flex-1 pl-1 min-w-0 text-left">
                     {/* Date Badge */}
-                    <div className="w-10 h-10 bg-indigo-50 border border-indigo-100/30 rounded-xl flex flex-col items-center justify-center shrink-0 group-hover:bg-[#030C4D] group-hover:border-[#030C4D] transition-colors text-indigo-600 group-hover:text-white">
+                    <div className="w-10 h-10 bg-indigo-50 border border-indigo-100/30 rounded-xl flex flex-col items-center justify-center shrink-0 group-hover:bg-indigo-100 group-hover:border-indigo-200 transition-colors text-indigo-600">
                         {getDayNum(exam.start_time) === '--' ? (
                             <Zap size={16} />
                         ) : (
@@ -297,9 +297,9 @@ export default function SiswaDashboard() {
                     {isReady ? (
                         <button
                             onClick={() => { void openExam(exam); }}
-                            className="w-full sm:w-auto bg-[#030C4D] hover:bg-[#2563EB] text-white text-[10px] font-bold px-3.5 py-1.5 rounded-xl flex items-center justify-center gap-1.5 transition-colors shadow-sm active:scale-95"
+                            className="w-full sm:w-auto bg-[#F8A01B] hover:bg-[#E8900A] text-[#030C4D] text-[10px] font-bold px-3.5 py-1.5 rounded-xl flex items-center justify-center gap-1.5 transition-colors shadow-sm active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#F8A01B]/60 focus-visible:ring-offset-2"
                         >
-                            {inRecovery ? recovery.button : exam.isInProgress ? 'Lanjutkan' : needsTokenUnlock(exam) ? 'Bayar & Mulai' : 'Mulai'} <ArrowRight size={12} />
+                            {inRecovery ? recovery.button : exam.isInProgress ? 'Lanjutkan' : needsTokenUnlock(exam) ? 'Bayar & Mulai' : exam.canRetake ? 'Kerjakan Ulang' : 'Mulai'} <ArrowRight size={12} />
                         </button>
                     ) : (
                         <div className="text-[9px] font-bold text-slate-500 uppercase px-2.5 py-1 bg-slate-50 rounded-lg border border-slate-100">Belum mulai</div>
@@ -380,7 +380,7 @@ export default function SiswaDashboard() {
                             {nextStep.sub && <p className="truncate text-xs text-slate-500 dark:text-slate-400">{nextStep.sub}</p>}
                         </div>
                         {activeExam
-                            ? <button type="button" onClick={() => { void openExam(activeExam); }} className={`${BANNER_BUTTON} w-full sm:w-auto`}>{nextStep.action} <ArrowRight size={15} /></button>
+                            ? <button type="button" onClick={() => { void openExam(activeExam); }} className={`${EXAM_ACTION_BUTTON} w-full sm:w-auto`}>{nextStep.action} <ArrowRight size={15} /></button>
                             : <Link href={nextStep.href} className={`${BANNER_BUTTON} w-full sm:w-auto`}>{nextStep.action} <ArrowRight size={15} /></Link>}
                     </div>
                 )}
