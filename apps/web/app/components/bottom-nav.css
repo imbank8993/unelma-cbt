@@ -436,8 +436,8 @@
     transform: translateX(-50%);
 }
 
-/* Logo Unelma varian terang (U putih, garis oranye; unelma-mark-light.png)
-   di atas cakram navy. Berkasnya persegi dengan sedikit ruang kosong, jadi
+/* Logo Unelma putih penuh (unelma-mark-white.png) di atas cakram navy,
+   senada dengan ikon putih tombol aksi. Berkasnya persegi dengan sedikit ruang kosong, jadi
    26px tampil seukuran ikon Lucide 24px di sekitarnya. */
 .bnav__fab-logo {
     display: block;
