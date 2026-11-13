@@ -141,7 +141,7 @@ test('CANCEL-04: perangkat siswa menerima 410 EXAM_CANCELLED untuk attempt yang 
     await assert.rejects(run(new CancelledAttemptInterceptor(fakeDb({ archive: false })), context({ params: { attemptId: ATTEMPT } }), new ForbiddenException('x')), ForbiddenException);
 });
 
-test('CANCEL-05: attempt baru tidak dapat terselip saat pembatalan; endpoint dan UI terpasang', () => {
+test('CANCEL-05: attempt baru tidak dapat terselip saat pembatalan; endpoint terpasang, tombol UI dihapus', () => {
     const attempts = api('students/exam-attempts.service.ts');
     const safely = attempts.slice(attempts.indexOf('private async createAttemptSafely('));
     assert.match(safely, /advisoryTransactionLock\(db, `\$\{examId\}:\$\{user\.id\}`\);\s*\/\/[^]*?sharedAdvisoryTransactionLock\(db, examStartLockKey\(examId\)\)/);
@@ -158,5 +158,7 @@ test('CANCEL-05: attempt baru tidak dapat terselip saat pembatalan; endpoint dan
     assert.match(page, /res\.cancelled/);
     assert.match(page, /discardExamLocalCopy/);
     assert.match(web('lib/exam-submission-worker.ts'), /status\.cancelled/);
-    assert.match(web('app/components/monitoring/ParticipantsWorkspace.tsx'), /CancelExamModal/);
+    // Tombol Batalkan Ujian dihapus dari monitoring; endpoint API tetap ada.
+    assert.doesNotMatch(web('app/components/monitoring/ParticipantsWorkspace.tsx'), /CancelExamModal|Batalkan ujian/);
+    assert.doesNotMatch(web('app/components/monitoring/MonitoringWorkspaceHeader.tsx'), /CancelExam/);
 });

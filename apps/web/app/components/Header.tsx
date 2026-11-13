@@ -105,10 +105,7 @@ export default function Header({
     const displayName = user?.nama || user?.email || 'User';
     const displayRoles = user?.roles?.length ? user.roles : user?.role ? [user.role] : ['User'];
     const displayRole = displayRoles[0] || 'User';
-    const displayNip = user?.nip || 'N/A';
     const avatarImg = user?.photoUrl || user?.avatar_url;
-    const isSiswa = displayRoles.some(r => r.toLowerCase() === 'siswa');
-    const idLabel = isSiswa ? 'NISN' : 'NIP';
 
     const isDashboard = !pageTitle || pageTitle === 'Dashboard' || pathname.endsWith('/dashboard') || pathname === '/dashboard/admin' || pathname === '/dashboard/proktor' || pathname === '/dashboard/guru' || pathname === '/dashboard/siswa' || pathname === '/dashboard/pengawas';
 
@@ -235,7 +232,7 @@ export default function Header({
                             </div>
                             <div className="user-info-header">
                                 <span className="user-name-header">{displayName}</span>
-                                <span className="user-role-header">{displayNip && displayNip !== 'N/A' ? `${idLabel} ${displayNip} • ` : ''}{displayRole}</span>
+                                <span className="user-role-header">{displayRole}</span>
                             </div>
                         </button>
 
@@ -298,9 +295,6 @@ export default function Header({
                                         </div>
                                         <div style={{ minWidth: 0, flex: 1 }}>
                                             <div className="user-menu-name" style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{displayName}</div>
-                                            <div className="user_menu_nip">
-                                                {idLabel}: {displayNip && displayNip !== 'N/A' ? displayNip : '-'}
-                                            </div>
                                             <div className="user-menu-role">{displayRoles.join(', ')}</div>
                                         </div>
                                     </div>
