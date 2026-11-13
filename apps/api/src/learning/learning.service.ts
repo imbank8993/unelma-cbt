@@ -1,4 +1,5 @@
-import { assertPaidContentAllowed, isPaidItemLocked, PAID_LOCKED_MESSAGE } from '../common/paid-content';
+import { assertPaidContentAllowed, isPaidItem, isPaidItemLocked, PAID_LOCKED_MESSAGE } from '../common/paid-content';
+import { assertFreeQuotaAvailable, assertMayCreate } from '../common/creation-limits';
 import { LearningLatexService } from './learning-latex.service';
 import { BadRequestException, ConflictException, ForbiddenException, Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common';
 import type { AuthUser } from '@acca-cbt/shared';
@@ -98,6 +99,7 @@ export class LearningService {
     }
     async create(user: AuthUser, org: string, dto: CreateMaterialDto) {
         await this.manager(user, org);
+        await assertMayCreate(this.db, user, 'material');
         if (!dto.title.trim()) throw new BadRequestException('Judul wajib diisi.');
         const { data: existing, error: readError } = await this.db.from('cbt_learning_materials').select('*').eq('id', dto.id).maybeSingle();
         if (readError) throw new InternalServerErrorException('Gagal memeriksa draf.');
@@ -108,6 +110,19 @@ export class LearningService {
         const { data, error } = await this.db.from('cbt_learning_materials').insert({ id: dto.id, organization_id: org, created_by: user.id, title: dto.title.trim(), grade_level: dto.gradeLevel || '', subject: (dto.subject || '').trim(), topic: (dto.topic || '').trim(), subtopic: (dto.subtopic || dto.title).trim(), subtopic_order: dto.subtopicOrder || 0 }).select('*').single();
         if (error || !data) throw new InternalServerErrorException('Gagal membuat draf bahan ajar.');
         return { material: this.publicRow(data) };
+    }
+    /**
+     * Akses & kuota Proktor saat bahan ajar MENJADI terbit, atau saat bahan ajar
+     * terbit digratiskan: akses menerbitkan harus aktif dan bahan ajar gratis
+     * dibatasi kuotanya. Menyunting materi yang sudah terbit tidak diperiksa ulang.
+     */
+    private async assertPublishAllowed(user: AuthUser, row: MaterialRow, nextStatus: string | undefined, nextPaid: boolean) {
+        if (nextStatus !== 'published') return;
+        const wasPublished = row.status === 'published';
+        if (!wasPublished) await assertMayCreate(this.db, user, 'material');
+        if (!nextPaid && (!wasPublished || isPaidItem(row as { is_paid?: boolean; token_price?: number }))) {
+            await assertFreeQuotaAvailable(this.db, user, 'material', row.id);
+        }
     }
     async update(user: AuthUser, org: string, id: string, dto: UpdateMaterialDto) {
         const row = await this.row(org, id);
@@ -122,6 +137,7 @@ export class LearningService {
         if (nextPaid && (!currentPaid || currentPrice !== nextPrice)) {
             await assertPaidContentAllowed(this.db, row.created_by || user.id, 'material', nextPrice);
         }
+        await this.assertPublishAllowed(user, row, dto.status, nextPaid && nextPrice > 0);
         const { data, error } = await this.db.from('cbt_learning_materials').update({
             cover_data: dto.coverData ?? row.cover_data ?? '',
             subtopic_order: dto.subtopicOrder ?? row.subtopic_order ?? 0,
@@ -144,6 +160,8 @@ export class LearningService {
         if (!file || !file.size || file.size > MAX_UPLOAD_BYTES) throw new BadRequestException('Pilih berkas berukuran 1 byte hingga 25 MB.');
         if (row.revision !== revision) throw new ConflictException('Materi telah berubah. Muat ulang sebelum mengunggah.');
         if (!dto || !dto.title.trim()) throw new BadRequestException('Isi hasil konversi dan informasi draf wajib dikirim bersama berkas.');
+        // Periksa sebelum mengunggah: unggahan bisa sekaligus menerbitkan materi.
+        await this.assertPublishAllowed(user, row, dto.status || row.status, isPaidItem(row as { is_paid?: boolean; token_price?: number }));
         const isTex = /\.(tex|latex|zip)$/i.test(file.originalname);
         // Compile first. A compiler failure must never replace the existing source or preview.
         const pdf = isTex ? await this.latex.compile(file.buffer, /\.zip$/i.test(file.originalname)) : null;

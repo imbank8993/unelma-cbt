@@ -1,4 +1,5 @@
 import { assertPaidContentAllowed } from '../common/paid-content';
+import { assertFreeQuotaAvailable, assertMayCreate } from '../common/creation-limits';
 import { isUUID } from 'class-validator';
 import { collaborationGrants, collaboratorCounts } from '../common/collaboration-access';
 import {
@@ -250,9 +251,14 @@ export class ExamAdminService {
             }
         }
 
+        // Akses & kuota Proktor (Komisi → Proktor): boleh membuat ujian, dan ujian
+        // gratis dibatasi kuotanya. Ujian berbayar tidak memakai kuota.
+        await assertMayCreate(this.db, user, 'exam');
         if (dto.isPaid) {
             this.assertPaidAllowedForType(examType);
             await assertPaidContentAllowed(this.db, user.id, 'exam', dto.tokenPrice);
+        } else {
+            await assertFreeQuotaAvailable(this.db, user, 'exam');
         }
 
         const data = await insertIdempotently<{ id: string }>(this.db, {
@@ -407,6 +413,10 @@ export class ExamAdminService {
             if (nextPaid) this.assertPaidAllowedForType(examType);
             if (nextPaid && (!existing.is_paid || Number(existing.token_price ?? 0) !== nextPrice)) {
                 await assertPaidContentAllowed(db, existing.created_by || user.id, 'exam', nextPrice);
+            }
+            // Menggratiskan ujian berbayar memakai kuota gratis, sama seperti membuat ujian gratis.
+            if (!nextPaid && existing.is_paid && Number(existing.token_price ?? 0) > 0) {
+                await assertFreeQuotaAvailable(db, user, 'exam', examId);
             }
 
             const { error } = await db

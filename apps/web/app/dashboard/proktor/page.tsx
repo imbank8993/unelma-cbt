@@ -29,10 +29,13 @@ Plus
 import { useRouter } from 'next/navigation';
 import { useCallback,useEffect,useState } from 'react';
 import { TopScorersCard } from '../admin/TopScorersCard';
+import { useCreationLimits } from '@/lib/useCreationLimits';
 
 
 export default function ProktorDashboard() {
     const router = useRouter();
+    const { limits: creationLimits } = useCreationLimits();
+    const canCreateExam = creationLimits?.canCreateExams !== false;
     const [stats, setStats] = useMemoryState<OrganizationStats>('proktor_stats', {
         totalMembers: 0,
         totalBanks: 0,
@@ -320,6 +323,7 @@ export default function ProktorDashboard() {
                                 <Activity size={22} className="text-[#030C4D]/40" />
                             </div>
                             <p className="font-bold text-slate-700 mb-1">Belum Ada Ujian</p>
+                            {canCreateExam ? <>
                             <p className="text-xs text-slate-400 mb-4">Mulai buat ujian pertama Anda</p>
                             <button
                                 onClick={() => router.push('/dashboard/proktor/exams')}
@@ -327,6 +331,7 @@ export default function ProktorDashboard() {
                             >
                                 <Plus size={12} /> Buat Ujian
                             </button>
+                            </> : <p className="text-xs text-slate-400">Akses membuat ujian sedang dinonaktifkan Admin.</p>}
                         </div>
                     )}
                 </div>

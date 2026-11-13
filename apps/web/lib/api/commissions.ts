@@ -24,6 +24,11 @@ export interface ProctorSummaryItem {
   bank2_account_number?: string;
   can_create_exams: boolean;
   can_create_materials: boolean;
+  /** Kuota ujian / bahan ajar gratis; null = tanpa batas. */
+  free_exam_quota?: number | null;
+  free_material_quota?: number | null;
+  free_exams_used?: number;
+  free_materials_used?: number;
   profile_status: string;
   total_unlocks: number;
   gross_tokens: number;
@@ -150,6 +155,8 @@ export async function updateProctorPermissions(
     can_create_exams?: boolean;
     can_create_materials?: boolean;
     status?: 'pending' | 'approved' | 'rejected';
+    free_exam_quota?: number | null;
+    free_material_quota?: number | null;
   }
 ): Promise<ApiResult<{ profile: any }>> {
   return apiSend<{ profile: any }>(
@@ -157,6 +164,26 @@ export async function updateProctorPermissions(
     data,
     'PUT'
   );
+}
+
+export interface FreeQuota {
+  /** null = tanpa batas. */
+  quota: number | null;
+  used: number;
+  remaining: number | null;
+}
+
+/** Akses membuat ujian/bahan ajar dan sisa kuota gratis pengguna yang login. */
+export interface CreationLimits {
+  unlimited: boolean;
+  canCreateExams: boolean;
+  canCreateMaterials: boolean;
+  freeExam: FreeQuota;
+  freeMaterial: FreeQuota;
+}
+
+export async function getMyCreationLimits(): Promise<ApiResult<CreationLimits>> {
+  return apiGet<CreationLimits>('/api/commissions/proctor/limits');
 }
 
 export async function getProctorMySummary(): Promise<ApiResult<ProctorMySummaryResponse>> {

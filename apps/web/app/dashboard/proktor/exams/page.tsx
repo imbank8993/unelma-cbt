@@ -59,6 +59,7 @@ import { useRouter } from 'next/navigation';
 import React,{ useCallback,useEffect,useMemo,useState } from 'react';
 import type { LucideIcon } from 'lucide-react';
 import EditPASPeriodModal from '@/app/components/pas/EditPASPeriodModal';
+import { useCreationLimits } from '@/lib/useCreationLimits';
 
 type TabId = 'all' | 'draft' | 'active' | 'finished' | 'archived' | 'pas';
 type SortBy = 'newest' | 'oldest' | 'name';
@@ -92,8 +93,12 @@ const ExamsPage = () => {
     const [publishingId, setPublishingId] = useState<string | null>(null);
     // Modals
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+    // Akses membuat ujian diatur Admin (Komisi → Proktor); tombol tambah disembunyikan bila nonaktif.
+    const { limits: creationLimits } = useCreationLimits();
+    const canCreateExam = creationLimits?.canCreateExams !== false;
 
     useEffect(() => {
+        if (!canCreateExam) return;
         const token = {};
         registerPageFab(token, {
             label: 'Tambah Ujian',
@@ -101,7 +106,7 @@ const ExamsPage = () => {
             run: () => setIsAddModalOpen(true),
         });
         return () => unregisterPageFab(token);
-    }, []);
+    }, [canCreateExam]);
 
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [isAssignModalOpen, setIsAssignModalOpen] = useState(false);
@@ -443,7 +448,7 @@ const ExamsPage = () => {
                             ]}
                         />
 
-                        <FilterActions>
+                        {canCreateExam && <FilterActions>
                             <Button
                                 variant="primary"
                                 icon="add"
@@ -451,7 +456,7 @@ const ExamsPage = () => {
                             >
                                 Buat Ujian Baru
                             </Button>
-                        </FilterActions>
+                        </FilterActions>}
                     </FilterToolbar>
                 </div>
             )}
@@ -466,7 +471,7 @@ const ExamsPage = () => {
                 <div className="py-16 text-center text-slate-400 border-2 border-dashed border-[#030C4D]/30 rounded-lg">
                     <ClipboardCheck size={40} className="mx-auto mb-3 opacity-40" />
                     <p className="font-medium">Tidak ada ujian{activeTab === 'draft' ? ' draft' : activeTab === 'active' ? ' aktif' : ''}</p>
-                    <p className="text-sm mt-1">Klik &quot;Buat Ujian Baru&quot; untuk memulai</p>
+                    <p className="text-sm mt-1">{canCreateExam ? <>Klik &quot;Buat Ujian Baru&quot; untuk memulai</> : 'Akses membuat ujian sedang dinonaktifkan Admin.'}</p>
                 </div>
             ) : (
                 <>

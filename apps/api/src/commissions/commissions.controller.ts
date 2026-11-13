@@ -23,6 +23,8 @@ import {
   UpdateProctorPermissionsDto,
 } from './commissions.dto';
 import { CommissionsService } from './commissions.service';
+import { DbService } from '../prisma/prisma-db-adapter';
+import { loadCreationLimits } from '../common/creation-limits';
 
 function assertAdmin(user: AuthUser) {
   const isSuper = user.resolved?.superadmin === true || user.roles.includes('SUPERADMIN');
@@ -36,7 +38,13 @@ function assertAdmin(user: AuthUser) {
 @Controller('commissions')
 @UseGuards(JwtAuthGuard)
 export class CommissionsController {
-  constructor(private readonly commissions: CommissionsService) {}
+  constructor(private readonly commissions: CommissionsService, private readonly db: DbService) {}
+
+  @Get('proctor/limits')
+  @ApiOperation({ summary: 'Akses membuat ujian/bahan ajar dan sisa kuota gratis pengguna yang login' })
+  getMyCreationLimits(@CurrentUser() user: AuthUser) {
+    return loadCreationLimits(this.db, user);
+  }
 
   // ── 1. Konfigurasi Komisi & Ambang Batas ──
   @Get('config')

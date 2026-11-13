@@ -87,24 +87,43 @@ export default function AdminCommissionsPage() {
         }
     };
 
-    const handleTogglePermission = async (proc: ProctorSummaryItem, field: 'can_create_exams' | 'can_create_materials') => {
+    // Akses membuat & kuota gratis satu proktor (dialog "Atur").
+    const [accessProc, setAccessProc] = useState<ProctorSummaryItem | null>(null);
+    const [accessDraft, setAccessDraft] = useState({ canExams: true, canMaterials: true, examQuota: '', materialQuota: '' });
+    const [savingAccess, setSavingAccess] = useState(false);
+    const openAccess = (proc: ProctorSummaryItem) => {
         if (!proc.profile_id) {
             void notify('Proktor ini belum melengkapi profil registrasi proktor.');
             return;
         }
-        try {
-            const nextVal = !proc[field];
-            const res = await updateProctorPermissions(proc.profile_id, {
-                [field]: nextVal,
-            });
-            if (res.success) {
-                await loadData();
-            } else {
-                void notify(res.error || 'Gagal memperbarui izin proktor.');
-            }
-        } catch (err: any) {
-            void notify(err.message || 'Gagal mengubah izin.');
+        setAccessProc(proc);
+        setAccessDraft({
+            canExams: proc.can_create_exams, canMaterials: proc.can_create_materials,
+            examQuota: proc.free_exam_quota == null ? '' : String(proc.free_exam_quota),
+            materialQuota: proc.free_material_quota == null ? '' : String(proc.free_material_quota),
+        });
+    };
+    const saveAccess = async () => {
+        if (!accessProc?.profile_id) return;
+        const parse = (value: string) => (value.trim() === '' ? null : Number(value));
+        const examQuota = parse(accessDraft.examQuota);
+        const materialQuota = parse(accessDraft.materialQuota);
+        if ([examQuota, materialQuota].some(value => value !== null && (!Number.isInteger(value) || value < 0))) {
+            void notify('Kuota harus bilangan bulat 0 atau lebih, atau dikosongkan untuk tanpa batas.');
+            return;
         }
+        setSavingAccess(true);
+        const res = await updateProctorPermissions(accessProc.profile_id, {
+            can_create_exams: accessDraft.canExams, can_create_materials: accessDraft.canMaterials,
+            free_exam_quota: examQuota, free_material_quota: materialQuota,
+        });
+        setSavingAccess(false);
+        if (!res.success) {
+            void notify(res.error || 'Gagal memperbarui akses proktor.');
+            return;
+        }
+        setAccessProc(null);
+        await loadData();
     };
 
     const handleOpenPayoutModal = (proc: ProctorSummaryItem) => {
@@ -392,7 +411,7 @@ export default function AdminCommissionsPage() {
                             <tr className="border-b border-slate-200 bg-slate-50 text-[11px] font-medium text-slate-500">
                                 <th className="py-3 px-4">Proktor & Kontak</th>
                                 <th className="py-3 px-4">Rekening Transfer</th>
-                                <th className="py-3 px-4 text-center">Izin Konten</th>
+                                <th className="py-3 px-4 text-center">Akses & Kuota Gratis</th>
                                 <th className="py-3 px-4 text-right">Siswa Membuka</th>
                                 <th className="py-3 px-4 text-right">Total Komisi</th>
                                 <th className="py-3 px-4 text-right">Belum Dicairkan</th>
@@ -459,22 +478,19 @@ export default function AdminCommissionsPage() {
                                         </td>
 
                                         <td className="py-3.5 px-4 text-center">
-                                            <div className="inline-flex flex-col gap-1 items-center">
-                                                <button
-                                                    type="button"
-                                                    onClick={() => handleTogglePermission(proc, 'can_create_exams')}
-                                                    className={`px-2 py-0.5 rounded text-[10px] font-medium border transition-colors ${proc.can_create_exams ? 'bg-[#030C4D] text-white border-[#030C4D]' : 'bg-white text-slate-400 border-slate-200'}`}
-                                                    title="Klik untuk ubah izin buat ujian"
-                                                >
-                                                    Ujian {proc.can_create_exams ? '✓' : '✗'}
-                                                </button>
-                                                <button
-                                                    type="button"
-                                                    onClick={() => handleTogglePermission(proc, 'can_create_materials')}
-                                                    className={`px-2 py-0.5 rounded text-[10px] font-medium border transition-colors ${proc.can_create_materials ? 'bg-[#030C4D] text-white border-[#030C4D]' : 'bg-white text-slate-400 border-slate-200'}`}
-                                                    title="Klik untuk ubah izin buat bahan ajar"
-                                                >
-                                                    Materi {proc.can_create_materials ? '✓' : '✗'}
+                                            <div className="inline-flex flex-col items-center gap-1">
+                                                {([
+                                                    ['Ujian', proc.can_create_exams, proc.free_exams_used ?? 0, proc.free_exam_quota],
+                                                    ['Materi', proc.can_create_materials, proc.free_materials_used ?? 0, proc.free_material_quota],
+                                                ] as const).map(([label, allowed, used, quota]) => (
+                                                    <span key={label} className={`whitespace-nowrap rounded px-2 py-0.5 text-[10px] font-medium border ${allowed ? 'bg-[#030C4D] text-white border-[#030C4D]' : 'bg-white text-slate-400 border-slate-200 line-through'}`}
+                                                        title={allowed ? `Gratis terpakai ${used}${quota == null ? ' (tanpa batas)' : ` dari ${quota}`}` : 'Akses membuat dinonaktifkan'}>
+                                                        {label} {allowed ? `· gratis ${used}/${quota == null ? '∞' : quota}` : '✗'}
+                                                    </span>
+                                                ))}
+                                                <button type="button" onClick={() => openAccess(proc)} disabled={!proc.profile_id}
+                                                    className="text-[11px] font-semibold text-[#030C4D] hover:underline disabled:cursor-not-allowed disabled:text-slate-300">
+                                                    Atur
                                                 </button>
                                             </div>
                                         </td>
@@ -532,6 +548,38 @@ export default function AdminCommissionsPage() {
             </div>}
 
             {/* Modal Pencairan Komisi Proktor */}
+            <Modal open={Boolean(accessProc)} onClose={() => setAccessProc(null)} size="md" title={`Akses & Kuota: ${accessProc?.full_name || 'Proktor'}`}>
+                {accessProc && <>
+                    <ModalBody>
+                        <div className="space-y-5 text-sm">
+                            {([
+                                ['exam', 'Ujian', 'Boleh membuat ujian', 'Tombol Tambah Ujian disembunyikan bila dinonaktifkan.', accessDraft.canExams, accessDraft.examQuota, accessProc.free_exams_used ?? 0],
+                                ['material', 'Bahan ajar', 'Boleh menerbitkan bahan ajar', 'Tombol tambah dan terbitkan bahan ajar disembunyikan bila dinonaktifkan.', accessDraft.canMaterials, accessDraft.materialQuota, accessProc.free_materials_used ?? 0],
+                            ] as const).map(([key, title, toggleLabel, toggleHint, allowed, quota, used]) => (
+                                <fieldset key={key} className="space-y-2.5 rounded-xl border border-slate-200 p-3.5">
+                                    <legend className="px-1 text-xs font-semibold uppercase tracking-wide text-slate-500">{title}</legend>
+                                    <label className="flex items-start gap-2.5">
+                                        <input type="checkbox" className="mt-0.5" checked={allowed}
+                                            onChange={event => setAccessDraft(draft => key === 'exam' ? { ...draft, canExams: event.target.checked } : { ...draft, canMaterials: event.target.checked })} />
+                                        <span><span className="font-medium text-slate-800">{toggleLabel}</span><span className="block text-xs text-slate-500">{toggleHint}</span></span>
+                                    </label>
+                                    <ModalField label={`Kuota ${title.toLowerCase()} gratis`}
+                                        hint={`Sudah terpakai ${used}. Kosongkan untuk tanpa batas. Bila habis, ${title.toLowerCase()} berikutnya otomatis berbayar.`}>
+                                        <input type="number" min={0} step={1} value={quota} placeholder="Tanpa batas" disabled={!allowed}
+                                            onChange={event => setAccessDraft(draft => key === 'exam' ? { ...draft, examQuota: event.target.value } : { ...draft, materialQuota: event.target.value })}
+                                            className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm disabled:bg-slate-50 disabled:text-slate-400" />
+                                    </ModalField>
+                                </fieldset>
+                            ))}
+                        </div>
+                    </ModalBody>
+                    <ModalFooter>
+                        <Button variant="outline" onClick={() => setAccessProc(null)} disabled={savingAccess}>Batal</Button>
+                        <Button onClick={() => void saveAccess()} isLoading={savingAccess}>Simpan</Button>
+                    </ModalFooter>
+                </>}
+            </Modal>
+
             <Modal open={Boolean(selectedProc)} onClose={() => setSelectedProc(null)} size="md" variant="default" icon="cash-coin" title="Proses Pencairan Komisi">
                 {selectedProc && (
                     <form onSubmit={handleSubmitPayout}>

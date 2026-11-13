@@ -10,6 +10,7 @@ import { CreateSubchapterModal } from '@/app/components/learning/CreateSubchapte
 import { HTML_EDITABLE_FORMATS, HtmlSourceEditorModal } from '@/app/components/learning/HtmlSourceEditorModal';
 import { InlineSelect } from '@/app/components/ui/inlineselect';
 import '@/app/components/learning/learning.css';
+import { useCreationLimits } from '@/lib/useCreationLimits';
 
 /** Singkatan mata pelajaran yang umum; mapel lain memakai inisial kata atau tiga huruf pertama. */
 const SUBJECT_ABBR: Record<string, string> = {
@@ -59,6 +60,9 @@ export default function LearningLibrary() {
 }
 
 function LearningLibraryContent({ manage, setManage }: { manage: boolean; setManage: (value: boolean) => void }) {
+    // Akses menerbitkan bahan ajar diatur Admin (Komisi → Proktor).
+    const { limits: creationLimits } = useCreationLimits(manage);
+    const canCreateMaterial = creationLimits?.canCreateMaterials !== false;
     const request = useRef<AbortController | null>(null);
     const [materials, setMaterials] = useState<LearningMaterial[]>([]);
     const [canManage, setCanManage] = useState(false);
@@ -132,7 +136,7 @@ function LearningLibraryContent({ manage, setManage }: { manage: boolean; setMan
                     <button type="button" aria-pressed={!manage} onClick={() => setManage(false)}>Ruang belajar</button>
                     <button type="button" aria-pressed={manage} onClick={() => setManage(true)}>Kelola materi</button>
                 </div>
-                {manage && <button type="button" className="learn-primary lc-add" onClick={() => setCreating({})}><Plus size={16} />Tambah subbab</button>}
+                {manage && canCreateMaterial && <button type="button" className="learn-primary lc-add" onClick={() => setCreating({})}><Plus size={16} />Tambah subbab</button>}
             </div>}
         </header>
 

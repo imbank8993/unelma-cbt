@@ -436,14 +436,14 @@
     transform: translateX(-50%);
 }
 
-/* Lambang bottomnav.svg digambar putih penuh (#FEFEFE), jadi ia mengandalkan
-   cakram biru di belakangnya. Tingginya yang memimpin: berkasnya lebih jangkung
-   dari lebarnya (20 × 23mm), sehingga menyamakan lebar malah bikin ia jadi
-   lebih besar dari ikon Lucide 24px yang menggantikannya. */
+/* Logo Unelma varian terang (U putih, garis oranye; unelma-mark-light.png)
+   di atas cakram navy. Berkasnya persegi dengan sedikit ruang kosong, jadi
+   26px tampil seukuran ikon Lucide 24px di sekitarnya. */
 .bnav__fab-logo {
     display: block;
-    height: 24px;
-    width: auto;
+    height: 26px;
+    width: 26px;
+    object-fit: contain;
 }
 
 /* SVG Lucide, bukan lagi glif font. `color` yang menggerakkan garisnya lewat

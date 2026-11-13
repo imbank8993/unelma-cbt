@@ -315,6 +315,16 @@ export class CommissionsService {
         prof.bank2_account_number,
         COALESCE(prof.can_create_exams, true) AS can_create_exams,
         COALESCE(prof.can_create_materials, true) AS can_create_materials,
+        -- to_jsonb: tetap jalan sebelum migrasi 20261116_01 menambah kolom kuota.
+        (to_jsonb(prof)->>'free_exam_quota')::int AS free_exam_quota,
+        (to_jsonb(prof)->>'free_material_quota')::int AS free_material_quota,
+        (SELECT count(*)::int FROM public.cbt_exams e
+          WHERE e.created_by = p.id AND COALESCE(e.status, '') <> 'archived'
+            AND COALESCE(e.metadata->>'is_pas_exam', 'false') <> 'true'
+            AND NOT (COALESCE(e.is_paid, false) AND COALESCE(e.token_price, 0) > 0)) AS free_exams_used,
+        (SELECT count(*)::int FROM public.cbt_learning_materials m
+          WHERE m.created_by = p.id AND m.status = 'published'
+            AND NOT (COALESCE(m.is_paid, false) AND COALESCE(m.token_price, 0) > 0)) AS free_materials_used,
         COALESCE(prof.status, 'approved') AS profile_status,
         COALESCE(earnings.unlock_count, 0)::int AS total_unlocks,
         COALESCE(earnings.gross_tokens, 0)::int AS gross_tokens,
@@ -572,14 +582,28 @@ export class CommissionsService {
     const canMats = dto.can_create_materials ?? curr.can_create_materials;
     const status = dto.status ?? curr.status;
 
+    // Kuota hanya ditulis bila dikirim (null = tanpa batas), supaya mengubah izin
+    // tetap berfungsi sebelum migrasi kolom kuota dijalankan.
+    const sets = ['can_create_exams = $1', 'can_create_materials = $2', 'status = $3', 'updated_at = NOW()'];
+    const params: unknown[] = [canExams, canMats, status];
+    for (const field of ['free_exam_quota', 'free_material_quota'] as const) {
+      if (!(field in dto)) continue;
+      params.push(dto[field] ?? null);
+      sets.push(`${field} = $${params.length}::int`);
+    }
+    params.push(profileId);
     const rows = await this.prisma.$queryRawUnsafe<any[]>(`
       UPDATE public.proctor_profiles
-      SET can_create_exams = $1, can_create_materials = $2, status = $3, updated_at = NOW()
-      WHERE id = $4::uuid
-      RETURNING id, user_id, can_create_exams, can_create_materials, status
-    `, canExams, canMats, status, profileId);
+      SET ${sets.join(', ')}
+      WHERE id = $${params.length}::uuid
+      RETURNING *
+    `, ...params);
+    const row = rows[0] || {};
 
-    return { success: true, profile: rows[0] };
+    return { success: true, profile: {
+      id: row.id, user_id: row.user_id, can_create_exams: row.can_create_exams, can_create_materials: row.can_create_materials,
+      status: row.status, free_exam_quota: row.free_exam_quota ?? null, free_material_quota: row.free_material_quota ?? null,
+    } };
   }
 
   // ─────────────────────────────────────────────────────────────

@@ -130,9 +130,26 @@ export class RegisterProctorDto {
 }
 
 export class UpdateProctorPermissionsDto {
+  /** Boleh membuat ujian sama sekali (tombol Tambah Ujian tampil). */
   @IsOptional()
   @IsBoolean()
   can_create_exams?: boolean;
+
+  /** Jumlah ujian gratis yang boleh dibuat; null = tanpa batas. */
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt({ message: 'Kuota ujian gratis harus bilangan bulat.' })
+  @Min(0, { message: 'Kuota ujian gratis tidak boleh negatif.' })
+  @Max(100000)
+  free_exam_quota?: number | null;
+
+  /** Jumlah bahan ajar gratis (terbit) yang boleh dibuat; null = tanpa batas. */
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt({ message: 'Kuota bahan ajar gratis harus bilangan bulat.' })
+  @Min(0, { message: 'Kuota bahan ajar gratis tidak boleh negatif.' })
+  @Max(100000)
+  free_material_quota?: number | null;
 
   @IsOptional()
   @IsBoolean()

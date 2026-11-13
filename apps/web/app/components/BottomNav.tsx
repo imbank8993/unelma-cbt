@@ -10,7 +10,7 @@
  * 3. MENU / FAB (Tengah Menonjol):
  *    - Bila halaman mendaftarkan aksi utama via page-fab (misal: Tambah Soal / Tambah Kelas),
  *      tombol ini mengeksekusi aksi tersebut dengan LucideIcon.
- *    - Bila tidak ada aksi, tombol menampilkan lambang bottomnav.svg secara statis (bukan tombol menu).
+ *    - Bila tidak ada aksi, tombol menampilkan logo Unelma (U putih, garis oranye) secara statis (bukan tombol menu).
  * 4. Ke Atas (Scroll to Top): menggulirkan halaman kembali ke puncak dengan mulus.
  * 5. Pintasan (Pinned Pages): membuka Bottom Sheet Menu Pintasan.
  */
@@ -345,9 +345,9 @@ export default function BottomNav({
                             />
                         </button>
                     ) : (
-                        /* <div>, bukan <button>: lambang bottomnav.svg statis, tidak ada aksi di sini */
+                        /* <div>, bukan <button>: logo Unelma statis, tidak ada aksi di sini */
                         <div className="bnav__fab bnav__fab--static" aria-hidden="true">
-                            <img src="/bottomnav.svg" alt="" className="bnav__fab-logo" />
+                            <img src="/unelma-mark-light.png" alt="" className="bnav__fab-logo" />
                         </div>
                     )}
                 </div>

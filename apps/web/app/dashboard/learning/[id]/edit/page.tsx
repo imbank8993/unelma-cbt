@@ -15,11 +15,16 @@ import '@/app/components/learning/learning.css';
 import { learningGradeOptions, learningGrades, learningKey } from '@/lib/learning-catalog';
 
 import { InlineSelect } from '@/components/ui/InlineSelect';
+import { freeQuotaExhausted, useCreationLimits } from '@/lib/useCreationLimits';
 export default function MaterialEditor() {
     const { id } = useParams<{ id: string }>();
     const router = useRouter();
     const [catalog, setCatalog] = useState<LearningMaterial[]>([]);
     const [material, setMaterial] = useState<LearningMaterial | null>(null);
+    // Akses menerbitkan & kuota bahan ajar gratis (Komisi → Proktor). Admin tidak dibatasi.
+    const { limits } = useCreationLimits();
+    const canPublish = limits?.canCreateMaterials !== false;
+    const paidForced = freeQuotaExhausted(limits?.freeMaterial) && (material?.status !== 'published' || Boolean(material?.is_paid));
     const [error, setError] = useState('');
     const [notice, setNotice] = useState('');
     const [busy, setBusy] = useState('');
@@ -79,12 +84,14 @@ export default function MaterialEditor() {
         setBusy('Menyimpan…'); setError(''); setNotice('');
         try {
             if ((await fetchSessionUser())?.id !== owner.current) throw new Error('Akun berubah. Masuk dengan akun semula untuk menyimpan draf.');
-            const result = await saveMaterial(material, status); setMaterial(result.material); setPreview(result.material); setDirty(false); clearDraft();
+            // Kuota bahan ajar gratis habis: materi disimpan sebagai berbayar.
+            const toSave = paidForced && !material.is_paid ? { ...material, is_paid: true, token_price: material.token_price || 1 } : material;
+            const result = await saveMaterial(toSave, status); setMaterial(result.material); setPreview(result.material); setDirty(false); clearDraft();
             setNotice(status === 'published' ? 'Bahan ajar telah diterbitkan untuk seluruh siswa.' : 'Draf tersimpan. Materi belum terlihat oleh siswa.');
         }
         catch (err) { setError((err as Error).message); }
         finally { setBusy(''); }
-    }, [material, busy]);
+    }, [material, busy, paidForced]);
     const uploadCover = async (file?: File) => {
         if (!file || !material || busy) return;
         setBusy('Menyiapkan cover…'); setError('');
@@ -156,7 +163,7 @@ export default function MaterialEditor() {
                     <Trash2 size={16} />Hapus materi
                 </button>
                 <button disabled={!!busy} onClick={() => void save('draft')}><Save size={16} />Simpan draf</button>
-                <button className="learn-primary" disabled={!!busy || !material.title.trim() || (!material.content_html && !material.hasFile)} onClick={() => void save('published')}><Send size={16} />{material.status === 'published' ? 'Perbarui materi' : 'Terbitkan'}</button>
+                {(material.status === 'published' || canPublish) && <button className="learn-primary" disabled={!!busy || !material.title.trim() || (!material.content_html && !material.hasFile)} onClick={() => void save('published')}><Send size={16} />{material.status === 'published' ? 'Perbarui materi' : 'Terbitkan'}</button>}
             </div>}
         </div>
         {error && <div className="learn-error" role="alert">{error}{!material && <button onClick={() => void load()}>Coba lagi</button>}</div>}
@@ -178,12 +185,16 @@ export default function MaterialEditor() {
                     <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontWeight: 600, fontSize: 13, color: '#1e293b' }}>
                         <input
                             type="checkbox"
-                            checked={Boolean(material.is_paid)}
+                            checked={Boolean(material.is_paid) || paidForced}
+                            disabled={paidForced}
                             onChange={event => edit({ is_paid: event.target.checked, token_price: material.token_price || 1 })}
                         />
                         Akses Berbayar (Token Siswa)
                     </label>
-                    {Boolean(material.is_paid) && (
+                    {paidForced && <small style={{ color: '#b45309', fontSize: 11, display: 'block', marginTop: 4, paddingLeft: 24 }}>
+                        Kuota bahan ajar gratis Anda sudah habis ({limits?.freeMaterial.used}/{limits?.freeMaterial.quota}), jadi materi ini wajib berbayar. Tentukan harga tokennya.
+                    </small>}
+                    {(Boolean(material.is_paid) || paidForced) && (
                         <div style={{ marginTop: 8, paddingLeft: 24 }}>
                             <label htmlFor="material-token-price" style={{ fontSize: 11, color: '#64748b', display: 'block', marginBottom: 4 }}>Biaya Pembukaan</label>
                             <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>

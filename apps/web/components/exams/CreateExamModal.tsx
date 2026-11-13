@@ -47,6 +47,7 @@ import { getSessionUser } from '@/lib/session';
 import { alertDialog } from '@/lib/confirm-dialog';
 import { learningPrograms, type LearningProgram } from '@/lib/learning-catalog';
 import { DEFAULT_SCHOOL_TIME_ZONE, getSchoolTimeZone, getSchoolTimeZoneLabel, schoolTodayDate, utcToSchoolLocalDateTime, addMinutesToLocalDateTime } from '@/lib/school-time';
+import { freeQuotaExhausted, useCreationLimits } from '@/lib/useCreationLimits';
 
 /** Jenis bawaan, atau kode jenis kustom dari Pengaturan → Jenis Ujian (mis. `skd_cpns`). */
 export type ExamType = 'daily' | 'am' | 'asas_asat' | 'tryout' | 'assignment' | 'lainnya' | (string & {});
@@ -517,6 +518,14 @@ export const CreateExamModal: React.FC<CreateExamModalProps> = ({
         && (selectedTypeDefinition.score_mode !== 'scaled' || selectedTypeDefinition.pass_rule.mode !== 'none')
         ? selectedTypeDefinition : null;
 
+    // Kuota ujian gratis Proktor (Komisi → Proktor). Habis: ujian baru otomatis
+    // berbayar; menyunting ujian berbayar tidak bisa menggratiskannya.
+    const { limits: creationLimits } = useCreationLimits(isOpen && role !== 'admin');
+    const freeExamQuota = creationLimits?.freeExam;
+    const paidForced = freeQuotaExhausted(freeExamQuota) && !isFolderType(formData.examType)
+        && (!isEdit || Boolean((exam as { is_paid?: boolean } | null | undefined)?.is_paid));
+    const effectivePaid = formData.isPaid || paidForced;
+
     const isPasFolderCreate = !isEdit && isFolderType(formData.examType);
     const isBankRequired = !isFolderType(formData.examType) && (!isAssignmentType(formData.examType) || formData.requireBank);
     const isBankMissing = !isEdit && isBankRequired && (!formData.bankId || availableBanks.length === 0);
@@ -555,7 +564,7 @@ export const CreateExamModal: React.FC<CreateExamModalProps> = ({
         formData.randomizeQuestions || formData.randomizeOptions ? 'Diacak' : 'Urutan tetap',
         formData.showResults ? 'Nilai ditampilkan' : 'Nilai disembunyikan',
         formData.isSafeMode ? 'Mode aman' : 'Tanpa mode aman',
-        formData.isPaid ? `${formData.tokenPrice} token` : 'Gratis',
+        effectivePaid ? `${formData.tokenPrice} token` : 'Gratis',
     ];
 
     const handleStartTimeChange = (val: string) => {
@@ -721,8 +730,8 @@ export const CreateExamModal: React.FC<CreateExamModalProps> = ({
                 allowFileUpload: isAssignmentType(formData.examType) ? formData.allowFileUpload : undefined,
                 allowedFileTypes: isAssignmentType(formData.examType) && formData.allowFileUpload ? formData.allowedFileTypes : undefined,
                 requireBank: isAssignmentType(formData.examType) ? formData.requireBank : true,
-                isPaid: formData.isPaid,
-                tokenPrice: formData.isPaid ? formData.tokenPrice : 0,
+                isPaid: effectivePaid,
+                tokenPrice: effectivePaid ? formData.tokenPrice : 0,
                 program: formData.program,
             };
 
@@ -1592,15 +1601,21 @@ export const CreateExamModal: React.FC<CreateExamModalProps> = ({
                             <label className="flex items-center gap-2 cursor-pointer">
                                 <input
                                     type="checkbox"
-                                    checked={formData.isPaid}
+                                    checked={effectivePaid}
+                                    disabled={paidForced}
                                     onChange={(e) => setFormData((prev) => ({ ...prev, isPaid: e.target.checked }))}
-                                    className="w-4 h-4 rounded border-slate-300 text-amber-500 focus:ring-amber-500/20"
+                                    className="w-4 h-4 rounded border-slate-300 text-amber-500 focus:ring-amber-500/20 disabled:opacity-60"
                                 />
                                 <span className="text-xs font-semibold text-slate-700 flex items-center gap-1.5">
                                     Akses Berbayar (Memerlukan Token Siswa)
                                 </span>
                             </label>
-                            {formData.isPaid && (
+                            {paidForced && (
+                                <p className="mt-1.5 ml-6 text-[11px] font-medium text-amber-700">
+                                    Kuota ujian gratis Anda sudah habis ({freeExamQuota?.used}/{freeExamQuota?.quota}), jadi ujian ini wajib berbayar. Tentukan harga tokennya.
+                                </p>
+                            )}
+                            {effectivePaid && (
                                 <div className="mt-3 ml-6 flex flex-wrap items-center gap-3">
                                     <label className="text-xs text-slate-600 font-medium">
                                         Biaya Pembukaan:
