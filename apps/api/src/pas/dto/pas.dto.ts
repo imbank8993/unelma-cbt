@@ -33,6 +33,11 @@ export class CreatePASPeriodDto {
     @IsString()
     type?: string;
 
+    @ApiPropertyOptional({ description: 'Kode jenis tambahan berpola Folder Ujian (Pengaturan → Jenis Ujian).' })
+    @IsOptional()
+    @IsString()
+    catalog_type?: string;
+
     @ApiProperty({ example: '2025/2026' })
     @IsString()
     @IsNotEmpty({ message: 'Tahun ajaran wajib diisi.' })

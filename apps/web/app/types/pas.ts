@@ -32,6 +32,8 @@ export interface PASPeriod {
   organization_id: string;
   name: string;
   type: PASPeriodType;
+  /** Kode jenis tambahan berpola Folder Ujian (mis. PTS); kosong = ASAS/ASAT atau AM. */
+  catalog_type?: string | null;
   school_year: string;
   semester: Semester;
   start_date: string;

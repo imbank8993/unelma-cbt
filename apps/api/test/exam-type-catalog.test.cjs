@@ -201,7 +201,7 @@ test('exam creation accepts only active custom types and freezes their rule on t
 
     const source = read('apps/api/src/proctor/exam-admin.service.ts');
     assert.match(source, /metadata: this\.withExamTypeRule\(this\.buildMetadata\(examType, dto, \{\}, true\), examTypeRule\)/);
-    assert.match(source, /examType !== existing\.exam_type\s*\n\s*\|\| \(!isBuiltinExamType\(examType\)/);
+    assert.match(source, /const examTypeRule = typeChanged\s*\n\s*\|\| \(!isBuiltinExamType\(requestedType\)/);
     const dto = read('apps/api/src/proctor/dto/proctor.dto.ts');
     assert.match(dto, /@Matches\(EXAM_TYPE_CODE_PATTERN/);
 });
@@ -221,7 +221,7 @@ test('built-in types live in the catalog: fixed code and pattern, editable label
     assert.equal(asas.pattern, 'folder', 'pola jenis bawaan tidak dapat diubah');
     assert.equal(asas.creators, 'admin', 'folder ujian selalu hanya Admin');
     assert.equal(asas.builtin, true);
-    assert.throws(() => normalizeExamTypeCatalog({ types: [{ label: 'Folder Baru', pattern: 'folder' }] }), /ujian biasa/);
+    assert.throws(() => normalizeExamTypeCatalog({ types: [{ label: 'Aneh', pattern: 'kuis' }] }), /Ujian Biasa, Folder Ujian, atau Tugas/);
     assert.throws(() => normalizeExamTypeCatalog({ types: [{ label: 'Ulangan Harian', code: 'uh' }] }), /sudah dipakai jenis bawaan/);
 
     const { builtinExamTypeRule } = require('../src/common/exam-type-catalog.ts');
@@ -247,6 +247,57 @@ test('built-in types live in the catalog: fixed code and pattern, editable label
 
     const schedules = read('apps/api/src/pas/pas-schedules.service.ts');
     assert.match(schedules, /\.\.\.\(typeRule \? \{ \[EXAM_TYPE_RULE_METADATA_KEY\]: typeRule \} : \{\}\)/);
+});
+
+test('added types choose a pattern: folder and assignment map to the codes their flows use', async () => {
+    const { folderExamTypeRule } = require('../src/common/exam-type-catalog.ts');
+    const catalog = normalizeExamTypeCatalog({ types: [
+        { code: 'ujian_pts', label: 'PTS', pattern: 'folder', creators: 'staff', pass_rule: { mode: 'kkm', kkm: 70 } },
+        { label: 'Tugas Proyek', pattern: 'assignment' },
+        { label: 'Kuis Bab', pattern: 'regular' },
+    ] });
+    const byCode = Object.fromEntries(custom(catalog).map(type => [type.code, type]));
+    assert.deepEqual([byCode.ujian_pts.pattern, byCode.ujian_pts.creators], ['folder', 'admin'], 'folder selalu hanya Admin');
+    assert.equal(byCode.tugas_proyek.pattern, 'assignment');
+
+    // Tugas tambahan disimpan sebagai `assignment`, nama aslinya dibekukan di aturan.
+    const proyek = examTypeRuleSnapshot(byCode.tugas_proyek);
+    assert.deepEqual([proyek.code, proyek.catalog_code, proyek.label], ['assignment', 'tugas_proyek', 'Tugas Proyek']);
+    assert.equal(examTypeRuleSnapshot(byCode.kuis_bab).catalog_code, undefined);
+
+    const service = new ExamAdminService(null, null, null, { getExamTypeCatalog: async () => catalog });
+    assert.equal((await service.resolveExamTypeRule('tugas_proyek')).code, 'assignment');
+    await assert.rejects(service.resolveExamTypeRule('ujian_pts'), /folder ujian/);
+    service.isElevated = async () => false;
+    await assert.rejects(service.assertMayUseExamType({ id: 'guru' }, 'org', 'ujian_pts'), /Hanya Admin/);
+
+    // Folder PTS: ujian folder tetap ber-kode `pas`, dengan nama dan KKM PTS.
+    const pts = folderExamTypeRule(catalog, 'ujian_pts', 'pas');
+    assert.deepEqual([pts.code, pts.catalog_code, pts.label, pts.pass_rule.kkm], ['pas', 'ujian_pts', 'PTS', 70]);
+    assert.equal(examTypeRule({ exam_type: 'pas', metadata: { exam_type_rule: pts } }).label, 'PTS');
+    assert.equal(folderExamTypeRule(catalog, null, 'pas'), null, 'folder ASAS/ASAT bawaan tanpa aturan beku');
+
+    const source = read('apps/api/src/proctor/exam-admin.service.ts');
+    assert.match(source, /const examType = examTypeRule\?\.code \?\? requestedType;/);
+    assert.match(source, /existing\.metadata\?\.\[EXAM_TYPE_RULE_METADATA_KEY\]\?\.catalog_code \|\| existing\.exam_type/);
+    const migration = read('database/migrations/20261115_01_exam_type_catalog_patterns.sql');
+    assert.match(migration, /CHECK \(exam_type ~ '\^\[a-z\]\[a-z0-9_\]\{1,39\}\$'\)/);
+    assert.match(migration, /ADD COLUMN IF NOT EXISTS catalog_type text/);
+});
+
+test('built-in types can be deleted and restored; deleted ones cannot be chosen', async () => {
+    const catalog = normalizeExamTypeCatalog({ types: [{ code: 'daily', label: 'Ulangan Harian' }], removed: ['tryout', 'lainnya', 'bukan_bawaan'] });
+    assert.deepEqual(catalog.removed, ['tryout', 'lainnya']);
+    assert.ok(!catalog.types.some(type => type.code === 'tryout'));
+    assert.ok(catalog.types.some(type => type.code === 'am'), 'yang tidak dihapus tetap diisi');
+    // Dipulihkan = dikirim lagi di daftar jenis, sehingga keluar dari `removed`.
+    const restored = normalizeExamTypeCatalog({ types: [{ code: 'tryout', label: 'Try Out' }], removed: ['tryout'] });
+    assert.equal(restored.removed, undefined);
+
+    const service = new ExamAdminService(null, null, null, { getExamTypeCatalog: async () => catalog });
+    service.isElevated = async () => true;
+    await assert.rejects(service.assertMayUseExamType({ id: 'admin' }, 'org', 'tryout'), /sudah dihapus/);
+    await service.assertMayUseExamType({ id: 'admin' }, 'org', 'daily');
 });
 
 test('weighted MCQ (TKP) is validated, graded from option weight, and never exposed to students', () => {

@@ -44,7 +44,7 @@ export function CompactExamPeriodHeader({ period, schedules, activeTab, onTabCha
                 <div className="cp-title">
                     <h1>{period.name}</h1>
                     <div className="cp-context">
-                        <span className="cp-type">{semesterAssessmentLabel(period.type, true)}</span>
+                        <span className="cp-type">{semesterAssessmentLabel(period.type, true, period.catalog_type)}</span>
                         <span className="cp-chip"><CalendarDays size={13} aria-hidden="true" />{formatDate(period.start_date)}–{formatDate(period.end_date)}</span>
                         <span className="cp-chip"><GraduationCap size={13} aria-hidden="true" />{period.school_year} · Semester {period.semester === 'genap' ? 'Genap' : 'Ganjil'}</span>
                         {period.is_locked && <span className="cp-chip cp-locked"><Lock size={12} aria-hidden="true" />Terkunci</span>}

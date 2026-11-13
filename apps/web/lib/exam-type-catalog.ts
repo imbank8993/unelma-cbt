@@ -34,6 +34,16 @@ export interface ExamTypeDefinition {
     builtin: boolean;
 }
 
+/** Jenis bawaan (cermin `BUILTIN_EXAM_TYPES` di API), untuk memulihkan yang dihapus. */
+export const BUILTIN_EXAM_TYPE_SEEDS: ReadonlyArray<Pick<ExamTypeDefinition, 'code' | 'label' | 'description' | 'pattern' | 'creators'>> = [
+    { code: 'daily', label: 'Ulangan Harian', description: 'Ujian biasa untuk satu atau beberapa kelas.', pattern: 'regular', creators: 'staff' },
+    { code: 'asas_asat', label: 'ASAS/ASAT', description: 'Asesmen akhir semester/tahun dengan ruang, sesi, dan pengawas.', pattern: 'folder', creators: 'admin' },
+    { code: 'am', label: 'Asesmen Madrasah', description: 'Asesmen akhir jenjang dengan ruang, sesi, dan pengawas.', pattern: 'folder', creators: 'admin' },
+    { code: 'tryout', label: 'Try Out', description: 'Latihan ujian.', pattern: 'regular', creators: 'staff' },
+    { code: 'assignment', label: 'Tugas', description: 'Tugas dengan instruksi, unggah berkas, dan bank soal opsional.', pattern: 'assignment', creators: 'staff' },
+    { code: 'lainnya', label: 'Lainnya', description: 'Ujian biasa yang tidak masuk jenis lain.', pattern: 'regular', creators: 'staff' },
+];
+
 export const EXAM_TYPE_PATTERN_LABELS: Record<ExamTypePattern, string> = {
     regular: 'Ujian biasa',
     folder: 'Folder ujian (ruang, sesi, pengawas)',
@@ -42,7 +52,12 @@ export const EXAM_TYPE_PATTERN_LABELS: Record<ExamTypePattern, string> = {
 
 export interface ExamTypeCatalog {
     types: ExamTypeDefinition[];
+    /** Kode jenis bawaan yang dihapus Admin (dapat dipulihkan). */
+    removed?: string[];
 }
+
+/** Kode yang dipakai alur aplikasi (cermin `BUILTIN_EXAM_TYPE_CODES` di API). */
+const RESERVED_CODES = new Set(['daily', 'pas', 'pat', 'am', 'pts', 'pkn', 'tryout', 'lainnya', 'assignment', 'quiz', 'asas_asat', 'all']);
 
 export const EXAM_TYPE_CATALOG_SETTING_KEY = 'exam_type_catalog';
 
@@ -96,7 +111,8 @@ export function formatScore(value: number | null | undefined): string {
 /** Kode baru dari nama: "Ujian TO" → "ujian_to". */
 export function examTypeCodeFromLabel(label: string): string {
     const code = label.toLowerCase().normalize('NFKD').replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '').slice(0, 40);
-    return /^[a-z][a-z0-9_]{1,39}$/.test(code) ? code : `jenis_${code}`.replace(/_+$/, '').slice(0, 40);
+    // "PTS" → "jenis_pts": kode bawaan tidak boleh dipakai jenis tambahan.
+    return /^[a-z][a-z0-9_]{1,39}$/.test(code) && !RESERVED_CODES.has(code) ? code : `jenis_${code}`.replace(/_+$/, '').slice(0, 40);
 }
 
 /** Label jenis kustom yang dibekukan pada metadata ujian, bila ada. */

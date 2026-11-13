@@ -15,16 +15,18 @@ const EXAM_TYPE_LABELS: Record<ExamTypeCategory, string> = {
  * yang benar langsung tampil pada pemuatan berikutnya.
  */
 const LABEL_STORAGE_KEY = 'acca:exam-type-labels';
-let labelOverrides: Partial<Record<ExamTypeCategory, string>> = (() => {
+/** Nama bawaan yang diubah, ditambah nama semua jenis tambahan (untuk label folder). */
+let labelOverrides: Partial<Record<string, string>> = (() => {
     if (typeof window === 'undefined') return {};
     try { return JSON.parse(window.localStorage.getItem(LABEL_STORAGE_KEY) || '{}') || {}; } catch { return {}; }
 })();
 
 export function applyExamTypeLabels(types: Array<{ code: string; label: string; builtin?: boolean }>): void {
-    const next: Partial<Record<ExamTypeCategory, string>> = {};
+    const next: Partial<Record<string, string>> = {};
     for (const type of types) {
-        if (type.builtin && type.code in EXAM_TYPE_LABELS && type.label !== EXAM_TYPE_LABELS[type.code as ExamTypeCategory]) {
-            next[type.code as ExamTypeCategory] = type.label;
+        if (!type.builtin) next[type.code] = type.label;
+        else if (type.code in EXAM_TYPE_LABELS && type.label !== EXAM_TYPE_LABELS[type.code as ExamTypeCategory]) {
+            next[type.code] = type.label;
         }
     }
     labelOverrides = next;
@@ -66,8 +68,12 @@ export function isSemesterAssessmentType(type?: string | null): boolean {
     return (SEMESTER_ASSESSMENT_TYPES as readonly string[]).includes((type || '').trim().toLowerCase());
 }
 
-/** Label folder/jenis asesmen untuk tampilan: AM atau ASAS/ASAT. */
-export function semesterAssessmentLabel(type?: string | null, short = false): string {
+/**
+ * Label folder/jenis asesmen untuk tampilan: AM, ASAS/ASAT, atau nama jenis
+ * tambahan berpola folder (`catalogType`, mis. "PTS").
+ */
+export function semesterAssessmentLabel(type?: string | null, short = false, catalogType?: string | null): string {
+    if (catalogType && labelOverrides[catalogType]) return labelOverrides[catalogType]!;
     const normalized = (type || '').trim().toLowerCase();
     if (normalized === 'am') return labelOverrides.am || (short ? 'AM' : 'Asesmen Madrasah');
     if (normalized === 'pas' || normalized === 'pat') return builtinExamTypeLabel('asas_asat');

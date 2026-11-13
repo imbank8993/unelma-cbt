@@ -113,6 +113,8 @@ export function createPASPeriodAction(
         screenshot_enabled?: boolean;
         committee_chair_name?: string;
         committee_chair_nip?: string;
+        /** Kode jenis tambahan berpola Folder Ujian (Pengaturan → Jenis Ujian). */
+        catalog_type?: string;
     },
 ) {
     return apiCreate<{ id: string }>('/api/pas/periods', input);

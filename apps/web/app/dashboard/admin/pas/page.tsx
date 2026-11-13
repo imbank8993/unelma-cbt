@@ -164,7 +164,7 @@ export default function ProctorPASPage({ activeTab = 'all', typeFilter = 'all', 
         return new Date(dateStr).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
     };
 
-    const getPeriodTypeLabel = (type: string) => semesterAssessmentLabel(type);
+    const getPeriodTypeLabel = (type: string, catalogType?: string | null) => semesterAssessmentLabel(type, false, catalogType);
 
     const filteredPeriods = periods.filter(p => {
         if (!matchesExamType(p.type, typeFilter)) return false;
@@ -288,7 +288,7 @@ export default function ProctorPASPage({ activeTab = 'all', typeFilter = 'all', 
                                                     isActive ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' :
                                                     isPast ? 'bg-slate-50 text-slate-400 border border-slate-200' : 'bg-slate-50 text-slate-600 border border-slate-200'
                                                 }`}>
-                                                    {getPeriodTypeLabel(period.type)} • {period.semester === 'ganjil' ? 'Semester Ganjil' : 'Semester Genap'}
+                                                    {getPeriodTypeLabel(period.type, period.catalog_type)} • {period.semester === 'ganjil' ? 'Semester Ganjil' : 'Semester Genap'}
                                                 </span>
                                                 <span className="px-2 py-0.5 bg-slate-50 text-slate-500 text-xs font-semibold border border-slate-200 rounded-md">
                                                     {period.school_year}

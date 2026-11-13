@@ -17,6 +17,8 @@ import { advisoryTransactionLock } from '../common/transaction-lock';
 import { normalizeSqlTime } from '../common/school-time';
 import type { CreatePASPeriodDto, UpdatePASCommitteeChairDto, UpdatePASExamSettingsDto, UpdatePASPeriodDto } from './dto/pas.dto';
 import { writablePasPeriod, pasDateRange, storedPasDate } from '../common/pas-period-policy';
+import { DEFAULT_EXAM_TYPE_CATALOG } from '../common/exam-type-catalog';
+import { SettingsService } from '../settings/settings.service';
 import { loadPasReadiness } from './pas-readiness';
 import {
     normalizePasExamSettings,
@@ -55,6 +57,7 @@ export class PasService {
     constructor(
         private readonly db: DbService,
         private readonly authz: AuthorizationService,
+        private readonly settings?: SettingsService,
     ) {}
 
     // ── Periode ──────────────────────────────────────────────────────────────
@@ -151,6 +154,7 @@ export class PasService {
 
     async createPeriod(user: AuthUser, organizationId: string, dto: CreatePASPeriodDto) {
         await this.authz.assertProktor(user, organizationId);
+        const catalogType = await this.folderCatalogType(dto.catalog_type);
 
         pasDateRange(dto.start_date, dto.end_date);
 
@@ -173,10 +177,25 @@ export class PasService {
                 committee_chair_nip: dto.committee_chair_nip?.trim() || null,
                 created_by: user.id,
                 is_locked: false,
+                // Hanya dikirim untuk folder jenis tambahan, supaya folder ASAS/ASAT/AM
+                // tetap bisa dibuat walau migrasi kolom ini belum dijalankan.
+                ...(catalogType ? { catalog_type: catalogType } : {}),
             },
         });
 
         return { id: data.id };
+    }
+
+    /** Jenis tambahan berpola Folder yang masih aktif, atau null untuk folder ASAS/ASAT/AM. */
+    private async folderCatalogType(code: string | undefined): Promise<string | null> {
+        const value = (code || '').trim();
+        if (!value) return null;
+        const catalog = (await this.settings?.getExamTypeCatalog?.()) ?? DEFAULT_EXAM_TYPE_CATALOG;
+        const definition = catalog.types.find(type => type.code === value && !type.builtin && type.pattern === 'folder');
+        if (!definition || !definition.active) {
+            throw new BadRequestException('Jenis folder ujian ini tidak tersedia. Periksa Pengaturan → Jenis Ujian.');
+        }
+        return definition.code;
     }
 
     async updateCommitteeChair(user: AuthUser, periodId: string, dto: UpdatePASCommitteeChairDto) {

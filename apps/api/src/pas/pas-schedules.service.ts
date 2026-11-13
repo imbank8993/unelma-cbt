@@ -20,7 +20,7 @@ import { SettingsService } from '../settings/settings.service';
 import type { CreatePASScheduleDto, CreatePASSessionDto } from './dto/pas.dto';
 import { loadPasReadiness } from './pas-readiness';
 import { pasExamLabel, pasExamSettingsColumns, pasExamSettingsUpdate, resolvePasExamSettings, storedPasExamSettings } from '../common/pas-exam-settings';
-import { builtinExamTypeRule, DEFAULT_EXAM_TYPE_CATALOG, EXAM_TYPE_RULE_METADATA_KEY } from '../common/exam-type-catalog';
+import { DEFAULT_EXAM_TYPE_CATALOG, EXAM_TYPE_RULE_METADATA_KEY, folderExamTypeRule } from '../common/exam-type-catalog';
 
 /**
  * Jadwal kelas dan sesi waktu sebuah periode PAS, serta pembangkitan ujiannya.
@@ -546,7 +546,8 @@ export class PasSchedulesService {
             const settings = pasExamSettingsColumns(resolvePasExamSettings(storedPasExamSettings(periodRow), schedule.bank_id));
             // Nama, skala nilai, dan KKM jenis folder (Pengaturan → Jenis Ujian), dibekukan pada ujian.
             const folderExamType = periodRow.type || 'pas';
-            const typeRule = builtinExamTypeRule((await this.settings?.getExamTypeCatalog?.()) ?? DEFAULT_EXAM_TYPE_CATALOG, folderExamType);
+            const typeRule = folderExamTypeRule((await this.settings?.getExamTypeCatalog?.()) ?? DEFAULT_EXAM_TYPE_CATALOG,
+                (periodRow as { catalog_type?: string | null }).catalog_type, folderExamType);
 
             const payload = {
                 organization_id: periodRow.organization_id,

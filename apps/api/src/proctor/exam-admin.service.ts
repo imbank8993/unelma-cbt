@@ -33,6 +33,7 @@ import {
     builtinExamTypeRule,
     examTypeRuleSnapshot,
     findExamTypeDefinition,
+    isRemovedExamType,
     isBuiltinExamType,
     type ExamTypeCatalog,
     type ExamTypeRuleSnapshot,
@@ -208,9 +209,12 @@ export class ExamAdminService {
         // itu. Sebelumnya payload tanpa `examType` lolos gerbang tetapi tetap
         // tersimpan sebagai 'pas' — jalur persis yang gerbangnya dimaksudkan
         // untuk ditutup.
-        const examType = dto.examType || 'pas';
-        await this.assertMayUseExamType(user, organizationId, examType);
-        const examTypeRule = await this.resolveExamTypeRule(examType);
+        // Jenis tambahan berpola Tugas disimpan sebagai `assignment`; kode yang
+        // tersimpan dibawa aturan bekunya (`examTypeRule.code`).
+        const requestedType = dto.examType || 'pas';
+        await this.assertMayUseExamType(user, organizationId, requestedType);
+        const examTypeRule = await this.resolveExamTypeRule(requestedType);
+        const examType = examTypeRule?.code ?? requestedType;
         this.assertPublicAllowedForType(examType, dto.isPublic);
 
         this.assertValidDuration(examType, dto.duration);
@@ -345,21 +349,25 @@ export class ExamAdminService {
 
             // `examType` kosong berarti PERTAHANKAN tipe lama. Nilai bawaan 'pas'
             // pernah membuat penyuntingan biasa diam-diam mengubah ujian menjadi PAS.
-            const examType = dto.examType || existing.exam_type || 'daily';
+            // Jenis yang dipilih di formulir: kode jenis tambahan (Tugas) atau kode ujian.
+            const existingType = existing.metadata?.[EXAM_TYPE_RULE_METADATA_KEY]?.catalog_code || existing.exam_type;
+            const requestedType = dto.examType || existingType || 'daily';
+            const typeChanged = requestedType !== existingType;
 
             // `assertExamStaff` menutup penyuntingan ujian yang MEMANG PAS/PAT bagi
             // Guru. Cabang ini menutup arah sebaliknya: menaikkan ujian biasa
             // miliknya sendiri menjadi PAS/PAT.
-            if (examType !== existing.exam_type) {
-                await this.assertMayUseExamType(user, existing.organization_id, examType);
+            if (typeChanged) {
+                await this.assertMayUseExamType(user, existing.organization_id, requestedType);
             }
             // Aturan kelulusan dibekukan saat jenis dipilih. Menyunting ujian tanpa
             // mengganti jenisnya mempertahankan aturan lama, supaya perubahan
             // passing grade di Pengaturan tidak menggeser hasil yang sudah keluar.
-            const examTypeRule = examType !== existing.exam_type
-                || (!isBuiltinExamType(examType) && !existing.metadata?.[EXAM_TYPE_RULE_METADATA_KEY])
-                ? await this.resolveExamTypeRule(examType)
+            const examTypeRule = typeChanged
+                || (!isBuiltinExamType(requestedType) && !existing.metadata?.[EXAM_TYPE_RULE_METADATA_KEY])
+                ? await this.resolveExamTypeRule(requestedType)
                 : undefined;
+            const examType = examTypeRule?.code ?? (examTypeRule === undefined ? existing.exam_type || requestedType : requestedType);
             this.assertPublicAllowedForType(examType, dto.isPublic);
 
             // Ujian umum → privat: akses siswa langsung bergantung pada penugasan,
@@ -1014,6 +1022,9 @@ export class ExamAdminService {
         if (!definition) {
             throw new BadRequestException('Jenis ujian ini tidak tersedia atau sudah dinonaktifkan. Periksa Pengaturan → Jenis Ujian.');
         }
+        if (definition.pattern === 'folder') {
+            throw new BadRequestException(`${definition.label} adalah folder ujian. Buat lewat menu folder ujian.`);
+        }
         return examTypeRuleSnapshot(definition);
     }
 
@@ -1043,11 +1054,16 @@ export class ExamAdminService {
         organizationId: string,
         examType: string,
     ): Promise<void> {
-        const definition = findExamTypeDefinition(await this.examTypeCatalog(), examType);
+        const catalog = await this.examTypeCatalog();
+        if (isRemovedExamType(catalog, examType)) {
+            throw new BadRequestException('Jenis ujian ini sudah dihapus. Pulihkan di Pengaturan → Jenis Ujian.');
+        }
+        const definition = findExamTypeDefinition(catalog, examType);
         if (definition && !definition.active) {
             throw new BadRequestException(`Jenis ujian ${definition.label} sedang tidak ditampilkan. Aktifkan di Pengaturan → Jenis Ujian.`);
         }
-        const adminOnly = isSemesterAssessmentExam({ exam_type: examType }) || definition?.creators === 'admin';
+        const adminOnly = isSemesterAssessmentExam({ exam_type: examType }) || definition?.creators === 'admin'
+            || definition?.pattern === 'folder';
         if (!adminOnly) return;
 
         if (!(await this.isElevated(user, organizationId))) {

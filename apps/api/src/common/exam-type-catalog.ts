@@ -55,7 +55,13 @@ export type ExamScoreMode = (typeof EXAM_SCORE_MODES)[number];
  *  - `regular`   : ujian biasa (satu bank soal, jadwal, peserta);
  *  - `folder`    : folder ujian dengan ruang, sesi, pengawas, dan administrasi;
  *  - `assignment`: tugas (instruksi, unggah berkas, bank soal opsional).
- * Jenis tambahan saat ini selalu `regular`.
+ * Jenis tambahan memilih polanya saat dibuat dan tidak dapat diganti setelahnya.
+ * Kode ujian yang tersimpan (`cbt_exams.exam_type`) mengikuti pola:
+ *  - `regular`   → kode jenis itu sendiri (mis. `skd_cpns`);
+ *  - `assignment`→ `assignment`, karena alur tugas bergantung pada kode itu;
+ *  - `folder`    → folder `pas` dengan `cbt_pas_periods.catalog_type` = kode jenis.
+ * Nama dan aturan jenis tambahan dibekukan di `metadata.exam_type_rule`
+ * (dengan `catalog_code`), sehingga tampil sesuai nama yang diatur Admin.
  */
 export const EXAM_TYPE_PATTERNS = ['regular', 'folder', 'assignment'] as const;
 export type ExamTypePattern = (typeof EXAM_TYPE_PATTERNS)[number];
@@ -79,14 +85,24 @@ export interface ExamTypeDefinition {
 
 export interface ExamTypeCatalog {
     types: ExamTypeDefinition[];
+    /** Jenis bawaan yang dihapus Admin; tidak dapat dipilih lagi sampai dipulihkan. */
+    removed?: string[];
 }
 
 /** Salinan yang dibekukan pada metadata ujian. */
 export interface ExamTypeRuleSnapshot {
+    /** Kode yang tersimpan di `exam_type` ujian. */
     code: string;
     label: string;
     score_mode: ExamScoreMode;
     pass_rule: ExamPassRule;
+    /** Kode jenis tambahan bila berbeda dari `code` (pola Tugas atau Folder). */
+    catalog_code?: string;
+}
+
+/** Kode `exam_type` yang disimpan untuk ujian dari jenis tambahan. */
+export function storedExamTypeFor(definition: Pick<ExamTypeDefinition, 'code' | 'pattern'>): string {
+    return definition.pattern === 'assignment' ? 'assignment' : definition.pattern === 'folder' ? 'pas' : definition.code;
 }
 
 type BuiltinSeed = Pick<ExamTypeDefinition, 'code' | 'label' | 'description' | 'pattern' | 'creators'>;
@@ -237,10 +253,11 @@ export function normalizeExamTypeCatalog(value: unknown): ExamTypeCatalog {
         codes.add(code); labels.add(label.toLowerCase());
         const scoreMode = row.score_mode ?? 'scaled';
         if (!(EXAM_SCORE_MODES as readonly unknown[]).includes(scoreMode)) fail(`Mode nilai ${label} tidak dikenal.`);
-        if (!seed && row.pattern !== undefined && row.pattern !== 'regular') {
-            fail(`${label}: jenis tambahan saat ini hanya dapat berpola ujian biasa.`);
+        const requestedPattern = row.pattern ?? 'regular';
+        if (!seed && !(EXAM_TYPE_PATTERNS as readonly unknown[]).includes(requestedPattern)) {
+            fail(`${label}: pola jenis ujian harus Ujian Biasa, Folder Ujian, atau Tugas.`);
         }
-        const pattern: ExamTypePattern = seed ? seed.pattern : 'regular';
+        const pattern: ExamTypePattern = seed ? seed.pattern : requestedPattern as ExamTypePattern;
         const creators = row.creators ?? (seed ? seed.creators : 'staff');
         if (!(EXAM_TYPE_CREATORS as readonly unknown[]).includes(creators)) fail(`${label}: pilihan pembuat ujian tidak dikenal.`);
         return {
@@ -256,12 +273,21 @@ export function normalizeExamTypeCatalog(value: unknown): ExamTypeCatalog {
         };
     });
     if (types.filter(type => !type.builtin).length > MAX_TYPES) fail(`Maksimal ${MAX_TYPES} jenis ujian tambahan.`);
-    // Jenis bawaan tidak dapat dihapus: yang tidak terkirim (mis. katalog lama) diisi bawaannya di depan.
-    const missing = BUILTIN_EXAM_TYPES.filter(seed => !codes.has(seed.code)).map(seed => {
+    // Jenis bawaan yang dihapus dicatat di `removed`. Yang tidak terkirim dan tidak
+    // tercatat dihapus (mis. katalog lama sebelum jenis bawaan masuk katalog)
+    // diisi bawaannya di depan.
+    const removed = [...new Set((Array.isArray(raw.removed) ? raw.removed : [])
+        .filter((code): code is string => typeof code === 'string' && BUILTIN_BY_CODE.has(code) && !codes.has(code)))];
+    const missing = BUILTIN_EXAM_TYPES.filter(seed => !codes.has(seed.code) && !removed.includes(seed.code)).map(seed => {
         if (labels.has(seed.label.toLowerCase())) fail(`Nama jenis ujian "${seed.label}" sudah dipakai jenis bawaan.`);
         return builtinDefinition(seed);
     });
-    return { types: [...missing, ...types] };
+    return { types: [...missing, ...types], ...(removed.length ? { removed } : {}) };
+}
+
+/** Jenis bawaan yang dihapus Admin dari katalog (ujian lamanya tetap berjalan). */
+export function isRemovedExamType(catalog: ExamTypeCatalog, examType: string | null | undefined): boolean {
+    return (catalog.removed || []).includes(catalogCodeForExamType(examType));
 }
 
 /**
@@ -293,7 +319,18 @@ export function builtinExamTypeRule(catalog: ExamTypeCatalog, examType: string):
 }
 
 export function examTypeRuleSnapshot(definition: ExamTypeDefinition): ExamTypeRuleSnapshot {
-    return { code: definition.code, label: definition.label, score_mode: definition.score_mode, pass_rule: definition.pass_rule };
+    const stored = definition.builtin ? definition.code : storedExamTypeFor(definition);
+    return {
+        code: stored, label: definition.label, score_mode: definition.score_mode, pass_rule: definition.pass_rule,
+        ...(stored !== definition.code ? { catalog_code: definition.code } : {}),
+    };
+}
+
+/** Aturan beku untuk ujian yang dibangkitkan dari folder jenis tambahan. */
+export function folderExamTypeRule(catalog: ExamTypeCatalog, catalogType: string | null | undefined, examType: string): ExamTypeRuleSnapshot | null {
+    const definition = catalogType ? catalog.types.find(type => type.code === catalogType && !type.builtin && type.pattern === 'folder') : null;
+    if (!definition) return builtinExamTypeRule(catalog, examType);
+    return { ...examTypeRuleSnapshot(definition), code: examType, catalog_code: definition.code };
 }
 
 /** Aturan yang dibekukan pada ujian, atau null bila ujian tidak memakai jenis kustom. */

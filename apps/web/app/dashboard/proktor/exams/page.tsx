@@ -508,7 +508,7 @@ const ExamsPage = () => {
                                                         ? 'bg-red-50 text-red-600 border border-red-200'
                                                         : 'bg-blue-50 text-[#1E40AF] dark:text-[#60a5fa] border border-blue-200'
                                                 }`}>
-                                                    {semesterAssessmentLabel(period.type)} • {period.semester === 'ganjil' ? 'GANJIL' : 'GENAP'}
+                                                    {semesterAssessmentLabel(period.type, false, period.catalog_type)} • {period.semester === 'ganjil' ? 'GANJIL' : 'GENAP'}
                                                 </span>
                                                 {isDraft && (
                                                     <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-red-50 text-red-600 border border-red-200">
