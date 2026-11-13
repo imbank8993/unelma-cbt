@@ -1218,11 +1218,12 @@ export const QuestionRenderer = React.memo<QuestionRendererProps>(({
                                     textClass = 'text-emerald-900 dark:text-emerald-200 font-medium';
                                     checkClass = 'bg-emerald-500 text-white';
                                 } else if (isSelected) {
-                                    borderClass = 'border-rose-400 dark:border-rose-700';
-                                    bgClass = 'bg-rose-50 dark:bg-rose-950/40';
-                                    labelClass = 'bg-rose-500 text-white border-rose-500 dark:bg-rose-600 dark:border-rose-500';
-                                    textClass = 'text-rose-900 dark:text-rose-200 font-medium';
-                                    checkClass = 'bg-rose-500 text-white';
+                                    // SJT tidak punya jawaban salah: pilihan ini hanya berbobot lebih rendah.
+                                    borderClass = 'border-amber-400 dark:border-amber-700';
+                                    bgClass = 'bg-amber-50 dark:bg-amber-950/40';
+                                    labelClass = 'bg-amber-500 text-white border-amber-500 dark:bg-amber-600 dark:border-amber-500';
+                                    textClass = 'text-amber-900 dark:text-amber-200 font-medium';
+                                    checkClass = 'bg-amber-500 text-white';
                                 } else {
                                     textClass = 'text-slate-400 dark:text-slate-500';
                                 }
@@ -1252,8 +1253,8 @@ export const QuestionRenderer = React.memo<QuestionRendererProps>(({
                                     <div className={`flex-1 min-w-0 self-center text-sm font-normal transition-colors ${textClass}`}>
                                         <QuestionContent content={(opt.option_text || opt.text || '')} />
                                     </div>
-                                    {/* Weight indicator */}
-                                    {showFeedback && showFeedbackLabels && (
+                                    {/* Bobot opsi: inti penilaian SJT, jadi selalu tampil saat umpan balik. */}
+                                    {showFeedback && (
                                         <div className={`shrink-0 px-2 py-1 rounded text-[10px] font-bold border ${isHighest ? 'bg-emerald-100 text-emerald-700 border-emerald-200' : 'bg-slate-50 text-slate-400 border-slate-100'}`}>
                                             {optWeight} pt
                                         </div>
@@ -1269,8 +1270,8 @@ export const QuestionRenderer = React.memo<QuestionRendererProps>(({
                                         </div>
                                     )}
                                     {showFeedback && isSelected && !isHighest && (
-                                        <div className={`w-7 h-7 shrink-0 rounded-full flex items-center justify-center bg-rose-500 text-white`}>
-                                            <AlertTriangle size={12} strokeWidth={3} />
+                                        <div title="Pilihan siswa" className={`w-7 h-7 shrink-0 rounded-full flex items-center justify-center ${checkClass}`}>
+                                            <Check size={12} strokeWidth={3} />
                                         </div>
                                     )}
                                 </label>

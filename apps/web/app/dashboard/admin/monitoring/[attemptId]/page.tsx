@@ -8,7 +8,7 @@ import { AttemptAnalyticsHeader } from '@/app/components/AttemptAnalyticsHeader'
 import { AttemptScoreCard } from '@/app/components/AttemptScoreCard';
 import { QuestionRenderer } from '@/app/components/questions/QuestionRenderer';
 import '@/app/components/monitoring/attempt-answer-review.css';
-import { isAnswerUnanswered, matchesAnswerOutcome, summarizeAnswerOutcomes, type AnswerOutcomeFilter } from '@/lib/answer-stats';
+import { isAnswerUnanswered, matchesAnswerOutcome, summarizeAnswerOutcomes, type AnswerOutcomeFilter, isPsychometricType, psychometricPoints } from '@/lib/answer-stats';
 import { AttemptFullDetails,getAttemptFullDetailsAction } from '@/lib/api/proctor';
 import { submitEssayGrades } from '@/lib/api/teachers';
 import { useMemoryState } from '@/lib/useMemoryState';
@@ -298,7 +298,9 @@ export default function AttemptAnalyticsPage() {
                                     if (!q) return null;
                                     const isEssay = ['essay', 'esay', 'uraian'].includes(q.type);
                                     const unanswered = isAnswerUnanswered(answer);
-                                    const pending = !unanswered && !isEssay && answer.is_correct == null;
+                                    const psychometric = isPsychometricType(q.type);
+                                    const dimensionPoints = psychometric ? psychometricPoints(answer) : null;
+                                    const pending = !unanswered && !isEssay && !psychometric && answer.is_correct == null;
 
                                     return (
                                         <div key={answer.id} className="relative flex gap-4 md:gap-6">
@@ -320,13 +322,13 @@ export default function AttemptAnalyticsPage() {
                                                             {QUESTION_TYPE_LABELS[q.type] || q.type.replace(/_/g, ' ').toUpperCase()}
                                                         </span>
                                                         <span className="px-2.5 py-1 bg-white border border-slate-200 rounded text-[10px] font-bold text-slate-500">
-                                                            Max: {q.score_default || 1} Pts
+                                                            {psychometric ? 'Poin dimensi (bukan nilai)' : `Max: ${q.score_default || 1} Pts`}
                                                         </span>
                                                     </div>
                                                     <div className="flex items-center gap-2">
                                                         <span className="text-xs font-semibold text-slate-500">Points:</span>
-                                                        <span className={`text-lg font-bold ${unanswered ? 'text-slate-400' : pending ? 'text-[#030C4D]' : answer.is_correct ? 'text-emerald-600' : ((answer.score ?? 0) > 0 ? 'text-amber-500' : (isEssay ? 'text-[#030C4D]' : 'text-red-500'))}`}>
-                                                            {unanswered ? '—' : pending ? 'Menunggu nilai' : isEssay ? (Number(grades[answer.id]) || answer.score || 0) : (answer.score ?? (answer.is_correct ? q.score_default : 0))}
+                                                        <span className={`text-lg font-bold ${unanswered ? 'text-slate-400' : psychometric ? 'text-indigo-600' : pending ? 'text-[#030C4D]' : answer.is_correct ? 'text-emerald-600' : ((answer.score ?? 0) > 0 ? 'text-amber-500' : (isEssay ? 'text-[#030C4D]' : 'text-red-500'))}`}>
+                                                            {unanswered ? '—' : psychometric ? (dimensionPoints == null ? 'Poin dimensi' : `${dimensionPoints} poin dimensi`) : pending ? 'Menunggu nilai' : isEssay ? (Number(grades[answer.id]) || answer.score || 0) : (answer.score ?? (answer.is_correct ? q.score_default : 0))}
                                                         </span>
                                                     </div>
                                                 </div>
