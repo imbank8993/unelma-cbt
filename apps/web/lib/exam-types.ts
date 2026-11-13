@@ -9,6 +9,33 @@ const EXAM_TYPE_LABELS: Record<ExamTypeCategory, string> = {
     lainnya: 'Lainnya',
 };
 
+/**
+ * Nama jenis bawaan yang diubah Admin di Pengaturan → Jenis Ujian. Diisi dari
+ * katalog oleh layout dashboard dan disimpan di localStorage supaya label
+ * yang benar langsung tampil pada pemuatan berikutnya.
+ */
+const LABEL_STORAGE_KEY = 'acca:exam-type-labels';
+let labelOverrides: Partial<Record<ExamTypeCategory, string>> = (() => {
+    if (typeof window === 'undefined') return {};
+    try { return JSON.parse(window.localStorage.getItem(LABEL_STORAGE_KEY) || '{}') || {}; } catch { return {}; }
+})();
+
+export function applyExamTypeLabels(types: Array<{ code: string; label: string; builtin?: boolean }>): void {
+    const next: Partial<Record<ExamTypeCategory, string>> = {};
+    for (const type of types) {
+        if (type.builtin && type.code in EXAM_TYPE_LABELS && type.label !== EXAM_TYPE_LABELS[type.code as ExamTypeCategory]) {
+            next[type.code as ExamTypeCategory] = type.label;
+        }
+    }
+    labelOverrides = next;
+    try { window.localStorage.setItem(LABEL_STORAGE_KEY, JSON.stringify(next)); } catch { /* mode privat */ }
+}
+
+/** Nama jenis bawaan saat ini (nama dari Admin bila sudah diubah). */
+export function builtinExamTypeLabel(category: ExamTypeCategory): string {
+    return labelOverrides[category] || EXAM_TYPE_LABELS[category];
+}
+
 export function examTypeCategory(type?: string | null): ExamTypeCategory {
     if (type === 'asas_asat' || type === 'am' || type === 'daily' || type === 'pas' || type === 'pat' || type === 'tryout' || type === 'assignment') {
         return type === 'pas' || type === 'pat' ? 'asas_asat' : type;
@@ -21,7 +48,7 @@ export function examTypeLabel(type?: string | null, metadata?: Record<string, un
     const rule = metadata?.exam_type_rule as { label?: unknown } | undefined;
     const custom = typeof rule?.label === 'string' ? rule.label
         : typeof metadata?.exam_type_label === 'string' ? metadata.exam_type_label : null;
-    return custom || EXAM_TYPE_LABELS[examTypeCategory(type)];
+    return custom || builtinExamTypeLabel(examTypeCategory(type));
 }
 
 export function matchesExamType(type: string | null | undefined, category: string): boolean {
@@ -42,8 +69,8 @@ export function isSemesterAssessmentType(type?: string | null): boolean {
 /** Label folder/jenis asesmen untuk tampilan: AM atau ASAS/ASAT. */
 export function semesterAssessmentLabel(type?: string | null, short = false): string {
     const normalized = (type || '').trim().toLowerCase();
-    if (normalized === 'am') return short ? 'AM' : 'Asesmen Madrasah';
-    if (normalized === 'pas' || normalized === 'pat') return 'ASAS/ASAT';
+    if (normalized === 'am') return labelOverrides.am || (short ? 'AM' : 'Asesmen Madrasah');
+    if (normalized === 'pas' || normalized === 'pat') return builtinExamTypeLabel('asas_asat');
     if (normalized === 'pts') return 'PTS / UTS';
     if (normalized === 'pkn') return 'Asesmen Lainnya';
     return normalized.toUpperCase() || 'ASAS/ASAT';

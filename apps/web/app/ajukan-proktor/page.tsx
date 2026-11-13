@@ -220,8 +220,8 @@ export default function PublicApplyProctorPage() {
                 {/* Header Section */}
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200/80 pb-5">
                     <div className="flex items-center gap-3">
-                        <Link href="/login" className="w-10 h-10 rounded-xl bg-white border border-slate-200 shadow-xs flex items-center justify-center p-1.5 hover:scale-105 transition-transform shrink-0">
-                            <Image src="/unelma.png" alt="Unelma Logo" width={32} height={32} className="object-contain" />
+                        <Link href="/login" className="w-10 h-10 flex items-center justify-center hover:-translate-y-0.5 transition-transform shrink-0">
+                            <Image src="/unelma-mark.png" alt="Unelma Logo" width={40} height={40} className="h-10 w-10 object-contain" />
                         </Link>
                         <div>
                             <h1 className="text-xl sm:text-2xl font-black text-[#030C4D] tracking-tight flex items-center gap-2">

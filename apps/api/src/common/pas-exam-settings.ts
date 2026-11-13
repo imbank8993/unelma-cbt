@@ -1,5 +1,5 @@
 import { BadRequestException } from '@nestjs/common';
-import { examComplexScoringRule, examMatchingScoringRule, type ComplexScoringRule } from './complex-scoring';
+import { examCategorizationScoringRule, examComplexScoringRule, examMatchingScoringRule, type ComplexScoringRule } from './complex-scoring';
 
 /**
  * Pengaturan ujian folder ASAS/ASAT/AM.
@@ -24,12 +24,14 @@ export interface PasExamSettings {
     /** Model nilai siswa. IRT dihitung dari seluruh peserta satu ujian (satu bank soal × sesi). */
     scoring: PasScoringModel;
     /**
-     * Aturan skor Benar-Salah & Kategorisasi (lihat `complex-scoring.ts`):
+     * Aturan skor Benar-Salah (lihat `complex-scoring.ts`):
      * `official` = satu soal dinilai utuh (≤ 5 pernyataan semua-atau-nol,
      * > 5 pernyataan penuh/setengah/nol); `proportional` = benar ÷ jumlah pernyataan.
      */
     complex_scoring: ComplexScoringRule;
-    /** Menjodohkan: aturan terpisah, bawaan proporsional demi kompatibilitas nilai lama. */
+    /** Kategorisasi: aturan yang sama, diatur terpisah dari Benar-Salah. */
+    categorization_scoring: ComplexScoringRule;
+    /** Menjodohkan: aturan terpisah. */
     matching_scoring: ComplexScoringRule;
 }
 
@@ -43,7 +45,7 @@ export interface PasExamSettingsConfig {
     banks: Record<string, Partial<PasExamSettings>>;
 }
 
-/** Sama dengan perilaku ujian ASAS/AM sebelum pengaturan ini ada. */
+/** Bawaan folder. Ketiga aturan skor per tipe soal bawaannya proporsional. */
 export const PAS_EXAM_SETTING_DEFAULTS: PasExamSettings = {
     randomize_questions: true,
     randomize_options: true,
@@ -53,14 +55,15 @@ export const PAS_EXAM_SETTING_DEFAULTS: PasExamSettings = {
     max_violations: 3,
     screenshot_enabled: false,
     scoring: 'classical',
-    complex_scoring: 'official',
+    complex_scoring: 'proportional',
+    categorization_scoring: 'proportional',
     matching_scoring: 'proportional',
 };
 
 const BOOLEAN_KEYS = ['randomize_questions', 'randomize_options', 'show_results', 'show_answer_keys', 'is_safe_mode', 'screenshot_enabled'] as const;
 
 /** Bidang yang ikut membentuk pengalaman siswa selama mengerjakan; dikunci setelah ada siswa yang mulai. */
-export const PAS_LOCKED_AFTER_START = ['randomize_questions', 'randomize_options', 'is_safe_mode', 'max_violations', 'screenshot_enabled', 'complex_scoring', 'matching_scoring'] as const;
+export const PAS_LOCKED_AFTER_START = ['randomize_questions', 'randomize_options', 'is_safe_mode', 'max_violations', 'screenshot_enabled', 'complex_scoring', 'categorization_scoring', 'matching_scoring'] as const;
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -93,9 +96,15 @@ function readSettings(value: unknown, label: string): Partial<PasExamSettings> {
     }
     if (value.complex_scoring !== undefined) {
         if (!COMPLEX_SCORING_RULES.includes(value.complex_scoring as ComplexScoringRule)) {
-            throw new BadRequestException(`${label}: aturan Benar-Salah/Kategorisasi harus resmi atau proporsional.`);
+            throw new BadRequestException(`${label}: aturan Benar-Salah harus utuh per soal atau proporsional.`);
         }
         result.complex_scoring = value.complex_scoring as ComplexScoringRule;
+    }
+    if (value.categorization_scoring !== undefined) {
+        if (!COMPLEX_SCORING_RULES.includes(value.categorization_scoring as ComplexScoringRule)) {
+            throw new BadRequestException(`${label}: aturan Kategorisasi harus utuh per soal atau proporsional.`);
+        }
+        result.categorization_scoring = value.categorization_scoring as ComplexScoringRule;
     }
     if (value.matching_scoring !== undefined) {
         if (!COMPLEX_SCORING_RULES.includes(value.matching_scoring as ComplexScoringRule)) {
@@ -107,18 +116,27 @@ function readSettings(value: unknown, label: string): Partial<PasExamSettings> {
 }
 
 /**
+ * Pengaturan yang disimpan sebelum Kategorisasi dipisah hanya punya
+ * `complex_scoring`; Kategorisasi saat itu mengikuti aturan yang sama.
+ */
+function withLegacyCategorization(settings: Partial<PasExamSettings>): Partial<PasExamSettings> {
+    return settings.complex_scoring !== undefined && settings.categorization_scoring === undefined
+        ? { ...settings, categorization_scoring: settings.complex_scoring } : settings;
+}
+
+/**
  * Baca konfigurasi tersimpan. Data lama (kosong) menghasilkan bawaan yang sama
  * dengan perilaku sebelumnya, dengan screenshot mengikuti kolom folder.
  */
 export function storedPasExamSettings(period: { exam_settings?: unknown; screenshot_enabled?: boolean | null }): PasExamSettingsConfig {
     const raw = isRecord(period.exam_settings) ? period.exam_settings : {};
     let defaults: Partial<PasExamSettings> = {};
-    try { defaults = readSettings(raw.defaults, 'Pengaturan bawaan'); } catch { defaults = {}; }
+    try { defaults = withLegacyCategorization(readSettings(raw.defaults, 'Pengaturan bawaan')); } catch { defaults = {}; }
     const banks: Record<string, Partial<PasExamSettings>> = {};
     if (isRecord(raw.banks)) {
         for (const [bankId, value] of Object.entries(raw.banks)) {
             try {
-                const override = readSettings(value, 'Pengaturan bank soal');
+                const override = withLegacyCategorization(readSettings(value, 'Pengaturan bank soal'));
                 if (UUID.test(bankId) && Object.keys(override).length) banks[bankId] = override;
             } catch { /* Abaikan timpaan rusak; bawaan folder tetap berlaku. */ }
         }
@@ -135,7 +153,8 @@ export function storedPasExamSettings(period: { exam_settings?: unknown; screens
 
 /** Validasi kiriman pengguna; menolak data tidak sah alih-alih diam-diam mengabaikannya. */
 export function normalizePasExamSettings(input: { defaults?: unknown; banks?: unknown }, allowedBankIds?: Set<string>): PasExamSettingsConfig {
-    const defaults = { ...PAS_EXAM_SETTING_DEFAULTS, ...readSettings(input.defaults, 'Pengaturan bawaan') };
+    // Klien lama hanya mengirim `complex_scoring`; Kategorisasi mengikutinya seperti sebelum dipisah.
+    const defaults = { ...PAS_EXAM_SETTING_DEFAULTS, ...withLegacyCategorization(readSettings(input.defaults, 'Pengaturan bawaan')) };
     const banks: Record<string, Partial<PasExamSettings>> = {};
     if (input.banks !== undefined && input.banks !== null) {
         if (!isRecord(input.banks)) throw new BadRequestException('Pengaturan per bank soal tidak valid.');
@@ -173,7 +192,10 @@ export function pasExamSettingsColumns(settings: PasExamSettings) {
             screenshot_enabled: settings.screenshot_enabled,
             student_score_type: settings.scoring,
             complex_scoring_rule: settings.complex_scoring,
+            categorization_scoring_rule: settings.categorization_scoring,
             matching_scoring_rule: settings.matching_scoring,
+            // Ujian folder memakai parameter tebakan IRT terbaru untuk PG Kompleks, Isian, dan Urutan.
+            legacy_irt_guess: false,
         },
     };
 }
@@ -194,7 +216,7 @@ export interface PasExamRow {
  *   kunci berjalan (rilis menunggu penilaian ulang selesai).
  * - Pengacakan dan keamanan tidak diubah bila siswa sudah mulai mengerjakan,
  *   supaya peserta dalam satu ujian tidak mendapat aturan berbeda.
- * - Aturan skor Benar-Salah/Kategorisasi juga dikunci setelah ada pengerjaan:
+ * - Aturan skor Benar-Salah, Kategorisasi, dan Menjodohkan juga dikunci setelah ada pengerjaan:
  *   mengubahnya akan membuat nilai tersimpan dan nilai hasil penilaian ulang
  *   memakai aturan berbeda.
  */
@@ -222,6 +244,7 @@ export function pasExamSettingsUpdate(exam: PasExamRow, settings: PasExamSetting
         (meta.screenshot_enabled === true) !== metadata.screenshot_enabled;
     const securityLocked = started && securityChanged;
     const scoringRuleLocked = started && (examComplexScoringRule(meta) !== metadata.complex_scoring_rule ||
+        examCategorizationScoringRule(meta) !== metadata.categorization_scoring_rule ||
         examMatchingScoringRule(meta) !== metadata.matching_scoring_rule);
     if (!started) {
         update.randomize_questions = columns.randomize_questions;
@@ -231,7 +254,10 @@ export function pasExamSettingsUpdate(exam: PasExamRow, settings: PasExamSetting
             max_violations: metadata.max_violations,
             screenshot_enabled: metadata.screenshot_enabled,
             complex_scoring_rule: metadata.complex_scoring_rule,
+            categorization_scoring_rule: metadata.categorization_scoring_rule,
             matching_scoring_rule: metadata.matching_scoring_rule,
+            // Belum ada pengerjaan, jadi belum ada hasil IRT lama yang perlu dipertahankan.
+            legacy_irt_guess: metadata.legacy_irt_guess,
         });
     }
     return { update: { ...update, metadata: meta }, resultsLocked, securityLocked, scoringRuleLocked };

@@ -678,7 +678,7 @@ export default function QuestionBankDetailPage({ role }: QuestionBankDetailPageP
                 ) : activeTab === 'instructions' ? (
                     <InstructionManager bankId={bankId} onItemsChange={setInstructionsList} />
                 ) : activeTab === 'dimensions' ? (
-                    <DimensionManager bankId={bankId} onItemsChange={setDimensionsList} />
+                    <DimensionManager bankId={bankId} onItemsChange={setDimensionsList} questions={questions} />
                 ) : activeTab === 'kisikisi' ? (
                     <KisiKisiTab bankId={bankId} onItemsChange={setKisiKisiList} />
                 ) : (

@@ -19,7 +19,10 @@ const { assertQuestionStructure } = require('../src/questions/questions.service.
 const { studentExamMetadata } = require('../src/students/student-exam-metadata.ts');
 
 const read = rel => fs.readFileSync(path.resolve(__dirname, '..', '..', '..', rel), 'utf8');
-const skd = examTypeRuleSnapshot(DEFAULT_EXAM_TYPE_CATALOG.types[0]);
+const SKD_TYPE = DEFAULT_EXAM_TYPE_CATALOG.types.find(type => type.code === 'skd_cpns');
+const skd = examTypeRuleSnapshot(SKD_TYPE);
+const BUILTIN_CODES = ['daily', 'asas_asat', 'am', 'tryout', 'assignment', 'lainnya'];
+const custom = catalog => catalog.types.filter(type => !type.builtin);
 const finished = { id: 'a1', status: 'submitted', total_score: 70, needs_manual_grading: false };
 
 // 30 TWK (5 poin), 35 TIU (5 poin), 45 TKP (bobot 1–5) seperti SKD sebenarnya.
@@ -35,30 +38,30 @@ function answersFor(questions, scoreFor) {
 
 test('default catalog offers SKD CPNS with raw scores and PG TWK 65 / TIU 80 / TKP 166', () => {
     const catalog = parseExamTypeCatalog(null);
-    assert.equal(catalog.types.length, 1);
-    const [type] = catalog.types;
+    assert.deepEqual(catalog.types.map(type => type.code), [...BUILTIN_CODES, 'skd_cpns']);
+    const [type] = custom(catalog);
     assert.equal(type.code, 'skd_cpns');
     assert.equal(type.score_mode, 'raw');
     assert.deepEqual(type.pass_rule.subtests.map(s => [s.materi[0], s.passing_grade]), [['TWK', 65], ['TIU', 80], ['TKP', 166]]);
     assert.equal(type.pass_rule.total_passing_grade, null);
-    // Katalog yang sengaja dikosongkan tetap kosong (bukan kembali ke bawaan).
-    assert.deepEqual(parseExamTypeCatalog({ types: [] }).types, []);
+    // Jenis tambahan yang sengaja dikosongkan tetap kosong; jenis bawaan selalu ada.
+    assert.deepEqual(parseExamTypeCatalog({ types: [] }).types.map(type => type.code), BUILTIN_CODES);
 });
 
 test('catalog validation: codes, scale-aware KKM, unique materi, and admin-friendly errors', () => {
-    const catalog = normalizeExamTypeCatalog({ types: [
+    const catalog = custom(normalizeExamTypeCatalog({ types: [
         { label: 'Ujian TO', score_mode: 'raw', pass_rule: { mode: 'kkm', kkm: 250 } },
         { label: 'Kuis Bab', pass_rule: { mode: 'none' } },
-    ] });
-    assert.equal(catalog.types[0].code, 'ujian_to');
-    assert.equal(catalog.types[0].pass_rule.kkm, 250);
-    assert.equal(catalog.types[1].score_mode, 'scaled');
-    assert.equal(catalog.types[1].active, true);
+    ] }));
+    assert.equal(catalog[0].code, 'ujian_to');
+    assert.equal(catalog[0].pass_rule.kkm, 250);
+    assert.equal(catalog[1].score_mode, 'scaled');
+    assert.equal(catalog[1].active, true);
 
     const rejects = (types, pattern) => assert.throws(() => normalizeExamTypeCatalog({ types }), pattern);
-    rejects([{ label: 'X', code: 'tryout' }], /bawaan/);
+    rejects([{ label: 'X', code: 'quiz' }], /bawaan/);
     rejects([{ label: 'X', code: 'Bad Code' }], /huruf kecil/);
-    assert.equal(normalizeExamTypeCatalog({ types: [{ label: 'X' }, { label: '2026' }] }).types.map(t => t.code).join(), 'jenis_x,jenis_2026');
+    assert.equal(custom(normalizeExamTypeCatalog({ types: [{ label: 'X' }, { label: '2026' }] })).map(t => t.code).join(), 'jenis_x,jenis_2026');
     rejects([{ label: 'A', code: 'aa' }, { label: 'B', code: 'aa' }], /ganda/);
     rejects([{ label: 'Skala', pass_rule: { mode: 'kkm', kkm: 250 } }], /antara 0 dan 100/);
     rejects([{ label: 'Kosong', pass_rule: { mode: 'kkm', kkm: null } }], /angka/);
@@ -168,20 +171,20 @@ test('examPassStatuses reads answer scores per attempt and skips exams without a
 test('settings store a normalized catalog and fall back to SKD CPNS when unset', async () => {
     const db = fixtureDb({ acca_settings: [] });
     const settings = new SettingsService(db);
-    assert.equal((await settings.getExamTypeCatalog()).types[0].code, 'skd_cpns');
+    assert.equal(custom(await settings.getExamTypeCatalog())[0].code, 'skd_cpns');
     await assert.rejects(settings.upsert('exam_type_catalog', { types: [{ label: 'X', code: 'pas' }] }), /bawaan/);
     await settings.upsert('exam_type_catalog', { types: [{ label: 'Ujian TO', score_mode: 'raw', pass_rule: { mode: 'kkm', kkm: '300' } }] });
     const stored = db.tables.acca_settings.find(row => row.key === 'exam_type_catalog').value;
-    assert.equal(stored.types[0].code, 'ujian_to');
-    assert.equal(stored.types[0].pass_rule.kkm, 300);
-    assert.equal((await settings.getExamTypeCatalog()).types[0].label, 'Ujian TO');
+    assert.equal(custom(stored)[0].code, 'ujian_to');
+    assert.equal(custom(stored)[0].pass_rule.kkm, 300);
+    assert.equal(custom(await settings.getExamTypeCatalog())[0].label, 'Ujian TO');
     const controller = read('apps/api/src/settings/settings.controller.ts');
     assert.ok(controller.indexOf("@Get('exam-types')") < controller.indexOf("@Get(':key')"), 'route must precede :key');
 });
 
 test('exam creation accepts only active custom types and freezes their rule on the exam', async () => {
     const catalog = { types: [
-        { ...DEFAULT_EXAM_TYPE_CATALOG.types[0] },
+        { ...SKD_TYPE },
         { code: 'lama', label: 'Lama', description: '', active: false, score_mode: 'scaled', pass_rule: { mode: 'none' } },
     ] };
     const service = new ExamAdminService(null, null, null, { getExamTypeCatalog: async () => catalog });
@@ -197,10 +200,53 @@ test('exam creation accepts only active custom types and freezes their rule on t
     assert.deepEqual(service.withExamTypeRule({ a: 1, exam_type_rule: snapshot }, undefined), { a: 1, exam_type_rule: snapshot });
 
     const source = read('apps/api/src/proctor/exam-admin.service.ts');
-    assert.match(source, /metadata: this\.withExamTypeRule\(this\.buildMetadata\(examType, dto, \{\}\), examTypeRule\)/);
+    assert.match(source, /metadata: this\.withExamTypeRule\(this\.buildMetadata\(examType, dto, \{\}, true\), examTypeRule\)/);
     assert.match(source, /examType !== existing\.exam_type\s*\n\s*\|\| \(!isBuiltinExamType\(examType\)/);
     const dto = read('apps/api/src/proctor/dto/proctor.dto.ts');
     assert.match(dto, /@Matches\(EXAM_TYPE_CODE_PATTERN/);
+});
+
+test('built-in types live in the catalog: fixed code and pattern, editable label, rules, visibility, and creators', async () => {
+    // Katalog lama (hanya jenis tambahan) mendapat jenis bawaan di depan.
+    const legacy = normalizeExamTypeCatalog({ types: [{ code: 'skd_cpns', label: 'SKD CPNS' }] });
+    assert.deepEqual(legacy.types.map(type => type.code), [...BUILTIN_CODES, 'skd_cpns']);
+    assert.deepEqual(legacy.types.map(type => type.pattern), ['regular', 'folder', 'folder', 'regular', 'assignment', 'regular', 'regular']);
+
+    const catalog = normalizeExamTypeCatalog({ types: [
+        { code: 'asas_asat', label: 'Penilaian Akhir Semester', pattern: 'regular', creators: 'staff', pass_rule: { mode: 'kkm', kkm: 70 } },
+        { code: 'tryout', label: 'Try Out', active: false, creators: 'admin' },
+        { code: 'daily', label: 'Ulangan Harian', score_mode: 'raw' },
+    ] });
+    const asas = catalog.types.find(type => type.code === 'asas_asat');
+    assert.equal(asas.pattern, 'folder', 'pola jenis bawaan tidak dapat diubah');
+    assert.equal(asas.creators, 'admin', 'folder ujian selalu hanya Admin');
+    assert.equal(asas.builtin, true);
+    assert.throws(() => normalizeExamTypeCatalog({ types: [{ label: 'Folder Baru', pattern: 'folder' }] }), /ujian biasa/);
+    assert.throws(() => normalizeExamTypeCatalog({ types: [{ label: 'Ulangan Harian', code: 'uh' }] }), /sudah dipakai jenis bawaan/);
+
+    const { builtinExamTypeRule } = require('../src/common/exam-type-catalog.ts');
+    // Belum diubah = tidak ada aturan beku, ujian berperilaku persis seperti sebelumnya.
+    assert.equal(builtinExamTypeRule(parseExamTypeCatalog(null), 'daily'), null);
+    const pas = builtinExamTypeRule(catalog, 'pat');
+    assert.deepEqual([pas.code, pas.label, pas.pass_rule.kkm], ['pat', 'Penilaian Akhir Semester', 70]);
+    assert.equal(examTypeRule({ exam_type: 'pat', metadata: { exam_type_rule: pas } }).pass_rule.kkm, 70);
+    assert.equal(builtinExamTypeRule(catalog, 'daily').score_mode, 'raw');
+
+    const service = new ExamAdminService(null, null, null, { getExamTypeCatalog: async () => catalog });
+    assert.equal((await service.resolveExamTypeRule('daily')).score_mode, 'raw');
+    service.isElevated = async () => false;
+    await assert.rejects(service.assertMayUseExamType({ id: 'guru' }, 'org', 'tryout'), /tidak ditampilkan/);
+    await assert.rejects(service.assertMayUseExamType({ id: 'guru' }, 'org', 'pas'), /Hanya Admin/);
+    await service.assertMayUseExamType({ id: 'guru' }, 'org', 'daily');
+    const adminOnly = normalizeExamTypeCatalog({ types: [{ code: 'tryout', label: 'Try Out', creators: 'admin' }] });
+    const gated = new ExamAdminService(null, null, null, { getExamTypeCatalog: async () => adminOnly });
+    gated.isElevated = async () => false;
+    await assert.rejects(gated.assertMayUseExamType({ id: 'guru' }, 'org', 'tryout'), /Hanya Admin yang dapat membuat ujian Try Out/);
+    gated.isElevated = async () => true;
+    await gated.assertMayUseExamType({ id: 'admin' }, 'org', 'tryout');
+
+    const schedules = read('apps/api/src/pas/pas-schedules.service.ts');
+    assert.match(schedules, /\.\.\.\(typeRule \? \{ \[EXAM_TYPE_RULE_METADATA_KEY\]: typeRule \} : \{\}\)/);
 });
 
 test('weighted MCQ (TKP) is validated, graded from option weight, and never exposed to students', () => {

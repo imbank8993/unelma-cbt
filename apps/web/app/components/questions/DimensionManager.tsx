@@ -12,16 +12,33 @@ getDimensionsByBank,
 updateDimension,
 updateDimensionInterpretation,
 } from '@/lib/api/questions';
-import { BarChart2,Edit3,Plus,Settings2,Trash2,X } from 'lucide-react';
+import { AlertTriangle,BarChart2,Edit3,Plus,Settings2,Sparkles,Trash2,X } from 'lucide-react';
+import type { QuestionRecord } from '@/lib/api/questions';
+import { dimensionScoreRange, generateInterpretations, uncoveredScores, type DimensionScoreRange } from '@/lib/dimension-score-range';
 import { useCallback,useEffect,useState } from 'react';
 import { BankChildSelectionBar, useBankChildSelection } from './useBankChildSelection';
+import { decodeEntities } from '@/lib/word-images';
 
 interface DimensionManagerProps {
     bankId: string;
     onItemsChange?: (items: DimensionItem[]) => void;
+    /** Soal bank ini; dipakai menghitung kemungkinan skor tiap dimensi. */
+    questions?: QuestionRecord[];
 }
 
-export default function DimensionManager({ bankId, onItemsChange }: DimensionManagerProps) {
+/** Ringkas daftar skor yang belum tercakup: [3,4,5,9] → "3–5, 9". */
+function formatScoreList(scores: number[]): string {
+    const parts: string[] = [];
+    for (let i = 0; i < scores.length; i += 1) {
+        let j = i;
+        while (j + 1 < scores.length && scores[j + 1] === scores[j] + 1) j += 1;
+        parts.push(i === j ? `${scores[i]}` : `${scores[i]}–${scores[j]}`);
+        i = j;
+    }
+    return parts.join(', ');
+}
+
+export default function DimensionManager({ bankId, onItemsChange, questions = [] }: DimensionManagerProps) {
     const [dimensions, setDimensions] = useState<DimensionItem[]>([]);
     const [interpretations, setInterpretations] = useState<DimensionInterpretationItem[]>([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -74,7 +91,8 @@ export default function DimensionManager({ bankId, onItemsChange }: DimensionMan
     const handleOpenEditor = (d: DimensionItem | null = null) => {
         if (d) {
             setEditingId(d.id);
-            setName(d.name || '');
+            // Nama hasil impor bisa tersimpan sebagai entitas HTML (mis. &amp;).
+            setName(decodeEntities(d.name || ''));
             setDescription(d.description || '');
         } else {
             setEditingId(null);
@@ -137,6 +155,30 @@ export default function DimensionManager({ bankId, onItemsChange }: DimensionMan
         void loadData();
     };
 
+    /** Ganti rentang dimensi dengan tingkat Rendah/Sedang/Tinggi dari kemungkinan skornya. */
+    const handleAutoInterp = async (dimension: DimensionItem, range: DimensionScoreRange, existing: DimensionInterpretationItem[]) => {
+        const name = decodeEntities(dimension.name || '');
+        const levels = generateInterpretations(name, range);
+        if (existing.length > 0 && !await deleteConfirmDialog(
+            'Ganti rentang interpretasi?',
+            `${existing.length} rentang ${name} yang ada akan dihapus dan diganti ${levels.length} rentang baru (skor ${range.min}–${range.max}). Narasi yang sudah ditulis akan hilang.`,
+        )) return;
+        setIsSubmitting(true);
+        try {
+            for (const item of existing) await deleteDimensionInterpretation(item.id);
+            for (const level of levels) {
+                const result = await createDimensionInterpretation(dimension.id, level.min_score, level.max_score, level.title, level.interpretation);
+                if (!result.success) throw new Error(result.error || 'Rentang gagal disimpan.');
+            }
+            notify(`${levels.length} rentang dibuat untuk ${name}. Sesuaikan narasinya bila perlu.`);
+        } catch (error) {
+            notify((error as Error).message || 'Rentang otomatis gagal dibuat.');
+        } finally {
+            setIsSubmitting(false);
+            void loadData();
+        }
+    };
+
     const handleDeleteInterp = async (id: string) => {
         if (!await deleteConfirmDialog('Hapus Interpretasi?', 'Hapus interpretasi ini?')) return;
         await deleteDimensionInterpretation(id);
@@ -184,23 +226,25 @@ export default function DimensionManager({ bankId, onItemsChange }: DimensionMan
                 <div className="grid grid-cols-1 gap-5">
                     {dimensions.map(d => {
                         const dimsInterps = interpretations.filter(i => i.dimension_id === d.id);
+                        const scoreRange = dimensionScoreRange(questions, d.id);
+                        const gaps = scoreRange ? uncoveredScores(scoreRange, dimsInterps) : [];
                         return (
                             <div key={d.id} className={`rounded-xl border shadow-sm overflow-hidden flex flex-col ${selection.selectedIds.has(d.id) ? 'border-blue-300 bg-blue-50/50' : 'border-slate-200 bg-white'}`}>
                                 {/* Dimension Header */}
                                 <div className="p-5 flex flex-col md:flex-row gap-4 justify-between bg-slate-50/50">
                                     <input type="checkbox" checked={selection.selectedIds.has(d.id)} disabled={selection.isDeleting}
-                                        onChange={() => selection.toggle(d.id)} aria-label={`Pilih dimensi ${d.name}`}
+                                        onChange={() => selection.toggle(d.id)} aria-label={`Pilih dimensi ${decodeEntities(d.name || '')}`}
                                         className="mt-2 h-4 w-4 shrink-0 rounded border-slate-300 accent-blue-600" />
                                     <div className="flex-1 min-w-0">
                                         <div className="flex items-center gap-2 mb-1">
                                             <div className="w-8 h-8 rounded-lg bg-indigo-100 flex items-center justify-center text-indigo-600">
                                                 <BarChart2 size={16} />
                                             </div>
-                                            <h3 className="text-lg font-bold text-slate-800">{d.name}</h3>
+                                            <h3 className="text-lg font-bold text-slate-800">{decodeEntities(d.name || '')}</h3>
                                         </div>
                                         {d.description && (
                                             <p className="text-sm text-slate-500 mt-2 ml-10">
-                                                {d.description}
+                                                {decodeEntities(d.description)}
                                             </p>
                                         )}
                                     </div>
@@ -216,16 +260,38 @@ export default function DimensionManager({ bankId, onItemsChange }: DimensionMan
                                 
                                 {/* Interpretations Section */}
                                 <div className="p-5 border-t border-slate-100">
-                                    <div className="flex items-center justify-between mb-4">
-                                        <h4 className="text-sm font-semibold text-slate-700 flex items-center gap-2">
-                                            <Settings2 size={14} className="text-indigo-500" /> Rentang Interpretasi
-                                        </h4>
-                                        <button 
-                                            onClick={() => handleOpenInterpEditor(d.id)}
-                                            className="text-[11px] font-bold uppercase tracking-wider text-indigo-600 bg-indigo-50 hover:bg-indigo-100 px-3 py-1.5 rounded-md transition-colors"
-                                        >
-                                            + Tambah Rentang
-                                        </button>
+                                    <div className="flex flex-wrap items-start justify-between gap-3 mb-4">
+                                        <div>
+                                            <h4 className="text-sm font-semibold text-slate-700 flex items-center gap-2">
+                                                <Settings2 size={14} className="text-indigo-500" /> Rentang Interpretasi
+                                            </h4>
+                                            <p className="mt-1 text-[11px] text-slate-500">
+                                                {scoreRange
+                                                    ? <>Kemungkinan skor <b className="text-slate-700">{scoreRange.min}–{scoreRange.max}</b> dari {scoreRange.questionCount} soal (jumlah poin semua soalnya).</>
+                                                    : 'Belum ada soal yang terhubung ke dimensi ini, jadi kemungkinan skornya belum bisa dihitung.'}
+                                            </p>
+                                            {scoreRange && dimsInterps.length > 0 && gaps.length > 0 && (
+                                                <p className="mt-1 flex items-center gap-1 text-[11px] font-medium text-amber-700">
+                                                    <AlertTriangle size={12} /> Skor {formatScoreList(gaps)} belum punya interpretasi.
+                                                </p>
+                                            )}
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                            <button
+                                                onClick={() => scoreRange && void handleAutoInterp(d, scoreRange, dimsInterps)}
+                                                disabled={!scoreRange || isSubmitting}
+                                                title={scoreRange ? 'Bagi kemungkinan skor menjadi tingkat Rendah, Sedang, dan Tinggi' : 'Hubungkan soal ke dimensi ini terlebih dahulu'}
+                                                className="flex items-center gap-1 text-[11px] font-bold uppercase tracking-wider text-indigo-600 border border-indigo-200 hover:bg-indigo-50 px-3 py-1.5 rounded-md transition-colors disabled:cursor-not-allowed disabled:opacity-40"
+                                            >
+                                                <Sparkles size={12} /> Buat Otomatis
+                                            </button>
+                                            <button
+                                                onClick={() => handleOpenInterpEditor(d.id)}
+                                                className="text-[11px] font-bold uppercase tracking-wider text-indigo-600 bg-indigo-50 hover:bg-indigo-100 px-3 py-1.5 rounded-md transition-colors"
+                                            >
+                                                + Tambah Rentang
+                                            </button>
+                                        </div>
                                     </div>
 
                                     {dimsInterps.length === 0 ? (

@@ -22,10 +22,32 @@ function service(tables = {}) {
 const exam = (metadata = {}) => ({ id: EXAM, organization_id: ORG, metadata, exam_type: 'daily', status: 'draft', title: 'UH' });
 const edit = (extra = {}) => ({ title: 'UH', examType: 'daily', duration: 60, ...extra });
 
-test('new exams default to the official (juknis) rule and keep an explicit choice', () => {
+test('new exams default to proportional for B/S and categorization and keep an explicit choice', () => {
     const { s } = service();
-    assert.equal(s.buildMetadata('daily', edit(), {}).complex_scoring_rule, 'official');
-    assert.equal(s.buildMetadata('daily', edit({ complexScoringRule: 'proportional' }), {}).complex_scoring_rule, 'proportional');
+    const fresh = s.buildMetadata('daily', edit(), {}, true);
+    assert.equal(fresh.complex_scoring_rule, 'proportional');
+    assert.equal(fresh.categorization_scoring_rule, 'proportional');
+    assert.equal(fresh.matching_scoring_rule, 'proportional');
+    assert.equal(fresh.legacy_irt_guess, false);
+    const chosen = s.buildMetadata('daily', edit({ complexScoringRule: 'official', categorizationScoringRule: 'official' }), {}, true);
+    assert.equal(chosen.complex_scoring_rule, 'official');
+    assert.equal(chosen.categorization_scoring_rule, 'official');
+});
+
+test('editing an exam saved before the split keeps whole-question scoring and ties categorization to B/S', () => {
+    const { s } = service();
+    const old = s.buildMetadata('daily', edit(), { is_safe_mode: true });
+    assert.equal(old.complex_scoring_rule, 'official');
+    assert.equal(old.categorization_scoring_rule, 'official');
+    assert.equal(old.legacy_irt_guess, undefined);
+    assert.equal(s.buildMetadata('daily', edit(), { complex_scoring_rule: 'proportional' }).categorization_scoring_rule, 'proportional');
+});
+
+test('the categorization rule is locked on its own once a student has an attempt', async () => {
+    const { s, db } = service({ cbt_exams: [exam({ complex_scoring_rule: 'official' })], cbt_exam_attempts: [{ id: 'a1', exam_id: EXAM }] });
+    await assert.rejects(s.update({ id: 'staff' }, EXAM, edit({ categorizationScoringRule: 'proportional' })), /Kategorisasi tidak dapat diubah/);
+    await s.update({ id: 'staff' }, EXAM, edit({ title: 'UH Baru', categorizationScoringRule: 'official' }));
+    assert.equal(db.tables.cbt_exams[0].title, 'UH Baru');
 });
 
 test('editing without the field keeps the stored rule, including legacy proportional exams', () => {

@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { Compass, PencilLine, Route, Users, HelpCircle, X, Menu, LogIn, LayoutDashboard } from 'lucide-react';
+import { Compass, PencilLine, Route, X, Menu, LogIn, LayoutDashboard } from 'lucide-react';
 
 interface LandingHeaderProps {
     currentUser?: { name?: string; role?: string } | null;
@@ -25,8 +25,6 @@ export default function LandingHeader({ currentUser }: LandingHeaderProps) {
         { name: 'Program', href: '#program', icon: Compass },
         { name: 'Coba Soal', href: '#coba-soal', icon: PencilLine },
         { name: 'Cara Belajar', href: '#cara-belajar', icon: Route },
-        { name: 'Untuk Siapa', href: '#untuk-siapa', icon: Users },
-        { name: 'FAQ', href: '#faq', icon: HelpCircle },
     ];
 
     return (
@@ -42,9 +40,9 @@ export default function LandingHeader({ currentUser }: LandingHeaderProps) {
                     <div className="flex items-center justify-between">
                         {/* Logo Area */}
                         <Link href="/" className="flex items-center gap-2.5 md:gap-3 group cursor-pointer">
-                            <div className="relative w-10 h-10 md:w-11 md:h-11 overflow-hidden rounded-xl flex items-center justify-center p-1 bg-white border border-slate-150 shadow-xs group-hover:scale-105 transition-transform">
+                            <div className="relative w-10 h-10 md:w-11 md:h-11 flex items-center justify-center group-hover:-translate-y-0.5 transition-transform">
                                 <Image
-                                    src="/unelma.png"
+                                    src="/unelma-mark.png"
                                     alt="Unelma Logo"
                                     width={44}
                                     height={44}

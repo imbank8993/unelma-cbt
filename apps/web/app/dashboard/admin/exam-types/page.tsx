@@ -4,9 +4,13 @@ import React, { useEffect, useState } from 'react';
 import { Plus, Trash2 } from 'lucide-react';
 import { Button } from '@/app/components/ui/button';
 import { getExamTypeCatalog, saveExamTypeCatalog } from '@/lib/api/settings';
+import { applyExamTypeLabels } from '@/lib/exam-types';
 import {
+    EXAM_TYPE_PATTERN_LABELS,
     examTypeCodeFromLabel,
     SCORE_MODE_LABELS,
+    type ExamTypeCreators,
+    type ExamTypePattern,
     type ExamPassRule,
     type ExamScoreMode,
     type ExamSubtestRule,
@@ -16,17 +20,21 @@ import {
 /**
  * Pengaturan → Jenis Ujian.
  *
- * Admin menambah jenis ujian yang bisa dipilih saat membuat ujian, beserta cara
- * penilaiannya (skala 0–100 atau jumlah skor mentah) dan aturan kelulusannya
- * (tanpa aturan, KKM, atau passing grade per subtes). Aturan disalin ke ujian
- * saat ujian dibuat, jadi perubahan di sini hanya berlaku untuk ujian baru atau
- * ujian yang jenisnya dipilih ulang.
+ * Semua jenis ujian dalam satu daftar: jenis bawaan (kode dan pola tetap, tidak
+ * dapat dihapus) dan jenis tambahan. Admin mengatur nama, tampil/tidak saat
+ * membuat ujian, siapa yang boleh membuat, cara penilaian (skala 0–100 atau
+ * jumlah skor mentah), dan aturan kelulusan (tanpa aturan, KKM, atau passing
+ * grade per subtes). Aturan disalin ke ujian saat ujian dibuat, jadi perubahan
+ * di sini hanya berlaku untuk ujian baru atau ujian yang jenisnya dipilih ulang.
  */
 
 type DraftSubtest = Omit<ExamSubtestRule, 'materi' | 'passing_grade'> & { materi: string; passing_grade: string };
 interface DraftType {
     uid: string;
     isNew: boolean;
+    builtin: boolean;
+    pattern: ExamTypePattern;
+    creators: ExamTypeCreators;
     code: string;
     label: string;
     description: string;
@@ -47,7 +55,8 @@ const uid = () => `t${Date.now()}_${uidCounter++}`;
 function toDraft(type: ExamTypeDefinition): DraftType {
     const rule = type.pass_rule;
     return {
-        uid: uid(), isNew: false, code: type.code, label: type.label, description: type.description || '',
+        uid: uid(), isNew: false, builtin: type.builtin === true, pattern: type.pattern || 'regular', creators: type.creators || 'staff',
+        code: type.code, label: type.label, description: type.description || '',
         active: type.active, score_mode: type.score_mode || 'scaled', pass_mode: rule.mode,
         kkm: rule.mode === 'kkm' ? String(rule.kkm) : '',
         total_passing_grade: rule.mode === 'passing_grade' && rule.total_passing_grade != null ? String(rule.total_passing_grade) : '',
@@ -77,12 +86,13 @@ function fromDraft(draft: DraftType): ExamTypeDefinition {
     return {
         code: draft.code || examTypeCodeFromLabel(draft.label), label: draft.label.trim(),
         description: draft.description.trim(), active: draft.active, score_mode: draft.score_mode, pass_rule,
+        pattern: draft.pattern, creators: draft.pattern === 'folder' ? 'admin' : draft.creators, builtin: draft.builtin,
     };
 }
 
 function emptyType(): DraftType {
     return {
-        uid: uid(), isNew: true, code: '', label: '', description: '', active: true,
+        uid: uid(), isNew: true, builtin: false, pattern: 'regular', creators: 'staff', code: '', label: '', description: '', active: true,
         score_mode: 'scaled', pass_mode: 'kkm', kkm: '75', total_passing_grade: '', subtests: [],
     };
 }
@@ -96,7 +106,10 @@ export default function AdminExamTypesPage() {
     const load = async () => {
         setLoading(true);
         const result = await getExamTypeCatalog();
-        if (result.success) setTypes(result.catalog.types.map(toDraft));
+        if (result.success) {
+            setTypes(result.catalog.types.map(toDraft));
+            applyExamTypeLabels(result.catalog.types);
+        }
         else setFeedback({ type: 'error', text: result.error || 'Jenis ujian gagal dimuat.' });
         setLoading(false);
     };
@@ -129,8 +142,8 @@ export default function AdminExamTypesPage() {
                 <div>
                     <h1 className="text-xl font-semibold text-slate-900">Jenis Ujian</h1>
                     <p className="text-sm text-slate-500 mt-1">
-                        Tambahkan jenis ujian yang bisa dipilih guru saat membuat ujian, beserta cara penilaian dan aturan kelulusannya.
-                        Jenis bawaan (Ulangan Harian, ASAS/ASAT, AM, Try Out, Tugas, Lainnya) tetap tersedia.
+                        Atur jenis ujian yang bisa dipilih saat membuat ujian: namanya, siapa yang boleh membuat, cara penilaian, dan aturan kelulusannya.
+                        Jenis bawaan dapat diganti nama atau disembunyikan, tetapi tidak dapat dihapus.
                     </p>
                 </div>
                 <div className="flex gap-2 shrink-0">
@@ -153,12 +166,19 @@ export default function AdminExamTypesPage() {
             {loading && <p className="text-sm text-slate-500">Memuat…</p>}
             {!loading && types.length === 0 && (
                 <div className="bg-white rounded-xl border border-dashed border-slate-300 p-8 text-center text-sm text-slate-500">
-                    Belum ada jenis ujian kustom. Klik “Tambah Jenis”.
+                    Belum ada jenis ujian. Klik “Tambah Jenis”.
                 </div>
             )}
 
             {types.map((type, index) => (
-                <section key={type.uid} className="bg-white rounded-xl border border-slate-200 p-5 space-y-4" aria-label={type.label || 'Jenis ujian baru'}>
+                <section key={type.uid} className={`bg-white rounded-xl border p-5 space-y-4 ${type.active ? 'border-slate-200' : 'border-dashed border-slate-300 opacity-80'}`} aria-label={type.label || 'Jenis ujian baru'}>
+                    <div className="flex flex-wrap items-center gap-1.5">
+                        <span className={`rounded-md px-1.5 py-0.5 text-[10px] font-semibold ${type.builtin ? 'bg-slate-100 text-slate-600' : 'bg-blue-50 text-blue-700'}`}>
+                            {type.builtin ? 'Bawaan' : 'Tambahan'}
+                        </span>
+                        <span className="rounded-md border border-slate-200 px-1.5 py-0.5 text-[10px] text-slate-600">{EXAM_TYPE_PATTERN_LABELS[type.pattern]}</span>
+                        {!type.active && <span className="rounded-md bg-amber-50 px-1.5 py-0.5 text-[10px] font-semibold text-amber-700">Tidak ditampilkan</span>}
+                    </div>
                     <div className="flex items-start justify-between gap-3">
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 flex-1">
                             <div>
@@ -168,6 +188,15 @@ export default function AdminExamTypesPage() {
                                 <span className="text-[11px] text-slate-400 mt-1 block">Kode: {type.code || '-'}{type.isNew ? '' : ' (tetap)'}</span>
                             </div>
                             <div>
+                                <label className={labelClass}>Boleh Dibuat Oleh</label>
+                                <select className={inputClass} value={type.pattern === 'folder' ? 'admin' : type.creators} disabled={type.pattern === 'folder'}
+                                    onChange={e => update(index, { creators: e.target.value as ExamTypeCreators })}>
+                                    <option value="staff">Admin, Guru, dan Proktor</option>
+                                    <option value="admin">Hanya Admin</option>
+                                </select>
+                                {type.pattern === 'folder' && <span className="text-[11px] text-slate-400 mt-1 block">Folder ujian memakai ruang, sesi, dan pengawas sekolah, jadi selalu dibuat Admin.</span>}
+                            </div>
+                            <div>
                                 <label className={labelClass}>Cara Penilaian</label>
                                 <select className={inputClass} value={type.score_mode}
                                     onChange={e => update(index, { score_mode: e.target.value as ExamScoreMode })}>
@@ -175,7 +204,7 @@ export default function AdminExamTypesPage() {
                                     <option value="raw">{SCORE_MODE_LABELS.raw} (jumlah semua skor yang diperoleh)</option>
                                 </select>
                             </div>
-                            <div className="sm:col-span-2">
+                            <div>
                                 <label className={labelClass}>Deskripsi (opsional)</label>
                                 <input className={inputClass} value={type.description} maxLength={300}
                                     onChange={e => update(index, { description: e.target.value })} />
@@ -184,13 +213,15 @@ export default function AdminExamTypesPage() {
                         <div className="flex flex-col items-end gap-2">
                             <label className="flex items-center gap-2 text-xs text-slate-700">
                                 <input type="checkbox" checked={type.active} onChange={e => update(index, { active: e.target.checked })} />
-                                Aktif
+                                Tampilkan
                             </label>
-                            <button type="button" className="p-2 text-slate-400 hover:text-red-600" title="Hapus jenis"
-                                aria-label={`Hapus jenis ${type.label}`}
-                                onClick={() => setTypes(list => list.filter((_, i) => i !== index))}>
-                                <Trash2 size={16} />
-                            </button>
+                            {!type.builtin && (
+                                <button type="button" className="p-2 text-slate-400 hover:text-red-600" title="Hapus jenis"
+                                    aria-label={`Hapus jenis ${type.label}`}
+                                    onClick={() => setTypes(list => list.filter((_, i) => i !== index))}>
+                                    <Trash2 size={16} />
+                                </button>
+                            )}
                         </div>
                     </div>
 

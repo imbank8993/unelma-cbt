@@ -3,8 +3,8 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import {
-    ArrowRight, BarChart3, BookOpen, Briefcase, CheckCircle2, ChevronDown, GraduationCap, HeartHandshake, Landmark,
-    Languages, Lightbulb, PencilLine, School, ShieldCheck, Smartphone, Sparkles, Target, Trophy, Users, XCircle,
+    ArrowRight, BarChart3, BookOpen, Briefcase, CheckCircle2, GraduationCap, Landmark,
+    Languages, Lightbulb, PencilLine, ShieldCheck, Smartphone, Sparkles, Target, Trophy, Users, XCircle,
     type LucideIcon,
 } from 'lucide-react';
 
@@ -207,54 +207,6 @@ export function LandingHowItWorks() {
     );
 }
 
-/* ─────────────────────────── Untuk siapa ─────────────────────────── */
-
-const AUDIENCES: { key: string; icon: LucideIcon; label: string; title: string; points: string[]; quote: string; who: string }[] = [
-    { key: 'siswa', icon: Sparkles, label: 'Siswa', title: 'Belajar terasa seperti bermain', points: ['Misi harian dan lencana pencapaian', 'Materi sesuai kelas dan tujuanmu', 'Tryout dengan pembahasan lengkap'], quote: 'Latihannya seru, aku jadi semangat mengerjakan soal tiap hari.', who: 'Siswa kelas VIII' },
-    { key: 'ortu', icon: HeartHandshake, label: 'Orang Tua', title: 'Tahu perkembangan anak tanpa menebak', points: ['Ringkasan nilai dan topik yang dikuasai', 'Pengingat jadwal ujian dan tryout', 'Lingkungan belajar aman tanpa iklan'], quote: 'Saya bisa lihat bagian mana yang anak saya masih kesulitan.', who: 'Orang tua siswa SD' },
-    { key: 'sekolah', icon: School, label: 'Guru & Sekolah', title: 'Ujian sekolah rapi, aman, dan cepat dinilai', points: ['Bank soal, kelas, dan jadwal terpusat', 'Monitoring ujian langsung dan anti-curang', 'Analisis butir soal dan ekspor nilai'], quote: 'Penilaian Akhir Semester kini selesai tanpa kertas dan tanpa lembur.', who: 'Proktor sekolah' },
-    { key: 'asn', icon: Landmark, label: 'Pejuang ASN', title: 'Simulasi CAT seperti hari-H', points: ['Tryout SKD dengan passing grade', 'Peringkat nasional dan analisis per subtes', 'Materi kompetensi PPPK lengkap'], quote: 'Simulasi waktunya persis, saya jadi tidak gugup saat tes asli.', who: 'Peserta seleksi CPNS' },
-];
-
-export function LandingAudience() {
-    const [active, setActive] = useState(AUDIENCES[0].key);
-    const current = AUDIENCES.find(item => item.key === active) || AUDIENCES[0];
-    return (
-        <section id="untuk-siapa" className="bg-[#030C4D] py-20 text-white md:py-28">
-            <div className="container mx-auto px-4 md:px-6">
-                <div className="mx-auto mb-6 max-w-2xl text-center md:mb-8">
-                    <h2 className="text-2xl font-extrabold tracking-tight md:text-4xl">Ramah untuk anak, nyaman untuk dewasa</h2>
-                </div>
-                <div className="mx-auto mb-6 flex max-w-3xl flex-wrap justify-center gap-2 md:mb-8" role="tablist" aria-label="Pengguna Unelma">
-                    {AUDIENCES.map(item => (
-                        <button key={item.key} type="button" role="tab" aria-selected={active === item.key} onClick={() => setActive(item.key)}
-                            className={`inline-flex items-center gap-2 rounded-full px-4 py-2 text-xs font-bold transition-all md:px-5 md:py-2.5 md:text-sm ${active === item.key ? 'bg-[#F8A01B] text-[#030C4D]' : 'bg-white/10 text-blue-100 hover:bg-white/15'}`}>
-                            <item.icon size={16} />{item.label}
-                        </button>
-                    ))}
-                </div>
-                <motion.div key={current.key} initial={current.key === AUDIENCES[0].key ? false : { opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
-                    className="mx-auto grid max-w-5xl gap-5 rounded-[2rem] bg-white p-5 text-slate-800 md:grid-cols-[1.2fr_1fr] md:gap-6 md:p-10" role="tabpanel">
-                    <div>
-                        <h3 className="text-2xl font-extrabold text-[#030C4D]">{current.title}</h3>
-                        <ul className="mt-5 space-y-3">
-                            {current.points.map(point => (
-                                <li key={point} className="flex items-start gap-3 text-sm font-medium text-slate-700">
-                                    <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-emerald-600"><CheckCircle2 size={14} /></span>{point}
-                                </li>
-                            ))}
-                        </ul>
-                    </div>
-                    <figure className="flex flex-col justify-between rounded-3xl bg-gradient-to-br from-amber-50 to-orange-50 p-6">
-                        <blockquote className="text-lg font-semibold leading-relaxed text-slate-700">“{current.quote}”</blockquote>
-                        <figcaption className="mt-4 flex items-center gap-2 text-sm font-bold text-[#030C4D]"><Users size={16} className="text-[#F8A01B]" />{current.who}</figcaption>
-                    </figure>
-                </motion.div>
-            </div>
-        </section>
-    );
-}
-
 /* ─────────────────────────── Fitur ─────────────────────────── */
 
 const FEATURES: { icon: LucideIcon; title: string; desc: string; tone: string }[] = [
@@ -281,52 +233,6 @@ export function LandingFeatureGrid() {
                             </div>
                         </div>
                     ))}
-                </div>
-            </div>
-        </section>
-    );
-}
-
-/* ─────────────────────────── FAQ & ajakan ─────────────────────────── */
-
-const FAQS = [
-    { q: 'Apakah Unelma gratis?', a: 'Mendaftar dan banyak materi bisa diakses gratis. Beberapa tryout dan materi premium memakai token yang bisa diisi kapan saja.' },
-    { q: 'Usia berapa yang cocok?', a: 'Mulai dari siswa SD hingga dewasa yang bersiap seleksi CPNS, PPPK, atau kedinasan. Tampilan dan materi menyesuaikan tujuan yang dipilih.' },
-    { q: 'Apakah perlu memasang aplikasi?', a: 'Tidak. Unelma berjalan di peramban pada laptop, tablet, maupun HP. Cukup masuk dengan akun Google.' },
-    { q: 'Bagaimana sekolah memakai Unelma?', a: 'Sekolah mendapat ruang sendiri untuk kelas, bank soal, jadwal ujian, monitoring, dan rekap nilai. Hubungi kami untuk pendampingan.' },
-];
-
-export function LandingFaqCta({ onStart, loggedIn }: { onStart: () => void; loggedIn: boolean }) {
-    const [open, setOpen] = useState<number | null>(0);
-    return (
-        <section id="faq" className="bg-gradient-to-b from-white to-[#FFFBF2] py-10 md:py-20">
-            <div className="container mx-auto grid gap-8 px-4 md:gap-12 md:px-6 lg:grid-cols-2">
-                <div>
-                    <h2 className="text-2xl font-extrabold tracking-tight text-[#030C4D] md:text-4xl">Yang sering ditanyakan</h2>
-                    <div className="mt-6 space-y-3">
-                        {FAQS.map((item, index) => (
-                            <div key={item.q} className="rounded-2xl border border-slate-200 bg-white">
-                                <button type="button" aria-expanded={open === index} onClick={() => setOpen(open === index ? null : index)}
-                                    className="flex w-full items-center justify-between gap-3 px-5 py-4 text-left text-sm font-bold text-[#030C4D]">
-                                    {item.q}
-                                    <ChevronDown size={18} className={`shrink-0 text-slate-400 transition-transform ${open === index ? 'rotate-180' : ''}`} />
-                                </button>
-                                {open === index && <p className="px-5 pb-4 text-sm leading-relaxed text-slate-600">{item.a}</p>}
-                            </div>
-                        ))}
-                    </div>
-                </div>
-                <div className="relative overflow-hidden rounded-[2rem] bg-gradient-to-br from-[#030C4D] via-[#0b1a6b] to-[#2563EB] p-6 text-white shadow-2xl shadow-[#030C4D]/25 md:p-12">
-                    <div className="pointer-events-none absolute -right-16 -top-16 h-56 w-56 rounded-full bg-white/10" />
-                    <div className="pointer-events-none absolute -bottom-20 left-10 h-48 w-48 rounded-full bg-[#F8A01B]/20" />
-                    <div className="relative">
-                        <h2 className="text-2xl font-extrabold leading-tight md:text-4xl">Mulai perjalanan belajarmu hari ini</h2>
-                        <p className="mt-3 max-w-md text-blue-100">Pilih tujuanmu, kerjakan soal pertama, dan lihat seberapa jauh kamu bisa melangkah.</p>
-                        <button type="button" onClick={onStart}
-                            className="mt-6 inline-flex items-center gap-2 rounded-2xl bg-[#F8A01B] px-6 py-3.5 text-sm font-extrabold text-[#030C4D] shadow-lg transition-all hover:-translate-y-0.5 hover:bg-amber-400">
-                            {loggedIn ? 'Buka dashboard' : 'Daftar gratis dengan Google'} <ArrowRight size={16} />
-                        </button>
-                    </div>
                 </div>
             </div>
         </section>

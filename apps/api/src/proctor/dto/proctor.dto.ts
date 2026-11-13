@@ -91,11 +91,17 @@ class ExamFieldsDto {
     @IsBoolean()
     showAnswerKeys?: boolean;
 
-    @ApiPropertyOptional({ enum: ['official', 'proportional'], default: 'official',
-        description: 'Skor Benar-Salah & Kategorisasi: utuh per soal (juknis) atau proporsional per pernyataan.' })
+    @ApiPropertyOptional({ enum: ['official', 'proportional'], default: 'proportional',
+        description: 'Skor Benar-Salah: utuh per soal atau proporsional per pernyataan.' })
     @IsOptional()
     @IsIn(['official', 'proportional'])
     complexScoringRule?: 'official' | 'proportional';
+
+    @ApiPropertyOptional({ enum: ['official', 'proportional'], default: 'proportional',
+        description: 'Skor Kategorisasi: utuh per soal atau proporsional per pernyataan.' })
+    @IsOptional()
+    @IsIn(['official', 'proportional'])
+    categorizationScoringRule?: 'official' | 'proportional';
 
     @ApiPropertyOptional({ enum: ['official', 'proportional'], default: 'proportional',
         description: 'Skor Menjodohkan: utuh per soal atau proporsional per pasangan.' })

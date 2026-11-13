@@ -27,7 +27,7 @@ import { listOrganizationLabels,listQuestionBanks } from '@/lib/api/questions';
 import type { OrganizationLabel,QuestionBank } from '@/lib/api/questions';
 import type { ClassStudent,OrganizationClass,OrganizationExam,ProctorOrganization,SchoolSubject } from '@/lib/api/proctor';
 import { getSessionUser } from '@/lib/session';
-import { isFolderExamCategory, matchesExamType, semesterAssessmentLabel } from '@/lib/exam-types';
+import { builtinExamTypeLabel, isFolderExamCategory, matchesExamType, semesterAssessmentLabel } from '@/lib/exam-types';
 import { formatSchoolDateTime } from '@/lib/school-time';
 import { useSchoolTimeZone } from '@/lib/useSchoolTimeZone';
 import { REFRESH_INTERVAL,useAutoRefresh } from '@/lib/useAutoRefresh';
@@ -428,12 +428,12 @@ const ExamsPage = () => {
                             onChange={val => setTypeFilter(val as string)}
                             options={[
                                 { value: 'all', label: 'Semua Jenis Ujian' },
-                                { value: 'daily', label: 'Ulangan Harian' },
-                                { value: 'asas_asat', label: 'ASAS/ASAT' },
-                                { value: 'am', label: 'Asesmen Madrasah' },
-                                { value: 'tryout', label: 'Try Out' },
-                                { value: 'assignment', label: 'Tugas' },
-                                { value: 'lainnya', label: 'Lainnya' },
+                                { value: 'daily', label: builtinExamTypeLabel('daily') },
+                                { value: 'asas_asat', label: builtinExamTypeLabel('asas_asat') },
+                                { value: 'am', label: builtinExamTypeLabel('am') },
+                                { value: 'tryout', label: builtinExamTypeLabel('tryout') },
+                                { value: 'assignment', label: builtinExamTypeLabel('assignment') },
+                                { value: 'lainnya', label: builtinExamTypeLabel('lainnya') },
                             ]}
                         />
 

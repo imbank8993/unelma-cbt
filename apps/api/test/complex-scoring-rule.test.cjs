@@ -88,7 +88,7 @@ test('folder settings choose the rule for exams nobody has started yet', () => {
     assert.equal(fresh.update.metadata.complex_scoring_rule, 'proportional');
     assert.equal(fresh.scoringRuleLocked, false);
     const back = pasExamSettingsUpdate({ id: 'e', metadata: { complex_scoring_rule: 'proportional' } },
-        resolvePasExamSettings(normalizePasExamSettings({}), null), false);
+        resolvePasExamSettings(normalizePasExamSettings({ defaults: { complex_scoring: 'official' } }), null), false);
     assert.equal(back.update.metadata.complex_scoring_rule, 'official');
 });
 
@@ -102,14 +102,60 @@ test('the rule of a started exam never changes and the lock is reported', () => 
 });
 
 test('invalid rules are refused', () => {
-    assert.throws(() => normalizePasExamSettings({ defaults: { complex_scoring: 'separuh' } }), /resmi atau proporsional/);
+    assert.throws(() => normalizePasExamSettings({ defaults: { complex_scoring: 'separuh' } }), /utuh per soal atau proporsional/);
 });
 
 test('legacy marker also keeps the old IRT guessing parameter for PGK, short answer and ordering', () => {
     const { applyComplexScoringRule } = require('../src/common/complex-scoring.ts');
+    const { examStatementScoringRules } = require('../src/common/complex-scoring.ts');
+    const legacy = examStatementScoringRules({ complex_scoring_rule: 'proportional' });
+    const official = examStatementScoringRules({});
     for (const type of ['mcq_complex', 'short_answer', 'ordering']) {
-        assert.equal(applyComplexScoringRule({ type, metadata: {} }, 'proportional').metadata.complex_scoring, 'proportional');
-        assert.deepEqual(applyComplexScoringRule({ type, metadata: {} }, 'official').metadata, {});
+        assert.equal(applyComplexScoringRule({ type, metadata: {} }, legacy).metadata.complex_scoring, 'proportional');
+        assert.deepEqual(applyComplexScoringRule({ type, metadata: {} }, official).metadata, {});
     }
-    assert.equal(applyComplexScoringRule({ type: 'matching' }, 'proportional').metadata, undefined);
+    assert.equal(applyComplexScoringRule({ type: 'matching' }, legacy).metadata, undefined);
+});
+
+test('exams created with proportional as the default keep the current IRT guessing parameter', () => {
+    const { applyComplexScoringRule, examStatementScoringRules } = require('../src/common/complex-scoring.ts');
+    const rules = examStatementScoringRules({ complex_scoring_rule: 'proportional', legacy_irt_guess: false });
+    for (const type of ['mcq_complex', 'short_answer', 'ordering']) {
+        assert.deepEqual(applyComplexScoringRule({ type, metadata: {} }, rules).metadata, {});
+    }
+    assert.equal(applyComplexScoringRule({ type: 'true_false', metadata: {} }, rules).metadata.complex_scoring, 'proportional');
+});
+
+test('categorization has its own rule and follows B/S only on exams saved before the split', async () => {
+    const { examCategorizationScoringRule } = require('../src/common/complex-scoring.ts');
+    assert.equal(examCategorizationScoringRule(null), 'official');
+    assert.equal(examCategorizationScoringRule({ complex_scoring_rule: 'proportional' }), 'proportional');
+    assert.equal(examCategorizationScoringRule({ complex_scoring_rule: 'proportional', categorization_scoring_rule: 'official' }), 'official');
+    assert.equal(examCategorizationScoringRule({ categorization_scoring_rule: 'proportional' }), 'proportional');
+
+    const mark = async metadata => Object.fromEntries((await loadFrozenExamQuestions(snapshotDb(metadata), 'exam'))
+        .map(question => [question.id, question.metadata?.complex_scoring]));
+    assert.deepEqual(await mark({ complex_scoring_rule: 'proportional', categorization_scoring_rule: 'official' }),
+        { tf: 'proportional', cat: undefined, pg: undefined });
+    assert.deepEqual(await mark({ complex_scoring_rule: 'official', categorization_scoring_rule: 'proportional' }),
+        { tf: undefined, cat: 'proportional', pg: undefined });
+});
+
+test('folder settings store the categorization rule and lock it once an exam has started', () => {
+    const { storedPasExamSettings } = require('../src/common/pas-exam-settings.ts');
+    const BANK = '22222222-2222-4222-8222-222222222222';
+    // Tersimpan sebelum pemisahan: Kategorisasi mengikuti Benar-Salah, juga pada timpaan bank soal.
+    const stored = storedPasExamSettings({ exam_settings: { defaults: { complex_scoring: 'official' }, banks: { [BANK]: { complex_scoring: 'proportional' } } } });
+    assert.equal(stored.defaults.categorization_scoring, 'official');
+    assert.equal(stored.banks[BANK].categorization_scoring, 'proportional');
+    assert.equal(storedPasExamSettings({}).defaults.categorization_scoring, 'proportional');
+
+    const settings = resolvePasExamSettings(normalizePasExamSettings({ defaults: { complex_scoring: 'official', categorization_scoring: 'proportional' } }), null);
+    const fresh = pasExamSettingsUpdate({ id: 'e', metadata: {} }, settings, false);
+    assert.equal(fresh.update.metadata.complex_scoring_rule, 'official');
+    assert.equal(fresh.update.metadata.categorization_scoring_rule, 'proportional');
+    const started = pasExamSettingsUpdate({ id: 'e', metadata: {} }, settings, true);
+    assert.equal(started.scoringRuleLocked, true);
+    assert.equal(started.update.metadata.categorization_scoring_rule, undefined);
+    assert.throws(() => normalizePasExamSettings({ defaults: { categorization_scoring: 'separuh' } }), /Kategorisasi/);
 });

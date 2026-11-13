@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import LandingHeader from '@/app/components/landing/LandingHeader';
 import LandingHero from '@/app/components/landing/LandingHero';
-import { LandingAudience, LandingFaqCta, LandingFeatureGrid, LandingHowItWorks, LandingPaths, LandingTryQuestion } from '@/app/components/landing/LandingLearning';
+import { LandingFeatureGrid, LandingHowItWorks, LandingPaths, LandingTryQuestion } from '@/app/components/landing/LandingLearning';
 import LandingFooter from '@/app/components/landing/LandingFooter';
 import { fetchSessionUser, clearSessionCache } from '@/lib/session';
 import { clearActiveRoleInStorage, setActiveRoleInStorage, lockActiveRole, getDashboardPath, type Role } from '@/lib/rbac';
@@ -195,16 +195,10 @@ export default function Home() {
             {/* 5. Siklus belajar */}
             <LandingHowItWorks />
 
-            {/* 6. Untuk siswa, orang tua, sekolah, dan pejuang ASN */}
-            <LandingAudience />
-
-            {/* 7. Fitur platform */}
+            {/* 6. Fitur platform */}
             <LandingFeatureGrid />
 
-            {/* 8. Tanya jawab & ajakan */}
-            <LandingFaqCta onStart={startLearning} loggedIn={!!currentUser} />
-
-            {/* 9. Footer */}
+            {/* 7. Footer */}
             <LandingFooter />
         </main>
     );

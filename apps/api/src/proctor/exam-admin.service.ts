@@ -21,14 +21,20 @@ import { isSemesterAssessmentExam, semesterAssessmentSourceLabel } from '../comm
 import { resolveExamBankIds } from '../common/exam-question-sources';
 import { assertNoActiveAttempts } from '../common/exam-active-attempts';
 import { assertPeriodExceptionsAvailable, examPasPeriods, type ScreenShareExceptionScope } from '../common/screen-share-exceptions';
-import { COMPLEX_SCORING_RULE_KEY, examComplexScoringRule, MATCHING_SCORING_RULE_KEY, examMatchingScoringRule } from '../common/complex-scoring';
+import {
+    CATEGORIZATION_SCORING_RULE_KEY, COMPLEX_SCORING_RULE_KEY, LEGACY_IRT_GUESS_KEY, MATCHING_SCORING_RULE_KEY,
+    examCategorizationScoringRule, examComplexScoringRule, examMatchingScoringRule,
+} from '../common/complex-scoring';
 import { ALLOWED_EXTENSIONS } from '../storage/storage.service';
 import { EXAM_TYPES, type CreateExamDto, type UpdateExamDto } from './dto/proctor.dto';
 import {
     DEFAULT_EXAM_TYPE_CATALOG,
     EXAM_TYPE_RULE_METADATA_KEY,
+    builtinExamTypeRule,
     examTypeRuleSnapshot,
+    findExamTypeDefinition,
     isBuiltinExamType,
+    type ExamTypeCatalog,
     type ExamTypeRuleSnapshot,
 } from '../common/exam-type-catalog';
 
@@ -270,7 +276,7 @@ export class ExamAdminService {
                 scoring_type: dto.scoringType || 'classical',
                 is_paid: dto.isPaid ?? false,
                 token_price: dto.tokenPrice ?? 0,
-                metadata: this.withExamTypeRule(this.buildMetadata(examType, dto, {}), examTypeRule),
+                metadata: this.withExamTypeRule(this.buildMetadata(examType, dto, {}, true), examTypeRule),
             },
         });
 
@@ -317,7 +323,15 @@ export class ExamAdminService {
                 const { data: attempts, error: attemptError } = await db.from('cbt_exam_attempts').select('id').eq('exam_id', examId).limit(1);
                 if (attemptError) throw new BadRequestException('Status pengerjaan ujian belum dapat diperiksa.');
                 if ((attempts || []).length) {
-                    throw new ConflictException('Aturan skor Benar-Salah & Kategorisasi tidak dapat diubah karena sudah ada siswa yang mengerjakan ujian ini.');
+                    throw new ConflictException('Aturan skor Benar-Salah tidak dapat diubah karena sudah ada siswa yang mengerjakan ujian ini.');
+                }
+            }
+
+            if (dto.categorizationScoringRule && dto.categorizationScoringRule !== examCategorizationScoringRule(existing.metadata)) {
+                const { data: attempts, error: attemptError } = await db.from('cbt_exam_attempts').select('id').eq('exam_id', examId).limit(1);
+                if (attemptError) throw new BadRequestException('Status pengerjaan ujian belum dapat diperiksa.');
+                if ((attempts || []).length) {
+                    throw new ConflictException('Aturan skor Kategorisasi tidak dapat diubah karena sudah ada siswa yang mengerjakan ujian ini.');
                 }
             }
 
@@ -992,10 +1006,11 @@ export class ExamAdminService {
      * Jenis Ujian; salinan aturannya disimpan pada metadata ujian.
      */
     private async resolveExamTypeRule(examType: string): Promise<ExamTypeRuleSnapshot | null> {
-        if ((EXAM_TYPES as readonly string[]).includes(examType)) return null;
+        const catalog = await this.examTypeCatalog();
+        // Jenis bawaan: aturan dibekukan hanya bila Admin mengubah nama, skala, atau kelulusannya.
+        if ((EXAM_TYPES as readonly string[]).includes(examType)) return builtinExamTypeRule(catalog, examType);
         if (isBuiltinExamType(examType)) throw new BadRequestException('Jenis ujian tidak dikenal');
-        const catalog = (await this.settings?.getExamTypeCatalog?.()) ?? DEFAULT_EXAM_TYPE_CATALOG;
-        const definition = catalog.types.find(type => type.code === examType && type.active);
+        const definition = catalog.types.find(type => type.code === examType && type.active && !type.builtin);
         if (!definition) {
             throw new BadRequestException('Jenis ujian ini tidak tersedia atau sudah dinonaktifkan. Periksa Pengaturan → Jenis Ujian.');
         }
@@ -1014,17 +1029,31 @@ export class ExamAdminService {
         return next;
     }
 
+    private async examTypeCatalog(): Promise<ExamTypeCatalog> {
+        return (await this.settings?.getExamTypeCatalog?.()) ?? DEFAULT_EXAM_TYPE_CATALOG;
+    }
+
+    /**
+     * Dipanggil saat ujian dibuat atau jenisnya diganti. Jenis yang
+     * disembunyikan di Pengaturan → Jenis Ujian tidak dapat dipilih lagi, dan
+     * jenis "hanya Admin" menolak Guru/Proktor. Ujian lama tetap bisa disunting.
+     */
     private async assertMayUseExamType(
         user: AuthUser,
         organizationId: string,
         examType: string,
     ): Promise<void> {
-        if (!isSemesterAssessmentExam({ exam_type: examType })) return;
+        const definition = findExamTypeDefinition(await this.examTypeCatalog(), examType);
+        if (definition && !definition.active) {
+            throw new BadRequestException(`Jenis ujian ${definition.label} sedang tidak ditampilkan. Aktifkan di Pengaturan → Jenis Ujian.`);
+        }
+        const adminOnly = isSemesterAssessmentExam({ exam_type: examType }) || definition?.creators === 'admin';
+        if (!adminOnly) return;
 
         if (!(await this.isElevated(user, organizationId))) {
-            throw new ForbiddenException(
-                'Hanya Admin yang dapat membuat atau mengubah ujian ASAS/ASAT dan Asesmen Madrasah.',
-            );
+            throw new ForbiddenException(isSemesterAssessmentExam({ exam_type: examType })
+                ? 'Hanya Admin yang dapat membuat atau mengubah ujian ASAS/ASAT dan Asesmen Madrasah.'
+                : `Hanya Admin yang dapat membuat ujian ${definition?.label || 'jenis ini'}.`);
         }
     }
 
@@ -1104,6 +1133,7 @@ export class ExamAdminService {
         examType: string,
         dto: CreateExamDto | UpdateExamDto,
         existing: Record<string, any>,
+        isNew = false,
     ): Record<string, unknown> {
         const isAssignment = examType === 'assignment';
 
@@ -1116,9 +1146,13 @@ export class ExamAdminService {
             student_score_type: studentScoreType({ scoring_type: dto.scoringType || 'classical',
                 metadata: { student_score_type: dto.studentScoreType ?? existing.student_score_type } }),
             show_answer_keys: dto.showAnswerKeys ?? existing.show_answer_keys ?? false,
-            // Ujian lama tanpa bidang ini = aturan juknis (lihat `examComplexScoringRule`).
-            [COMPLEX_SCORING_RULE_KEY]: dto.complexScoringRule ?? examComplexScoringRule(existing),
+            // Ujian baru: ketiga aturan bawaannya proporsional. Ujian lama tanpa bidang ini
+            // tetap utuh per soal untuk Benar-Salah, dan Kategorisasi mengikuti Benar-Salah
+            // (lihat `complex-scoring.ts`), supaya nilai yang sudah ada tidak bergeser.
+            [COMPLEX_SCORING_RULE_KEY]: dto.complexScoringRule ?? (isNew ? 'proportional' : examComplexScoringRule(existing)),
+            [CATEGORIZATION_SCORING_RULE_KEY]: dto.categorizationScoringRule ?? (isNew ? 'proportional' : examCategorizationScoringRule(existing)),
             [MATCHING_SCORING_RULE_KEY]: dto.matchingScoringRule ?? examMatchingScoringRule(existing),
+            ...(isNew ? { [LEGACY_IRT_GUESS_KEY]: false } : {}),
             is_safe_mode: dto.isSafeMode ?? existing.is_safe_mode ?? true,
             screenshot_enabled: dto.screenshotEnabled ?? existing.screenshot_enabled ?? false,
             // `null` adalah pilihan eksplisit "tanpa batas". Ujian lama yang

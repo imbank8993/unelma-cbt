@@ -102,18 +102,20 @@ export default function LoginPage() {
                 });
 
                 googleBtnContainerRef.current.innerHTML = '';
-                const width = Math.min(googleBtnContainerRef.current.offsetWidth || 360, 400);
+                const width = Math.min(googleBtnContainerRef.current.offsetWidth || 320, 400);
 
-                // Render tombol resmi Google Sign-In yang selalu membuka dialog autentikasi
-                // tanpa terkena rate-limiting / cooldown One-Tap.
+                // Tombol resmi Google Sign-In (selalu membuka dialog autentikasi, tanpa
+                // cooldown One-Tap). Isinya iframe Google, jadi tampilannya diatur lewat
+                // opsi resmi: pill gelap senada warna navy Unelma.
                 googleObj.accounts.id.renderButton(googleBtnContainerRef.current, {
-                    theme: 'outline',
+                    theme: 'filled_black',
                     size: 'large',
                     type: 'standard',
-                    text: 'signin_with',
-                    shape: 'rectangular',
+                    text: 'continue_with',
+                    shape: 'pill',
                     logo_alignment: 'left',
-                    width: width > 200 ? width : 340,
+                    locale: 'id',
+                    width: width > 200 ? width : 300,
                 });
 
                 setGoogleReady(true);
@@ -170,13 +172,13 @@ export default function LoginPage() {
                 ))}
             </div>
 
-            <div className="login-card relative z-10 w-full max-w-sm rounded-3xl border border-white/70 bg-white/85 p-8 text-center shadow-2xl shadow-slate-300/40 backdrop-blur-xl sm:p-10">
-                <Link href="/" className="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-2xl bg-white shadow-md shadow-slate-200 transition-transform hover:scale-105">
-                    <Image src="/unelma.png" alt="Unelma" width={40} height={40} className="object-contain" priority />
+            <div className="login-card relative z-10 w-full max-w-sm rounded-[2rem] border border-white/70 bg-white/80 p-8 text-center shadow-2xl shadow-slate-300/40 backdrop-blur-xl sm:p-10">
+                <Link href="/" aria-label="Unelma, kembali ke beranda" className="mx-auto mb-4 block h-14 w-14 transition-transform hover:-translate-y-0.5">
+                    <Image src="/unelma-mark.png" alt="Unelma" width={56} height={56} className="h-14 w-14 object-contain" priority />
                 </Link>
 
-                <h1 className="text-2xl font-extrabold tracking-tight text-[#030C4D]">Login ke Unelma</h1>
-                <p className="mt-1.5 text-sm text-slate-500">Lanjutkan belajar dan latihan soal dengan akun Google-mu.</p>
+                <h1 className="text-[1.65rem] font-extrabold tracking-tight text-[#030C4D]">Selamat datang!</h1>
+                <p className="mt-1.5 text-sm leading-relaxed text-slate-500">Masuk untuk lanjut belajar dan latihan soal di Unelma.</p>
 
                 {errorMsg && (
                     <div className="mt-5 flex items-start gap-2.5 rounded-xl border border-red-200 bg-red-50 p-3 text-left text-xs text-red-600">
@@ -186,25 +188,27 @@ export default function LoginPage() {
                 )}
 
                 {/* Tombol resmi Google Sign-In */}
-                <div className="mt-7 flex min-h-[46px] w-full flex-col items-center justify-center">
-                    <div
-                        ref={googleBtnContainerRef}
-                        className={`flex w-full justify-center ${loading ? 'pointer-events-none opacity-40' : ''}`}
-                    />
+                <div className="mt-7 flex w-full flex-col items-center justify-center">
+                    <div className="login-google">
+                        <div
+                            ref={googleBtnContainerRef}
+                            className={`flex w-full justify-center ${loading ? 'pointer-events-none opacity-40' : ''}`}
+                        />
 
-                    {!googleReady && !loading && (
-                        <div className="flex w-full items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-3 text-xs font-medium text-slate-500">
-                            <Loader2 className="h-4 w-4 animate-spin text-[#030C4D]" />
-                            <span>Menyiapkan layanan Google...</span>
-                        </div>
-                    )}
+                        {!googleReady && !loading && (
+                            <div className="flex h-11 w-full items-center justify-center gap-2 rounded-full bg-[#030C4D] px-4 text-xs font-semibold text-white/80">
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                                <span>Menyiapkan login Google…</span>
+                            </div>
+                        )}
 
-                    {loading && (
-                        <div className="mt-1 flex w-full items-center justify-center gap-2 rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-xs font-medium text-blue-700">
-                            <Loader2 className="h-4 w-4 animate-spin text-[#030C4D]" />
-                            <span>Memverifikasi akun Google...</span>
-                        </div>
-                    )}
+                        {loading && (
+                            <div className="mt-1 flex h-11 w-full items-center justify-center gap-2 rounded-full bg-[#030C4D] px-4 text-xs font-semibold text-white">
+                                <Loader2 className="h-4 w-4 animate-spin text-[#F8A01B]" />
+                                <span>Memverifikasi akun Google…</span>
+                            </div>
+                        )}
+                    </div>
 
                     {!googleReady && loadTimedOut && (
                         <button
@@ -221,7 +225,7 @@ export default function LoginPage() {
                     )}
                 </div>
 
-                <p className="mt-4 text-[11px] leading-relaxed text-slate-400">Akun baru dibuat otomatis saat pertama kali login.</p>
+                <p className="mt-4 text-[11px] text-slate-400">Belum punya akun? Akun dibuat otomatis saat pertama login.</p>
 
                 <div className="mt-7 border-t border-slate-100 pt-5 text-xs text-slate-500">
                     Ingin menjadi proktor?{' '}

@@ -4,7 +4,7 @@ import type { DbService, DbSession } from '../prisma/prisma-db-adapter';
 import { loadExamQuestions } from './exam-question-sources';
 import { advisoryTransactionLock } from './transaction-lock';
 import { markScoreExcluded } from './score-exclusion';
-import { applyComplexScoringRule, examComplexScoringRule, applyMatchingScoringRule, examMatchingScoringRule } from './complex-scoring';
+import { applyComplexScoringRule, examStatementScoringRules, applyMatchingScoringRule, examMatchingScoringRule } from './complex-scoring';
 
 /** Seluruh data yang dapat memengaruhi tampilan, urutan, dan nilai. */
 export const EXAM_QUESTION_SNAPSHOT_SELECT = `
@@ -44,7 +44,7 @@ async function withExamScoringRule(db: DbSession, examId: string, questions: Fro
   if (questions.length === 0) return questions;
   const { data, error } = await db.from('cbt_exams').select('metadata').eq('id', examId).maybeSingle();
   if (error) throw new BadRequestException('Aturan penilaian ujian belum dapat dibaca.');
-  const rule = examComplexScoringRule(data?.metadata);
+  const rule = examStatementScoringRules(data?.metadata);
   const matchingRule = examMatchingScoringRule(data?.metadata);
   return questions.map(question => applyMatchingScoringRule(applyComplexScoringRule(question, rule), matchingRule));
 }
@@ -54,7 +54,7 @@ async function applyCorrections(db: DbSession, examId: string, questions: Frozen
   if (error) throw new BadRequestException('Revisi kunci ujian belum dapat dibaca.');
   const keys = data?.metadata?.answer_key_overrides || {};
   const voided = data?.metadata?.voided_questions || {};
-  const rule = examComplexScoringRule(data?.metadata);
+  const rule = examStatementScoringRules(data?.metadata);
   const matchingRule = examMatchingScoringRule(data?.metadata);
   return questions.map(question => {
     const keyed = typeof keys[question.id] === 'string'

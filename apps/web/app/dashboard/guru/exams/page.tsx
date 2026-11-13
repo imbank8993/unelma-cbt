@@ -28,7 +28,7 @@ import { listOrganizationLabels,listQuestionBanks } from '@/lib/api/questions';
 import type { OrganizationLabel,QuestionBank } from '@/lib/api/questions';
 import type { ClassStudent,OrganizationClass,OrganizationExam,ProctorOrganization,SchoolSubject,SchoolYear } from '@/lib/api/proctor';
 import { getSessionUser } from '@/lib/session';
-import { matchesExamType } from '@/lib/exam-types';
+import { builtinExamTypeLabel, matchesExamType } from '@/lib/exam-types';
 import { formatSchoolDateTime } from '@/lib/school-time';
 import { useSchoolTimeZone } from '@/lib/useSchoolTimeZone';
 import { REFRESH_INTERVAL,useAutoRefresh } from '@/lib/useAutoRefresh';
@@ -480,10 +480,10 @@ const ExamsPage = () => {
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
                 {[
                     { id: 'all', label: 'Semua' },
-                    { id: 'daily', label: 'Ulangan Harian' },
-                    { id: 'tryout', label: 'Try Out' },
-                    { id: 'assignment', label: 'Tugas' },
-                    { id: 'lainnya', label: 'Lainnya' }
+                    { id: 'daily', label: builtinExamTypeLabel('daily') },
+                    { id: 'tryout', label: builtinExamTypeLabel('tryout') },
+                    { id: 'assignment', label: builtinExamTypeLabel('assignment') },
+                    { id: 'lainnya', label: builtinExamTypeLabel('lainnya') }
                 ].map(type => {
                     const total = type.id === 'all' ? exams.length : exams.filter(exam => matchesExamType(exam.exam_type, type.id)).length;
                     
@@ -575,10 +575,10 @@ const ExamsPage = () => {
                             value={typeFilter}
                             onChange={(next) => setTypeFilter(next)} className="w-full" minWidth="0" height="44px">
                             <option value="all">Semua Jenis Ujian</option>
-                            <option value="daily">Ulangan Harian</option>
-                            <option value="tryout">Try Out</option>
-                            <option value="assignment">Tugas</option>
-                            <option value="lainnya">Lainnya</option>
+                            <option value="daily">{builtinExamTypeLabel('daily')}</option>
+                            <option value="tryout">{builtinExamTypeLabel('tryout')}</option>
+                            <option value="assignment">{builtinExamTypeLabel('assignment')}</option>
+                            <option value="lainnya">{builtinExamTypeLabel('lainnya')}</option>
                         </InlineSelect>
                     </div>
                     <div className="relative w-full sm:w-auto">

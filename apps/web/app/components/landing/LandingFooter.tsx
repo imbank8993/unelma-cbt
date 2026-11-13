@@ -21,9 +21,9 @@ export default function LandingFooter() {
                     {/* Brand Info */}
                     <div className="md:col-span-5 space-y-4">
                         <div className="flex items-center gap-3">
-                            <div className="w-12 h-12 bg-white rounded-xl flex items-center justify-center p-1.5 shadow-lg">
+                            <div className="w-12 h-12 flex items-center justify-center">
                                 <Image
-                                    src="/unelma.png"
+                                    src="/unelma-mark-light.png"
                                     alt="Unelma Logo"
                                     width={44}
                                     height={44}

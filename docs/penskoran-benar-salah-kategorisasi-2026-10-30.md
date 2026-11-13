@@ -38,18 +38,34 @@ NestJS mencap aturan itu pada salinan soal beku (`metadata.complex_scoring`) di
 monitoring, koreksi kunci, IRT) membawanya tanpa perubahan payload. Snapshot
 tersimpan tidak ditulis ulang.
 
-## Memilih aturan per folder ujian
+## Memilih aturan per tipe soal (pembaruan 2026-11-13)
 
-Tab **Pengaturan Ujian** pada folder ASAS/ASAT/AM kini memiliki baris
-**Skor Benar-Salah & Kategorisasi**:
+Formulir ujian dan tab **Pengaturan Ujian** folder ASAS/ASAT/AM memiliki tiga
+pengaturan terpisah: **Skor Benar-Salah**, **Skor Kategorisasi**, dan
+**Skor Menjodohkan**. Masing-masing berpilihan:
 
-- **Utuh per soal (juknis)**: bawaan, aturan di atas;
-- **Proporsional per pernyataan**: aturan lama, misalnya untuk latihan.
+- **Utuh per soal**: aturan di atas;
+- **Proporsional per pernyataan** (Menjodohkan: per pasangan): **bawaan untuk
+  ujian dan folder baru**.
 
-Pilihan dapat diatur sebagai bawaan folder atau khusus per bank soal, disimpan
-ke `cbt_exams.metadata.complex_scoring_rule`, dan ikut saat ujian dibangkitkan.
-Seperti urutan dan mode aman, aturan ini **dikunci setelah ada siswa yang
-mulai mengerjakan**; folder yang disimpan melaporkan ujian yang tidak diubah.
+| Tipe | Kunci metadata ujian | Ujian lama tanpa kunci |
+|---|---|---|
+| Benar-Salah | `complex_scoring_rule` | utuh per soal |
+| Kategorisasi | `categorization_scoring_rule` | mengikuti `complex_scoring_rule` |
+| Menjodohkan | `matching_scoring_rule` | proporsional |
+
+Pengaturan folder yang tersimpan sebelum pemisahan hanya memiliki
+`complex_scoring`; Kategorisasi dibaca mengikuti nilai itu. Tidak ada migrasi
+data, dan nilai ujian yang sudah ada tidak bergeser.
+
+Ujian baru menyimpan `legacy_irt_guess: false`, sehingga memilih Benar-Salah
+proporsional tidak lagi ikut memakai parameter tebakan IRT lama untuk PG
+Kompleks, Isian, dan Urutan. Ujian lama tanpa kunci itu tetap seperti sebelumnya.
+
+Pilihan dapat diatur sebagai bawaan folder atau khusus per bank soal, dan ikut
+saat ujian dibangkitkan. Seperti urutan dan mode aman, ketiga aturan ini
+**dikunci setelah ada siswa yang mulai mengerjakan**; folder yang disimpan
+melaporkan ujian yang tidak diubah.
 
 ## IRT
 

@@ -1,6 +1,6 @@
 'use client';
 
-import { isFolderExamCategory } from '@/lib/exam-types';
+import { builtinExamTypeLabel, examTypeCategory, examTypeLabel, isFolderExamCategory } from '@/lib/exam-types';
 import { getExamTypeCatalog } from '@/lib/api/settings';
 import { customExamTypeLabel, PASS_STATE_LABELS, SCORE_MODE_LABELS, type ExamTypeDefinition } from '@/lib/exam-type-catalog';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
@@ -12,6 +12,7 @@ import {
     FileText,
     FolderOpen,
     Globe,
+    Info,
     Loader2,
     Plus,
     Settings,
@@ -20,7 +21,7 @@ import {
 import { Modal, ModalBody, ModalFooter, ModalField } from '@/components/ui/modal';
 import { Button } from '@/components/ui/button';
 import { InlineSelect } from '@/components/ui/InlineSelect';
-import { COMPLEX_SCORING_CHOICES, MATCHING_SCORING_CHOICES, type PASComplexScoringRule } from '@/lib/pas/exam-settings';
+import { CATEGORIZATION_SCORING_CHOICES, COMPLEX_SCORING_CHOICES, MATCHING_SCORING_CHOICES, type PASComplexScoringRule } from '@/lib/pas/exam-settings';
 import { MultiSelect } from '@/components/ui/MultiSelect';
 import { DateTimePicker } from '@/components/ui/DateTimePicker';
 import { DatePicker } from '@/components/ui/DatePicker';
@@ -81,6 +82,7 @@ interface ExamFormData {
     studentScoreType: StudentScoreType;
     showAnswerKeys: boolean;
     complexScoringRule: PASComplexScoringRule;
+    categorizationScoringRule: PASComplexScoringRule;
     matchingScoringRule: PASComplexScoringRule;
     isSafeMode: boolean;
     screenshotEnabled: boolean;
@@ -119,7 +121,9 @@ const DEFAULT_FORM_DATA: ExamFormData = {
     showResults: false,
     studentScoreType: 'classical',
     showAnswerKeys: false,
-    complexScoringRule: 'official',
+    // Ujian baru: ketiga aturan skor bawaannya proporsional.
+    complexScoringRule: 'proportional',
+    categorizationScoringRule: 'proportional',
     matchingScoringRule: 'proportional',
     isSafeMode: true,
     screenshotEnabled: false,
@@ -171,6 +175,69 @@ function AdvancedGroup({ title, children }: { title: string; children: React.Rea
             <h4 className="mb-2.5 text-xs font-semibold uppercase tracking-wide text-slate-500">{title}</h4>
             {children}
         </div>
+    );
+}
+
+/**
+ * Label kolom dengan ikon info. Penjelasan semua pilihan tampil di popup saat
+ * ikon diklik, sehingga formulir tidak dipenuhi teks panjang.
+ */
+function ChoiceInfoLabel({ label, choices, active, note }: {
+    label: string;
+    choices: Array<{ value: string; label: string; hint: string }>;
+    active: string;
+    note?: string;
+}) {
+    const [open, setOpen] = useState(false);
+    const ref = useRef<HTMLSpanElement>(null);
+    const popupId = React.useId();
+
+    useEffect(() => {
+        if (!open) return;
+        const onPointerDown = (event: PointerEvent) => {
+            if (!ref.current?.contains(event.target as Node)) setOpen(false);
+        };
+        const onKeyDown = (event: KeyboardEvent) => {
+            if (event.key !== 'Escape') return;
+            // Tutup popup saja, jangan ikut menutup modal ujian.
+            event.stopPropagation();
+            setOpen(false);
+        };
+        document.addEventListener('pointerdown', onPointerDown);
+        document.addEventListener('keydown', onKeyDown, true);
+        return () => {
+            document.removeEventListener('pointerdown', onPointerDown);
+            document.removeEventListener('keydown', onKeyDown, true);
+        };
+    }, [open]);
+
+    return (
+        <span ref={ref} className="relative inline-flex items-center gap-1.5">
+            {label}
+            <button type="button" onClick={() => setOpen((value) => !value)}
+                aria-label={`Penjelasan ${label}`} aria-expanded={open} aria-controls={open ? popupId : undefined}
+                className={`flex h-5 w-5 items-center justify-center rounded-full transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#3083FF]/40 ${open ? 'bg-blue-50 text-[#3083FF]' : 'text-slate-400 hover:bg-slate-100 hover:text-slate-600'}`}>
+                <Info size={14} />
+            </button>
+            {open && (
+                <span id={popupId} role="dialog" aria-label={`Penjelasan ${label}`}
+                    className="absolute left-0 top-full z-30 mt-2 block w-[min(22rem,calc(100vw-4rem))] rounded-xl border border-slate-200 bg-white p-3.5 text-left text-xs font-normal leading-relaxed text-slate-600 shadow-lg">
+                    <span className="flex flex-col gap-2.5">
+                        {choices.map((choice) => (
+                            <span key={choice.value}
+                                className={`block rounded-lg px-2.5 py-2 ${choice.value === active ? 'border-l-[3px] border-blue-500 bg-blue-50/70' : 'bg-slate-50'}`}>
+                                <span className="flex flex-wrap items-center gap-1.5 font-semibold text-slate-900">
+                                    {choice.label}
+                                    {choice.value === active && <span className="rounded bg-blue-600 px-1.5 py-0.5 text-[10px] font-semibold text-white">Dipilih</span>}
+                                </span>
+                                <span className="mt-0.5 block first-letter:uppercase">{choice.hint}</span>
+                            </span>
+                        ))}
+                    </span>
+                    {note && <span className="mt-2.5 block border-t border-slate-100 pt-2.5 text-[11px] text-slate-500">{note}</span>}
+                </span>
+            )}
+        </span>
     );
 }
 
@@ -253,8 +320,12 @@ export const CreateExamModal: React.FC<CreateExamModalProps> = ({
                 showResults: exam.show_results ?? false,
                 studentScoreType: studentScoreType(exam),
                 showAnswerKeys: exam.metadata?.show_answer_keys === true,
-                // Tanpa nilai tersimpan = aturan juknis (sama dengan server).
+                // Ujian lama tanpa nilai tersimpan = utuh per soal, dan Kategorisasi mengikuti
+                // Benar-Salah seperti sebelum keduanya dipisah (sama dengan server).
                 complexScoringRule: exam.metadata?.complex_scoring_rule === 'proportional' ? 'proportional' : 'official',
+                categorizationScoringRule: exam.metadata?.categorization_scoring_rule === 'official' || exam.metadata?.categorization_scoring_rule === 'proportional'
+                    ? exam.metadata.categorization_scoring_rule
+                    : exam.metadata?.complex_scoring_rule === 'proportional' ? 'proportional' : 'official',
                 matchingScoringRule: exam.metadata?.matching_scoring_rule === 'official' ? 'official' : 'proportional',
                 isSafeMode: exam.metadata?.is_safe_mode ?? true,
                 screenshotEnabled: exam.metadata?.screenshot_enabled === true,
@@ -399,46 +470,43 @@ export const CreateExamModal: React.FC<CreateExamModalProps> = ({
         }
     }, [isOpen, formData.selectedClassIds, localClassStudents]);
 
-    // Jenis ujian kustom dari Pengaturan → Jenis Ujian (mis. SKD CPNS).
-    const [customExamTypes, setCustomExamTypes] = useState<ExamTypeDefinition[]>([]);
+    // Semua jenis ujian dari Pengaturan → Jenis Ujian: bawaan (nama, tampil, pembuat) dan tambahan (mis. SKD CPNS).
+    const [catalogTypes, setCatalogTypes] = useState<ExamTypeDefinition[]>([]);
     useEffect(() => {
         if (!isOpen) return;
         let cancelled = false;
         void getExamTypeCatalog().then(result => {
-            if (!cancelled && result.success) setCustomExamTypes(result.catalog.types);
+            if (!cancelled && result.success) setCatalogTypes(result.catalog.types);
         });
         return () => { cancelled = true; };
     }, [isOpen]);
 
     const examTypeOptions = useMemo(() => {
-        const custom = customExamTypes.filter(type => type.active).map(type => ({ value: type.code, label: type.label }));
-        // Ujian lama yang jenis kustomnya sudah dinonaktifkan tetap bisa disunting.
-        const currentLabel = customExamTypeLabel(exam);
-        if (exam?.exam_type && currentLabel && !custom.some(option => option.value === exam.exam_type)) {
-            custom.push({ value: exam.exam_type, label: `${currentLabel} (nonaktif)` });
+        const staffOnly = role === 'guru' || role === 'proktor';
+        // Katalog belum termuat (atau gagal): jenis bawaan dengan nama yang terakhir diketahui.
+        const fallback: ExamTypeDefinition[] = (['daily', 'asas_asat', 'am', 'tryout', 'assignment', 'lainnya'] as const).map(code => ({
+            code, label: builtinExamTypeLabel(code), description: '', active: true, score_mode: 'scaled', pass_rule: { mode: 'none' },
+            pattern: code === 'assignment' ? 'assignment' : isFolderExamCategory(code) ? 'folder' : 'regular',
+            creators: isFolderExamCategory(code) ? 'admin' : 'staff', builtin: true,
+        }));
+        const options = (catalogTypes.length ? catalogTypes : fallback)
+            // Folder ujian (ASAS/ASAT, AM) dan jenis "hanya Admin" tidak tampil untuk Guru/Proktor.
+            .filter(type => type.active && (!staffOnly || (type.pattern !== 'folder' && type.creators === 'staff')))
+            .map(type => ({ value: type.code, label: type.pattern === 'folder' ? `${type.label} (Folder Ujian)` : type.label }));
+        // Ujian lama yang jenisnya sudah disembunyikan tetap bisa disunting.
+        const current = isEdit && exam?.exam_type
+            ? (isFolderExamCategory(examTypeCategory(exam.exam_type)) ? examTypeCategory(exam.exam_type) : exam.exam_type) : null;
+        if (current && !options.some(option => option.value === current)) {
+            options.push({ value: current, label: `${customExamTypeLabel(exam) || examTypeLabel(exam?.exam_type, exam?.metadata)} (tidak ditampilkan)` });
         }
-        // ASAS/ASAT & Asesmen Madrasah adalah urusan sekolah: hanya Admin yang membuat foldernya.
-        if (role === 'guru' || role === 'proktor') {
-            return [
-                { value: 'daily', label: 'Ulangan Harian' },
-                { value: 'tryout', label: 'Try Out' },
-                ...custom,
-                { value: 'assignment', label: 'Tugas' },
-                { value: 'lainnya', label: 'Lainnya' },
-            ];
-        }
-        return [
-            { value: 'daily', label: 'Ulangan Harian' },
-            { value: 'asas_asat', label: 'ASAS/ASAT (Folder Ujian)' },
-            { value: 'am', label: 'Asesmen Madrasah (Folder Ujian)' },
-            { value: 'tryout', label: 'Try Out' },
-            ...custom,
-            { value: 'assignment', label: 'Tugas' },
-            { value: 'lainnya', label: 'Lainnya' },
-        ];
-    }, [role, customExamTypes, exam]);
+        return options;
+    }, [role, catalogTypes, exam, isEdit]);
 
-    const selectedCustomType = customExamTypes.find(type => type.code === formData.examType) || null;
+    // Aturan nilai jenis terpilih; hanya ditampilkan bila berbeda dari bawaan (0–100 tanpa kelulusan).
+    const selectedTypeDefinition = catalogTypes.find(type => type.code === formData.examType) || null;
+    const selectedCustomType = selectedTypeDefinition
+        && (selectedTypeDefinition.score_mode !== 'scaled' || selectedTypeDefinition.pass_rule.mode !== 'none')
+        ? selectedTypeDefinition : null;
 
     const isPasFolderCreate = !isEdit && isFolderExamCategory(formData.examType);
     const isBankRequired = !isFolderExamCategory(formData.examType) && (formData.examType !== 'assignment' || formData.requireBank);
@@ -627,6 +695,7 @@ export const CreateExamModal: React.FC<CreateExamModalProps> = ({
                 studentScoreType: formData.studentScoreType,
                 showAnswerKeys: formData.showAnswerKeys,
                 complexScoringRule: formData.complexScoringRule,
+                categorizationScoringRule: formData.categorizationScoringRule,
                 matchingScoringRule: formData.matchingScoringRule,
                 isSafeMode: formData.isSafeMode,
                 screenshotEnabled: formData.screenshotEnabled,
@@ -1348,24 +1417,27 @@ export const CreateExamModal: React.FC<CreateExamModalProps> = ({
                                     allSelectedText="Semua Terpilih"
                                 />
                             </ModalField>
-                        <ModalField label="Skor Benar-Salah & Kategorisasi"
-                            hint={<>
-                                <strong className="font-semibold text-slate-700">{COMPLEX_SCORING_CHOICES.find(choice => choice.value === formData.complexScoringRule)?.label}:</strong>{' '}
-                                {COMPLEX_SCORING_CHOICES.find(choice => choice.value === formData.complexScoringRule)?.hint}{' '}
-                                Tidak dapat diubah lagi setelah ada siswa yang mengerjakan.
-                            </>}>
+                        <ModalField label={<ChoiceInfoLabel label="Skor Benar-Salah"
+                            choices={COMPLEX_SCORING_CHOICES} active={formData.complexScoringRule}
+                            note="Berlaku khusus untuk soal Benar-Salah. Tidak dapat diubah lagi setelah ada siswa yang mengerjakan." />}>
                             <InlineSelect
                                 options={COMPLEX_SCORING_CHOICES.map(({ value, label }) => ({ value, label }))}
                                 value={formData.complexScoringRule}
                                 onChange={(value) => setFormData((prev) => ({ ...prev, complexScoringRule: value as PASComplexScoringRule }))}
                             />
                         </ModalField>
-                        <ModalField label="Skor Menjodohkan"
-                            hint={<>
-                                <strong className="font-semibold text-slate-700">{MATCHING_SCORING_CHOICES.find(choice => choice.value === formData.matchingScoringRule)?.label}:</strong>{' '}
-                                {MATCHING_SCORING_CHOICES.find(choice => choice.value === formData.matchingScoringRule)?.hint}{' '}
-                                Tidak dapat diubah lagi setelah ada siswa yang mengerjakan.
-                            </>}>
+                        <ModalField label={<ChoiceInfoLabel label="Skor Kategorisasi"
+                            choices={CATEGORIZATION_SCORING_CHOICES} active={formData.categorizationScoringRule}
+                            note="Berlaku khusus untuk soal Kategorisasi. Tidak dapat diubah lagi setelah ada siswa yang mengerjakan." />}>
+                            <InlineSelect
+                                options={CATEGORIZATION_SCORING_CHOICES.map(({ value, label }) => ({ value, label }))}
+                                value={formData.categorizationScoringRule}
+                                onChange={(value) => setFormData((prev) => ({ ...prev, categorizationScoringRule: value as PASComplexScoringRule }))}
+                            />
+                        </ModalField>
+                        <ModalField label={<ChoiceInfoLabel label="Skor Menjodohkan"
+                            choices={MATCHING_SCORING_CHOICES} active={formData.matchingScoringRule}
+                            note="Berlaku khusus untuk soal Menjodohkan. Tidak dapat diubah lagi setelah ada siswa yang mengerjakan." />}>
                             <InlineSelect
                                 options={MATCHING_SCORING_CHOICES.map(({ value, label }) => ({ value, label }))}
                                 value={formData.matchingScoringRule}

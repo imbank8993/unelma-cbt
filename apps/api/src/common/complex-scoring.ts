@@ -1,7 +1,8 @@
 /**
  * Aturan penskoran Benar-Salah dan Kategorisasi untuk satu ujian.
  *
- * `official` (bawaan): satu soal dinilai sebagai satu soal, mengikuti Kepdirjen
+ * `official` (ujian lama tanpa bidang aturan; ujian baru bawaannya
+ * `proportional`): satu soal dinilai sebagai satu soal, mengikuti Kepdirjen
  * Pendis 781/2021 dan Desain Pengembangan Soal AKM 2020 — soal ≤ 5 pernyataan
  * semua-atau-nol; soal > 5 pernyataan skor penuh / setengah (salah 1–2) / nol.
  *
@@ -26,20 +27,66 @@ export const LEGACY_MARKED_TYPES = ['true_false', 'categorization', 'mcq_complex
 
 export type ComplexScoringRule = 'official' | 'proportional';
 
+/** Aturan Benar-Salah. Ujian tanpa bidang ini (ujian lama) = `official`. */
 export function examComplexScoringRule(examMetadata: unknown): ComplexScoringRule {
     return !!examMetadata && typeof examMetadata === 'object' &&
         (examMetadata as Record<string, unknown>)[COMPLEX_SCORING_RULE_KEY] === 'proportional'
         ? 'proportional' : 'official';
 }
 
-/** Cap aturan lama pada salinan soal bertipe terkait; tidak pernah mengubah objek asli. */
+/**
+ * Kategorisasi diatur terpisah dari Benar-Salah. Ujian yang belum memiliki
+ * bidang ini (dibuat sebelum pemisahan) mengikuti aturan Benar-Salah-nya,
+ * sehingga nilainya tidak bergeser saat dinilai ulang.
+ */
+export const CATEGORIZATION_SCORING_RULE_KEY = 'categorization_scoring_rule';
+
+export function examCategorizationScoringRule(examMetadata: unknown): ComplexScoringRule {
+    const value = !!examMetadata && typeof examMetadata === 'object'
+        ? (examMetadata as Record<string, unknown>)[CATEGORIZATION_SCORING_RULE_KEY] : undefined;
+    return value === 'official' || value === 'proportional' ? value : examComplexScoringRule(examMetadata);
+}
+
+/**
+ * Parameter tebakan IRT 3PL lama untuk PG Kompleks, Isian Singkat, dan Urutan.
+ * Dulu ikut terpasang setiap kali aturan Benar-Salah proporsional. Ujian yang
+ * dibuat setelah proporsional menjadi bawaan menyimpan `legacy_irt_guess: false`
+ * supaya memilih proporsional tidak lagi mengubah parameter tebakan tipe lain;
+ * ujian lama tanpa bidang itu tetap seperti sebelumnya.
+ */
+export const LEGACY_IRT_GUESS_KEY = 'legacy_irt_guess';
+const LEGACY_GUESS_TYPES = ['mcq_complex', 'short_answer', 'ordering'];
+
+export interface ExamStatementScoringRules {
+    trueFalse: ComplexScoringRule;
+    categorization: ComplexScoringRule;
+    legacyIrtGuess: boolean;
+}
+
+export function examStatementScoringRules(examMetadata: unknown): ExamStatementScoringRules {
+    const trueFalse = examComplexScoringRule(examMetadata);
+    return {
+        trueFalse,
+        categorization: examCategorizationScoringRule(examMetadata),
+        legacyIrtGuess: trueFalse === 'proportional' &&
+            (examMetadata as Record<string, unknown>)[LEGACY_IRT_GUESS_KEY] !== false,
+    };
+}
+
+/**
+ * Cap penanda proporsional pada salinan soal bertipe terkait; tidak pernah
+ * mengubah objek asli. Layanan penilaian membaca penanda yang sama untuk
+ * Benar-Salah dan Kategorisasi, jadi pemisahan aturan dilakukan di sini per tipe.
+ */
 export function applyComplexScoringRule<T extends { type?: unknown; metadata?: unknown }>(
     question: T,
-    rule: ComplexScoringRule,
+    rules: ExamStatementScoringRules,
 ): T {
-    if (rule !== 'proportional' || !LEGACY_MARKED_TYPES.includes(String(question.type || '').toLowerCase())) {
-        return question;
-    }
+    const type = String(question.type || '').toLowerCase();
+    const marked = type === 'true_false' ? rules.trueFalse === 'proportional'
+        : type === 'categorization' ? rules.categorization === 'proportional'
+            : LEGACY_GUESS_TYPES.includes(type) && rules.legacyIrtGuess;
+    if (!marked) return question;
     const metadata = question.metadata && typeof question.metadata === 'object'
         ? question.metadata as Record<string, unknown> : {};
     return { ...question, metadata: { ...metadata, [COMPLEX_SCORING_FLAG]: 'proportional' } };

@@ -3,7 +3,7 @@
  * Bawaan folder berlaku untuk semua bank soal; satu bank soal dapat menimpa sebagian bidang.
  */
 export type PASScoringModel = 'classical' | 'irt_1pl' | 'irt_2pl' | 'irt_3pl';
-/** Aturan skor Benar-Salah & Kategorisasi (cermin `apps/api/src/common/complex-scoring.ts`). */
+/** Aturan skor Benar-Salah, Kategorisasi, dan Menjodohkan (cermin `apps/api/src/common/complex-scoring.ts`). */
 export type PASComplexScoringRule = 'official' | 'proportional';
 
 export interface PASExamSettings {
@@ -17,8 +17,9 @@ export interface PASExamSettings {
     screenshot_enabled: boolean;
     /** Model nilai siswa; IRT dihitung dari seluruh peserta ujian bank soal itu. */
     scoring: PASScoringModel;
-    /** Skor soal Benar-Salah & Kategorisasi; dikunci setelah ada siswa yang mengerjakan. */
+    /** Skor per tipe soal, masing-masing diatur terpisah; dikunci setelah ada siswa yang mengerjakan. */
     complex_scoring: PASComplexScoringRule;
+    categorization_scoring: PASComplexScoringRule;
     matching_scoring: PASComplexScoringRule;
 }
 
@@ -32,7 +33,7 @@ export interface PASExamSettingsSaveResult {
     updated: number;
     security_locked: string[];
     results_locked: string[];
-    /** Ujian yang aturan Benar-Salah/Kategorisasinya tidak diubah karena sudah dikerjakan. */
+    /** Ujian yang aturan skor Benar-Salah, Kategorisasi, atau Menjodohkannya tidak diubah karena sudah dikerjakan. */
     scoring_rule_locked?: string[];
 }
 
@@ -45,7 +46,8 @@ export const PAS_EXAM_SETTING_DEFAULTS: PASExamSettings = {
     max_violations: 3,
     screenshot_enabled: false,
     scoring: 'classical',
-    complex_scoring: 'official',
+    complex_scoring: 'proportional',
+    categorization_scoring: 'proportional',
     matching_scoring: 'proportional',
 };
 
@@ -94,10 +96,17 @@ export const SCORING_CHOICES: Array<{ value: PASScoringModel; label: string; sho
 ];
 
 export const COMPLEX_SCORING_CHOICES: Array<{ value: PASComplexScoringRule; label: string; short: string; hint: string }> = [
-    { value: 'official', label: 'Utuh per soal (juknis)', short: 'B/S utuh per soal',
+    { value: 'official', label: 'Utuh per soal', short: 'B/S utuh',
         hint: 'satu soal dinilai sebagai satu kesatuan, sesuai petunjuk teknis (juknis) penilaian soal AKM. Soal dengan 5 pernyataan atau kurang mendapat skor penuh hanya jika semua pernyataan benar. Soal dengan lebih dari 5 pernyataan mendapat skor penuh jika semua benar, setengah skor jika salah 1–2, dan nol jika salah lebih dari 2.' },
     { value: 'proportional', label: 'Proporsional per pernyataan', short: 'B/S proporsional',
         hint: 'setiap pernyataan yang benar mendapat bagian skor. Contoh: benar 3 dari 4 pernyataan mendapat ¾ skor soal.' },
+];
+
+export const CATEGORIZATION_SCORING_CHOICES: Array<{ value: PASComplexScoringRule; label: string; short: string; hint: string }> = [
+    { value: 'official', label: 'Utuh per soal', short: 'Kategorisasi utuh',
+        hint: 'satu soal dinilai sebagai satu kesatuan. Soal dengan 5 pernyataan atau kurang mendapat skor penuh hanya jika semua pernyataan masuk kategori yang tepat. Soal dengan lebih dari 5 pernyataan mendapat skor penuh jika semua tepat, setengah skor jika salah 1–2, dan nol jika salah lebih dari 2.' },
+    { value: 'proportional', label: 'Proporsional per pernyataan', short: 'Kategorisasi proporsional',
+        hint: 'setiap pernyataan yang masuk kategori yang tepat mendapat bagian skor. Contoh: tepat 3 dari 4 pernyataan mendapat ¾ skor soal.' },
 ];
 
 export const MATCHING_SCORING_CHOICES: Array<{ value: PASComplexScoringRule; label: string; short: string; hint: string }> = [
@@ -157,7 +166,9 @@ export function describePASExamSettings(settings: PASExamSettings): string[] {
     const safety = safetyChoice(settings);
     return [
         SCORING_CHOICES.find(choice => choice.value === settings.scoring)?.short || 'Klasik',
-        ...(settings.complex_scoring === 'proportional' ? ['B/S proporsional'] : []),
+        // Proporsional adalah bawaan; hanya pilihan utuh per soal yang perlu ditonjolkan.
+        ...(settings.complex_scoring === 'official' ? ['B/S utuh'] : []),
+        ...(settings.categorization_scoring === 'official' ? ['Kategorisasi utuh'] : []),
         ...(settings.matching_scoring === 'official' ? ['Menjodohkan utuh'] : []),
         RESULTS_CHOICES.find(choice => choice.value === resultsChoice(settings))!.short,
         safety === 'off' ? 'Tanpa mode aman' : safety === 'record' ? 'Mode aman (catat saja)' : `Mode aman (${settings.max_violations}×)`,

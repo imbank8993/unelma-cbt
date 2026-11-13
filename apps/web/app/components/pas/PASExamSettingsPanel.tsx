@@ -12,6 +12,7 @@ import type { PASPeriod } from '@/app/types/pas';
 import { mergePASExamsAction, updatePASExamSettingsAction } from '@/lib/api/pas';
 import {
     bankOverride,
+    CATEGORIZATION_SCORING_CHOICES,
     choiceHint,
     COMPLEX_SCORING_CHOICES,
     MATCHING_SCORING_CHOICES,
@@ -98,11 +99,17 @@ export function PASExamSettingsFields({ idPrefix, value, onChange, disabled }: {
                 onChange={next => onChange({ ...value, scoring: next as PASScoringModel })}
                 options={SCORING_CHOICES.map(({ value: v, label }) => ({ value: v, label }))} />
         </SettingsRow>
-        <SettingsRow htmlFor={`${idPrefix}-complex`} title="Skor Benar-Salah & Kategorisasi"
-            description={detailLink('Skor Benar-Salah & Kategorisasi', 'Berlaku untuk soal Benar-Salah dan soal Kategorisasi. Aturan ini tidak dapat diubah lagi setelah ada siswa yang mengerjakan.', choiceHint(COMPLEX_SCORING_CHOICES, value.complex_scoring))}>
+        <SettingsRow htmlFor={`${idPrefix}-complex`} title="Skor Benar-Salah"
+            description={detailLink('Skor Benar-Salah', 'Berlaku khusus untuk soal Benar-Salah. Aturan ini tidak dapat diubah lagi setelah ada siswa yang mengerjakan.', choiceHint(COMPLEX_SCORING_CHOICES, value.complex_scoring))}>
             <InlineSelect id={`${idPrefix}-complex`} value={value.complex_scoring} disabled={disabled} minWidth="220px"
                 onChange={next => onChange({ ...value, complex_scoring: next as PASComplexScoringRule })}
                 options={COMPLEX_SCORING_CHOICES.map(({ value: v, label }) => ({ value: v, label }))} />
+        </SettingsRow>
+        <SettingsRow htmlFor={`${idPrefix}-categorization`} title="Skor Kategorisasi"
+            description={detailLink('Skor Kategorisasi', 'Berlaku khusus untuk soal Kategorisasi. Aturan ini tidak dapat diubah lagi setelah ada siswa yang mengerjakan.', choiceHint(CATEGORIZATION_SCORING_CHOICES, value.categorization_scoring))}>
+            <InlineSelect id={`${idPrefix}-categorization`} value={value.categorization_scoring} disabled={disabled} minWidth="220px"
+                onChange={next => onChange({ ...value, categorization_scoring: next as PASComplexScoringRule })}
+                options={CATEGORIZATION_SCORING_CHOICES.map(({ value: v, label }) => ({ value: v, label }))} />
         </SettingsRow>
         <SettingsRow htmlFor={`${idPrefix}-matching`} title="Skor Menjodohkan"
             description={detailLink('Skor Menjodohkan', 'Berlaku khusus untuk soal Menjodohkan. Aturan ini tidak dapat diubah lagi setelah ada siswa yang mengerjakan.', choiceHint(MATCHING_SCORING_CHOICES, value.matching_scoring))}>
@@ -215,7 +222,7 @@ export function PASExamSettingsPanel({ period, onSaved, onReload }: {
             title: result.updated ? `Tersimpan dan diterapkan ke ${result.updated} ujian.` : 'Tersimpan. Ujian yang dibangkitkan berikutnya memakai pengaturan ini.',
             lines: [
                 ...(result.security_locked.length ? [`Urutan dan keamanan tidak diubah pada ujian yang sudah dikerjakan: ${result.security_locked.join('; ')}.`] : []),
-                ...(result.scoring_rule_locked?.length ? [`Aturan skor Benar-Salah/Kategorisasi atau Menjodohkan tidak diubah pada ujian yang sudah dikerjakan: ${result.scoring_rule_locked.join('; ')}.`] : []),
+                ...(result.scoring_rule_locked?.length ? [`Aturan skor Benar-Salah, Kategorisasi, atau Menjodohkan tidak diubah pada ujian yang sudah dikerjakan: ${result.scoring_rule_locked.join('; ')}.`] : []),
                 ...(result.results_locked.length ? [`Hasil dan penilaian belum diubah karena koreksi kunci masih berjalan: ${result.results_locked.join('; ')}.`] : []),
             ],
         });

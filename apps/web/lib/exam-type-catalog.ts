@@ -16,6 +16,11 @@ export type ExamPassRule =
     | { mode: 'kkm'; kkm: number }
     | { mode: 'passing_grade'; subtests: ExamSubtestRule[]; total_passing_grade: number | null };
 
+/** Cara kerja jenis di aplikasi. Jenis bawaan berpola tetap; jenis tambahan selalu `regular`. */
+export type ExamTypePattern = 'regular' | 'folder' | 'assignment';
+/** `staff` = Admin, Guru, dan Proktor; `admin` = hanya Admin. Folder selalu `admin`. */
+export type ExamTypeCreators = 'staff' | 'admin';
+
 export interface ExamTypeDefinition {
     code: string;
     label: string;
@@ -23,7 +28,17 @@ export interface ExamTypeDefinition {
     active: boolean;
     score_mode: ExamScoreMode;
     pass_rule: ExamPassRule;
+    pattern: ExamTypePattern;
+    creators: ExamTypeCreators;
+    /** Jenis bawaan: kode dan pola tetap, tidak dapat dihapus. */
+    builtin: boolean;
 }
+
+export const EXAM_TYPE_PATTERN_LABELS: Record<ExamTypePattern, string> = {
+    regular: 'Ujian biasa',
+    folder: 'Folder ujian (ruang, sesi, pengawas)',
+    assignment: 'Tugas',
+};
 
 export interface ExamTypeCatalog {
     types: ExamTypeDefinition[];

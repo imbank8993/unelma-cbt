@@ -572,8 +572,9 @@ export interface ExamInput {
     showResults?: boolean;
     studentScoreType?: 'classical' | 'irt_1pl' | 'irt_2pl' | 'irt_3pl';
     showAnswerKeys?: boolean;
-    /** Skor Benar-Salah & Kategorisasi; terkunci setelah ada siswa yang mengerjakan. */
+    /** Skor Benar-Salah, Kategorisasi, dan Menjodohkan; terkunci setelah ada siswa yang mengerjakan. */
     complexScoringRule?: 'official' | 'proportional';
+    categorizationScoringRule?: 'official' | 'proportional';
     matchingScoringRule?: 'official' | 'proportional';
     isSafeMode?: boolean;
     screenshotEnabled?: boolean;
