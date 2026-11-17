@@ -24,6 +24,7 @@ import { StudentsModule } from './students/students.module';
 import { TeachersModule } from './teachers/teachers.module';
 import { TokensModule } from './tokens/tokens.module';
 import { CommissionsModule } from './commissions/commissions.module';
+import { SocialMediaModule } from './social-media/social-media.module';
 
 /**
  * Modul domain ditambahkan bertahap seiring server action dipindahkan.
@@ -57,6 +58,7 @@ import { CommissionsModule } from './commissions/commissions.module';
     LearningModule,
     TokensModule,
     CommissionsModule,
+    SocialMediaModule,
   ],
 })
 export class AppModule {}
