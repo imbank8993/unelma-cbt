@@ -1,4 +1,5 @@
-import { Body, Controller, Delete, Get, Param, ParseUUIDPipe, Post, Put, SetMetadata, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Headers, Param, ParseUUIDPipe, Post, Put, SetMetadata, UploadedFile, UseGuards, UseInterceptors } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
 import type { AuthUser } from '@acca-cbt/shared';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { Roles } from '../auth/roles.decorator';
@@ -6,6 +7,8 @@ import { RolesGuard } from '../auth/roles.guard';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
 import { RateLimit, RateLimitGuard } from '../common/rate-limit';
 import { SocialMediaService } from './social-media.service';
+import { SocialMediaFilesService } from './social-media-files.service';
+import { SOCIAL_VIDEO_MAX_BYTES } from './social-media.files';
 
 @Controller('social-media')
 @SetMetadata('storage:preserve-public-urls', true)
@@ -13,8 +16,13 @@ import { SocialMediaService } from './social-media.service';
 @Roles('ADMIN', 'SUPERADMIN')
 @RateLimit({ name: 'social-media', limit: 90, windowMs: 60000 })
 export class SocialMediaController {
-  constructor(private readonly social: SocialMediaService) {}
+  constructor(private readonly social: SocialMediaService, private readonly files: SocialMediaFilesService) {}
   @Get() workspace(@CurrentUser() user: AuthUser) { return this.social.workspace(user); }
+  @Post('media')
+  @UseInterceptors(FileInterceptor('file', { limits: { fileSize: SOCIAL_VIDEO_MAX_BYTES, files: 1, fields: 0 } }))
+  upload(@CurrentUser() user: AuthUser, @UploadedFile() file: Express.Multer.File | undefined, @Headers('x-social-public-origin') origin: string) { return this.files.upload(user, file, origin); }
+  @Get('media/storage') storage(@CurrentUser() user: AuthUser) { return this.files.usage(user); }
+  @Post('media/cleanup') cleanup(@CurrentUser() user: AuthUser) { return this.files.cleanup(user); }
   @Put('settings') settings(@CurrentUser() user: AuthUser, @Body() body: Record<string, unknown>) { return this.social.saveSettings(user, body); }
   @Post('channels/sync') syncChannels(@CurrentUser() user: AuthUser) { return this.social.syncChannels(user); }
   @Get('channels/:id/settings') channelSettings(@CurrentUser() user: AuthUser, @Param('id') id: string) { return this.social.channelSettings(user, id); }

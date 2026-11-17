@@ -61,7 +61,7 @@ test('composer validates platform/media combinations and rejects private or auth
   assert.throws(() => validatePost({ platform: 'instagram', mediaType: 'image', caption: 'x'.repeat(2201), mediaUrl: 'https://a.example.org/a.jpg' }), /2200/);
   assert.equal(validatePost({ platform: 'facebook', mediaType: 'text', caption: 'Informasi' }).mediaUrl, null);
   assert.equal(validatePost({ platform: 'instagram', mediaType: 'image', caption: 'Draf caption' }).mediaUrl, null);
-  assert.throws(() => validatePost({ platform: 'instagram', mediaType: 'image', caption: 'Draf caption' }, true), /Lengkapi URL media/);
+  assert.throws(() => validatePost({ platform: 'instagram', mediaType: 'image', caption: 'Draf caption' }, true), /Tambahkan gambar atau video/);
   assert.throws(() => validatePost(null), /permintaan tidak valid/);
 });
 

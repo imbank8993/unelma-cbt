@@ -5,6 +5,7 @@ import {
   DeleteObjectsCommand,
   GetObjectCommand,
   HeadBucketCommand,
+  HeadObjectCommand,
   ListObjectsV2Command,
   PutObjectCommand,
   S3Client,
@@ -128,11 +129,12 @@ export class StorageService {
   /**
    * Ambil satu objek dari R2 sebagai readable stream dan metadata.
    */
-  async getObject(key: string): Promise<{
+  async getObject(key: string, range?: string): Promise<{
     stream: Readable;
     contentType: string;
     contentLength?: number;
     etag?: string;
+    contentRange?: string;
   } | null> {
     if (!this.client) {
       return null;
@@ -143,6 +145,7 @@ export class StorageService {
         new GetObjectCommand({
           Bucket: this.bucket,
           Key: key,
+          ...(range ? { Range: range } : {}),
         }),
       );
       if (!resp.Body) return null;
@@ -151,10 +154,23 @@ export class StorageService {
         contentType: resp.ContentType || this.resolveContentType(key) || 'application/octet-stream',
         contentLength: resp.ContentLength,
         etag: resp.ETag,
+        contentRange: resp.ContentRange,
       };
     } catch (err) {
       this.logger.warn(`Gagal mengambil '${key}': ${(err as Error).message}`);
       return null;
+    }
+  }
+
+  async objectMetadata(key: string): Promise<{ contentType: string; contentLength: number; etag?: string } | null> {
+    if (!this.client) return null;
+    try {
+      const result = await this.client.send(new HeadObjectCommand({ Bucket: this.bucket, Key: key }));
+      return { contentType: result.ContentType || 'application/octet-stream', contentLength: result.ContentLength || 0, etag: result.ETag };
+    } catch (error) {
+      const status = (error as { $metadata?: { httpStatusCode?: number } }).$metadata?.httpStatusCode;
+      if (status === 404) return null;
+      throw new Error('Metadata penyimpanan belum dapat dibaca.');
     }
   }
 

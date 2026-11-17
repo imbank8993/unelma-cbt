@@ -75,3 +75,39 @@ test('discussion lookup failure is reported as a server error, not a release dec
     exam.metadata.show_answer_keys = true;
     await assert.rejects(assertAnswerKeysReleased(fixtureDb({}, ['cbt_exam_attempts']), exam), e => e.getStatus() === 500);
 });
+
+test('personality totals remain visible with discussion closed without exposing frozen keys', async () => {
+    const db = fixture(), attempt = db.tables.cbt_exam_attempts[0];
+    attempt.total_score = 0;
+    attempt.metadata.dimension_scores = { discipline: 12, teamwork: 8.5, integrity: 0 };
+    db.tables.cbt_exam_question_snapshots[0].question_snapshot.type = 'likert';
+    const result = await new StudentsService(db).getAttemptDetails(user, 'attempt');
+    assert.equal(result.answerKeysReleased, false);
+    assert.equal(result.attempt.display_score, 0, 'Academic scale stays separate from personality points');
+    assert.deepEqual(result.personalitySummary, { academicQuestions: 0, personalityQuestions: 1, totalScore: 20.5, dimensionCount: 3 });
+    assert.deepEqual(result.answers, []);
+    assert.ok(!JSON.stringify(result).includes('SECRET'));
+    assert.equal(db.writes.length, 0, 'Historical scores do not need a destructive regrade');
+});
+
+test('mixed exams retain their academic score and report personality total independently', async () => {
+    const db = fixture(), attempt = db.tables.cbt_exam_attempts[0];
+    attempt.metadata.dimension_scores = { discipline: 5, teamwork: 2 };
+    db.tables.cbt_exam_question_snapshots.push({ exam_id: 'exam', order_number: 2, question_snapshot: { id: 'personality', type: 'sjt' } });
+    const result = await new StudentsService(db).getAttemptDetails(user, 'attempt');
+    assert.equal(result.attempt.display_score, 80);
+    assert.deepEqual(result.personalitySummary, { academicQuestions: 1, personalityQuestions: 1, totalScore: 7, dimensionCount: 2 });
+});
+
+test('personality total distinguishes zero, pending grading, and invalid score data', () => {
+    const { personalityResultSummary } = require('../src/common/personality-result.ts');
+    const questions = ['sjt', 'likert', 'forced_choice', 'checklist', 'ranking', 'paired_comparison'].map(type => ({ type }));
+    assert.equal(personalityResultSummary(questions, { dimension_scores: { d: 0 } }, true).totalScore, 0);
+    assert.equal(personalityResultSummary(questions, { dimension_scores: {} }, true).totalScore, 0);
+    assert.equal(personalityResultSummary(questions, { dimension_scores: {} }, false).totalScore, null);
+    assert.equal(personalityResultSummary(questions, {}, true).totalScore, null);
+    assert.equal(personalityResultSummary(questions, { dimension_scores: { d: NaN } }, true).totalScore, null);
+    assert.equal(personalityResultSummary(questions, { dimension_scores: { d: '5' } }, true).totalScore, null);
+    assert.equal(personalityResultSummary([{ type: 'mcq' }], { dimension_scores: { d: 5 } }, true).totalScore, null);
+    assert.equal(personalityResultSummary(questions, { dimension_scores: { a: -2.5, b: 4 } }, true).totalScore, 1.5);
+});

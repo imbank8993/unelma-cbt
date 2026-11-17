@@ -1,11 +1,19 @@
 import { ServiceUnavailableException } from '@nestjs/common';
-import { createCipheriv, createDecipheriv, hkdfSync, randomBytes } from 'node:crypto';
+import { createCipheriv, createDecipheriv, createHmac, hkdfSync, randomBytes, timingSafeEqual } from 'node:crypto';
 
 // Memakai rahasia server yang SUDAH ada. API key/token tidak perlu masuk .env.
-function key(): Buffer {
+function key(context = 'social-media-credentials-v1'): Buffer {
   const secret = process.env.JWT_SECRET;
   if (!secret || secret.length < 32) throw new ServiceUnavailableException('Kunci keamanan server belum siap untuk menyimpan API media sosial.');
-  return Buffer.from(hkdfSync('sha256', secret, 'unelma-cbt', 'social-media-credentials-v1', 32));
+  return Buffer.from(hkdfSync('sha256', secret, 'unelma-cbt', context, 32));
+}
+
+export function signSocialMediaKey(objectKey: string): string {
+  return createHmac('sha256', key('social-media-upload-links-v1')).update(objectKey).digest('hex');
+}
+
+export function verifySocialMediaKey(objectKey: string, signature: string): boolean {
+  return /^[a-f0-9]{64}$/.test(signature) && timingSafeEqual(Buffer.from(signature, 'hex'), Buffer.from(signSocialMediaKey(objectKey), 'hex'));
 }
 
 export function sealCredentials(value: object, context: string): string {

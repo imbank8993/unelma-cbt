@@ -21,6 +21,7 @@ import { studentExamMetadata } from './student-exam-metadata';
 import { findScreenShareException } from '../common/screen-share-exceptions';
 import { allowsPaidRetake } from '../common/paid-content';
 import { finishedAttemptOrder } from '../common/attempt-history';
+import { personalityResultSummary } from '../common/personality-result';
 
 /** Status attempt yang berarti siswa sudah selesai mengerjakan. */
 const FINISHED_STATUSES = ['submitted', 'auto_submitted'];
@@ -508,6 +509,9 @@ export class StudentsService {
         }
 
         const passResult = publicPassResult((await examPassStatuses(this.db, row.exams, [row])).get(row.id));
+        // Classification and aggregate scores are results, independent of discussion release.
+        const questionVersion = await readExamQuestionVersion(this.db, row.exams.id);
+        const personalitySummary = personalityResultSummary(questionVersion, row.metadata, row.total_score != null);
         // Never return exam configuration or submission metadata in a score summary.
         const publicAttempt = {
             pass_result: passResult,
@@ -531,7 +535,7 @@ export class StudentsService {
             return {
                 attempt: publicAttempt, answerKeysReleased: false,
                 answerKeysMessage: error.message,
-                dimensions, interpretations, answers: [],
+                dimensions, interpretations, personalitySummary, answers: [],
             };
         }
 
@@ -545,13 +549,14 @@ export class StudentsService {
         if (error) throw new BadRequestException(error.message);
         // Review the full exam version, including questions with no saved answer.
         // Bank edits must not change the keys shown for an existing exam snapshot.
-        const questions = await withQuestionTopics(this.db, await readExamQuestionVersion(this.db, row.exams.id));
+        const questions = await withQuestionTopics(this.db, questionVersion);
         const answersByQuestion = new Map(((answers as any[]) || []).map(answer => [answer.question_id, answer]));
 
         return {
             attempt: publicAttempt,
             answerKeysReleased: true,
             answerKeysMessage: null,
+            personalitySummary,
             topicAnalysis: buildTopicAnalysis(questions, [attemptId], ((answers as any[]) || []).map(answer => ({
                 participantId: attemptId, questionId: answer.question_id,
                 answered: hasStoredAnswer(answer), isCorrect: answer.is_correct,

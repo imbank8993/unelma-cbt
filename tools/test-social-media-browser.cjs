@@ -15,7 +15,8 @@ const { chromium } = require('playwright');
   ]) modules[name] = fs.readFileSync(path.join(path.dirname(require.resolve(pkg)), 'cjs', file), 'utf8');
   for (const [name, file] of Object.entries({
     Page: 'apps/web/app/dashboard/admin/social-media/page.tsx',
-    '@/app/components/DashboardPageTitle': 'apps/web/app/components/DashboardPageTitle.tsx',
+    './social-media-components': 'apps/web/app/dashboard/admin/social-media/social-media-components.tsx',
+    '@/app/components/ui/inlineselect': 'apps/web/app/components/ui/inlineselect.tsx',
     '@/app/components/ui/tabs': 'apps/web/app/components/ui/tabs.tsx',
     '@/lib/dashboard-navigation': 'apps/web/lib/dashboard-navigation.ts',
   })) modules[name] = ts.transpileModule(fs.readFileSync(file, 'utf8'), { compilerOptions: {
@@ -34,6 +35,7 @@ const { chromium } = require('playwright');
     await page.goto('http://localhost:3099');
     await page.addStyleTag({ path: 'apps/web/app/dashboard/admin/social-media/social-media.css' });
     await page.addStyleTag({ path: 'apps/web/app/components/ui/tabs.css' });
+    await page.addStyleTag({ path: 'apps/web/app/components/ui/inline-select.css' });
     await page.addStyleTag({ content: 'body{margin:0;padding:28px;background:#ebecf1;font-family:Arial,sans-serif}*{box-sizing:border-box}button{font-family:inherit}.max-w-7xl{max-width:1280px}.mx-auto{margin:auto}.pb-20{padding-bottom:80px}.dark body{background:#020718}@media(max-width:640px){body{padding:12px}}' });
     await page.evaluate(modules => {
       const cache = {}; let React;
@@ -71,6 +73,9 @@ const { chromium } = require('playwright');
           else Object.assign(post, { status: 'published', external_url: 'https://www.facebook.com/posts/123', metrics: { views: 42, reach: 25, interactions: 3 }, metrics_at: '2026-11-17T09:00:00Z', published_at: '2026-11-17T08:05:00Z', metrics_error: null }); return { success: true, post: structuredClone(post) }; },
         deleteSocialDraft: async id => { state.data.posts = state.data.posts.filter(post => post.id !== id); return { success: true }; },
         reconcileSocialPost: async () => ({ success: false, error: 'Referensi tidak cocok.' }),
+        uploadSocialMediaFile: async (file, progress) => { progress(50); progress(100); return { success: true, media: { url: URL.createObjectURL(file), name: file.name, size: file.size, mediaType: file.name.endsWith('.mp4') ? 'video' : 'image' } }; },
+        getSocialStorageUsage: async () => ({ success: true, storage: { files: 2, bytes: 2097152, unusedFiles: 1, unusedBytes: 1048576, truncated: false } }),
+        cleanupSocialStorage: async () => ({ success: true, deleted: 1, freedBytes: 1048576, failed: 0 }),
       };
       const stubs = {
         '@/lib/social-media-api': api,
@@ -88,8 +93,11 @@ const { chromium } = require('playwright');
       React = require('react');
       require('react-dom/client').createRoot(document.getElementById('root')).render(React.createElement(require('Page').default));
     }, modules);
-    await page.getByRole('heading', { name: 'Media Sosial', exact: true }).waitFor();
-    await page.getByText('Mulai dengan menghubungkan akun', { exact: true }).waitFor();
+    await page.getByRole('heading', { name: 'Buat posting', exact: true }).waitFor();
+    await page.getByText(/Hubungkan akun melalui/).waitFor();
+    assert.equal(await page.locator('.social-hero, .social-stat').count(), 0, 'Posting has no banner or statistics cards');
+    assert.equal(await page.locator('select:not(.uisel-input)').count(), 0, 'Every dropdown uses InlineSelect');
+    await page.getByRole('button', { name: 'Statistik', exact: true }).click();
     assert.deepEqual(await page.locator('.social-stat strong').allTextContents(), ['0', '—', '—', '—']);
     await page.getByRole('button', { name: 'Pengaturan', exact: true }).click();
     await page.getByLabel(/^API key Buffer/).fill('fixture-private-buffer-key');
@@ -107,8 +115,21 @@ const { chromium } = require('playwright');
     await page.getByLabel('Akun statistik', { exact: true }).selectOption('tiktok');
     await page.getByLabel('Client secret TikTok (opsional)', { exact: true }).waitFor();
     assert.equal(await page.getByLabel('Access token TikTok', { exact: true }).inputValue(), '');
+    await page.getByRole('button', { name: 'Periksa pemakaian', exact: true }).click();
+    await page.getByText('1 file tidak terpakai', { exact: true }).waitFor();
+    await page.getByRole('button', { name: 'Bersihkan media', exact: true }).click();
+    await page.getByText(/1 file dihapus, 1 MB dibebaskan/).waitFor();
+    assert.equal(await page.locator('select:not(.uisel-input)').count(), 0);
     await page.screenshot({ path: path.join(output, 'social-settings-desktop.png'), fullPage: true });
     await page.getByRole('button', { name: 'Posting', exact: true }).click();
+    await page.getByLabel('Unggah gambar', { exact: true }).setInputFiles({ name: 'fixture.png', mimeType: 'image/png', buffer: Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO/aK1sAAAAASUVORK5CYII=', 'base64') });
+    await page.getByText(/File berhasil diunggah/).waitFor();
+    await page.getByText('fixture.png', { exact: true }).waitFor();
+    assert.equal(await page.locator('.social-preview-media img').count(), 1);
+    await page.getByRole('button', { name: 'Hapus lampiran', exact: true }).click();
+    await page.getByRole('button', { name: 'Gunakan URL', exact: true }).click();
+    await page.getByLabel('URL media publik').fill('https://example.invalid/broken.png');
+    await page.getByText('Media belum dapat ditampilkan', { exact: true }).waitFor();
     await page.getByRole('button', { name: 'Facebook', exact: true }).click();
     await page.getByLabel('Akun tujuan', { exact: true }).selectOption('facebook');
     await page.getByLabel('Caption', { exact: false }).fill('Informasi tryout Unelma. Daftar sekarang!');
@@ -132,16 +153,23 @@ const { chromium } = require('playwright');
     await page.screenshot({ path: path.join(output, 'social-statistics-desktop.png'), fullPage: true });
     await page.setViewportSize({ width: 390, height: 844 });
     assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true);
-    assert.ok((await page.locator('.social-hero > div').nth(1).boundingBox()).width > 250, 'Mobile title keeps enough width beside its icon');
     await page.getByRole('button', { name: 'Posting', exact: true }).click();
     await page.screenshot({ path: path.join(output, 'social-composer-mobile.png'), fullPage: true });
     assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true);
     await page.evaluate(() => document.documentElement.classList.add('dark'));
+    for (const width of [320, 360, 768]) {
+      await page.setViewportSize({ width, height: 844 });
+      for (const tab of ['Posting', 'Statistik', 'Pengaturan']) {
+        await page.getByRole('button', { name: tab, exact: true }).click();
+        assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true, `${tab} fits ${width}px`);
+      }
+    }
+    await page.setViewportSize({ width: 390, height: 844 });
     await page.getByRole('button', { name: 'Pengaturan', exact: true }).click();
     await page.screenshot({ path: path.join(output, 'social-settings-mobile-dark.png'), fullPage: true });
     assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true);
     assert.deepEqual(errors, []);
-    console.log('PASS: API settings, credential clearing, account selection, draft save, explicit publish, pending/published states, metrics error preservation, mobile layout, dark mode.');
+    console.log('PASS: InlineSelect, no banner, upload/preview, storage usage/cleanup, credentials, draft/publish, metrics, responsive 320/360/390/768/1440, dark mode.');
     console.log('Previews: ' + output);
   } finally { await browser.close(); }
 })().catch(error => { console.error(error); process.exitCode = 1; });

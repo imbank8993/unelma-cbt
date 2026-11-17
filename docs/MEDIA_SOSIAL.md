@@ -1,6 +1,6 @@
 # Media Sosial Admin
 
-Halaman: `/dashboard/admin/social-media`. Menu, header, dan banner menggunakan nama **Media Sosial**.
+Halaman: `/dashboard/admin/social-media`. Menu dan header menggunakan nama **Media Sosial**. Halaman langsung menampilkan tab Posting, Statistik, dan Pengaturan tanpa banner; seluruh dropdown memakai InlineSelect.
 
 ## Aktivasi
 
@@ -27,7 +27,8 @@ Referensi: [Meta Insights](https://developers.facebook.com/docs/insights/overvie
 
 - Buat draf untuk satu akun tujuan. Facebook mendukung teks/tautan dalam caption, gambar, atau video. Instagram/TikTok memerlukan gambar atau video.
 - Caption dapat disimpan dahulu sebagai draf sebelum media atau akun tujuan dilengkapi; publikasi memerlukan semua isian yang diperlukan.
-- Media berupa tautan HTTPS langsung yang dapat diakses tanpa login. Tautan halaman Google Drive, halaman preview, atau gateway berkas yang memerlukan sesi login tidak sesuai. Format, dimensi, durasi, dan ukuran tetap mengikuti persyaratan platform/Buffer. Versi ini memakai URL media; belum menyediakan unggah berkas lokal di halaman ini.
+- Media dapat diunggah langsung dari perangkat: JPG/PNG maksimal 8 MB atau MP4 maksimal 25 MB. Aplikasi menyimpan file di R2 yang sudah terhubung dan menyiapkan tautan bertanda tangan khusus lampiran pemasaran untuk diambil Buffer. Tidak perlu memasukkan URL sendiri. Format, dimensi, dan durasi tetap mengikuti persyaratan platform/Buffer.
+- **Gunakan URL** tetap tersedia untuk tautan HTTPS langsung tanpa login. Tautan halaman Google Drive, halaman preview, atau gateway berkas yang memerlukan sesi login tidak sesuai. Publikasi dari localhost memerlukan alamat aplikasi HTTPS publik yang dapat dijangkau Buffer; unggah/draf lokal tetap dapat dicoba tanpa mempublikasikan.
 - Pratinjau menunjukkan media dan caption sebelum pengguna menekan **Publikasikan sekarang**. Konten tidak dikirim dengan menyimpan pengaturan atau draf.
 - Publikasi menggunakan Buffer GraphQL `createPost` dengan `mode: shareNow`, `schedulingType: automatic`, dan `needsApproval: false`.
 - Respons Buffer yang baru menerima pekerjaan ditampilkan **Diproses Buffer**, bukan langsung Terbit. **Perbarui** memeriksa hasil publikasi.
@@ -50,7 +51,9 @@ Referensi: [Meta Insights](https://developers.facebook.com/docs/insights/overvie
 
 ## Penyimpanan dan keamanan
 
-- Seluruh endpoint berada di bawah guard JWT dan Admin/Superadmin, dengan pemeriksaan Admin pada service. Kunci internal tidak melewati pemeriksaan ini. Mutasi Next.js tetap melewati pemeriksaan asal permintaan.
+- Endpoint pengelolaan berada di bawah guard JWT dan Admin/Superadmin, dengan pemeriksaan Admin pada service. Kunci internal tidak melewati pemeriksaan ini. Mutasi Next.js tetap melewati pemeriksaan asal permintaan.
+- Unduhan lampiran pemasaran memiliki endpoint terpisah dengan tanda tangan HMAC untuk satu object key. Tautan dapat digunakan siapa pun yang memilikinya selama file ada; mengganti `JWT_SECRET` membatalkan tautan unggahan lama sehingga perlu unggah ulang. Format file diverifikasi dari isi berkas, bukan hanya MIME dari browser. Unduhan video mendukung byte range.
+- **Pengaturan → Penyimpanan media** memeriksa jumlah file dan ruang terpakai. Pembersihan dijalankan secara manual, maksimal 50 file per klik, hanya untuk unggahan lebih dari 24 jam yang tidak direferensikan draf maupun riwayat posting. Penghapusan draf tidak langsung menghapus lampiran. Pemeriksaan referensi gagal/daftar tidak lengkap membatalkan pembersihan; penyimpanan draf dan pembersihan memakai lock yang sama. Tidak ada migrasi tambahan untuk fitur unggah.
 - API key dan token disimpan dengan AES-256-GCM, nonce acak, serta konteks terikat pada konfigurasi/ID akun. Respons hanya mengandung tanda sudah/belum tersimpan. Token tidak disimpan di localStorage atau dikirim kembali ke browser.
 - Kunci enkripsi diturunkan menggunakan HKDF dari `JWT_SECRET` server yang **sudah ada**, minimal 32 karakter, dengan konteks khusus Media Sosial. Tidak ada environment variable baru untuk API pihak ketiga. Rotasi `JWT_SECRET` memerlukan input ulang kredensial Media Sosial; jangan mengubahnya hanya untuk fitur ini jika sudah valid.
 - Tabel kredensial terpisah dari endpoint pengaturan umum. Cadangan tiga tabel Media Sosial perlu ditambahkan ke prosedur cadangan database operasional bila digunakan; daftar backup ujian lama tidak menyertakannya.
@@ -58,7 +61,7 @@ Referensi: [Meta Insights](https://developers.facebook.com/docs/insights/overvie
 
 ## Verifikasi
 
-`node --test --test-isolation=none apps/api/test/social-media.test.cjs`
+`node --test --test-isolation=none apps/api/test/social-media.test.cjs apps/api/test/social-media-files.test.cjs`
 
 `node tools/test-social-media-browser.cjs`
 

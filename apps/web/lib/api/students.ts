@@ -150,6 +150,7 @@ export interface StudentAttemptAnswer {
 }
 
 export interface StudentAttemptDetails {
+    personalitySummary?: { academicQuestions: number; personalityQuestions: number; totalScore: number | null; dimensionCount: number };
     topicAnalysis?: TopicAnalysis;
     answerKeysReleased: boolean;
     answerKeysMessage?: string | null;

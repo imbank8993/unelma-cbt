@@ -65,10 +65,11 @@ function decodeEntities(text: string) {
     return text.replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#39;/g, "'");
 }
 
-function PersonalityProfile({ scores, dimensions, interpretations }: {
+function PersonalityProfile({ scores, dimensions, interpretations, totalScore }: {
     scores: Record<string, number>;
     dimensions: StudentAttemptDetails['dimensions'];
     interpretations: StudentAttemptDetails['interpretations'];
+    totalScore?: number | null;
 }) {
     return (
         <div className="bg-white border border-indigo-100 rounded-2xl p-6 shadow-sm">
@@ -79,6 +80,7 @@ function PersonalityProfile({ scores, dimensions, interpretations }: {
                                     <div>
                                         <h2 className="text-sm font-black text-slate-800 uppercase tracking-widest">Profil Karakter</h2>
                                         <p className="text-[10px] text-slate-400 font-medium">Skor per Dimensi Kepribadian</p>
+                                        {totalScore != null && <p className="mt-1 text-xs font-semibold text-indigo-700">Total skor kepribadian: {totalScore.toLocaleString('id-ID', { maximumFractionDigits: 2 })} poin</p>}
                                     </div>
                                 </div>
 
@@ -103,7 +105,7 @@ function PersonalityProfile({ scores, dimensions, interpretations }: {
                                                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-2">
                                                         <h3 className="text-xs font-black uppercase tracking-widest text-indigo-800">{dimName}</h3>
                                                         <span className="inline-block px-2.5 py-1 bg-indigo-600 text-white text-[10px] font-black rounded-lg shadow-sm">
-                                                            Skor: {Number(score).toFixed(0)}
+                                                            Skor: {Number(score).toLocaleString('id-ID', { maximumFractionDigits: 2 })}
                                                         </span>
                                                     </div>
                                                     
@@ -140,7 +142,7 @@ function PersonalityProfile({ scores, dimensions, interpretations }: {
                                                     <div key={dimId}>
                                                         <div className="flex items-center justify-between mb-1">
                                                             <span className="text-xs font-bold text-slate-700 uppercase tracking-wide">{dimName}</span>
-                                                            <span className="text-sm font-black text-indigo-600">{Number(score).toFixed(0)}</span>
+                                                            <span className="text-sm font-black text-indigo-600">{Number(score).toLocaleString('id-ID', { maximumFractionDigits: 2 })}</span>
                                                         </div>
                                                         <div className="h-2.5 bg-slate-100 rounded-full overflow-hidden">
                                                             <motion.div
@@ -269,7 +271,8 @@ export default function StudentResultDetailsPage() {
 
     const displayedScore = attempt.display_score !== undefined ? attempt.display_score : selectedStudentScore(attempt, attempt.exams);
     const scoreLabel = attempt.score_label || STUDENT_SCORE_LABELS[studentScoreType(attempt.exams)];
-    const gradingPending = displayedScore == null;
+    const onlyPersonality = Boolean(details.personalitySummary?.personalityQuestions && details.personalitySummary.academicQuestions === 0);
+    const gradingPending = !onlyPersonality && displayedScore == null;
     const totalScore = Number(displayedScore || 0);
 
 
@@ -299,20 +302,24 @@ export default function StudentResultDetailsPage() {
             </header>
 
             <section aria-label="Ringkasan nilai" className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-                {(hasPengetahuan || details.answerKeysReleased === false || !hasKepribadian) && <div className="rounded-2xl border border-blue-200 bg-blue-50 p-4 sm:p-5">
+                {onlyPersonality ? <div className="rounded-2xl border border-indigo-200 bg-indigo-50 p-4 sm:p-5">
+                    <p className="text-sm font-medium text-indigo-700">Total skor kepribadian</p>
+                    <p className="mt-3 text-3xl sm:text-4xl font-semibold tracking-tight text-indigo-700 tabular-nums">{details.personalitySummary?.totalScore == null ? '—' : details.personalitySummary.totalScore.toLocaleString('id-ID', { maximumFractionDigits: 2 })}</p>
+                    <p className="mt-2 text-xs text-indigo-600">{details.personalitySummary?.totalScore == null ? 'Skor dimensi belum tersedia' : `Total poin dari ${details.personalitySummary.dimensionCount} dimensi`}</p>
+                </div> : (hasPengetahuan || details.answerKeysReleased === false || !hasKepribadian) && <div className="rounded-2xl border border-blue-200 bg-blue-50 p-4 sm:p-5">
                     <p className="text-sm font-medium text-blue-700">{attempt.needs_manual_grading ? 'Nilai sementara' : 'Nilai akhir'}</p>
                     <p className="mt-3 text-3xl sm:text-4xl font-semibold tracking-tight text-blue-700 tabular-nums">{gradingPending ? '—' : totalScore.toFixed(2)}</p>
                     <p className="mt-2 text-xs text-blue-600">{gradingPending ? 'Sedang diproses' : `${scoreLabel} · ${(attempt.score_type || studentScoreType(attempt.exams)) === 'classical' ? 'Skala 0–100' : 'Skala 200–800'}`}</p>
                 </div>}
                 <div className="rounded-2xl border border-slate-200 bg-white p-4 sm:p-5">
-                    <p className="text-sm font-medium text-slate-500">Jawaban benar</p>
-                    <p className="mt-3 text-3xl sm:text-4xl font-semibold text-slate-900 tabular-nums">{hasPengetahuan ? correctCount : '—'}{hasPengetahuan && <span className="ml-1 text-base font-normal text-slate-400">/ {totalPengetahuanCount}</span>}</p>
-                    <p className="mt-2 text-xs text-slate-500">{hasPengetahuan ? `${pendingCount ? `${pendingCount} menunggu koreksi` : 'Soal pengetahuan'}` : 'Belum tersedia'}</p>
+                    <p className="text-sm font-medium text-slate-500">{onlyPersonality ? 'Soal kepribadian' : 'Jawaban benar'}</p>
+                    <p className="mt-3 text-3xl sm:text-4xl font-semibold text-slate-900 tabular-nums">{onlyPersonality ? details.personalitySummary?.personalityQuestions : hasPengetahuan ? correctCount : '—'}{!onlyPersonality && hasPengetahuan && <span className="ml-1 text-base font-normal text-slate-400">/ {totalPengetahuanCount}</span>}</p>
+                    <p className="mt-2 text-xs text-slate-500">{onlyPersonality ? 'Jumlah soal dalam ujian' : hasPengetahuan ? `${pendingCount ? `${pendingCount} menunggu koreksi` : 'Soal pengetahuan'}` : 'Belum tersedia'}</p>
                 </div>
                 <div className="rounded-2xl border border-slate-200 bg-white p-4 sm:p-5">
-                    <p className="text-sm font-medium text-slate-500">Akurasi</p>
-                    <p className="mt-3 text-3xl sm:text-4xl font-semibold text-slate-900 tabular-nums">{accuracy == null ? '—' : `${accuracy}%`}</p>
-                    <p className="mt-2 text-xs text-slate-500">{hasPengetahuan ? 'Dari soal yang sudah dinilai' : 'Belum tersedia'}</p>
+                    <p className="text-sm font-medium text-slate-500">{onlyPersonality ? 'Dimensi dinilai' : 'Akurasi'}</p>
+                    <p className="mt-3 text-3xl sm:text-4xl font-semibold text-slate-900 tabular-nums">{onlyPersonality ? details.personalitySummary?.dimensionCount : accuracy == null ? '—' : `${accuracy}%`}</p>
+                    <p className="mt-2 text-xs text-slate-500">{onlyPersonality ? 'Profil tanpa benar atau salah' : hasPengetahuan ? 'Dari soal yang sudah dinilai' : 'Belum tersedia'}</p>
                 </div>
                 <div className="rounded-2xl border border-slate-200 bg-white p-4 sm:p-5">
                     <p className="text-sm font-medium text-slate-500">Durasi pengerjaan</p>
@@ -364,7 +371,7 @@ export default function StudentResultDetailsPage() {
                     <p className="mt-4 text-xs text-slate-500">Akurasi = benar ÷ (benar + salah + kosong). Jawaban menunggu koreksi belum dihitung.</p>
                 </section>}
                 {hasDimensionScores && <PersonalityProfile scores={dimensionScores}
-                    dimensions={details.dimensions} interpretations={details.interpretations} />}
+                    dimensions={details.dimensions} interpretations={details.interpretations} totalScore={details.personalitySummary?.totalScore} />}
             </div>}
 
             {section === 'materi' && <div role="tabpanel" id="result-panel-materi" aria-labelledby="result-tab-materi" className="space-y-5">

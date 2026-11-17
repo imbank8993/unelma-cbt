@@ -1,5 +1,6 @@
 import { BadRequestException } from '@nestjs/common';
 import type { MediaType, SocialPlatform } from './social-media.types';
+import { uploadedSocialMediaKey } from './social-media.files';
 
 export const PLATFORMS = ['instagram', 'facebook', 'tiktok'] as const;
 export function recordInput(value: unknown): asserts value is Record<string, unknown> {
@@ -37,10 +38,19 @@ export function validatePost(body: Record<string, unknown>, publishing = false) 
   const caption = field(body.caption, 'Caption', 2200);
   const mediaType = body.mediaType as MediaType;
   if (!['text', 'image', 'video'].includes(mediaType)) throw new BadRequestException('Jenis media tidak valid.');
-  const mediaUrl = mediaType === 'text' || body.mediaUrl === undefined || body.mediaUrl === null || body.mediaUrl === '' ? null : publicMediaUrl(body.mediaUrl);
+  let mediaUrl: string | null = null;
+  if (mediaType !== 'text' && body.mediaUrl !== undefined && body.mediaUrl !== null && body.mediaUrl !== '') {
+    const value = field(body.mediaUrl, 'URL media', 2048);
+    if (uploadedSocialMediaKey(value, false)) {
+      if (!uploadedSocialMediaKey(value)) throw new BadRequestException('Lampiran tidak valid. Unggah kembali file.');
+      const url = new URL(value);
+      const localDraft = !publishing && process.env.NODE_ENV !== 'production' && url.protocol === 'http:' && ['localhost', '127.0.0.1', '[::1]'].includes(url.hostname) && !url.username && !url.password;
+      mediaUrl = localDraft ? url.href : publicMediaUrl(value);
+    } else mediaUrl = publicMediaUrl(value);
+  }
   if (!caption && !mediaUrl) throw new BadRequestException('Isi caption atau tambahkan media.');
   if (selectedPlatform !== 'facebook' && mediaType === 'text') throw new BadRequestException('Instagram dan TikTok memerlukan gambar atau video.');
-  if (publishing && mediaType !== 'text' && !mediaUrl) throw new BadRequestException('Lengkapi URL media sebelum mempublikasikan posting.');
+  if (publishing && mediaType !== 'text' && !mediaUrl) throw new BadRequestException('Tambahkan gambar atau video sebelum mempublikasikan posting.');
   const channelId = body.channelId ? field(body.channelId, 'Akun', 160) : null;
   if (body.aiGenerated !== undefined && typeof body.aiGenerated !== 'boolean') throw new BadRequestException('Label konten AI tidak valid.');
   return { platform: selectedPlatform, caption, mediaType, mediaUrl, channelId, aiGenerated: body.aiGenerated === true };

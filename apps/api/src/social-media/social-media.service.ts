@@ -6,6 +6,8 @@ import { openCredentials, sealCredentials } from './social-media.crypto';
 import { SocialMediaProvider, SocialProviderError } from './social-media.provider';
 import { externalPostId, field, recordInput, secretField, validatePost } from './social-media.validation';
 import type { BufferPost, ChannelCredentials, SocialChannel, SocialPost } from './social-media.types';
+import { SocialMediaFilesService } from './social-media-files.service';
+import { uploadedSocialMediaKey } from './social-media.files';
 
 interface SettingsRow { credentials_cipher: string; organization_id: string; graph_version: string; updated_at: Date }
 const POST_COLUMNS = `id, platform, channel_id, caption, media_type, media_url, ai_generated, status,
@@ -15,7 +17,7 @@ const providerMessage = (error: unknown) => error instanceof SocialProviderError
 
 @Injectable()
 export class SocialMediaService {
-  constructor(private readonly prisma: PrismaService, private readonly provider: SocialMediaProvider) {}
+  constructor(private readonly prisma: PrismaService, private readonly provider: SocialMediaProvider, private readonly files: SocialMediaFilesService) {}
 
   assertAdmin(user: AuthUser): void {
     if (!user || !isAdminUser(user)) throw new ForbiddenException('Hanya Admin yang dapat mengelola Media Sosial.');
@@ -156,7 +158,7 @@ export class SocialMediaService {
     this.assertAdmin(user);
     const draft = validatePost(body);
     if (draft.channelId && (await this.channel(draft.channelId)).platform !== draft.platform) throw new BadRequestException('Akun tidak sesuai dengan platform posting.');
-    const [post] = await this.prisma.$queryRawUnsafe<SocialPost[]>(`INSERT INTO public.cbt_social_posts
+    const save = (client: Pick<PrismaService, '$queryRawUnsafe'>) => client.$queryRawUnsafe<SocialPost[]>(`INSERT INTO public.cbt_social_posts
       (id, platform, channel_id, caption, media_type, media_url, ai_generated, created_by, updated_by)
       VALUES ($1::uuid, $2, $3, $4, $5, $6, $7, $8::uuid, $8::uuid)
       ON CONFLICT (id) DO UPDATE SET platform = EXCLUDED.platform, channel_id = EXCLUDED.channel_id,
@@ -164,6 +166,8 @@ export class SocialMediaService {
         ai_generated = EXCLUDED.ai_generated, updated_by = EXCLUDED.updated_by, status = 'draft', error = NULL, updated_at = now()
       WHERE cbt_social_posts.status IN ('draft', 'failed') AND cbt_social_posts.buffer_post_id IS NULL RETURNING ${POST_COLUMNS}`,
       id, draft.platform, draft.channelId, draft.caption, draft.mediaType, draft.mediaUrl, draft.aiGenerated, user.id);
+    const [post] = draft.mediaUrl && uploadedSocialMediaKey(draft.mediaUrl) ?
+      await this.files.guardSave(draft.mediaUrl, save) : await save(this.prisma);
     if (!post) throw new ConflictException('Posting ini sudah dikirim atau sedang diproses dan tidak dapat diubah.');
     return { post };
   }

@@ -1,4 +1,4 @@
-import { apiGet, apiSend } from './api/client';
+import { apiGet, apiSend, type ApiResult } from './api/client';
 
 export type SocialPlatform = 'instagram' | 'facebook' | 'tiktok';
 export type SocialMediaType = 'text' | 'image' | 'video';
@@ -41,3 +41,25 @@ export const syncSocialPost = (id: string) => apiSend<{ post: SocialPost }>(`/ap
 export const deleteSocialDraft = (id: string) => apiSend<{ deleted: boolean }>(`/api/social-media/posts/${id}`, {}, 'DELETE');
 export const reconcileSocialPost = (id: string, body: { bufferPostId?: string; externalPostId?: string }) =>
   apiSend<{ post: SocialPost }>(`/api/social-media/posts/${id}/reference`, body, 'PUT');
+
+export interface UploadedSocialMedia { url: string; name: string; size: number; mediaType: 'image' | 'video' }
+export interface SocialStorageUsage { files: number; bytes: number; unusedFiles: number; unusedBytes: number; truncated: boolean }
+export const getSocialStorageUsage = () => apiGet<{ storage: SocialStorageUsage }>('/api/social-media/media/storage');
+export const cleanupSocialStorage = () => apiSend<{ deleted: number; freedBytes: number; failed: number }>('/api/social-media/media/cleanup', {}, 'POST', { timeoutMs: 45000 });
+export function uploadSocialMediaFile(file: File, onProgress: (percent: number) => void): Promise<ApiResult<{ media: UploadedSocialMedia }>> {
+  return new Promise(resolve => {
+    const request = new XMLHttpRequest();
+    request.open('POST', '/api/social-media/media');
+    request.timeout = 120000;
+    request.upload.onprogress = event => { if (event.lengthComputable) onProgress(Math.round(event.loaded / event.total * 100)); };
+    request.onload = () => {
+      try {
+        const result = JSON.parse(request.responseText);
+        resolve(request.status >= 200 && request.status < 300 && result.success ? result :
+          { success: false, error: result.error || 'File belum berhasil diunggah.' });
+      } catch { resolve({ success: false, error: request.status === 413 ? 'Berkas terlalu besar. Gambar maksimal 8 MB, video maksimal 25 MB.' : 'Unggah media gagal. Periksa koneksi lalu coba lagi.' }); }
+    };
+    request.onerror = request.ontimeout = request.onabort = () => resolve({ success: false, error: 'Unggahan terputus. Periksa koneksi lalu coba lagi.' });
+    const body = new FormData(); body.append('file', file); request.send(body);
+  });
+}
