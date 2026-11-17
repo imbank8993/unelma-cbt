@@ -66,6 +66,7 @@ export default function LandingFooter() {
                                     Coba Latihan Soal
                                 </a>
                             </li>
+                            <li><Link href="/informasi" className="hover:text-white transition-colors">Informasi PDF</Link></li>
                             <li>
                                 <Link href="/login" className="hover:text-white transition-colors">
                                     Login

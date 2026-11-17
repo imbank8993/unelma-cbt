@@ -10,6 +10,7 @@ const menuConfig: Record<string, DashboardMenuItem[]> = {
     'Superadmin': [
         { icon: 'fa-house', label: 'Dashboard', href: '/dashboard/admin' },
         { icon: 'fa-graduation-cap', label: 'Ruang Belajar', href: '/dashboard/learning' },
+        { icon: 'fa-circle-info', label: 'Informasi PDF', href: '/dashboard/admin/information' },
         { icon: 'fa-users', label: 'Kelas', href: '/dashboard/admin/classes' },
         { icon: 'fa-book-open', label: 'Bank Soal', href: '/dashboard/admin/questions' },
         { icon: 'fa-clipboard-check', label: 'Ujian', href: '/dashboard/admin/exams' },
@@ -32,6 +33,7 @@ const menuConfig: Record<string, DashboardMenuItem[]> = {
     'Admin': [
         { icon: 'fa-house', label: 'Dashboard', href: '/dashboard/admin' },
         { icon: 'fa-graduation-cap', label: 'Ruang Belajar', href: '/dashboard/learning' },
+        { icon: 'fa-circle-info', label: 'Informasi PDF', href: '/dashboard/admin/information' },
         { icon: 'fa-users', label: 'Kelas', href: '/dashboard/admin/classes' },
         { icon: 'fa-book-open', label: 'Bank Soal', href: '/dashboard/admin/questions' },
         { icon: 'fa-clipboard-check', label: 'Ujian', href: '/dashboard/admin/exams' },

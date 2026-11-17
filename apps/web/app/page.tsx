@@ -7,6 +7,7 @@ import LandingHeader from '@/app/components/landing/LandingHeader';
 import LandingHero from '@/app/components/landing/LandingHero';
 import { LandingFeatureGrid, LandingHowItWorks, LandingPaths, LandingTryQuestion } from '@/app/components/landing/LandingLearning';
 import LandingFooter from '@/app/components/landing/LandingFooter';
+import LandingInformation from '@/app/components/landing/LandingInformation';
 import { fetchSessionUser, clearSessionCache } from '@/lib/session';
 import { clearActiveRoleInStorage, setActiveRoleInStorage, lockActiveRole, getDashboardPath, type Role } from '@/lib/rbac';
 import { resetAndRetrySso } from '@/lib/session-reset';
@@ -188,6 +189,9 @@ export default function Home() {
 
             {/* 3. Jalur belajar: SD hingga CPNS/PPPK */}
             <LandingPaths />
+
+            {/* Informasi PDF yang diterbitkan Admin */}
+            <LandingInformation />
 
             {/* 4. Coba satu soal langsung */}
             <LandingTryQuestion onStart={startLearning} />

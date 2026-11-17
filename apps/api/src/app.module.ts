@@ -10,6 +10,7 @@ import { ExamsModule } from './exams/exams.module';
 import { GradingModule } from './grading/grading.module';
 import { HealthModule } from './health/health.module';
 import { ImportsModule } from './imports/imports.module';
+import { InformationModule } from './information/information.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { PasModule } from './pas/pas.module';
 import { PrismaModule } from './prisma/prisma.module';
@@ -41,6 +42,7 @@ import { CommissionsModule } from './commissions/commissions.module';
     ExamsModule,
     ExamConfigsModule,
     ImportsModule,
+    InformationModule,
     PasModule,
     StudentsModule,
     QuestionsModule,

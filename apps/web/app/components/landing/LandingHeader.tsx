@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { Compass, PencilLine, Route, X, Menu, LogIn, LayoutDashboard } from 'lucide-react';
+import { Compass, FileText, PencilLine, Route, X, Menu, LogIn, LayoutDashboard } from 'lucide-react';
 
 interface LandingHeaderProps {
     currentUser?: { name?: string; role?: string } | null;
@@ -23,6 +23,7 @@ export default function LandingHeader({ currentUser }: LandingHeaderProps) {
 
     const menuItems = [
         { name: 'Program', href: '#program', icon: Compass },
+        { name: 'Informasi', href: '/informasi', icon: FileText },
         { name: 'Coba Soal', href: '#coba-soal', icon: PencilLine },
         { name: 'Cara Belajar', href: '#cara-belajar', icon: Route },
     ];
