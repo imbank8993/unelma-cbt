@@ -2,13 +2,14 @@ import { BadRequestException, ForbiddenException, Injectable, InternalServerErro
 import type { AuthUser } from '@acca-cbt/shared';
 import { randomUUID } from 'node:crypto';
 import { isAdminUser } from '../common/creation-limits';
+import { advisoryTransactionLock } from '../common/transaction-lock';
 import { PrismaService } from '../prisma/prisma.service';
 import { StorageService } from '../storage/storage.service';
 import { signSocialMediaKey, verifySocialMediaKey } from './social-media.crypto';
 import { identifySocialUpload, SOCIAL_OBJECT_PATTERN, SOCIAL_UNUSED_MIN_AGE_MS, socialMediaObjectKey, uploadedSocialMediaKey } from './social-media.files';
 
 type QueryClient = Pick<PrismaService, '$queryRawUnsafe' | '$executeRawUnsafe'>;
-const LOCK_SQL = "SELECT pg_advisory_xact_lock(hashtext('unelma-social-media-files'))::text AS locked";
+const LOCK_KEY = 'unelma-social-media-files';
 
 @Injectable()
 export class SocialMediaFilesService {
@@ -52,7 +53,7 @@ export class SocialMediaFilesService {
     const key = uploadedSocialMediaKey(url);
     if (!key) throw new BadRequestException('Tautan lampiran unggahan tidak valid. Unggah kembali file.');
     return this.prisma.$transaction(async tx => {
-      await tx.$queryRawUnsafe(LOCK_SQL);
+      await advisoryTransactionLock({ raw: (sql: string, ...params: unknown[]) => tx.$queryRawUnsafe(sql, ...params) } as never, LOCK_KEY);
       if (!await this.storage.objectMetadata(key)) throw new BadRequestException('Lampiran sudah tidak tersedia. Unggah kembali file dari perangkat.');
       return save(tx);
     }, { timeout: 30000 });
@@ -78,7 +79,7 @@ export class SocialMediaFilesService {
   async cleanup(user: AuthUser) {
     this.assertAdmin(user);
     return this.prisma.$transaction(async tx => {
-      await tx.$queryRawUnsafe(LOCK_SQL);
+      await advisoryTransactionLock({ raw: (sql: string, ...params: unknown[]) => tx.$queryRawUnsafe(sql, ...params) } as never, LOCK_KEY);
       // Refuse cleanup if either listing/reference query is incomplete or fails.
       const [listing, used] = await Promise.all([this.storage.listObjects('social-media/', 10000), this.references(tx)]);
       if (listing.truncated) throw new BadRequestException('Daftar media terlalu besar. Pembersihan otomatis dibatalkan agar seluruh referensi dapat diperiksa.');
