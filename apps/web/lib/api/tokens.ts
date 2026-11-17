@@ -1,5 +1,28 @@
 import { apiGet, apiSend, type ApiResult } from './client';
 
+/** Metode pembayaran Midtrans yang bisa dipilih admin per paket token. */
+export const PAYMENT_METHOD_OPTIONS = [
+  { id: 'qris', label: 'QRIS', hint: 'Semua e-wallet & m-banking' },
+  { id: 'bri_va', label: 'BRI Virtual Account (BRIVA)', hint: 'BRImo, ATM BRI' },
+  { id: 'bca_va', label: 'BCA Virtual Account', hint: 'm-BCA, KlikBCA, ATM BCA' },
+  { id: 'bni_va', label: 'BNI Virtual Account', hint: 'BNI Mobile, ATM BNI' },
+  { id: 'mandiri_bill', label: 'Mandiri Bill Payment', hint: "Livin' by Mandiri, ATM Mandiri" },
+  { id: 'permata_va', label: 'Permata Virtual Account', hint: 'PermataMobile X, ATM Bersama/Prima' },
+  { id: 'cimb_va', label: 'CIMB Niaga Virtual Account', hint: 'OCTO Mobile, ATM CIMB Niaga' },
+] as const;
+
+export type PaymentMethodId = (typeof PAYMENT_METHOD_OPTIONS)[number]['id'];
+
+export const ALL_PAYMENT_METHOD_IDS: PaymentMethodId[] = PAYMENT_METHOD_OPTIONS.map((m) => m.id);
+
+/** Metode yang diizinkan untuk paket; kosong (data lama) berarti semua metode. */
+export function packagePaymentMethods(pkg: Pick<TokenPackage, 'payment_methods'> | null | undefined): PaymentMethodId[] {
+  const list = (pkg?.payment_methods || []).filter((id): id is PaymentMethodId =>
+    (ALL_PAYMENT_METHOD_IDS as string[]).includes(id),
+  );
+  return list.length ? list : ALL_PAYMENT_METHOD_IDS;
+}
+
 export interface TokenPackage {
   id: string;
   name: string;
@@ -7,6 +30,7 @@ export interface TokenPackage {
   price_idr: number;
   description?: string;
   is_active: boolean;
+  payment_methods?: string[];
   created_at?: string;
   updated_at?: string;
 }
@@ -64,6 +88,7 @@ export async function createTokenPackage(data: {
   price_idr: number;
   description?: string;
   is_active?: boolean;
+  payment_methods?: string[];
 }): Promise<ApiResult<{ package: TokenPackage }>> {
   return apiSend<{ package: TokenPackage }>('/api/tokens/admin/packages', data, 'POST');
 }

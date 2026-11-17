@@ -285,6 +285,23 @@ test('pembelian ditolak bila Midtrans belum dikonfigurasi atau pesanan menggantu
     await assert.rejects(spam.createPayment(user, { package_id: 'p-1' }), /Terlalu banyak/);
 });
 
+test('metode pembayaran dibatasi sesuai pilihan admin pada paket', async () => {
+    const user = { id: 'user-1', email: 'siswa@sekolah.id', roles: [] };
+    const pkg = [/FROM public.token_packages WHERE id/, () => [{ id: 'p-1', name: 'Paket', token_amount: 10, price_idr: '25000', payment_methods: ['qris', 'bri_va'] }]];
+    const svc = new TokensService(fakePrisma([pkg]), config);
+    await assert.rejects(svc.createPayment(user, { package_id: 'p-1', payment_method: 'bca_va' }), /tidak tersedia untuk paket/);
+
+    // Metode yang diizinkan lolos validasi paket (lalu berhenti di konfigurasi Midtrans).
+    const ok = new TokensService(fakePrisma([pkg, midtransRow({ is_production: false, sandbox_server_key: '' })]), config);
+    await assert.rejects(ok.createPayment(user, { package_id: 'p-1', payment_method: 'bri_va' }), /belum dikonfigurasi/);
+
+    // Simpan paket: daftar dirapikan dan dikirim sebagai array.
+    const prisma = fakePrisma([[/FROM public.token_packages WHERE id/, () => [{ id: 'p-1', name: 'Paket', token_amount: 10, price_idr: 25000, description: '', is_active: true, payment_methods: ['qris'] }]]]);
+    await new TokensService(prisma, config).updatePackage('p-1', { payment_methods: ['bri_va', 'qris', 'bri_va'] });
+    const update = prisma.calls.find((c) => /UPDATE public.token_packages/.test(c.sql));
+    assert.deepEqual(update.args[5], ['qris', 'bri_va']);
+});
+
 test('midtrans_config & commission_config tidak bocor lewat /settings', () => {
     for (const key of ['midtrans_config', 'commission_config']) {
         assert.equal(SettingsService.isSensitive(key), true);

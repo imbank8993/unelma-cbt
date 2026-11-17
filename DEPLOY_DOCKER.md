@@ -355,3 +355,16 @@ Migrasi (opsional/aman dijalankan ulang; tabel lokal sudah disiapkan):
 ```bash
 psql "$DATABASE_URL_HOST" -f database/migrations/20261111_05_core_api_payment_details.sql
 ```
+
+## Metode Pembayaran per Paket Token (17 November 2026)
+
+Admin dapat memilih satu atau lebih metode pembayaran Midtrans untuk tiap paket token (menu **Pengaturan Token → Paket Token → Tambah/Edit**): QRIS, BRIVA, BCA VA, BNI VA, Mandiri Bill, Permata VA, CIMB Niaga VA.
+- Modal checkout siswa hanya menampilkan metode yang dicentang untuk paket tersebut.
+- API menolak metode di luar daftar paket; fallback Snap mengirim `enabled_payments` yang sama.
+- Paket lama otomatis mendapat semua metode yang sebelumnya tampil (tanpa CIMB), jadi perilaku tidak berubah sampai admin mengeditnya.
+
+Migrasi (wajib sebelum deploy API, aman dijalankan ulang):
+
+```bash
+psql "$DATABASE_URL_HOST" -f database/migrations/20261117_03_token_package_payment_methods.sql
+```

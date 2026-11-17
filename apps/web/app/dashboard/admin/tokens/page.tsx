@@ -15,8 +15,22 @@ import {
     deleteTokenPackage,
     getMidtransConfig,
     saveMidtransConfig,
+    PAYMENT_METHOD_OPTIONS,
+    ALL_PAYMENT_METHOD_IDS,
+    packagePaymentMethods,
+    type PaymentMethodId,
     type TokenPackage
 } from '@/lib/api/tokens';
+
+const PAYMENT_METHOD_SHORT: Record<PaymentMethodId, string> = {
+    qris: 'QRIS',
+    bri_va: 'BRIVA',
+    bca_va: 'BCA VA',
+    bni_va: 'BNI VA',
+    mandiri_bill: 'Mandiri',
+    permata_va: 'Permata VA',
+    cimb_va: 'CIMB VA',
+};
 
 export default function AdminTokensPage() {
     const [packages, setPackages] = useState<TokenPackage[]>([]);
@@ -32,6 +46,7 @@ export default function AdminTokensPage() {
     const [pkgPrice, setPkgPrice] = useState('10000');
     const [pkgDesc, setPkgDesc] = useState('');
     const [pkgActive, setPkgActive] = useState(true);
+    const [pkgMethods, setPkgMethods] = useState<PaymentMethodId[]>(ALL_PAYMENT_METHOD_IDS);
     const [submitting, setSubmitting] = useState(false);
     const [togglingId, setTogglingId] = useState<string | null>(null);
 
@@ -119,6 +134,7 @@ export default function AdminTokensPage() {
         setPkgPrice('25000');
         setPkgDesc('');
         setPkgActive(true);
+        setPkgMethods(ALL_PAYMENT_METHOD_IDS);
         setModalOpen(true);
     };
 
@@ -129,7 +145,16 @@ export default function AdminTokensPage() {
         setPkgPrice(String(Math.round(Number(pkg.price_idr))));
         setPkgDesc(pkg.description || '');
         setPkgActive(pkg.is_active);
+        setPkgMethods(packagePaymentMethods(pkg));
         setModalOpen(true);
+    };
+
+    const togglePkgMethod = (id: PaymentMethodId, checked: boolean) => {
+        setPkgMethods((prev) => {
+            const next = checked ? [...prev, id] : prev.filter((m) => m !== id);
+            // Simpan urutan sesuai daftar resmi agar tampilan konsisten.
+            return ALL_PAYMENT_METHOD_IDS.filter((m) => next.includes(m));
+        });
     };
 
     const handleSavePackage = async (e: React.FormEvent) => {
@@ -149,12 +174,17 @@ export default function AdminTokensPage() {
             void notify('Harga paket harus bilangan bulat rupiah antara 1 dan 100.000.000.');
             return;
         }
+        if (pkgMethods.length === 0) {
+            void notify('Pilih minimal satu metode pembayaran.');
+            return;
+        }
         const payload = {
             name,
             token_amount: tokenAmount,
             price_idr: priceIdr,
             description: pkgDesc.trim(),
             is_active: pkgActive,
+            payment_methods: pkgMethods,
         };
         setSubmitting(true);
         try {
@@ -279,6 +309,7 @@ export default function AdminTokensPage() {
                                 <th className="py-3.5 px-6">Jumlah Token</th>
                                 <th className="py-3.5 px-6">Harga (Rp)</th>
                                 <th className="py-3.5 px-6">Deskripsi</th>
+                                <th className="py-3.5 px-6">Metode Bayar</th>
                                 <th className="py-3.5 px-6">Status</th>
                                 <th className="py-3.5 px-6 text-right">Aksi</th>
                             </tr>
@@ -286,19 +317,19 @@ export default function AdminTokensPage() {
                         <tbody className="divide-y divide-slate-100">
                             {loading ? (
                                 <tr>
-                                    <td colSpan={6} className="py-10 text-center text-slate-400">
+                                    <td colSpan={7} className="py-10 text-center text-slate-400">
                                         Memuat daftar paket token...
                                     </td>
                                 </tr>
                             ) : packagesError ? (
                                 <tr>
-                                    <td colSpan={6} className="py-10 text-center text-red-600">
+                                    <td colSpan={7} className="py-10 text-center text-red-600">
                                         Gagal memuat paket token: {packagesError}
                                     </td>
                                 </tr>
                             ) : packages.length === 0 ? (
                                 <tr>
-                                    <td colSpan={6} className="py-12 text-center text-slate-400">
+                                    <td colSpan={7} className="py-12 text-center text-slate-400">
                                         Belum ada paket token. Klik "Tambah Paket Token" untuk membuat paket pertama.
                                     </td>
                                 </tr>
@@ -316,6 +347,15 @@ export default function AdminTokensPage() {
                                         </td>
                                         <td className="py-4 px-6 text-xs text-slate-600 max-w-xs truncate">
                                             {pkg.description || '-'}
+                                        </td>
+                                        <td className="py-4 px-6">
+                                            <div className="flex flex-wrap gap-1 max-w-[220px]">
+                                                {packagePaymentMethods(pkg).map((m) => (
+                                                    <span key={m} className="px-1.5 py-0.5 rounded border border-slate-200 bg-slate-50 text-[10px] font-semibold text-slate-600">
+                                                        {PAYMENT_METHOD_SHORT[m]}
+                                                    </span>
+                                                ))}
+                                            </div>
                                         </td>
                                         <td className="py-4 px-6">
                                             <button
@@ -540,6 +580,36 @@ export default function AdminTokensPage() {
                         </div>
                         <ModalField label="Deskripsi singkat" hint='Tulis "(Bonus N token)" agar siswa melihat label bonus.'>
                             <textarea rows={2} maxLength={500} value={pkgDesc} onChange={(e) => setPkgDesc(e.target.value)} placeholder="Keterangan manfaat atau rincian paket" />
+                        </ModalField>
+                        <ModalField label="Metode pembayaran" required hint="Hanya metode yang dicentang yang muncul saat siswa membeli paket ini.">
+                            <div className="space-y-2">
+                                <div className="flex items-center gap-3 text-xs">
+                                    <button type="button" className="text-[#030C4D] font-semibold hover:underline cursor-pointer" onClick={() => setPkgMethods(ALL_PAYMENT_METHOD_IDS)}>
+                                        Pilih semua
+                                    </button>
+                                    <button type="button" className="text-slate-500 font-semibold hover:underline cursor-pointer" onClick={() => setPkgMethods([])}>
+                                        Kosongkan
+                                    </button>
+                                    <span className="ml-auto text-slate-500">{pkgMethods.length} dipilih</span>
+                                </div>
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                    {PAYMENT_METHOD_OPTIONS.map((m) => {
+                                        const checked = pkgMethods.includes(m.id);
+                                        return (
+                                            <label key={m.id} className={`flex items-start gap-2 p-2.5 rounded-lg border cursor-pointer transition-colors ${checked ? 'border-[#030C4D] bg-[#030C4D]/5' : 'border-slate-200 hover:border-slate-300'}`}>
+                                                <input type="checkbox" checked={checked} onChange={(e) => togglePkgMethod(m.id, e.target.checked)} className="mt-0.5 h-4 w-4 rounded" />
+                                                <span className="leading-tight">
+                                                    <span className="block text-xs font-semibold text-slate-800">{m.label}</span>
+                                                    <span className="block text-[11px] text-slate-500">{m.hint}</span>
+                                                </span>
+                                            </label>
+                                        );
+                                    })}
+                                </div>
+                                {pkgMethods.length === 0 && (
+                                    <p className="text-[11px] text-red-600">Pilih minimal satu metode pembayaran.</p>
+                                )}
+                            </div>
                         </ModalField>
                         <label className="flex items-center gap-2 text-sm text-slate-700 cursor-pointer">
                             <input type="checkbox" checked={pkgActive} onChange={(e) => setPkgActive(e.target.checked)} className="h-4 w-4 rounded" />

@@ -8,6 +8,7 @@ import {
 import {
   createPayment,
   checkPaymentStatus,
+  packagePaymentMethods,
   type TokenPackage,
   type CorePaymentDetails,
   type PaymentCreateResult
@@ -86,6 +87,15 @@ const PAYMENT_METHODS: MethodOption[] = [
     badgeColor: 'bg-emerald-50 text-emerald-700 border-emerald-200',
     description: 'Transfer via PermataMobile X atau ATM Permata/Prima/ALTO',
   },
+  {
+    id: 'cimb_va',
+    name: 'CIMB Niaga Virtual Account',
+    category: 'va',
+    bankLabel: 'CIMB Niaga',
+    badge: 'CIMB',
+    badgeColor: 'bg-red-50 text-red-700 border-red-200',
+    description: 'Transfer via OCTO Mobile atau ATM CIMB Niaga',
+  },
 ];
 
 export default function CustomPaymentModal({
@@ -107,13 +117,18 @@ export default function CustomPaymentModal({
 
   const pollingRef = useRef<NodeJS.Timeout | null>(null);
 
+  // Hanya metode yang diizinkan admin untuk paket ini.
+  const allowedIds = packagePaymentMethods(pkg);
+  const availableMethods = PAYMENT_METHODS.filter((m) => allowedIds.includes(m.id));
+  const firstMethod = availableMethods[0]?.id ?? 'qris';
+
   // Reset state saat modal dibuka
   useEffect(() => {
     if (isOpen) {
       setActivePayment(null);
       setErrorMessage(null);
       setIsSuccess(false);
-      setSelectedMethod('qris');
+      setSelectedMethod(firstMethod);
       setTimeLeft(15 * 60);
     } else {
       if (pollingRef.current) clearInterval(pollingRef.current);
@@ -121,7 +136,7 @@ export default function CustomPaymentModal({
     return () => {
       if (pollingRef.current) clearInterval(pollingRef.current);
     };
-  }, [isOpen]);
+  }, [isOpen, pkg?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Hitung mundur waktu kadaluarsa pembayaran
   useEffect(() => {
@@ -369,7 +384,7 @@ export default function CustomPaymentModal({
               </div>
 
               <div className="space-y-2">
-                {PAYMENT_METHODS.map((method) => {
+                {availableMethods.map((method) => {
                   const isSelected = selectedMethod === method.id;
                   return (
                     <button

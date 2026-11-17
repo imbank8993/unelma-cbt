@@ -7,6 +7,7 @@ import { canAccessExam, loadExamAudience } from '../students/exam-access';
 import type { AuthUser } from '@acca-cbt/shared';
 import * as crypto from 'crypto';
 import { CreatePaymentDto, CreateTokenPackageDto, SaveMidtransConfigDto, UnlockItemDto, UpdateTokenPackageDto } from './tokens.dto';
+import { PAYMENT_METHOD_IDS, SNAP_PAYMENT_CODES, allowedPaymentMethods, normalizePaymentMethods } from './payment-methods';
 
 export interface MidtransConfig {
   is_production: boolean;
@@ -55,7 +56,7 @@ export class TokensService {
 
   async getPublicPackages() {
     return this.prisma.$queryRawUnsafe<any[]>(`
-      SELECT id, name, token_amount, price_idr, description, is_active
+      SELECT id, name, token_amount, price_idr, description, is_active, payment_methods
       FROM public.token_packages
       WHERE is_active = true
       ORDER BY price_idr ASC
@@ -64,7 +65,7 @@ export class TokensService {
 
   async getAllPackagesAdmin() {
     return this.prisma.$queryRawUnsafe<any[]>(`
-      SELECT id, name, token_amount, price_idr, description, is_active, created_at, updated_at
+      SELECT id, name, token_amount, price_idr, description, is_active, payment_methods, created_at, updated_at
       FROM public.token_packages
       ORDER BY created_at DESC
     `);
@@ -72,10 +73,11 @@ export class TokensService {
 
   async createPackage(dto: CreateTokenPackageDto) {
     const rows = await this.prisma.$queryRawUnsafe<any[]>(`
-      INSERT INTO public.token_packages (name, token_amount, price_idr, description, is_active)
-      VALUES ($1, $2, $3, $4, $5)
+      INSERT INTO public.token_packages (name, token_amount, price_idr, description, is_active, payment_methods)
+      VALUES ($1, $2, $3, $4, $5, $6::text[])
       RETURNING *
-    `, dto.name, dto.token_amount, dto.price_idr, dto.description || '', dto.is_active ?? true);
+    `, dto.name, dto.token_amount, dto.price_idr, dto.description || '', dto.is_active ?? true,
+      dto.payment_methods ? normalizePaymentMethods(dto.payment_methods) : [...PAYMENT_METHOD_IDS]);
     return { success: true, package: rows[0] };
   }
 
@@ -91,13 +93,17 @@ export class TokensService {
     const priceIdr = dto.price_idr ?? curr.price_idr;
     const description = dto.description ?? curr.description;
     const isActive = dto.is_active ?? curr.is_active;
+    const paymentMethods = dto.payment_methods
+      ? normalizePaymentMethods(dto.payment_methods)
+      : allowedPaymentMethods(curr);
 
     const rows = await this.prisma.$queryRawUnsafe<any[]>(`
       UPDATE public.token_packages
-      SET name = $1, token_amount = $2, price_idr = $3, description = $4, is_active = $5, updated_at = NOW()
-      WHERE id = $6::uuid
+      SET name = $1, token_amount = $2, price_idr = $3, description = $4, is_active = $5,
+          payment_methods = $6::text[], updated_at = NOW()
+      WHERE id = $7::uuid
       RETURNING *
-    `, name, tokenAmount, priceIdr, description, isActive, id);
+    `, name, tokenAmount, priceIdr, description, isActive, paymentMethods, id);
     return { success: true, package: rows[0] };
   }
 
@@ -202,6 +208,11 @@ export class TokensService {
     if (!pkgs.length) throw new NotFoundException('Paket token tidak tersedia atau nonaktif.');
 
     const pkg = pkgs[0];
+    const allowedMethods = allowedPaymentMethods(pkg);
+    const requestedMethod = (dto.payment_method || '').toLowerCase().trim();
+    if (requestedMethod && !(allowedMethods as string[]).includes(requestedMethod)) {
+      throw new BadRequestException('Metode pembayaran ini tidak tersedia untuk paket yang dipilih.');
+    }
     const amount = Math.round(Number(pkg.price_idr));
     if (!Number.isFinite(amount) || amount < 1) {
       throw new BadRequestException('Harga paket token tidak valid. Hubungi Administrator.');
@@ -240,7 +251,7 @@ export class TokensService {
       ? 'https://api.midtrans.com/v2/charge'
       : 'https://api.sandbox.midtrans.com/v2/charge';
 
-    const paymentMethod = (dto.payment_method || '').toLowerCase().trim();
+    const paymentMethod = requestedMethod;
     const isCoreApi = Boolean(paymentMethod);
 
     const transactionDetails = { order_id: orderId, gross_amount: amount };
@@ -357,6 +368,8 @@ export class TokensService {
       transaction_details: transactionDetails,
       customer_details: customerDetails,
       item_details: itemDetails,
+      // Snap hanya menampilkan metode yang diizinkan admin untuk paket ini.
+      enabled_payments: allowedMethods.map((id) => SNAP_PAYMENT_CODES[id]),
     };
 
     let snapToken = '';

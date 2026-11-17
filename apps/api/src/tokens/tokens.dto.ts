@@ -1,5 +1,6 @@
-import { IsBoolean, IsIn, IsInt, IsNotEmpty, IsOptional, IsString, IsUUID, Max, MaxLength, Min } from 'class-validator';
+import { ArrayMinSize, IsArray, IsBoolean, IsIn, IsInt, IsNotEmpty, IsOptional, IsString, IsUUID, Max, MaxLength, Min } from 'class-validator';
 import { Transform, Type } from 'class-transformer';
+import { PAYMENT_METHOD_IDS } from './payment-methods';
 
 const trim = ({ value }: { value: unknown }) => (typeof value === 'string' ? value.trim() : value);
 
@@ -40,6 +41,13 @@ export class CreateTokenPackageDto {
   @IsOptional()
   @IsBoolean()
   is_active?: boolean;
+
+  /** Metode pembayaran Midtrans yang diizinkan untuk paket ini (minimal satu). */
+  @IsOptional()
+  @IsArray()
+  @ArrayMinSize(1, { message: 'Pilih minimal satu metode pembayaran.' })
+  @IsIn(PAYMENT_METHOD_IDS as unknown as string[], { each: true, message: 'Metode pembayaran tidak dikenal.' })
+  payment_methods?: string[];
 }
 
 export class UpdateTokenPackageDto {
@@ -73,6 +81,13 @@ export class UpdateTokenPackageDto {
   @IsOptional()
   @IsBoolean()
   is_active?: boolean;
+
+  /** Metode pembayaran Midtrans yang diizinkan untuk paket ini (minimal satu). */
+  @IsOptional()
+  @IsArray()
+  @ArrayMinSize(1, { message: 'Pilih minimal satu metode pembayaran.' })
+  @IsIn(PAYMENT_METHOD_IDS as unknown as string[], { each: true, message: 'Metode pembayaran tidak dikenal.' })
+  payment_methods?: string[];
 }
 
 export class CreatePaymentDto {
@@ -86,6 +101,7 @@ export class CreatePaymentDto {
    */
   @IsOptional()
   @IsString()
+  @MaxLength(30)
   payment_method?: string;
 }
 
