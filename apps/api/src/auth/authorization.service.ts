@@ -218,7 +218,6 @@ export class AuthorizationService {
         const elevated =
             this.isElevatedGlobally(user) ||
             (await this.roles.hasOrgRole(user.id, bank.organization_id, ['Admin']));
-        const restrictedProctor = !elevated && await this.roles.hasOrgRole(user.id, bank.organization_id, ['Proktor']);
         // Proktor = pembuat konten mandiri: bank milik Proktor lain (termasuk yang
         // sudah dipublikasikan) TIDAK terbaca, karena isinya — soal dan kunci —
         // adalah konten yang dijual pembuatnya. Akses lintas pembuat hanya lewat
@@ -231,10 +230,8 @@ export class AuthorizationService {
             if (folder?.is_public === true && folder.created_by === user.id) return bank.organization_id;
         }
 
-        if (access === 'delete' && restrictedProctor) {
-            throw new ForbiddenException('Proktor tidak dapat menghapus bank soal, termasuk bank soal buatan sendiri.');
-        }
-
+        // Hapus: hanya Admin atau pembuat bank (termasuk Proktor). Bank yang sudah
+        // dipakai ujian tetap ditolak di QuestionBanksService.remove.
         if (!elevated && bank.created_by !== user.id && access !== 'delete') {
             const grant = await collaborationGrant(db, 'bank', bankId, user.id);
             if (grant && (access === 'read' || ['editor', 'manager'].includes(grant.permission))) return bank.organization_id;
@@ -258,11 +255,9 @@ export class AuthorizationService {
         const staff = this.isElevatedGlobally(user) || await this.roles.hasOrgRole(user.id, resource.organization_id, type === 'period' ? ['Admin'] : ['Proktor', 'Admin']);
         const admin = this.isElevatedGlobally(user) || await this.roles.hasOrgRole(user.id, resource.organization_id, ['Admin']);
         const owner = staff && resource.created_by === user.id;
-        // Bank soal tetap tidak boleh dihapus Proktor (kebijakan lama, dipertahankan);
-        // selebihnya Proktor setara pemilik konten biasa.
-        const proctorBank = type === 'bank' && !admin && await this.roles.hasOrgRole(user.id, resource.organization_id, ['Proktor']);
+        // Proktor setara pemilik konten biasa: boleh menghapus bank buatannya sendiri.
         const grant = staff && !admin && !owner ? await collaborationGrant(this.db, type, resourceId, user.id) : null;
-        return { resource, owner, admin, grant, canShare: admin || owner || grant?.permission === 'manager', canDelete: admin || (owner && !proctorBank) };
+        return { resource, owner, admin, grant, canShare: admin || owner || grant?.permission === 'manager', canDelete: admin || owner };
     }
 
     /**
@@ -272,13 +267,12 @@ export class AuthorizationService {
     async collaborationListContext(user: AuthUser, organizationId: string, type: CollaborativeResource = 'exam') {
         const admin = this.isElevatedGlobally(user) || await this.roles.hasOrgRole(user.id, organizationId, ['Admin']);
         const staff = admin || await this.roles.hasOrgRole(user.id, organizationId, type === 'period' ? ['Admin'] : ['Proktor', 'Admin']);
-        const proctorBank = type === 'bank' && !admin && await this.roles.hasOrgRole(user.id, organizationId, ['Proktor']);
         return {
             admin, staff,
             access: (resource: { created_by?: string | null }, grant: CollaborationGrant | null | undefined) => {
                 const owner = staff && resource.created_by === user.id;
                 const effective = staff && !admin && !owner ? grant || null : null;
-                return { owner, admin, grant: effective, canShare: admin || owner || effective?.permission === 'manager', canDelete: admin || (owner && !proctorBank) };
+                return { owner, admin, grant: effective, canShare: admin || owner || effective?.permission === 'manager', canDelete: admin || owner };
             },
         };
     }
