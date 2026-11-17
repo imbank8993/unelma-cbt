@@ -1,5 +1,6 @@
 "use client";
 
+import DashboardPageTitle from '@/app/components/DashboardPageTitle';
 import { useToast } from '@/app/components/ui/Toast';
 import { joinClassAction, leaveClassAction, listStudentClasses, type StudentClass } from '@/lib/api/students';
 import { getErrorMessage } from '@/lib/errors';
@@ -124,8 +125,8 @@ export default function SiswaClassesPage() {
             {/* ── Banner ── */}
             <StudentBanner
                 icon={Users}
-                eyebrow="Ruang kolaborasi bersama guru"
-                title={isLoading ? 'Kelasku' : classes.length ? `${classes.length} kelas aktif` : 'Belum bergabung di kelas'}
+                eyebrow={isLoading ? 'Memuat kelas…' : classes.length ? `${classes.length} kelas aktif` : 'Belum bergabung di kelas'}
+                title={<DashboardPageTitle />}
                 description={isLoading ? 'Memuat kelas Anda…' : classes.length
                     ? `Kamu tergabung di ${classes.length} kelas. Ujian dan materi dari guru otomatis muncul di Jadwal dan Ruang Belajar.`
                     : 'Gabung ke kelas gurumu dengan kode akses agar ujian dan materi kelas muncul otomatis.'}

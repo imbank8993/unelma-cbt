@@ -1,4 +1,5 @@
 "use client";
+import DashboardPageTitle from '@/app/components/DashboardPageTitle';
 import { motion } from 'framer-motion';
 import {
 Award,
@@ -101,7 +102,7 @@ export default function AnalyticsDashboard() {
               <BarChart3 size={20} className="text-primary" />
             </div>
             <div>
-              <h1 className="text-lg font-bold text-slate-800">Analitik & Statistik</h1>
+              <h1 className="text-lg font-bold text-slate-800"><DashboardPageTitle /></h1>
               <p className="text-sm text-slate-500">Performa ujian yang Anda buat</p>
             </div>
           </div>

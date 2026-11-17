@@ -28,8 +28,6 @@ interface HeaderProps {
     onCollapse?: () => void;
     pageTitle?: string;
     pageSubtitle?: string;
-    /** Sembunyikan judul halaman bila halaman sudah punya banner berjudul sendiri. */
-    hideTitle?: boolean;
     onScrollHiddenChange?: (hidden: boolean) => void;
 }
 
@@ -39,7 +37,6 @@ export default function Header({
     isCollapsed,
     pageTitle,
     pageSubtitle,
-    hideTitle = false,
 }: HeaderProps) {
     const router = useRouter();
     const pathname = usePathname();
@@ -108,6 +105,8 @@ export default function Header({
     const avatarImg = user?.photoUrl || user?.avatar_url;
 
     const isDashboard = !pageTitle || pageTitle === 'Dashboard' || pathname.endsWith('/dashboard') || pathname === '/dashboard/admin' || pathname === '/dashboard/proktor' || pathname === '/dashboard/guru' || pathname === '/dashboard/siswa' || pathname === '/dashboard/pengawas';
+    const title = pageTitle || 'Dashboard';
+    const subtitle = isDashboard ? displayName : (pageSubtitle || 'Unelma Edu Indonesia');
 
     return (
         <header className={`header ${isCollapsed ? 'collapsed' : ''}`}>
@@ -137,17 +136,17 @@ export default function Header({
                         </button>
                     )}
 
-                    {!hideTitle && <div className="header-title-wrapper">
-                        <h1 className="header-title" title={isDashboard ? 'Selamat Datang 👋' : pageTitle}>
-                            {isDashboard ? 'Selamat Datang 👋' : (pageTitle || 'ACCA CBT Portal')}
+                    <div className="header-title-wrapper">
+                        <h1 className="header-title" title={title}>
+                            {title}
                         </h1>
                         <span
                             className={`header-subtitle ${isDashboard ? 'header-subtitle--name' : ''}`}
-                            title={isDashboard ? displayName : (pageSubtitle || 'Unelma Edu Indonesia')}
+                            title={subtitle}
                         >
-                            {isDashboard ? displayName : (pageSubtitle || 'Unelma Edu Indonesia')}
+                            {subtitle}
                         </span>
-                    </div>}
+                    </div>
 
                     {/* Mobile: judul halaman + tombol menu sidebar */}
                     <div className="header-pageTitle-wrap">
@@ -160,29 +159,19 @@ export default function Header({
                         >
                             <Menu size={18} />
                         </button>
-                        {hideTitle ? null : isDashboard ? (
-                            <div className="header-greeting-container">
-                                <div className="header-greeting-title">
-                                    <h1 className="header-pageTitle header-pageTitle--stacked" title="Selamat Datang 👋">
-                                        Selamat Datang 👋
-                                    </h1>
-                                </div>
-                                <span className="header-greeting-name header-pageSubtitle header-pageSubtitle--name" title={displayName}>
-                                    {displayName}
-                                </span>
+                        <div className="header-greeting-container">
+                            <div className="header-greeting-title">
+                                <h1 className="header-pageTitle header-pageTitle--stacked" title={title}>
+                                    {title}
+                                </h1>
                             </div>
-                        ) : (
-                            <div className="header-greeting-container">
-                                <div className="header-greeting-title">
-                                    <h1 className="header-pageTitle header-pageTitle--stacked" title={pageTitle || 'ACCA CBT'}>
-                                        {pageTitle || 'ACCA CBT'}
-                                    </h1>
-                                </div>
-                                <span className="header-greeting-name header-pageSubtitle" title={pageSubtitle || 'Unelma Edu Indonesia'}>
-                                    {pageSubtitle || 'Unelma Edu Indonesia'}
-                                </span>
-                            </div>
-                        )}
+                            <span
+                                className={`header-greeting-name header-pageSubtitle ${isDashboard ? 'header-pageSubtitle--name' : ''}`}
+                                title={subtitle}
+                            >
+                                {subtitle}
+                            </span>
+                        </div>
                     </div>
                 </div>
 

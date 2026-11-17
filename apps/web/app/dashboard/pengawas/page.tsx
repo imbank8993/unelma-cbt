@@ -1,4 +1,5 @@
 "use client";
+import DashboardPageTitle from '@/app/components/DashboardPageTitle';
 import { Spinner } from '@/app/components/ui/Spinner';
 
 import { REFRESH_INTERVAL,useAutoRefresh } from '@/hooks/useAutoRefresh';
@@ -154,7 +155,7 @@ export default function PengawasDashboard() {
                 <div>
                     <div className="flex items-center gap-3 mb-2">
                         <h1 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight">
-                            Live Supervision
+                            <DashboardPageTitle />
                         </h1>
                         <span className="bg-primary/10 text-primary border border-primary/20 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider">
                             Pengawas Ruang

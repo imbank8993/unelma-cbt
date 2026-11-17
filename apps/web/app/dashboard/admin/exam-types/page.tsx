@@ -1,5 +1,6 @@
 "use client";
 
+import DashboardPageTitle from '@/app/components/DashboardPageTitle';
 import React, { useEffect, useState } from 'react';
 import { ClipboardList, FolderOpen, NotebookPen, Plus, RotateCcw, Trash2 } from 'lucide-react';
 import { Button } from '@/app/components/ui/button';
@@ -212,7 +213,7 @@ export default function AdminExamTypesPage() {
         <div className="max-w-5xl mx-auto space-y-6 pb-16">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
-                    <h1 className="text-xl font-semibold text-slate-900">Jenis Ujian</h1>
+                    <h1 className="text-xl font-semibold text-slate-900"><DashboardPageTitle /></h1>
                     <p className="text-sm text-slate-500 mt-1">
                         Atur jenis ujian yang bisa dipilih saat membuat ujian: namanya, siapa yang boleh membuat, cara penilaian, dan aturan kelulusannya.
                         Jenis yang dihapus tidak bisa dipilih lagi, tetapi ujian lamanya tetap berjalan.

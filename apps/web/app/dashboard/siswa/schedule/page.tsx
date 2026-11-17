@@ -1,4 +1,5 @@
 "use client";
+import DashboardPageTitle from '@/app/components/DashboardPageTitle';
 import { Spinner } from '@/app/components/ui/Spinner';
 import { getStudentExamsResult,type StudentScheduledExam } from '@/lib/api/students';
 import { formatSchoolDate,formatSchoolDateTime,formatSchoolTimeRange,utcToSchoolLocalDateTime } from '@/lib/school-time';
@@ -375,7 +376,8 @@ const SchedulePage = () => {
             <StudentBanner
                 icon={CalendarClock}
                 eyebrow={nextOpen ? 'Sedang berlangsung' : nextExam ? 'Ujian terdekat' : 'Agenda ujian'}
-                title={loading ? 'Memuat agenda…' : nextExam ? nextExam.title : 'Belum ada ujian terjadwal'}
+                title={<DashboardPageTitle />}
+                summary={loading ? 'Memuat agenda…' : nextExam ? nextExam.title : 'Belum ada ujian terjadwal'}
                 description={nextExam ? `${formatDay(nextExam.start_time)} · ${formatTimeRange(nextExam.start_time, nextExam.end_time)}` : 'Ujian dari sekolah, kelas, dan tryout akan muncul di sini.'}
                 actions={nextExam && (nextOpen ? (
                     <button type="button" onClick={() => { void openExam(nextExam); }} className={EXAM_ACTION_BUTTON}>

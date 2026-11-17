@@ -8,6 +8,7 @@ import ProfileCompletionModal from '@/app/components/ProfileCompletionModal';
 import { getAccountProfile } from '@/lib/api/account';
 import { getExamTypeCatalog, getSetting, type AppConfig } from '@/lib/api/settings';
 import { applyExamTypeLabels } from '@/lib/exam-types';
+import { getDashboardPageTitle } from '@/lib/dashboard-navigation';
 import {
     getActiveRoleFromStorage,
     getRoleFromPath,
@@ -81,39 +82,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         };
     }, [mobileOpen]);
 
-    // Halaman siswa yang sudah punya banner berjudul sendiri tidak perlu judul di header.
-    const hideHeaderTitle = activeRoleCtx?.role === 'Siswa' && [
-        '/dashboard/siswa', '/dashboard/siswa/classes', '/dashboard/siswa/schedule', '/dashboard/siswa/results',
-        '/dashboard/siswa/analytics', '/dashboard/siswa/tokens', '/dashboard/learning',
-    ].includes(pathname.replace(/\/$/, ''));
-
-    const pageTitle = useMemo(() => {
-        if (pathname.includes('/learning')) return 'Ruang Belajar';
-        if (pathname.includes('/classes')) return 'Kelas';
-        if (pathname.includes('/questions')) return 'Bank Soal';
-        if (pathname.includes('/exams')) return 'Ujian';
-        if (pathname.includes('/monitoring')) return 'Monitoring Ujian';
-        if (pathname.includes('/backup')) return 'Backup Data';
-        if (pathname.includes('/settings')) return 'Pengaturan Umum';
-        if (pathname.includes('/schedule')) return 'Jadwal Ujian';
-        if (pathname.includes('/results')) return 'Hasil Ujian';
-        if (pathname.includes('/analytics')) return 'Analisis Siswa';
-        if (
-            pathname === '/dashboard/admin' ||
-            pathname === '/dashboard/proktor' ||
-            pathname === '/dashboard/guru' ||
-            pathname === '/dashboard/siswa' ||
-            pathname === '/dashboard/pengawas' ||
-            pathname === '/dashboard'
-        ) {
-            return 'Dashboard';
-        }
-        if (pathname.startsWith('/dashboard/siswa/exam/')) return 'Ujian';
-        const lastSeg = pathname.split('/').filter(Boolean).pop() || '';
-        // Segmen ID (UUID) bukan judul: dulu halaman ujian berjudul "B0feab12-52a0-...".
-        if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(lastSeg)) return 'Detail';
-        return lastSeg ? lastSeg.charAt(0).toUpperCase() + lastSeg.slice(1) : 'Dashboard';
-    }, [pathname]);
+    const pageTitle = useMemo(
+        () => getDashboardPageTitle(pathname, activeRoleCtx?.role),
+        [pathname, activeRoleCtx?.role],
+    );
 
     useEffect(() => {
         let cancelled = false;
@@ -356,7 +328,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                     onCollapse={() => setIsCollapsed(!isCollapsed)}
                     pageTitle={pageTitle}
                     pageSubtitle={appSubtitle}
-                    hideTitle={hideHeaderTitle}
                 />
                 <main
                     className={`dashboard-main transition-all duration-300 ${

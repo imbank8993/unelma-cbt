@@ -1,5 +1,6 @@
 "use client";
 
+import DashboardPageTitle from '@/app/components/DashboardPageTitle';
 import { confirmDialog, deleteConfirmDialog } from '@/lib/confirm-dialog';
 import React, { useState, useEffect, useCallback } from 'react';
 import {
@@ -204,7 +205,7 @@ export default function AdminUsersPage() {
                     <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                         <div>
                             <h1 className="text-xl font-semibold text-slate-900">
-                                Kelola Pengguna
+                                <DashboardPageTitle />
                             </h1>
                             <p className="text-sm text-slate-500 mt-1">
                                 Kelola hak akses aplikasi: <strong>Admin</strong>, <strong>Proktor</strong>, dan <strong>Siswa</strong>.

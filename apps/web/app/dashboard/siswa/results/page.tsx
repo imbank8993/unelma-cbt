@@ -1,4 +1,5 @@
 "use client";
+import DashboardPageTitle from '@/app/components/DashboardPageTitle';
 import { PassResultBadge, passResultSummary } from '@/components/exams/PassResultBadge';
 import { selectedStudentScore, studentScoreType, STUDENT_SCORE_LABELS } from '@acca-cbt/shared';
 import { getStudentResultsResult,type StudentResult } from '@/lib/api/students';
@@ -76,8 +77,8 @@ export default function StudentResultsPage() {
 
             <StudentBanner
                 icon={Award}
-                eyebrow="Hasil & analisis"
-                title={isLoading ? 'Memuat hasil…' : results.length ? `${results.length} ujian selesai` : 'Belum ada hasil ujian'}
+                eyebrow={isLoading ? 'Memuat hasil…' : results.length ? `${results.length} ujian selesai` : 'Belum ada hasil ujian'}
+                title={<DashboardPageTitle />}
                 description="Lihat nilai setiap ujian dan perkembangan kemampuanmu dari waktu ke waktu."
                 aside={<BannerStats items={[
                     { label: 'Ujian selesai', value: results.length },

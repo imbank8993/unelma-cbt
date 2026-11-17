@@ -2,14 +2,16 @@ import type { LucideIcon } from 'lucide-react';
 import type { ReactNode } from 'react';
 
 /**
- * Banner bersama halaman siswa (Beranda, Kelas, Jadwal): kartu terang dengan
+ * Banner bersama halaman siswa (Dashboard, Kelas, Jadwal): kartu terang dengan
  * ikon, judul yang tegas, dan aksen halus (pola grid tipis dan sapuan biru di
- * kanan atas). Judul banner melengkapi judul header, bukan mengulanginya.
+ * kanan atas). Judul mengikuti header; ringkasan memuat informasi yang berubah.
  */
-export function StudentBanner({ icon: Icon, eyebrow, title, description, actions, aside, children }: {
+export function StudentBanner({ icon: Icon, eyebrow, title, summary, description, actions, aside, children }: {
     icon?: LucideIcon;
     eyebrow?: ReactNode;
     title: ReactNode;
+    /** Informasi kontekstual di bawah judul, misalnya nama ujian terdekat. */
+    summary?: ReactNode;
     description?: ReactNode;
     /** Tombol di kanan judul (desktop) atau di bawahnya (HP). */
     actions?: ReactNode;
@@ -35,6 +37,7 @@ export function StudentBanner({ icon: Icon, eyebrow, title, description, actions
                         <div className="min-w-0">
                             {eyebrow && <p className="text-xs font-medium text-slate-500 dark:text-slate-400">{eyebrow}</p>}
                             <h2 className="mt-0.5 truncate text-xl font-semibold tracking-tight text-slate-900 sm:text-2xl dark:text-white">{title}</h2>
+                            {summary && <p className="mt-1 text-sm font-medium text-slate-900 dark:text-slate-100">{summary}</p>}
                             {description && <div className="mt-1.5 max-w-2xl text-sm leading-relaxed text-slate-600 dark:text-slate-300">{description}</div>}
                         </div>
                     </div>

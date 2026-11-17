@@ -1,4 +1,5 @@
 "use client";
+import DashboardPageTitle from '@/app/components/DashboardPageTitle';
 import { Spinner } from '@/app/components/ui/Spinner';
 import { dashboardResultScore, officialResults } from '@/lib/student-dashboard-score';
 import { StudentScoreAverages } from '@/app/components/student/StudentScoreAverages';
@@ -332,8 +333,8 @@ export default function SiswaDashboard() {
             {/* ── Banner: sapaan, tujuan belajar, dan ringkasan ── */}
             <StudentBanner
                 icon={Sparkles}
-                eyebrow={`${greeting}${firstName ? ',' : ''}`}
-                title={firstName || 'Pejuang ilmu'}
+                eyebrow={`${greeting}, ${firstName || 'Pejuang ilmu'}`}
+                title={<DashboardPageTitle />}
                 description={goal ? (
                     <div className="flex flex-wrap items-center gap-x-2 gap-y-1.5">
                         <span className="inline-flex items-center gap-1.5 text-slate-500 dark:text-slate-400"><Target size={14} className="text-[#F8A01B]" />Tujuan</span>

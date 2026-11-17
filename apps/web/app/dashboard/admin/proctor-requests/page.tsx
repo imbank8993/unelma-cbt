@@ -1,5 +1,6 @@
 "use client";
 
+import DashboardPageTitle from '@/app/components/DashboardPageTitle';
 import { confirmDialog } from '@/lib/confirm-dialog';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { AlertCircle, RefreshCw } from 'lucide-react';
@@ -111,7 +112,7 @@ export default function ProctorRequestsPage() {
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
                     <h1 className="text-xl font-semibold text-slate-900">
-                        <span>Permintaan Proktor</span>
+                        <DashboardPageTitle />
                     </h1>
                     <p className="text-sm text-slate-500 mt-1">
                         Tinjau pengajuan pengguna (akun Google) yang ingin menjadi Proktor pembuat soal & bahan ajar.

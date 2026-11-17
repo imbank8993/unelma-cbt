@@ -1,4 +1,5 @@
 "use client";
+import DashboardPageTitle from '@/app/components/DashboardPageTitle';
 import { notify } from '@/lib/confirm-dialog';
 import { InlineMath } from '@/app/components/questions/InlineMath';
 import {
@@ -199,7 +200,7 @@ function GradingContent() {
                         <BarChart3 size={20} />
                     </div>
                     <div>
-                        <h2 className="text-base font-bold text-slate-800">Laporan & Penilaian Ujian</h2>
+                        <h2 className="text-base font-bold text-slate-800"><DashboardPageTitle /></h2>
                         <p className="text-xs text-slate-400">Pilih ujian untuk melihat rekap nilai dan analisis butir soal</p>
                     </div>
                 </div>

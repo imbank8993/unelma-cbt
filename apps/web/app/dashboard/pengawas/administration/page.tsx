@@ -1,5 +1,6 @@
 "use client";
 
+import DashboardPageTitle from '@/app/components/DashboardPageTitle';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
     AlertCircle,
@@ -107,7 +108,7 @@ export default function PengawasAdministrationPage() {
                     </div>
                     <div>
                         <h1 className="text-lg sm:text-xl font-bold text-slate-900">
-                            Administrasi Ujian PAS (Berita Acara & Daftar Hadir)
+                            <DashboardPageTitle />
                         </h1>
                         <p className="text-xs text-slate-500 mt-0.5">
                             Kelola absensi peserta (Hadir, Sakit, Izin, Alpha), isi Berita Acara berdasarkan Ruang & Sesi, serta cetak dokumen A4 berverifikasi QR.

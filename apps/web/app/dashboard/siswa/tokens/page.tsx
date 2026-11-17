@@ -1,5 +1,6 @@
 "use client";
 
+import DashboardPageTitle from '@/app/components/DashboardPageTitle';
 import React, { useEffect, useState } from 'react';
 import { ArrowRight, ArrowDownLeft, ArrowUpRight, Coins } from 'lucide-react';
 import {
@@ -80,6 +81,7 @@ export default function SiswaTokensPage() {
 
             {/* ── Saldo ── */}
             <section className="rounded-2xl border border-slate-200 bg-white p-6 sm:p-8 dark:border-slate-800 dark:bg-slate-900">
+                <h2 className="mb-5 text-xl font-semibold tracking-tight text-slate-900 sm:text-2xl dark:text-white"><DashboardPageTitle /></h2>
                 <div className="flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between">
                     <div>
                         <p className="flex items-center gap-2 text-sm font-medium text-slate-500 dark:text-slate-400">

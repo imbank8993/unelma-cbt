@@ -1,5 +1,6 @@
 "use client";
 
+import DashboardPageTitle from '@/app/components/DashboardPageTitle';
 import { notify } from '@/lib/confirm-dialog';
 import React, { useEffect, useState } from 'react';
 import {
@@ -198,7 +199,7 @@ export default function AdminCommissionsPage() {
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
                     <h1 className="text-xl font-semibold text-slate-900">
-                        <span>Komisi Proktor & Pencairan</span>
+                        <DashboardPageTitle />
                     </h1>
                     <p className="text-sm text-slate-500 mt-1">
                         Atur persentase bagi hasil, batas minimal penarikan bulanan, serta proses pencairan transfer dana proktor.
@@ -277,8 +278,9 @@ export default function AdminCommissionsPage() {
                         </label>
                         <input
                             type="number"
-                            min="100"
-                            step="500"
+                            min="1"
+                            max="10000000"
+                            step="1"
                             value={config.token_idr_rate}
                             onChange={(e) => setConfig({ ...config, token_idr_rate: Number(e.target.value) })}
                             className="w-full px-3.5 py-2.5 rounded-lg border border-slate-300 text-sm text-slate-900 outline-none focus:border-[#030C4D]"

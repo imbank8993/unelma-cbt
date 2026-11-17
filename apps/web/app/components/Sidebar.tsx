@@ -1,6 +1,7 @@
 'use client';
 
 import Image from 'next/image';
+import { getDashboardMenu } from '@/lib/dashboard-navigation';
 import { getUserRole, type Role } from '@/lib/rbac';
 import { getSessionUser } from '@/lib/session';
 import Link from 'next/link';
@@ -8,14 +9,6 @@ import { usePathname } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import './sidebar.css';
 import { InlineSelectIndicator } from '@/app/components/ui/inlineselect';
-
-interface MenuItem {
-    icon: string;
-    label: string;
-    href: string;
-    badge?: number;
-    children?: MenuItem[];
-}
 
 export interface SidebarProps {
     isCollapsed: boolean;
@@ -82,79 +75,7 @@ export default function Sidebar({
 
     const role = getRole();
 
-    const menuConfig: Record<string, MenuItem[]> = useMemo(() => ({
-        'Superadmin': [
-            { icon: 'fa-house', label: 'Dashboard', href: '/dashboard/admin' },
-            { icon: 'fa-graduation-cap', label: 'Ruang Belajar', href: '/dashboard/learning' },
-            { icon: 'fa-users', label: 'Kelas', href: '/dashboard/admin/classes' },
-            { icon: 'fa-book-open', label: 'Bank Soal', href: '/dashboard/admin/questions' },
-            { icon: 'fa-clipboard-check', label: 'Ujian', href: '/dashboard/admin/exams' },
-            { icon: 'fa-chart-line', label: 'Monitoring', href: '/dashboard/admin/monitoring' },
-            {
-                icon: 'fa-gear',
-                label: 'Pengaturan',
-                href: '/dashboard/admin/tokens',
-                children: [
-                    { icon: 'fa-coins', label: 'Paket Token', href: '/dashboard/admin/tokens' },
-                    { icon: 'fa-list-check', label: 'Jenis Ujian', href: '/dashboard/admin/exam-types' },
-                    { icon: 'fa-receipt', label: 'Tracker Transaksi', href: '/dashboard/admin/transactions' },
-                    { icon: 'fa-hand-holding-dollar', label: 'Komisi & Pencairan', href: '/dashboard/admin/commissions' },
-                    { icon: 'fa-user-check', label: 'Permintaan Proktor', href: '/dashboard/admin/proctor-requests' },
-                    { icon: 'fa-user-gear', label: 'Kelola Pengguna', href: '/dashboard/admin/users' },
-                    { icon: 'fa-database', label: 'Backup Data', href: '/dashboard/admin/backup' },
-                ],
-            },
-        ],
-        'Admin': [
-            { icon: 'fa-house', label: 'Dashboard', href: '/dashboard/admin' },
-            { icon: 'fa-graduation-cap', label: 'Ruang Belajar', href: '/dashboard/learning' },
-            { icon: 'fa-users', label: 'Kelas', href: '/dashboard/admin/classes' },
-            { icon: 'fa-book-open', label: 'Bank Soal', href: '/dashboard/admin/questions' },
-            { icon: 'fa-clipboard-check', label: 'Ujian', href: '/dashboard/admin/exams' },
-            { icon: 'fa-chart-line', label: 'Monitoring', href: '/dashboard/admin/monitoring' },
-            {
-                icon: 'fa-gear',
-                label: 'Pengaturan',
-                href: '/dashboard/admin/tokens',
-                children: [
-                    { icon: 'fa-coins', label: 'Paket Token', href: '/dashboard/admin/tokens' },
-                    { icon: 'fa-list-check', label: 'Jenis Ujian', href: '/dashboard/admin/exam-types' },
-                    { icon: 'fa-receipt', label: 'Tracker Transaksi', href: '/dashboard/admin/transactions' },
-                    { icon: 'fa-hand-holding-dollar', label: 'Komisi & Pencairan', href: '/dashboard/admin/commissions' },
-                    { icon: 'fa-user-check', label: 'Permintaan Proktor', href: '/dashboard/admin/proctor-requests' },
-                    { icon: 'fa-user-gear', label: 'Kelola Pengguna', href: '/dashboard/admin/users' },
-                    { icon: 'fa-database', label: 'Backup Data', href: '/dashboard/admin/backup' },
-                ],
-            },
-        ],
-        'Proktor': [
-            { icon: 'fa-house', label: 'Dashboard', href: '/dashboard/proktor' },
-            { icon: 'fa-graduation-cap', label: 'Ruang Belajar', href: '/dashboard/learning' },
-            { icon: 'fa-users', label: 'Kelas', href: '/dashboard/proktor/classes' },
-            { icon: 'fa-book-open', label: 'Bank Soal', href: '/dashboard/proktor/questions' },
-            { icon: 'fa-clipboard-check', label: 'Ujian', href: '/dashboard/proktor/exams' },
-            { icon: 'fa-chart-line', label: 'Monitoring', href: '/dashboard/proktor/monitoring' },
-            { icon: 'fa-hand-holding-dollar', label: 'Komisi Saya', href: '/dashboard/proktor/commissions' },
-        ],
-        'Siswa': [
-            { icon: 'fa-house', label: 'Dashboard', href: '/dashboard/siswa' },
-            { icon: 'fa-graduation-cap', label: 'Ruang Belajar', href: '/dashboard/learning' },
-            { icon: 'fa-users', label: 'Kelas', href: '/dashboard/siswa/classes' },
-            { icon: 'fa-calendar', label: 'Jadwal', href: '/dashboard/siswa/schedule' },
-            { icon: 'fa-chart-column', label: 'Hasil & Analisis', href: '/dashboard/siswa/results' },
-            { icon: 'fa-coins', label: 'Token Saya', href: '/dashboard/siswa/tokens' },
-        ],
-        'Pengawas': [
-            { icon: 'fa-house', label: 'Dashboard', href: '/dashboard/pengawas' },
-            { icon: 'fa-eye', label: 'Monitoring', href: '/dashboard/pengawas/monitoring' },
-            { icon: 'fa-file-signature', label: 'Administrasi', href: '/dashboard/pengawas/administration' },
-        ],
-    }), []);
-
-    const menuItems = useMemo(() => {
-        const activeRoleName = activeRole?.role ?? role;
-        return menuConfig[activeRoleName] || menuConfig['Admin'] || [];
-    }, [menuConfig, role, activeRole]);
+    const menuItems = useMemo(() => getDashboardMenu(activeRole?.role ?? role), [role, activeRole]);
 
     // Auto expand parent submenu if current route matches any child
     useEffect(() => {

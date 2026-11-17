@@ -326,6 +326,7 @@ test('students see the type label before results and the pass result only once r
     assert.match(students, /pass_result: publicPassResult\(passResults\.get\(row\.id\)\)/);
     const monitoring = read('apps/api/src/proctor/exam-monitoring.service.ts');
     assert.match(monitoring, /pass_result: passResults\.get\(attempt\.id\) \|\| null/);
-    const sidebar = read('apps/web/app/components/Sidebar.tsx');
-    assert.equal((sidebar.match(/'\/dashboard\/admin\/exam-types'/g) || []).length, 2);
+    const navigation = read('apps/web/lib/dashboard-navigation.ts');
+    assert.equal((navigation.match(/'\/dashboard\/admin\/exam-types'/g) || []).length, 2);
+    assert.match(read('apps/web/app/components/Sidebar.tsx'), /getDashboardMenu/);
 });

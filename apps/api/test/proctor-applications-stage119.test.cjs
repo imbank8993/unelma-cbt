@@ -140,9 +140,13 @@ test('peran Guru dihapus: bahan ajar dikelola Proktor/Admin, halaman lama milik 
     assert.match(migration, /CREATE TABLE IF NOT EXISTS public\.commission_rule_history/);
     assert.match(migration, /ADD COLUMN IF NOT EXISTS submitted_at timestamptz/);
     const sidebar = read('../../web/app/components/Sidebar.tsx');
-    assert.match(sidebar, /\/dashboard\/admin\/proctor-requests/);
+    const navigation = read('../../web/lib/dashboard-navigation.ts');
+    assert.match(sidebar, /getDashboardMenu/);
+    assert.match(navigation, /\/dashboard\/admin\/proctor-requests/);
     // Permintaan proktor tidak boleh ada di dalam aplikasi (sidebar maupun dasbor siswa)
     assert.doesNotMatch(sidebar, /ajukan-proktor/);
+    const { getDashboardMenu } = require('../../web/lib/dashboard-navigation.ts');
+    assert.equal(getDashboardMenu('Siswa').some(item => item.href.includes('ajukan-proktor')), false);
     const siswaPage = read('../../web/app/dashboard/siswa/page.tsx');
     assert.doesNotMatch(siswaPage, /ajukan-proktor/);
 
