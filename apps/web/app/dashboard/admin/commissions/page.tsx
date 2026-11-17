@@ -1,6 +1,5 @@
 "use client";
 
-import DashboardPageTitle from '@/app/components/DashboardPageTitle';
 import { notify } from '@/lib/confirm-dialog';
 import React, { useEffect, useState } from 'react';
 import {
@@ -195,18 +194,6 @@ export default function AdminCommissionsPage() {
 
     return (
         <div className="max-w-7xl mx-auto space-y-8 pb-16">
-            {/* Page Header (Clean & Elegan) */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <div>
-                    <h1 className="text-xl font-semibold text-slate-900">
-                        <DashboardPageTitle />
-                    </h1>
-                    <p className="text-sm text-slate-500 mt-1">
-                        Atur persentase bagi hasil, batas minimal penarikan bulanan, serta proses pencairan transfer dana proktor.
-                    </p>
-                </div>
-            </div>
-
             {feedback && (
                 <div className={`p-4 rounded-xl text-xs md:text-sm font-medium flex items-center justify-between ${feedback.type === 'success' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-red-50 text-red-700 border border-red-200'}`}>
                     <span>{feedback.text}</span>

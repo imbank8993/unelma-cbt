@@ -1,6 +1,5 @@
 "use client";
 
-import DashboardPageTitle from '@/app/components/DashboardPageTitle';
 import { deleteConfirmDialog, notify } from '@/lib/confirm-dialog';
 import React, { useEffect, useState } from 'react';
 import { Plus, AlertCircle, RefreshCw, Coins, CreditCard } from 'lucide-react';
@@ -237,12 +236,6 @@ export default function AdminTokensPage() {
     return (
         <div className="max-w-7xl mx-auto space-y-8 pb-16">
             
-            {/* Header */}
-            <div>
-                <h1 className="text-xl font-semibold text-slate-900"><DashboardPageTitle /></h1>
-                <p className="text-sm text-slate-500 mt-1">Atur harga paket token siswa dan kredensial payment gateway Midtrans.</p>
-            </div>
-
             <Tabs
                 ariaLabel="Pengaturan token"
                 activeTab={tab}

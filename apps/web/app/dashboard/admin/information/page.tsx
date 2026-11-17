@@ -1,9 +1,9 @@
 'use client';
 
 import Link from 'next/link';
-import { Copy, ExternalLink, FileText, FolderOpen, Pencil, Plus, Trash2, UploadCloud } from 'lucide-react';
+import { ExternalLink, FileText, FolderOpen, Plus, UploadCloud } from 'lucide-react';
 import { useCallback, useEffect, useState, type FormEvent } from 'react';
-import DashboardPageTitle from '@/app/components/DashboardPageTitle';
+import { ActionButton, ActionGroup } from '@/app/components/ui/actionbutton';
 import { deleteConfirmDialog } from '@/lib/confirm-dialog';
 import {
   createInformationFolder, deleteInformationDocument, deleteInformationFolder, getAdminInformation,
@@ -90,10 +90,6 @@ export default function AdminInformationPage() {
   const selected = data.folders.find(folder => folder.id === folderId);
   const documents = data.documents.filter(doc => doc.folder_id === folderId);
   return <main className="mx-auto max-w-7xl space-y-6 pb-16 text-slate-900">
-    <div className="flex flex-wrap items-end justify-between gap-3">
-      <div><h1 className="text-2xl font-bold"><DashboardPageTitle /></h1><p className="mt-1 text-sm text-slate-500">Atur folder, unggah PDF ke bucket Unelma, dan bagikan tautan informasi.</p></div>
-      <Link href="/informasi" target="_blank" className="inline-flex items-center gap-2 rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-semibold hover:bg-slate-50">Lihat halaman publik <ExternalLink size={16} /></Link>
-    </div>
     {message && <p role={message.error ? 'alert' : 'status'} className={`rounded-xl px-4 py-3 text-sm ${message.error ? 'bg-red-50 text-red-700' : 'bg-emerald-50 text-emerald-700'}`}>{message.text}</p>}
     {loading ? <p className="text-sm text-slate-500">Memuat informasi…</p> : <div className="grid gap-6 lg:grid-cols-[280px_1fr]">
       <aside className="rounded-2xl border border-slate-200 bg-white p-4">
@@ -104,15 +100,20 @@ export default function AdminInformationPage() {
           {editingFolder === folder.id ? <form onSubmit={saveFolder} className="flex gap-1"><input value={editName} onChange={event => setEditName(event.target.value)} maxLength={100} required autoFocus className="min-w-0 flex-1 rounded-md border px-2 py-1 text-sm" />
             <button disabled={busy} className="text-xs font-bold text-[#030C4D]">Simpan</button><button type="button" onClick={() => setEditingFolder('')} className="text-xs text-slate-500">Batal</button></form> : <>
             <button type="button" onClick={() => setFolderId(folder.id)} className="flex w-full items-center gap-2 text-left text-sm font-semibold"><FolderOpen size={17} className="shrink-0 text-[#030C4D]" /><span className="min-w-0 flex-1 truncate">{folder.name}</span><span className="text-xs text-slate-400">{data.documents.filter(doc => doc.folder_id === folder.id).length}</span></button>
-            <div className="mt-2 flex justify-end gap-1 border-t border-slate-100 pt-2"><button type="button" onClick={() => void copy(informationFolderLink(folder.id))} aria-label={`Salin tautan folder ${folder.name}`} title="Salin tautan folder" className="rounded p-1.5 hover:bg-white"><Copy size={14} /></button>
-              <button type="button" onClick={() => { setEditingFolder(folder.id); setEditName(folder.name); }} aria-label={`Ubah folder ${folder.name}`} title="Ubah nama" className="rounded p-1.5 hover:bg-white"><Pencil size={14} /></button>
-              <button type="button" disabled={busy} onClick={() => void removeFolder(folder.id)} aria-label={`Hapus folder ${folder.name}`} title="Hapus folder kosong" className="rounded p-1.5 text-red-600 hover:bg-white disabled:opacity-50"><Trash2 size={14} /></button></div>
+            <ActionGroup className="mt-2 justify-end border-t border-slate-100 pt-2">
+              <ActionButton action="copy" tooltip={`Salin tautan folder ${folder.name}`} onClick={() => void copy(informationFolderLink(folder.id))} />
+              <ActionButton action="edit" tooltip={`Ubah folder ${folder.name}`} onClick={() => { setEditingFolder(folder.id); setEditName(folder.name); }} />
+              <ActionButton action="delete" tooltip={`Hapus folder ${folder.name}`} disabled={busy} onClick={() => void removeFolder(folder.id)} />
+            </ActionGroup>
           </>}
         </div>)}</div>
       </aside>
       <div className="space-y-6">
         <section className="rounded-2xl border border-slate-200 bg-white p-5">
-          <h2 className="font-bold">Unggah PDF {selected ? `ke ${selected.name}` : ''}</h2>
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <h2 className="font-bold">Unggah PDF {selected ? `ke ${selected.name}` : ''}</h2>
+            <Link href="/informasi" target="_blank" className="inline-flex items-center gap-2 text-sm font-semibold text-[#030C4D] hover:underline">Lihat halaman publik <ExternalLink size={15} /></Link>
+          </div>
           <p className="mt-1 text-xs text-slate-500">Pilih folder lebih dulu. PDF yang berhasil diunggah langsung tampil di halaman publik. Maksimum 25 MB.</p>
           <form onSubmit={upload} className="mt-4 grid gap-3 sm:grid-cols-2">
             <label className="text-xs font-semibold">Folder<select value={folderId} onChange={event => setFolderId(event.target.value)} required className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm"><option value="">Pilih folder</option>{data.folders.map(folder => <option key={folder.id} value={folder.id}>{folder.name}</option>)}</select></label>
@@ -125,12 +126,14 @@ export default function AdminInformationPage() {
           <h2 className="font-bold">{selected ? `PDF dalam ${selected.name}` : 'Pilih folder'}</h2>
           <div className="mt-4 space-y-3">{documents.length ? documents.map(doc => <div key={doc.id} className="rounded-xl border border-slate-200 p-4">
             {editingDocument === doc.id ? <form onSubmit={saveDocument} className="flex gap-2"><input value={editName} onChange={event => setEditName(event.target.value)} maxLength={160} required autoFocus className="min-w-0 flex-1 rounded-lg border px-3 py-2 text-sm" /><button disabled={busy} className="text-sm font-bold text-[#030C4D]">Simpan</button><button type="button" onClick={() => setEditingDocument('')} className="text-sm text-slate-500">Batal</button></form> : <div className="flex flex-wrap items-start justify-between gap-3"><div className="flex min-w-0 items-start gap-3"><FileText className="mt-0.5 shrink-0 text-[#030C4D]" size={20} /><div><p className="font-semibold">{doc.title}</p><p className="mt-1 text-xs text-slate-500">{doc.file_name} · {(doc.size_bytes / 1024 / 1024).toFixed(1)} MB · {doc.published ? 'Terbit' : 'Disembunyikan'}</p></div></div>
-              <div className="flex flex-wrap gap-1"><button type="button" disabled={!doc.published} onClick={() => void copy(informationLink(doc.id))} className="rounded-lg px-2 py-1.5 text-xs font-semibold hover:bg-slate-100 disabled:opacity-40"><Copy size={14} className="inline" /> Salin halaman</button>
-                <button type="button" disabled={!doc.published} onClick={() => void copy(informationFileLink(doc.id))} className="rounded-lg px-2 py-1.5 text-xs font-semibold hover:bg-slate-100 disabled:opacity-40"><Copy size={14} className="inline" /> Salin PDF</button>
-                {doc.published && <Link href={informationLink(doc.id)} target="_blank" className="rounded-lg px-2 py-1.5 text-xs font-semibold hover:bg-slate-100">Buka</Link>}
-                <button type="button" onClick={() => { setEditingDocument(doc.id); setEditName(doc.title); }} className="rounded-lg px-2 py-1.5 text-xs font-semibold hover:bg-slate-100">Ubah judul</button>
-                <button type="button" disabled={busy} onClick={() => void run(updateInformationDocument(doc.id, { published: !doc.published }), doc.published ? 'PDF disembunyikan.' : 'PDF diterbitkan.')} className="rounded-lg px-2 py-1.5 text-xs font-semibold hover:bg-slate-100 disabled:opacity-50">{doc.published ? 'Sembunyikan' : 'Terbitkan'}</button>
-                <button type="button" disabled={busy} onClick={() => void removeDocument(doc)} className="rounded-lg px-2 py-1.5 text-xs font-semibold text-red-600 hover:bg-red-50 disabled:opacity-50">Hapus</button></div></div>}
+              <ActionGroup className="flex-wrap">
+                <ActionButton action="copy" tooltip="Salin tautan halaman" disabled={!doc.published} onClick={() => void copy(informationLink(doc.id))} />
+                <ActionButton action="copy" tooltip="Salin tautan PDF langsung" disabled={!doc.published} onClick={() => void copy(informationFileLink(doc.id))} />
+                {doc.published && <ActionButton action="view" tooltip="Buka halaman publik" onClick={() => window.open(informationLink(doc.id), '_blank', 'noopener,noreferrer')} />}
+                <ActionButton action="edit" tooltip="Ubah judul" onClick={() => { setEditingDocument(doc.id); setEditName(doc.title); }} />
+                <ActionButton action="toggle" tooltip={doc.published ? 'Sembunyikan PDF' : 'Terbitkan PDF'} disabled={busy} onClick={() => void run(updateInformationDocument(doc.id, { published: !doc.published }), doc.published ? 'PDF disembunyikan.' : 'PDF diterbitkan.')} />
+                <ActionButton action="delete" tooltip="Hapus PDF" disabled={busy} onClick={() => void removeDocument(doc)} />
+              </ActionGroup></div>}
           </div>) : <p className="rounded-lg border border-dashed border-slate-200 p-5 text-sm text-slate-500">Belum ada PDF dalam folder ini.</p>}</div>
         </section>
       </div>

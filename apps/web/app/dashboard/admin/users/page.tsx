@@ -1,6 +1,5 @@
 "use client";
 
-import DashboardPageTitle from '@/app/components/DashboardPageTitle';
 import { confirmDialog, deleteConfirmDialog } from '@/lib/confirm-dialog';
 import React, { useState, useEffect, useCallback } from 'react';
 import {
@@ -200,19 +199,8 @@ export default function AdminUsersPage() {
     return (
         <div className="max-w-7xl mx-auto pb-16 text-slate-800">
             <div className="space-y-6">
-                {/* Back button & Page Title */}
-                <div>
-                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                        <div>
-                            <h1 className="text-xl font-semibold text-slate-900">
-                                <DashboardPageTitle />
-                            </h1>
-                            <p className="text-sm text-slate-500 mt-1">
-                                Kelola hak akses aplikasi: <strong>Admin</strong>, <strong>Proktor</strong>, dan <strong>Siswa</strong>.
-                            </p>
-                        </div>
-
-                        <div className="flex items-center gap-3">
+                <div className="flex justify-end">
+                    <div className="flex items-center gap-3">
                             <button
                                 onClick={() => {
                                     setAddError(null);
@@ -232,7 +220,6 @@ export default function AdminUsersPage() {
                                 <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
                                 Segarkan
                             </button>
-                        </div>
                     </div>
                 </div>
 

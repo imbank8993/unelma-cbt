@@ -1,10 +1,8 @@
 "use client";
 
-import DashboardPageTitle from '@/app/components/DashboardPageTitle';
 import React, { useEffect, useState } from 'react';
 import {
     Coins,
-    DollarSign,
     CheckCircle2,
     Clock,
     CreditCard,
@@ -141,18 +139,7 @@ export default function ProctorCommissionsPage() {
 
     return (
         <div className="max-w-6xl mx-auto space-y-8 pb-16">
-            {/* Page Header (Clean & Elegan) */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <div>
-                    <h1 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight flex items-center gap-2.5">
-                        <DollarSign className="text-[#030C4D]" size={24} />
-                        <DashboardPageTitle />
-                    </h1>
-                    <p className="text-xs text-slate-500 mt-0.5">
-                        Pantau perolehan komisi token dari ujian dan bahan ajar Anda serta riwayat transfer bulanan.
-                    </p>
-                </div>
-
+            <div className="flex justify-end">
                 <button
                     type="button"
                     onClick={() => setIsProfileModalOpen(true)}

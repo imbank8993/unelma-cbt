@@ -1,6 +1,5 @@
 "use client";
 
-import DashboardPageTitle from '@/app/components/DashboardPageTitle';
 import { confirmDialog } from '@/lib/confirm-dialog';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { AlertCircle, RefreshCw } from 'lucide-react';
@@ -109,15 +108,7 @@ export default function ProctorRequestsPage() {
 
     return (
         <div className="max-w-7xl mx-auto space-y-6 pb-16">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <div>
-                    <h1 className="text-xl font-semibold text-slate-900">
-                        <DashboardPageTitle />
-                    </h1>
-                    <p className="text-sm text-slate-500 mt-1">
-                        Tinjau pengajuan pengguna (akun Google) yang ingin menjadi Proktor pembuat soal & bahan ajar.
-                    </p>
-                </div>
+            <div className="flex justify-end">
                 <button type="button" onClick={() => void load(filter)} disabled={loading}
                     className="self-start sm:self-auto p-2 text-slate-500 hover:text-slate-800 rounded-lg hover:bg-slate-100" title="Segarkan">
                     <RefreshCw size={16} className={loading ? 'animate-spin' : ''} />

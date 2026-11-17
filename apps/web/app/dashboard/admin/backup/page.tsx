@@ -1,5 +1,4 @@
 "use client";
-import DashboardPageTitle from '@/app/components/DashboardPageTitle';
 import { confirmDialog, notify } from '@/lib/confirm-dialog';
 import { getErrorMessage } from '@/lib/errors';
 
@@ -108,10 +107,6 @@ export default function BackupRestorePage() {
 
   return (
     <div className="max-w-7xl mx-auto pb-20 space-y-6">
-      <div>
-        <h1 className="text-xl font-semibold text-slate-900"><DashboardPageTitle /></h1>
-        <p className="text-sm text-slate-500 mt-1">Unduh cadangan seluruh data sekolah, pulihkan dari file cadangan, dan bersihkan gambar yang tidak terpakai.</p>
-      </div>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         
         {/* Export Card */}

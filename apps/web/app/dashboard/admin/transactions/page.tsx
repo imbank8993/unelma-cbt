@@ -1,6 +1,5 @@
 "use client";
 
-import DashboardPageTitle from '@/app/components/DashboardPageTitle';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Search, RefreshCw, AlertCircle, ChevronLeft, ChevronRight, Coins, ShoppingCart } from 'lucide-react';
 import { Tabs } from '@/app/components/ui/tabs';
@@ -138,16 +137,6 @@ export default function AdminTransactionsTrackerPage() {
 
     return (
         <div className="max-w-7xl mx-auto space-y-8 pb-16">
-
-            {/* Page Header (Clean & Elegan) */}
-            <div>
-                <h1 className="text-xl font-semibold text-slate-900">
-                    <DashboardPageTitle />
-                </h1>
-                <p className="text-sm text-slate-500 mt-1">
-                    Pantau transaksi pembelian token Midtrans dan riwayat pemakaian token siswa saat membuka ujian dan materi.
-                </p>
-            </div>
 
             {/* Tab bersama */}
             <Tabs
