@@ -331,7 +331,7 @@ export default function ProctorCommissionsPage() {
                                             {e.total_tokens} Token
                                         </td>
                                         <td className="py-3 px-4 text-right font-extrabold text-[#030C4D]">
-                                            {e.proctor_tokens} Token
+                                            {Number(e.proctor_tokens).toLocaleString('id-ID', { maximumFractionDigits: 2 })} Token
                                         </td>
                                         <td className="py-3 px-4 text-right font-bold text-emerald-700">
                                             Rp {Number(e.proctor_idr).toLocaleString('id-ID')}
@@ -342,6 +342,12 @@ export default function ProctorCommissionsPage() {
                         </tbody>
                     </table>
                 </div>
+                {(data?.exams?.length ?? 0) > 0 && (
+                    <p className="px-5 py-3 border-t border-slate-100 text-[11px] text-slate-500">
+                        Komisi per ujian ditampilkan apa adanya (mis. 0,5 token). Pecahan dari semua ujian dijumlahkan
+                        pada total komisi, yang dicairkan dalam token utuh; sisa di bawah 1 token menunggu transaksi berikutnya.
+                    </p>
+                )}
             </div>
 
             {/* Riwayat Pencairan Bulanan */}

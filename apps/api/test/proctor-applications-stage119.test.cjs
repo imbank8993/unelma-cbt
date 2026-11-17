@@ -6,7 +6,7 @@ require('ts-node').register({ project: path.resolve(__dirname, '../tsconfig.json
 require('reflect-metadata');
 const { plainToInstance } = require('class-transformer');
 const { validate } = require('class-validator');
-const { CommissionsService, shareFromWeighted } = require('../src/commissions/commissions.service.ts');
+const { CommissionsService, shareFromWeighted, exactShareFromWeighted } = require('../src/commissions/commissions.service.ts');
 const { ApplyProctorDto, RejectProctorApplicationDto } = require('../src/commissions/commissions.dto.ts');
 const { AuthController } = require('../src/auth/auth.controller.ts');
 
@@ -27,6 +27,19 @@ function fakePrisma(handlers) {
     prisma.$transaction = async (fn) => fn(prisma);
     return prisma;
 }
+
+test('komisi per item tampil desimal; total tetap token utuh dan pecahan terakumulasi', () => {
+    // Ujian 1 token @50%: 1 siswa = 0,5 token di rincian, 0 token utuh di total.
+    assert.equal(exactShareFromWeighted(1 * 50), 0.5);
+    assert.equal(shareFromWeighted(1 * 50), 0);
+    // 3 siswa: 1,5 di rincian; total 1 token, sisa 0,5 menunggu.
+    assert.equal(exactShareFromWeighted(3 * 50), 1.5);
+    assert.equal(shareFromWeighted(3 * 50), 1);
+    // Dua ujian berbeda masing-masing 0,5 → total 1 token utuh.
+    assert.equal(shareFromWeighted(50 + 50), 1);
+    assert.equal(exactShareFromWeighted(-10), 0);
+    assert.equal(exactShareFromWeighted(7 * 33), 2.31);
+});
 
 // ── Aturan komisi per tanggal ────────────────────────────────────────────────
 

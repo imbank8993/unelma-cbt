@@ -113,6 +113,15 @@ export function shareFromWeighted(weightedTokens: unknown): number {
   return Math.floor(Math.max(0, Number(weightedTokens) || 0) / 100);
 }
 
+/**
+ * Bagian proktor TANPA pembulatan (maks. 2 desimal), untuk rincian per item.
+ * Mis. ujian 1 token @50% → 0,5 token. Total dan pencairan tetap memakai
+ * `shareFromWeighted` (token utuh); sisa pecahan terakumulasi di total.
+ */
+export function exactShareFromWeighted(weightedTokens: unknown): number {
+  return Math.round(Math.max(0, Number(weightedTokens) || 0)) / 100;
+}
+
 function isMissingColumn(error: unknown): boolean {
   const e = error as { code?: string; meta?: { code?: string }; message?: string };
   return e?.meta?.code === '42703' || e?.code === '42703' || /42703|column .* does not exist/i.test(String(e?.message || ''));
@@ -477,8 +486,8 @@ export class CommissionsService {
       ORDER BY i.created_at DESC
     `;
     const withShare = (rows: any[]) => rows.map(({ weighted_tokens: weightedTokens, ...row }) => {
-      const proctorTokens = shareFromWeighted(weightedTokens);
-      return { ...row, proctor_tokens: proctorTokens, proctor_idr: proctorTokens * config.token_idr_rate };
+      const proctorTokens = exactShareFromWeighted(weightedTokens);
+      return { ...row, proctor_tokens: proctorTokens, proctor_idr: Math.round(proctorTokens * config.token_idr_rate) };
     });
     const exams = withShare(await this.prisma.$queryRawUnsafe<any[]>(itemSql('cbt_exams'), userId, config.proctor_share_pct));
     const materials = withShare(await this.prisma.$queryRawUnsafe<any[]>(itemSql('cbt_learning_materials'), userId, config.proctor_share_pct));
