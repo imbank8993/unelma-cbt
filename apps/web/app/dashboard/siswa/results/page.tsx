@@ -72,7 +72,7 @@ export default function StudentResultsPage() {
     ];
 
     return (
-        <div className="max-w-7xl mx-auto pb-24 space-y-6">
+        <div className="w-full space-y-6 pb-24">
             {timeZoneError && <div role="alert" className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{timeZoneError}</div>}
 
             <StudentBanner
@@ -112,12 +112,13 @@ export default function StudentResultsPage() {
                     <button type="button" onClick={loadResults} className="mt-4 px-4 py-2 rounded-lg bg-red-600 text-white text-sm font-semibold">Coba Lagi</button>
                 </div>
             ) : results.length === 0 ? (
-                <div className="py-16 px-6 text-center bg-white border border-slate-200/80 rounded-2xl max-w-xl mx-auto w-full flex flex-col items-center dark:border-slate-800 dark:bg-slate-900">
-                    <div className="w-14 h-14 bg-blue-50 rounded-2xl flex items-center justify-center mb-4 text-[#030C4D] dark:bg-slate-800 dark:text-blue-300">
+                <div className="relative flex min-h-72 w-full flex-col items-center justify-center overflow-hidden rounded-2xl border border-slate-200/80 bg-white px-6 py-14 text-center shadow-sm dark:border-slate-800 dark:bg-slate-900">
+                    <div aria-hidden="true" className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-[#030C4D] via-blue-500 to-[#F8A01B]" />
+                    <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-blue-50 text-[#030C4D] dark:bg-slate-800 dark:text-blue-300">
                         <Award size={26} />
                     </div>
-                    <h3 className="text-base font-bold text-slate-800 mb-1 dark:text-slate-100">Belum ada hasil ujian</h3>
-                    <p className="text-slate-500 text-sm max-w-sm dark:text-slate-400">Hasil akan muncul di sini setelah kamu mengumpulkan ujian pertamamu.</p>
+                    <h3 className="mb-2 text-lg font-bold text-slate-800 dark:text-slate-100">Belum ada hasil ujian</h3>
+                    <p className="max-w-lg text-sm leading-relaxed text-slate-500 dark:text-slate-400">Hasil akan muncul di sini setelah kamu mengumpulkan ujian pertamamu.</p>
                 </div>
             ) : (
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">

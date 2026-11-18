@@ -1,5 +1,6 @@
 import type { ExamAnswerSnapshot, ExamSubmissionRegistration } from './exam-durable-storage';
 import { ExamSnapshotConflictError } from './exam-durable-storage';
+import { examSubmissionScope } from './exam-submission-notices';
 
 export interface SubmissionStatus {
     success: boolean; error?: string; retryable?: boolean; cancelled?: boolean;
@@ -20,7 +21,7 @@ export interface SubmissionWorkerDependencies {
     freeze(attemptId: string, snapshot: ExamAnswerSnapshot): Promise<ExamAnswerSnapshot>;
     send(entry: ExamSubmissionRegistration, snapshot: ExamAnswerSnapshot): Promise<SubmissionResult>;
     confirm(entry: ExamSubmissionRegistration, snapshot: ExamAnswerSnapshot): Promise<void>;
-    notify?(entry: ExamSubmissionRegistration, result: SubmissionResult): void;
+    notify?(entry: ExamSubmissionRegistration, result: SubmissionResult): void | Promise<void>;
     /** Buang salinan generasi lama setelah server memulai ujian susulan. */
     discard?(entry: ExamSubmissionRegistration): Promise<void>;
 }
@@ -40,12 +41,13 @@ export function createExamSubmissionWorker(deps: SubmissionWorkerDependencies) {
     let running: Promise<void> | null = null;
     let stopped = false;
     const failures = new Map<string, { count: number; nextAt: number; error?: string }>();
-    const defer = (entry: ExamSubmissionRegistration, result: SubmissionResult) => {
-        const previous = failures.get(entry.attemptId);
+    const defer = async (entry: ExamSubmissionRegistration, result: SubmissionResult) => {
+        const scope = examSubmissionScope(entry);
+        const previous = failures.get(scope);
         const count = (previous?.count || 0) + 1;
-        failures.set(entry.attemptId, { count, error: result.error,
+        failures.set(scope, { count, error: result.error,
             nextAt: deps.now() + submissionRetryDelay(count, result.retryable) });
-        if (result.retryable === false && previous?.error !== result.error) deps.notify?.(entry, result);
+        if (!stopped && result.retryable === false && previous?.error !== result.error) await deps.notify?.(entry, result);
     };
     const work = async () => {
         if (stopped || !deps.online()) return;
@@ -56,32 +58,34 @@ export function createExamSubmissionWorker(deps: SubmissionWorkerDependencies) {
         if (!user || stopped) return;
         const device = await deps.currentDevice();
         for (const entry of entries) {
+            const scope = examSubmissionScope(entry);
             if (stopped || !deps.online()) break;
             if (entry.userId !== user.id || entry.deviceId !== device || entry.examId === deps.activeExamId()) continue;
-            if ((failures.get(entry.attemptId)?.nextAt || 0) > deps.now()) continue;
+            if ((failures.get(scope)?.nextAt || 0) > deps.now()) continue;
             try {
                 let snapshot = await deps.read(entry.attemptId);
                 if (!snapshot) continue;
                 const status = await deps.status(entry.attemptId);
+                if (stopped) break;
                 // Ujian dibatalkan pengawas: pengerjaan sudah diarsipkan di server dan
                 // siswa akan mengerjakan ulang, jadi salinan ini tidak pernah dikirim.
                 if (!status.success && status.cancelled && deps.discard) {
                     await deps.discard(entry);
-                    failures.delete(entry.attemptId);
-                    deps.notify?.(entry, status);
+                    failures.delete(scope);
+                    await deps.notify?.(entry, status);
                     continue;
                 }
-                if (!status.success) { defer(entry, status); continue; }
+                if (!status.success) { await defer(entry, status); continue; }
                 // Ujian susulan memulai generasi baru (started_at baru) dan sudah
                 // menghapus jawaban lama di server; salinan lama tidak berguna lagi.
                 if (deps.discard && status.examId === entry.examId &&
                     Date.parse(status.startedAt || '') > Date.parse(entry.startedAt)) {
                     await deps.discard(entry);
-                    failures.delete(entry.attemptId);
+                    failures.delete(scope);
                     continue;
                 }
                 if (status.examId !== entry.examId || Date.parse(status.startedAt || '') !== Date.parse(entry.startedAt) || !status.canRecover) {
-                    defer(entry, { success: false, retryable: false, error: 'Sesi ujian sudah berubah atau dihentikan. Salinan jawaban tetap disimpan.' });
+                    await defer(entry, { success: false, retryable: false, error: 'Sesi ujian sudah berubah atau dihentikan. Salinan jawaban tetap disimpan.' });
                     continue;
                 }
                 // A closed attempt is checked against the server instead of reported as a
@@ -101,25 +105,26 @@ export function createExamSubmissionWorker(deps: SubmissionWorkerDependencies) {
                 const stillUser = await deps.currentUser();
                 if (stopped || stillUser?.id !== entry.userId || !deps.online() || entry.examId === deps.activeExamId()) continue;
                 const result = await deps.send(entry, snapshot);
+                if (stopped) break;
                 if (!result.success && result.cancelled && deps.discard) {
                     await deps.discard(entry);
-                    failures.delete(entry.attemptId);
-                    deps.notify?.(entry, result);
+                    failures.delete(scope);
+                    await deps.notify?.(entry, result);
                     continue;
                 }
                 if (!result.success || result.savedAnswersOnly || result.submissionVerified !== true) {
-                    defer(entry, result.success ? { success: false, retryable: !result.savedAnswersOnly,
+                    await defer(entry, result.success ? { success: false, retryable: !result.savedAnswersOnly,
                         error: result.savedAnswersOnly
                             ? 'Server hanya mengonfirmasi jawaban yang sudah tersimpan. Salinan lokal dipertahankan untuk pemeriksaan proktor.'
                             : 'Pengumpulan belum dapat dikonfirmasi. Sistem akan memeriksa ulang; salinan lokal tetap disimpan.' } : result);
                     continue;
                 }
                 await deps.confirm(entry, snapshot);
-                failures.delete(entry.attemptId);
-                deps.notify?.(entry, result);
+                failures.delete(scope);
+                await deps.notify?.(entry, result);
             } catch (error) {
                 // A storage/network fault on one attempt must not prevent delivery of the next.
-                defer(entry, { success: false, retryable: !(error instanceof ExamSnapshotConflictError),
+                await defer(entry, { success: false, retryable: !(error instanceof ExamSnapshotConflictError),
                     ...(error instanceof ExamSnapshotConflictError ? { error: error.message } : {}) });
             }
         }

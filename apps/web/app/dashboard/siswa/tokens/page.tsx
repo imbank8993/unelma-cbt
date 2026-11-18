@@ -1,6 +1,5 @@
 "use client";
 
-import DashboardPageTitle from '@/app/components/DashboardPageTitle';
 import React, { useEffect, useState } from 'react';
 import { ArrowRight, ArrowDownLeft, ArrowUpRight, Coins } from 'lucide-react';
 import {
@@ -65,7 +64,7 @@ export default function SiswaTokensPage() {
     const rupiah = (value: number) => `Rp${Math.round(value).toLocaleString('id-ID')}`;
 
     return (
-        <div className="max-w-5xl mx-auto space-y-10 pb-16">
+        <div className="w-full space-y-8 pb-16">
             <CustomPaymentModal
                 isOpen={!!selectedPackage}
                 onClose={() => setSelectedPackage(null)}
@@ -80,28 +79,28 @@ export default function SiswaTokensPage() {
             />
 
             {/* ── Saldo ── */}
-            <section className="rounded-2xl border border-slate-200 bg-white p-6 sm:p-8 dark:border-slate-800 dark:bg-slate-900">
-                <h2 className="mb-5 text-xl font-semibold tracking-tight text-slate-900 sm:text-2xl dark:text-white"><DashboardPageTitle /></h2>
-                <div className="flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between">
+            <section className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#030C4D] via-[#102B77] to-[#174EA6] p-6 text-white shadow-lg shadow-blue-950/10 sm:p-9">
+                <div aria-hidden="true" className="absolute -right-20 -top-28 h-72 w-72 rounded-full border-[44px] border-white/5" />
+                <div aria-hidden="true" className="absolute -bottom-28 right-1/4 h-52 w-52 rounded-full bg-[#F8A01B]/10 blur-2xl" />
+                <div className="relative flex flex-col gap-8 lg:flex-row lg:items-center lg:justify-between">
                     <div>
-                        <p className="flex items-center gap-2 text-sm font-medium text-slate-500 dark:text-slate-400">
-                            <Coins size={16} className="text-[#F8A01B]" /> Saldo token
+                        <p className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 py-1.5 text-xs font-semibold tracking-wide text-blue-50">
+                            <Coins size={16} className="text-[#FFB640]" /> Saldo tersedia
                         </p>
-                        <p className="mt-2 flex items-baseline gap-2">
-                            <span className="text-5xl font-semibold tracking-tight tabular-nums text-slate-900 dark:text-white">{loading ? '…' : balance.toLocaleString('id-ID')}</span>
-                            <span className="text-base text-slate-500">token</span>
+                        <p className="mt-4 flex items-baseline gap-3">
+                            <span className="text-6xl font-bold tracking-tight tabular-nums text-[#FFB640] sm:text-7xl">{loading ? '…' : balance.toLocaleString('id-ID')}</span>
+                            <span className="text-lg text-blue-100">token</span>
                         </p>
-                        <p className="mt-3 text-sm text-slate-500 dark:text-slate-400">
-                            {toppedUp.toLocaleString('id-ID')} ditambahkan · {used.toLocaleString('id-ID')} terpakai
-                        </p>
+                        <p className="mt-3 max-w-xl text-sm leading-relaxed text-blue-100">Gunakan token untuk membuka tryout premium dan materi eksklusif. Saldo tidak hangus.</p>
                     </div>
-                    <a href="#paket-token" className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#030C4D] px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-[#0B1A66] dark:bg-blue-600 dark:hover:bg-blue-500">
-                        Top up <ArrowRight size={16} />
-                    </a>
+                    <div className="flex flex-wrap items-center gap-3 lg:justify-end">
+                        <div className="rounded-2xl border border-white/15 bg-white/10 px-5 py-3 backdrop-blur-sm"><p className="text-xs text-blue-100">Ditambahkan</p><p className="mt-1 text-xl font-bold tabular-nums">{toppedUp.toLocaleString('id-ID')}</p></div>
+                        <div className="rounded-2xl border border-white/15 bg-white/10 px-5 py-3 backdrop-blur-sm"><p className="text-xs text-blue-100">Terpakai</p><p className="mt-1 text-xl font-bold tabular-nums">{used.toLocaleString('id-ID')}</p></div>
+                        <a href="#paket-token" className="inline-flex min-h-14 items-center justify-center gap-2 rounded-2xl bg-[#F8A01B] px-6 text-sm font-bold text-[#030C4D] shadow-md transition hover:bg-[#FFB640] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white">
+                            Top up <ArrowRight size={17} />
+                        </a>
+                    </div>
                 </div>
-                <p className="mt-6 border-t border-slate-100 pt-4 text-sm text-slate-500 dark:border-slate-800 dark:text-slate-400">
-                    Token dipakai untuk membuka tryout premium dan materi eksklusif. Saldo tidak hangus.
-                </p>
             </section>
 
             {feedback && (
@@ -113,7 +112,7 @@ export default function SiswaTokensPage() {
 
             {/* ── Paket ── */}
             <section id="paket-token" className="scroll-mt-24">
-                <h2 className="text-lg font-semibold tracking-tight text-slate-900 dark:text-white">Pilih paket</h2>
+                <h2 className="text-xl font-bold tracking-tight text-[#030C4D] dark:text-white">Pilih paket</h2>
                 <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Bayar sekali, saldo langsung bertambah.</p>
 
                 {loading ? (
@@ -131,35 +130,36 @@ export default function SiswaTokensPage() {
                         Belum ada paket token yang aktif saat ini. Silakan hubungi admin.
                     </div>
                 ) : (
-                    <div className="mt-5 grid grid-cols-1 gap-4 md:grid-cols-3">
+                    <div className="mt-5 grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-3">
                         {packages.map((pkg) => {
                             const best = pkg.id === bestValueId;
                             const bonus = bonusOf(pkg);
                             return (
                                 <article key={pkg.id}
-                                    className={`relative flex flex-col rounded-2xl bg-white p-6 transition-shadow hover:shadow-md dark:bg-slate-900 ${best
-                                        ? 'border-2 border-[#030C4D] dark:border-blue-500'
-                                        : 'border border-slate-200 dark:border-slate-800'}`}>
+                                    className={`relative flex min-h-72 flex-col overflow-hidden rounded-3xl bg-white p-6 shadow-sm transition-all hover:-translate-y-1 hover:shadow-lg dark:bg-slate-900 ${best
+                                        ? 'border-2 border-[#F8A01B] dark:border-[#F8A01B]'
+                                        : 'border border-blue-100 dark:border-slate-800'}`}>
+                                    <div aria-hidden="true" className={`absolute inset-x-0 top-0 h-1.5 ${best ? 'bg-[#F8A01B]' : 'bg-gradient-to-r from-[#030C4D] to-blue-500'}`} />
                                     <div className="flex items-center justify-between gap-2">
-                                        <p className="text-sm font-medium text-slate-600 dark:text-slate-300">{pkg.name}</p>
-                                        {best && <span className="rounded-full bg-slate-900 px-2.5 py-0.5 text-[11px] font-medium text-white dark:bg-blue-600">Paling hemat</span>}
+                                        <p className="text-sm font-bold text-[#030C4D] dark:text-blue-200">{pkg.name}</p>
+                                        {best && <span className="rounded-full bg-orange-100 px-3 py-1 text-[11px] font-bold text-orange-800 dark:bg-orange-500/20 dark:text-orange-200">Paling hemat</span>}
                                     </div>
                                     <p className="mt-4 flex items-baseline gap-1.5">
-                                        <span className="text-4xl font-semibold tracking-tight tabular-nums text-slate-900 dark:text-white">{pkg.token_amount}</span>
+                                        <span className="text-5xl font-bold tracking-tight tabular-nums text-[#030C4D] dark:text-white">{pkg.token_amount}</span>
                                         <span className="text-sm text-slate-500">token</span>
                                     </p>
-                                    <p className="mt-1 h-5 text-sm text-slate-500 dark:text-slate-400">{bonus > 0 ? `termasuk ${bonus} token bonus` : ''}</p>
-                                    <div className="mt-6 flex items-end justify-between gap-3">
+                                    <p className="mt-1 min-h-5 text-sm font-medium text-orange-700 dark:text-orange-300">{bonus > 0 ? `Termasuk ${bonus} token bonus` : 'Untuk belajar lebih leluasa'}</p>
+                                    <div className="mt-auto flex items-end justify-between gap-3 pt-8">
                                         <div>
-                                            <p className="text-xl font-semibold tabular-nums text-slate-900 dark:text-white">{rupiah(Number(pkg.price_idr))}</p>
-                                            <p className="text-xs text-slate-400">{rupiah(Number(pkg.price_idr) / Math.max(1, pkg.token_amount))} / token</p>
+                                            <p className="text-2xl font-bold tabular-nums text-[#030C4D] dark:text-white">{rupiah(Number(pkg.price_idr))}</p>
+                                            <p className="text-xs text-slate-500 dark:text-slate-400">{rupiah(Number(pkg.price_idr) / Math.max(1, pkg.token_amount))} / token</p>
                                         </div>
                                     </div>
                                     <button type="button" onClick={() => handleBuyPackage(pkg)}
-                                        className={`mt-5 inline-flex w-full items-center justify-center rounded-xl px-4 py-2.5 text-sm font-semibold transition-colors ${best
-                                            ? 'bg-[#030C4D] text-white hover:bg-[#0B1A66] dark:bg-blue-600 dark:hover:bg-blue-500'
-                                            : 'border border-slate-300 text-slate-800 hover:border-slate-400 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800'}`}>
-                                        Pilih paket
+                                        className={`mt-5 inline-flex w-full items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-bold transition-colors ${best
+                                            ? 'bg-[#F8A01B] text-[#030C4D] hover:bg-[#FFB640]'
+                                            : 'bg-[#030C4D] text-white hover:bg-[#102B77] dark:bg-blue-600 dark:hover:bg-blue-500'}`}>
+                                        Pilih paket <ArrowRight size={16} />
                                     </button>
                                 </article>
                             );

@@ -14,6 +14,7 @@ import {
 import { retryExamEvidence } from '@/lib/exam-evidence-outbox';
 import { removeExamOfflineShell } from '@/lib/exam-pwa';
 import { createExamSubmissionWorker } from '@/lib/exam-submission-worker';
+import { claimExamSubmissionWarning, clearExamSubmissionWarnings } from '@/lib/exam-submission-notices';
 import { useToast } from './ui/Toast';
 
 /** Lives in the root layout so navigation to Dashboard does not stop the queue. */
@@ -26,6 +27,7 @@ export function ExamSubmissionSync() {
     useEffect(() => { toastRef.current = toast; }, [toast]);
     useEffect(() => { pathRef.current = pathname; runRef.current?.(); }, [pathname]);
     useEffect(() => {
+        let active = true;
         const worker = createExamSubmissionWorker({
             online: () => navigator.onLine,
             now: () => performance.now(),
@@ -81,8 +83,10 @@ export function ExamSubmissionSync() {
                 }
                 removeExamAttemptCaches(entry.attemptId);
             },
-            notify: (_entry, result) => {
+            notify: async (entry, result) => {
+                if (!active) return;
                 if (result.success) {
+                    clearExamSubmissionWarnings(entry);
                     window.dispatchEvent(new Event('exam-submission-synced'));
                     if (/^\/dashboard\/siswa\/exam\//.test(pathRef.current)) return;
                     toastRef.current.success(result.alreadySubmitted ? 'Jawaban sudah tersimpan' : 'Jawaban berhasil dikirim',
@@ -93,7 +97,13 @@ export function ExamSubmissionSync() {
                         toastRef.current.warning('Ujian dibatalkan', 'Pengawas membatalkan ujian ini. Salinan jawaban di perangkat ini sudah dibersihkan; tunggu jadwal ujian ulang.');
                         return;
                     }
-                    toastRef.current.warning('Pengumpulan perlu diperiksa', result.error);
+                    // The worker survives navigation, but reloads/tabs used to show the
+                    // same permanent rejection again. Keep one warning per issue/generation.
+                    const user = await fetchSessionUser().catch(() => null);
+                    if (!active || user?.id !== entry.userId || /^\/dashboard\/siswa\/exam\//.test(pathRef.current)) return;
+                    if (!await claimExamSubmissionWarning(entry, result.error || 'Pengumpulan belum terkonfirmasi.') || !active) return;
+                    toastRef.current.warning('Sinkronisasi jawaban ujian tertunda',
+                        `${result.error || 'Pengumpulan belum terkonfirmasi.'} Salinan jawaban tetap disimpan. Hubungi proktor jika ujian sudah selesai.`);
                 }
             },
         });
@@ -118,6 +128,7 @@ export function ExamSubmissionSync() {
         window.addEventListener(EXAM_SUBMISSION_QUEUE_CHANGED, run);
         document.addEventListener('visibilitychange', onVisible);
         return () => {
+            active = false;
             worker.stop();
             runRef.current = null;
             window.clearInterval(timer);
