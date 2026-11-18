@@ -89,6 +89,28 @@ export class SocialMediaProvider {
     return result.post;
   }
 
+  async postMetrics(key: string, post: SocialPost): Promise<{ metrics: SocialMetrics; updatedAt: string | null } | null> {
+    // Separate from the status query: unavailable Insights must never hide a successful publication.
+    const result = await this.buffer<{ post: { id: string; channelId: string; metricsUpdatedAt?: string | null;
+      metrics?: { type: string; value: number; unit: string }[] | null } }>(key,
+      `query PostMetrics($input: PostInput!) { post(input: $input) { id channelId metrics { type value unit } metricsUpdatedAt } }`,
+      { input: { id: post.buffer_post_id } });
+    if (result.post?.id !== post.buffer_post_id || result.post.channelId !== post.channel_id) {
+      throw new SocialProviderError('Akun atau ID statistik Buffer tidak cocok dengan posting ini.');
+    }
+    const value = (type: string) => numeric(result.post.metrics?.find(metric => metric.type === type && metric.unit === 'count')?.value);
+    const counts = ['reactions', 'comments', 'shares', ...(post.platform === 'instagram' ? ['saves'] : [])].map(value);
+    const metrics: SocialMetrics = {
+      views: value('views') ?? value('impressions'),
+      reach: post.platform === 'tiktok' ? null : value('reach'),
+      interactions: counts.every(count => count !== null) ? (counts as number[]).reduce((sum, count) => sum + count, 0) : null,
+      source: 'buffer',
+    };
+    if ([metrics.views, metrics.reach, metrics.interactions].every(count => count === null)) return null;
+    const timestamp = result.post.metricsUpdatedAt;
+    return { metrics, updatedAt: timestamp && Number.isFinite(Date.parse(timestamp)) ? timestamp : null };
+  }
+
   private async meta<T>(token: string, version: string, path: string, params: Record<string, string>): Promise<T> {
     const url = new URL(`https://graph.facebook.com/${version}/${path}`);
     url.search = new URLSearchParams(params).toString();

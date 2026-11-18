@@ -91,13 +91,14 @@ test('blank key preserves existing secret and replacement/clear is encrypted in 
   assert.deepEqual(openCredentials(row.credentials_cipher, 'settings'), {});
 });
 
-function publishFixture(provider) {
+function publishFixture(provider, credentials) {
   const post = draft();
+  const channel = { ...CHANNEL, ...(credentials ? { credentials_cipher: sealCredentials(credentials, `channel:${CHANNEL.id}`) } : {}) };
   const row = { credentials_cipher: sealCredentials({ bufferApiKey: 'buffer-test-key' }, 'settings'), organization_id: 'org-1', graph_version: 'v26.0' };
   const prisma = {
     $queryRawUnsafe: async (sql, ...args) => {
       if (sql.includes('FROM public.cbt_social_settings')) return [row];
-      if (sql.includes('FROM public.cbt_social_channels')) return [CHANNEL];
+      if (sql.includes('FROM public.cbt_social_channels')) return [channel];
       if (sql.includes("SET status = 'sending'")) {
         if (!['draft', 'failed'].includes(post.status) || post.buffer_post_id) return [];
         post.status = 'sending'; return [{ ...post }];
@@ -106,7 +107,12 @@ function publishFixture(provider) {
       throw new Error('Unexpected SQL: ' + sql);
     },
     $executeRawUnsafe: async (sql, ...args) => {
-      if (sql.includes('SET buffer_post_id')) Object.assign(post, { buffer_post_id: args[1], status: args[2], external_url: args[3], external_post_id: args[4], error: args[5] });
+      if (sql.includes('SET buffer_post_id')) {
+        if (post.status === 'published' && args[2] !== 'published') return 0;
+        Object.assign(post, { buffer_post_id: args[1], status: args[2], external_url: args[3] || post.external_url, external_post_id: post.external_post_id || args[4], error: args[5], published_at: args[6] || post.published_at });
+      }
+      else if (sql.includes('SET metrics =')) Object.assign(post, { metrics: JSON.parse(args[1]), metrics_at: sql.includes('external_post_id = $3') ? new Date().toISOString() : args[2] || new Date().toISOString(), metrics_error: null });
+      else if (sql.includes('SET metrics_error = NULL')) post.metrics_error = null;
       else if (sql.includes('SET status = $2')) Object.assign(post, { status: args[1], error: args[2] });
       else if (sql.includes('SET metrics_error')) post.metrics_error = args[1];
       else throw new Error('Unexpected SQL: ' + sql);
@@ -147,6 +153,74 @@ test('unavailable metrics remain null and real zero stays zero', () => {
   assert.equal(insightValue([{ name: 'views', values: [{ value: 0 }] }], 'views'), 0);
   assert.equal(insightValue([{ name: 'views', total_value: { value: 23 } }], 'views'), 23);
   assert.equal(insightValue([{ name: 'views', values: [{ value: -1 }] }], 'views'), null);
+});
+
+test('a processing post is reconciled with Buffer without publishing it again, even without a Meta token', async () => {
+  const { service, post } = publishFixture({
+    post: async () => ({ id: 'buffer-1', channelId: CHANNEL.id, status: 'sent', externalLink: 'https://www.instagram.com/p/target/', sentAt: '2026-11-18T13:44:09Z' }),
+    postMetrics: async () => null,
+    createPost: async () => { throw new Error('Must not republish'); },
+  });
+  Object.assign(post, { status: 'processing', buffer_post_id: 'buffer-1' });
+  const result = await service.syncPost(ADMIN, ID);
+  assert.equal(result.post.status, 'published');
+  assert.equal(result.post.external_url, 'https://www.instagram.com/p/target/');
+  assert.equal(result.post.published_at, '2026-11-18T13:44:09Z');
+  assert.equal(result.post.metrics_at, null);
+  assert.equal(result.post.metrics_error, null);
+  assert.deepEqual(result.post.metrics, {});
+});
+
+test('Buffer metrics are available without native credentials and keep the network refresh time', async () => {
+  const snapshot = { metrics: { views: 0, reach: 12, interactions: 4, source: 'buffer' }, updatedAt: '2026-11-18T14:00:00Z' };
+  const { service, post } = publishFixture({ post: async () => ({ id: 'buffer-1', channelId: CHANNEL.id, status: 'sent' }), postMetrics: async () => snapshot });
+  Object.assign(post, { status: 'published', buffer_post_id: 'buffer-1' });
+  const result = await service.syncPost(ADMIN, ID);
+  assert.deepEqual(result.post.metrics, snapshot.metrics);
+  assert.equal(result.post.metrics_at, snapshot.updatedAt);
+});
+
+test('missing Buffer data preserves previous metrics and late status snapshots never revert a published post', async () => {
+  const { service, post } = publishFixture({ post: async () => ({ id: 'buffer-1', channelId: CHANNEL.id, status: 'sending' }), postMetrics: async () => null });
+  Object.assign(post, { status: 'published', buffer_post_id: 'buffer-1', metrics: { views: 42 }, metrics_at: '2026-11-18T14:00:00Z' });
+  const result = await service.syncPost(ADMIN, ID);
+  assert.equal(result.post.status, 'published');
+  assert.deepEqual(result.post.metrics, { views: 42 });
+  assert.equal(result.post.metrics_at, '2026-11-18T14:00:00Z');
+});
+
+test('native Insights failures fall back to Buffer, while unavailable Buffer permissions keep a useful error', async () => {
+  const { service, post } = publishFixture({
+    post: async () => ({ id: 'buffer-1', channelId: CHANNEL.id, status: 'sent' }),
+    metrics: async () => { throw new SocialProviderError('Token Meta kedaluwarsa'); },
+    postMetrics: async () => { throw new SocialProviderError('Buffer menolak izin Insights'); },
+  }, { accessToken: 'expired-meta-token' });
+  Object.assign(post, { status: 'published', buffer_post_id: 'buffer-1', metrics: { views: 42 } });
+  const result = await service.syncPost(ADMIN, ID);
+  assert.equal(result.post.status, 'published');
+  assert.deepEqual(result.post.metrics, { views: 42 });
+  assert.match(result.post.metrics_error, /Meta kedaluwarsa.*Buffer menolak izin/);
+});
+
+test('Buffer metric mapping avoids duplicate view counts, missing-as-zero, and cross-account data', async () => {
+  const original = global.fetch;
+  let metricRows = null, channelId = CHANNEL.id;
+  global.fetch = async (url, options) => {
+    assert.equal(url, 'https://api.buffer.com');
+    const request = JSON.parse(options.body);
+    assert.match(request.query, /metricsUpdatedAt/);
+    return new Response(JSON.stringify({ data: { post: { id: 'buffer-1', channelId, metrics: metricRows, metricsUpdatedAt: '2026-11-18T14:00:00Z' } } }));
+  };
+  try {
+    const provider = new SocialMediaProvider(), post = { ...draft(), buffer_post_id: 'buffer-1' };
+    assert.equal(await provider.postMetrics('buffer-key', post), null);
+    metricRows = [{ type: 'views', value: 0, unit: 'count' }, { type: 'impressions', value: 20, unit: 'count' }, { type: 'reactions', value: 2, unit: 'count' }];
+    assert.deepEqual((await provider.postMetrics('buffer-key', post)).metrics, { views: 0, reach: null, interactions: null, source: 'buffer' });
+    metricRows = ['reactions', 'comments', 'shares', 'saves'].map(type => ({ type, value: 1, unit: 'count' }));
+    assert.equal((await provider.postMetrics('buffer-key', post)).metrics.interactions, 4);
+    channelId = 'other-account';
+    await assert.rejects(provider.postMetrics('buffer-key', post), /tidak cocok/);
+  } finally { global.fetch = original; }
 });
 
 test('TikTok video queries use the native ID and never invent unique reach', async () => {

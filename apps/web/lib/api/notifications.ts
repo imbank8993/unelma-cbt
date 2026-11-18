@@ -18,7 +18,7 @@ export async function getUserNotifications(
 
 export async function getUserNotificationsResult(
     options: { limit?: number; offset?: number; type?: string; unreadOnly?: boolean; includeExpired?: boolean } = {},
-): Promise<{ success: true; notifications: Notification[] } | { success: false; error: string }> {
+): Promise<{ success: true; notifications: Notification[]; unreadCount?: number } | { success: false; error: string }> {
     const params = new URLSearchParams();
     if (options.limit) params.set('limit', String(options.limit));
     if (options.offset) params.set('offset', String(options.offset));
@@ -27,11 +27,11 @@ export async function getUserNotificationsResult(
     if (options.includeExpired) params.set('includeExpired', 'true');
 
     const query = params.toString();
-    const res = await apiGet<{ notifications: Notification[] }>(
+    const res = await apiGet<{ notifications: Notification[]; unreadCount?: number }>(
         `/api/notifications${query ? `?${query}` : ''}`,
     );
     return res.success
-        ? { success: true, notifications: res.notifications }
+        ? { success: true, notifications: res.notifications, unreadCount: res.unreadCount }
         : { success: false, error: res.error || 'Notifikasi tidak dapat dimuat.' };
 }
 

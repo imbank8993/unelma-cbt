@@ -1,7 +1,7 @@
 export type SocialPlatform = 'instagram' | 'facebook' | 'tiktok';
 export type MediaType = 'text' | 'image' | 'video';
 export type PostStatus = 'draft' | 'sending' | 'processing' | 'published' | 'failed' | 'uncertain';
-export interface SocialMetrics { views?: number | null; reach?: number | null; interactions?: number | null }
+export interface SocialMetrics { views?: number | null; reach?: number | null; interactions?: number | null; source?: 'buffer' | 'platform' }
 export interface SocialChannel {
   id: string; platform: SocialPlatform; organization_id: string; name: string;
   external_account_id: string; connected: boolean; credentials_cipher?: string | null;

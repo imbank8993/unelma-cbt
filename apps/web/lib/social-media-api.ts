@@ -2,7 +2,7 @@ import { apiGet, apiSend, type ApiResult } from './api/client';
 
 export type SocialPlatform = 'instagram' | 'facebook' | 'tiktok';
 export type SocialMediaType = 'text' | 'image' | 'video';
-export interface SocialMetrics { views?: number | null; reach?: number | null; interactions?: number | null }
+export interface SocialMetrics { views?: number | null; reach?: number | null; interactions?: number | null; source?: 'buffer' | 'platform' }
 export interface SocialChannel {
   id: string; platform: SocialPlatform; organization_id: string; name: string;
   external_account_id: string; connected: boolean; tokenSet: boolean;
@@ -37,7 +37,7 @@ export const saveSocialChannelSettings = (id: string, body: { accountId?: string
   apiSend<{ saved: boolean }>(`/api/social-media/channels/${encodeURIComponent(id)}/settings`, body, 'PUT');
 export const saveSocialDraft = (id: string, body: SocialDraft) => apiSend<{ post: SocialPost }>(`/api/social-media/posts/${id}`, body, 'PUT');
 export const publishSocialPost = (id: string) => apiSend<{ post: SocialPost }>(`/api/social-media/posts/${id}/publish`, {});
-export const syncSocialPost = (id: string) => apiSend<{ post: SocialPost }>(`/api/social-media/posts/${id}/sync`, {});
+export const syncSocialPost = (id: string) => apiSend<{ post: SocialPost }>(`/api/social-media/posts/${id}/sync`, {}, 'POST', { timeoutMs: 65000 });
 export const deleteSocialDraft = (id: string) => apiSend<{ deleted: boolean }>(`/api/social-media/posts/${id}`, {}, 'DELETE');
 export const reconcileSocialPost = (id: string, body: { bufferPostId?: string; externalPostId?: string }) =>
   apiSend<{ post: SocialPost }>(`/api/social-media/posts/${id}/reference`, body, 'PUT');

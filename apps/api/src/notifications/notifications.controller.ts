@@ -45,17 +45,16 @@ export class NotificationsController {
     ) {
         const parsed = Number(limit);
         const parsedOffset = Number(offset);
-        return {
-            notifications: await this.notifications.list(user, {
-                // Batas atas dipasang supaya satu permintaan tidak bisa menarik
-                // seluruh isi tabel.
-                limit: Number.isFinite(parsed) ? Math.min(Math.max(Math.floor(parsed), 1), 100) : 20,
-                offset: Number.isFinite(parsedOffset) ? Math.min(Math.max(Math.floor(parsedOffset), 0), 1000000) : 0,
-                type: type && /^[a-z0-9_-]{1,50}$/i.test(type) ? type : undefined,
-                unreadOnly: unreadOnly === 'true',
-                includeExpired: includeExpired === 'true',
-            }),
-        };
+        const notifications = await this.notifications.list(user, {
+            // Batas atas dipasang supaya satu permintaan tidak bisa menarik
+            // seluruh isi tabel.
+            limit: Number.isFinite(parsed) ? Math.min(Math.max(Math.floor(parsed), 1), 100) : 20,
+            offset: Number.isFinite(parsedOffset) ? Math.min(Math.max(Math.floor(parsedOffset), 0), 1000000) : 0,
+            type: type && /^[a-z0-9_-]{1,50}$/i.test(type) ? type : undefined,
+            unreadOnly: unreadOnly === 'true',
+            includeExpired: includeExpired === 'true',
+        });
+        return { notifications, unreadCount: await this.notifications.unreadCount(user, false) };
     }
 
     @Get('unread-count')

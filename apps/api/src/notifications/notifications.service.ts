@@ -1,6 +1,7 @@
 import { BadRequestException, Injectable, InternalServerErrorException, Logger } from '@nestjs/common';
 import type { AuthUser } from '@acca-cbt/shared';
 import { DbService } from '../prisma/prisma-db-adapter';
+import { loadExamAudience } from '../students/exam-access';
 
 export interface CreateNotificationInput {
     userId: string;
@@ -33,6 +34,39 @@ export class NotificationsService {
 
     constructor(private readonly db: DbService) {}
 
+    /** Discover newly available exams through the same audience policy as the student schedule.
+     * This also covers PAS activation, newly assigned participants, and joining a class later.
+     */
+    async syncAvailableExams(user: AuthUser): Promise<void> {
+        if (!user.roles?.includes('SISWA')) return;
+        const audience = await loadExamAudience(this.db, user);
+        if (!audience.organizationId) return;
+        await this.db.raw(`
+            WITH candidates AS (
+                SELECT e.id, e.organization_id, e.title, e.end_time
+                FROM public.cbt_exams e
+                WHERE e.organization_id = $2::uuid AND e.is_published = true
+                  AND e.status <> 'archived' AND (e.end_time IS NULL OR e.end_time > now())
+                  AND (e.metadata->'is_public' = 'true'::jsonb OR e.id = ANY($3::uuid[]))
+                  AND (e.metadata->'key_correction'->>'state' IS NULL OR e.metadata->'key_correction'->>'state' = 'ready')
+                  AND COALESCE((SELECT exam_reminder FROM public.cbt_notification_preferences WHERE user_id = $1::uuid), true)
+                  AND NOT EXISTS (SELECT 1 FROM public.cbt_exam_attempts a WHERE a.exam_id = e.id AND a.user_id = $1::uuid
+                    AND a.status IN ('submitted', 'auto_submitted', 'graded'))
+                  AND NOT EXISTS (SELECT 1 FROM public.cbt_exam_notification_deliveries d WHERE d.user_id = $1::uuid AND d.exam_id = e.id)
+                  AND NOT EXISTS (SELECT 1 FROM public.cbt_notifications n WHERE n.user_id = $1::uuid AND n.type = 'exam_available' AND n.data->>'exam_id' = e.id::text)
+                ORDER BY e.created_at DESC, e.id LIMIT 50
+            ), claimed AS (
+                INSERT INTO public.cbt_exam_notification_deliveries (user_id, exam_id)
+                SELECT $1::uuid, id FROM candidates ON CONFLICT DO NOTHING RETURNING exam_id
+            )
+            INSERT INTO public.cbt_notifications (user_id, organization_id, type, title, message, data, priority, action_url, expires_at)
+            SELECT $1::uuid, c.organization_id, 'exam_available', 'Ujian baru: ' || c.title,
+                'Ujian telah diterbitkan. Periksa jadwal dan petunjuk sebelum mengerjakan.',
+                jsonb_build_object('exam_id', c.id::text), 'normal', '/dashboard/siswa/schedule', c.end_time
+            FROM candidates c JOIN claimed d ON d.exam_id = c.id RETURNING id`,
+            user.id, audience.organizationId, [...audience.assignedExamIds]);
+    }
+
     /** Saring notifikasi yang sudah kedaluwarsa, kecuali diminta sebaliknya. */
     private notExpired(query: any) {
         return query.or(`expires_at.is.null,expires_at.gt.${new Date().toISOString()}`);
@@ -42,6 +76,7 @@ export class NotificationsService {
         user: AuthUser,
         options: { limit?: number; offset?: number; type?: string; unreadOnly?: boolean; includeExpired?: boolean } = {},
     ) {
+        await this.syncAvailableExams(user);
         const { limit = 20, offset = 0, type, unreadOnly = false, includeExpired = false } = options;
 
         let query = this.db
@@ -63,7 +98,8 @@ export class NotificationsService {
         return (data as unknown[]) || [];
     }
 
-    async unreadCount(user: AuthUser): Promise<number> {
+    async unreadCount(user: AuthUser, syncExams = true): Promise<number> {
+        if (syncExams) await this.syncAvailableExams(user);
         const { count, error } = await this.notExpired(
             this.db
                 .from('cbt_notifications')

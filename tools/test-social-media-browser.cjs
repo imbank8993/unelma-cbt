@@ -40,7 +40,7 @@ const { chromium } = require('playwright');
     await page.evaluate(modules => {
       const cache = {}; let React;
       const state = window.socialFixture = {
-        savedKey: '', savedToken: '', publishes: 0, failMetrics: false,
+        savedKey: '', savedToken: '', publishes: 0, syncs: 0, failMetrics: false, holdProcessing: false, waitMetrics: false,
         data: { settings: { bufferKeySet: false, organizationId: '', graphVersion: 'v26.0', updatedAt: null }, channels: [], posts: [],
           totals: { published: 0, drafts: 0, measured: 0, views: null, reach: null, interactions: null } },
       };
@@ -69,7 +69,10 @@ const { chromium } = require('playwright');
           state.data.posts = [post, ...state.data.posts.filter(row => row.id !== id)]; return { success: true, post: structuredClone(post) };
         },
         publishSocialPost: async id => { state.publishes++; const post = state.data.posts.find(row => row.id === id); Object.assign(post, { status: 'processing', buffer_post_id: 'buffer1' }); return { success: true, post: structuredClone(post) }; },
-        syncSocialPost: async id => { const post = state.data.posts.find(row => row.id === id); if (state.failMetrics) post.metrics_error = 'Token statistik perlu diperbarui.';
+        syncSocialPost: async id => { state.syncs++; const post = state.data.posts.find(row => row.id === id);
+          if (state.holdProcessing) return { success: true, post: structuredClone(post) };
+          if (state.waitMetrics) { Object.assign(post, { status: 'published', metrics: {}, metrics_at: null, metrics_error: null }); return { success: true, post: structuredClone(post) }; }
+          if (state.failMetrics) post.metrics_error = 'Token statistik perlu diperbarui.';
           else Object.assign(post, { status: 'published', external_url: 'https://www.facebook.com/posts/123', metrics: { views: 42, reach: 25, interactions: 3 }, metrics_at: '2026-11-17T09:00:00Z', published_at: '2026-11-17T08:05:00Z', metrics_error: null }); return { success: true, post: structuredClone(post) }; },
         deleteSocialDraft: async id => { state.data.posts = state.data.posts.filter(post => post.id !== id); return { success: true }; },
         reconcileSocialPost: async () => ({ success: false, error: 'Referensi tidak cocok.' }),
@@ -142,10 +145,23 @@ const { chromium } = require('playwright');
     await page.getByRole('button', { name: 'Publikasikan sekarang', exact: true }).click();
     await page.getByText('Diproses Buffer', { exact: true }).waitFor();
     assert.equal(await page.evaluate(() => window.socialFixture.publishes), 1);
-    await page.getByRole('button', { name: 'Perbarui posting', exact: true }).click();
+    // Buffer accepts asynchronously; the status must advance without pressing refresh or republishing.
     await page.getByText('Terbit', { exact: true }).waitFor();
+    assert.equal(await page.evaluate(() => window.socialFixture.publishes), 1);
+    assert.equal(await page.evaluate(() => window.socialFixture.syncs), 1);
     await page.getByRole('button', { name: 'Statistik', exact: true }).click();
     assert.deepEqual(await page.locator('.social-table tbody tr td').allTextContents().then(values => values.slice(1, 4)), ['42', '25', '3']);
+    await page.evaluate(() => { window.socialFixture.holdProcessing = true; window.socialFixture.data.posts[0].status = 'processing'; });
+    await page.getByRole('button', { name: 'Perbarui halaman', exact: true }).click();
+    await page.getByRole('heading', { name: 'Status publikasi sedang diperiksa', exact: true }).waitFor();
+    assert.equal(await page.getByRole('button', { name: /Perbarui.*terbaru/ }).isEnabled(), true);
+    await page.evaluate(() => { window.socialFixture.holdProcessing = false; window.socialFixture.waitMetrics = true; });
+    await page.getByRole('button', { name: /Perbarui.*terbaru/ }).click();
+    await page.getByText('Posting sudah terbit. Menunggu statistik dari platform atau Buffer.', { exact: true }).waitFor();
+    assert.deepEqual(await page.locator('.social-table tbody tr td').allTextContents().then(values => values.slice(1, 4)), ['—', '—', '—']);
+    await page.evaluate(() => { window.socialFixture.waitMetrics = false; });
+    await page.getByRole('button', { name: /Perbarui.*terbaru/ }).click();
+    await page.getByText('42', { exact: true }).last().waitFor();
     await page.evaluate(() => { window.socialFixture.failMetrics = true; });
     await page.getByRole('button', { name: /Perbarui.*terbaru/ }).click();
     await page.getByText('Token statistik perlu diperbarui.', { exact: true }).waitFor();
@@ -169,7 +185,7 @@ const { chromium } = require('playwright');
     await page.screenshot({ path: path.join(output, 'social-settings-mobile-dark.png'), fullPage: true });
     assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true);
     assert.deepEqual(errors, []);
-    console.log('PASS: InlineSelect, no banner, upload/preview, storage usage/cleanup, credentials, draft/publish, metrics, responsive 320/360/390/768/1440, dark mode.');
+    console.log('PASS: upload/storage/credentials, automatic Buffer status sync without duplicate publish, batch refresh of processing posts, waiting metrics stay unavailable, preserved metrics after errors, responsive 320/360/390/768/1440 and dark mode.');
     console.log('Previews: ' + output);
   } finally { await browser.close(); }
 })().catch(error => { console.error(error); process.exitCode = 1; });

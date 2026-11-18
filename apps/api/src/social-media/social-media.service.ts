@@ -191,7 +191,8 @@ export class SocialMediaService {
     const link = remote.externalLink && /^https:\/\/(?:[^/]+\.)?(?:instagram\.com|facebook\.com|tiktok\.com)\//i.test(remote.externalLink) ? remote.externalLink : null;
     await this.prisma.$executeRawUnsafe(`UPDATE public.cbt_social_posts SET buffer_post_id = $2, status = $3,
       external_url = COALESCE($4, external_url), external_post_id = COALESCE(external_post_id, $5), error = $6,
-      published_at = COALESCE(published_at, $7::timestamptz), updated_at = now() WHERE id = $1::uuid`,
+      published_at = COALESCE(published_at, $7::timestamptz), updated_at = now() WHERE id = $1::uuid
+      AND (status <> 'published' OR $3 = 'published')`,
       post.id, remote.id, status, link, externalPostId(post.platform, link, channel.external_account_id), error,
       status === 'published' ? remote.sentAt || new Date().toISOString() : null);
   }
@@ -236,14 +237,14 @@ export class SocialMediaService {
     const config = await this.config();
     if (post.buffer_post_id && config.key) {
       try { await this.recordBuffer(post, await this.provider.post(config.key, post.buffer_post_id)); }
-      catch (error) { throw new BadRequestException(providerMessage(error)); }
+      catch (error) { if (post.status !== 'published') throw new BadRequestException(providerMessage(error)); }
       post = await this.post(id);
     }
     if (post.status !== 'published') return { post };
     if (!post.channel_id) return { post };
     const channel = await this.channel(post.channel_id);
-    let credentials = openCredentials<ChannelCredentials>(channel.credentials_cipher, `channel:${channel.id}`);
     try {
+      let credentials = openCredentials<ChannelCredentials>(channel.credentials_cipher, `channel:${channel.id}`);
       if (post.platform === 'tiktok' && (!credentials.expiresAt || credentials.expiresAt < Date.now() + 60000) && credentials.refreshToken) {
         credentials = await this.provider.refreshTikTok(credentials);
         const written = await this.prisma.$executeRawUnsafe('UPDATE public.cbt_social_channels SET credentials_cipher = $2 WHERE id = $1 AND credentials_cipher = $3',
@@ -251,11 +252,30 @@ export class SocialMediaService {
         // Jangan menimpa token baru yang disimpan Admin saat refresh masih berjalan.
         if (!written) credentials = openCredentials<ChannelCredentials>((await this.channel(channel.id)).credentials_cipher, `channel:${channel.id}`);
       }
+      if (!credentials.accessToken) throw new SocialProviderError('Token statistik akun belum diisi. Lengkapi pada Pengaturan Media Sosial.');
       const result = await this.provider.metrics(post, channel, credentials, config.graphVersion);
       await this.prisma.$executeRawUnsafe(`UPDATE public.cbt_social_posts SET metrics = $2::jsonb, metrics_at = now(), metrics_error = NULL,
-        external_post_id = $3, updated_at = now() WHERE id = $1::uuid`, id, JSON.stringify(result.metrics), result.externalId);
+        external_post_id = $3, updated_at = now() WHERE id = $1::uuid`, id, JSON.stringify({ ...result.metrics, source: 'platform' }), result.externalId);
     } catch (error) {
-      await this.prisma.$executeRawUnsafe('UPDATE public.cbt_social_posts SET metrics_error = $2 WHERE id = $1::uuid', id, providerMessage(error));
+      let message = providerMessage(error);
+      if (config.key && post.buffer_post_id) {
+        try {
+          const result = await this.provider.postMetrics(config.key, post);
+          if (result) {
+            await this.prisma.$executeRawUnsafe(`UPDATE public.cbt_social_posts SET metrics = metrics || jsonb_strip_nulls($2::jsonb),
+              metrics_at = COALESCE($3::timestamptz, now()), metrics_error = NULL, updated_at = now() WHERE id = $1::uuid
+              AND (metrics_at IS NULL OR metrics_at <= COALESCE($3::timestamptz, now()))`,
+              id, JSON.stringify(result.metrics), result.updatedAt);
+          } else {
+            // Buffer refreshes daily; missing data is not zero and is not a publish failure.
+            await this.prisma.$executeRawUnsafe('UPDATE public.cbt_social_posts SET metrics_error = NULL WHERE id = $1::uuid', id);
+          }
+          return { post: await this.post(id) };
+        } catch (bufferError) {
+          message = `${message} Statistik cadangan Buffer juga belum dapat dibaca: ${providerMessage(bufferError)}`;
+        }
+      }
+      await this.prisma.$executeRawUnsafe('UPDATE public.cbt_social_posts SET metrics_error = $2 WHERE id = $1::uuid', id, message);
     }
     return { post: await this.post(id) };
   }

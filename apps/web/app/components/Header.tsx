@@ -1,6 +1,7 @@
 'use client';
 
 import Image from 'next/image';
+import NotificationBell from './NotificationBell';
 
 import { clearExamRecoverySessions, forgetExamOfflineOwner } from '@/lib/exam-durable-storage';
 import { clearExamOfflineShells } from '@/lib/exam-pwa';
@@ -176,6 +177,7 @@ export default function Header({
                 </div>
 
                 <div className="header-right">
+                    {user.id && <NotificationBell key={user.id} />}
                     <button
                         type="button"
                         onClick={toggleDarkMode}

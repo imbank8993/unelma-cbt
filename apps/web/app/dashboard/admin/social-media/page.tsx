@@ -58,6 +58,35 @@ export default function AdminSocialMediaPage() {
     } else setNotice({ error: true, text: result.error });
     setLoading(false);
   }, []);
+  const pollInFlight = useRef(false);
+  const lastSync = useRef(new Map<string, number>());
+  const watchedPosts = data.settings.bufferKeySet ? data.posts.filter(post => post.buffer_post_id &&
+    (['processing', 'sending', 'uncertain'].includes(post.status) || post.status === 'published' && !post.metrics_at && !post.metrics_error)) : [];
+  const watchKey = watchedPosts.map(post => `${post.id}:${post.status}`).join(',');
+  useEffect(() => {
+    if (!watchKey || busy) return;
+    let active = true;
+    const watched = watchKey.split(',').map(item => { const [id, status] = item.split(':'); return { id, status }; });
+    const check = async () => {
+      if (document.hidden || busyRef.current || pollInFlight.current) return;
+      const pending = watched.filter(post => Date.now() - (lastSync.current.get(post.id) || 0) >= (post.status === 'published' ? 300000 : 10000))
+        .sort((a, b) => (lastSync.current.get(a.id) || 0) - (lastSync.current.get(b.id) || 0)).slice(0, 5);
+      if (!pending.length) return;
+      pollInFlight.current = true;
+      try {
+        await Promise.all(pending.map(post => { lastSync.current.set(post.id, Date.now()); return syncSocialPost(post.id); }));
+        if (active) await load();
+      } catch {
+        // Preserve the last snapshot on a background network failure; the next interval retries.
+      } finally { pollInFlight.current = false; }
+    };
+    const initial = window.setTimeout(() => void check(), 500);
+    const timer = window.setInterval(() => void check(), watched.some(post => post.status !== 'published') ? 15000 : 300000);
+    const onVisible = () => { if (!document.hidden) void check(); };
+    window.addEventListener('focus', onVisible);
+    document.addEventListener('visibilitychange', onVisible);
+    return () => { active = false; window.clearTimeout(initial); window.clearInterval(timer); window.removeEventListener('focus', onVisible); document.removeEventListener('visibilitychange', onVisible); };
+  }, [watchKey, busy, load]);
   useEffect(() => {
     const timer = window.setTimeout(() => { void load(true); }, 0);
     return () => window.clearTimeout(timer);
@@ -124,8 +153,28 @@ export default function AdminSocialMediaPage() {
     await run(post.id, async () => {
       const result = await syncSocialPost(post.id);
       setNotice(result.success ? { error: Boolean(result.post.metrics_error || result.post.error), text: result.post.metrics_error || result.post.error ||
-        (result.post.status === 'published' ? 'Status dan statistik diperbarui.' : 'Status posting diperbarui. Publikasi masih diproses oleh Buffer.') } : { error: true, text: result.error });
+        (result.post.status === 'published' ? result.post.metrics_at ? 'Status dan statistik diperbarui.' : 'Posting sudah terbit. Statistik belum tersedia; data Buffer dapat membutuhkan hingga 24 jam.' : 'Status posting diperbarui. Publikasi masih diproses oleh Buffer.') } : { error: true, text: result.error });
       await load();
+    });
+  }
+  async function refreshRecent(name: 'reload' | 'metrics') {
+    await run(name, async () => {
+      const latest = await getSocialWorkspace();
+      if (!latest.success) { setNotice({ error: true, text: latest.error }); return; }
+      const candidates = latest.posts.filter(post => post.buffer_post_id &&
+        (name === 'reload' || filter === 'all' || post.platform === filter)).slice(0, 20);
+      let unavailable = 0, processing = 0, waiting = 0;
+      for (let start = 0; start < candidates.length; start += 3) {
+        const responses = await Promise.all(candidates.slice(start, start + 3).map(post => syncSocialPost(post.id)));
+        for (const result of responses) {
+          if (!result.success || result.post.metrics_error || result.post.error) unavailable++;
+          else if (result.post.status !== 'published') processing++;
+          else if (!result.post.metrics_at) waiting++;
+        }
+      }
+      await load();
+      setNotice({ error: unavailable > 0, text: unavailable ? `${unavailable} posting belum dapat diperbarui. Lihat keterangan masing-masing posting.` :
+        `${candidates.length} posting diperiksa.${processing ? ` ${processing} masih diproses Buffer.` : ''}${waiting ? ` ${waiting} sudah terbit dan menunggu statistik; data Buffer dapat membutuhkan hingga 24 jam.` : ''}` });
     });
   }
   async function syncAccounts() {
@@ -185,12 +234,12 @@ export default function AdminSocialMediaPage() {
         { key: 'posting', label: 'Posting', icon: <PenLine size={16} /> }, { key: 'statistics', label: 'Statistik', icon: <BarChart3 size={16} /> },
         { key: 'settings', label: 'Pengaturan', icon: <Settings2 size={16} /> },
       ]} />
-      <button className="social-icon-button social-reload" title="Perbarui halaman" aria-label="Perbarui halaman" disabled={Boolean(busy) || loading} onClick={() => void run('reload', () => load())}><RefreshCw size={16} className={busy === 'reload' ? 'animate-spin' : ''} /></button>
+      <button className="social-icon-button social-reload" title="Perbarui status dan statistik" aria-label="Perbarui halaman" disabled={Boolean(busy) || loading} onClick={() => void refreshRecent('reload')}><RefreshCw size={16} className={busy === 'reload' ? 'animate-spin' : ''} /></button>
     </div>
     {tab === 'statistics' && <div className="social-summary">
       {[{ label: 'Posting terbit', value: data.totals.published, note: `${data.totals.drafts} draf tersimpan` },
         { label: 'Tayangan', value: data.totals.views, note: 'Akumulasi tayangan posting' },
-        { label: 'Jangkauan / pemirsa unik', value: data.totals.reach, note: 'Akumulasi per posting Meta' },
+        { label: 'Jangkauan / pemirsa unik', value: data.totals.reach, note: 'Akumulasi per posting' },
         { label: 'Interaksi', value: data.totals.interactions, note: `${data.totals.measured} posting memiliki statistik` }].map(item =>
         <div className="social-stat" key={item.label}><span>{item.label}</span><strong>{loading ? '…' : formatNumber(item.value)}</strong><small>{item.note}</small></div>)}
     </div>}
@@ -210,7 +259,7 @@ export default function AdminSocialMediaPage() {
               {draft.mediaType !== 'text' && <SocialMediaAttachment key={`${draftId}:${draft.mediaType}`} value={draft.mediaUrl} mediaType={draft.mediaType} disabled={Boolean(busy)} uploading={busy === 'upload'} progress={uploadProgress} onChange={mediaUrl => setDraft({ ...draft, mediaUrl })} onUpload={uploadFile} onError={text => setNotice({ error: true, text })} />}
               {(draft.platform === 'instagram' || (draft.platform === 'tiktok' && draft.mediaType === 'video')) && <label className="social-checkbox"><input type="checkbox" checked={draft.aiGenerated} onChange={event => setDraft({ ...draft, aiGenerated: event.target.checked })} />Konten dibuat dengan AI</label>}
               <div className="social-form-actions"><button type="submit" className="social-button secondary"><Save size={16} />Simpan draf</button><button type="button" className="social-button primary" disabled={!canPublish} onClick={() => void saveDraft(true)}>{busy === 'publish' ? <Loader2 size={16} className="animate-spin" /> : <Send size={16} />}Publikasikan sekarang</button></div>
-              <p className="social-input-note">Tombol publikasi mengirim posting ke akun yang dipilih melalui Buffer. Periksa pratinjau sebelum mengirim.</p>
+              <p className="social-input-note">Posting dikirim melalui Buffer. Status publikasi diperbarui otomatis selama halaman ini terbuka.</p>
             </fieldset>
           </form>
         </section>
@@ -234,10 +283,10 @@ export default function AdminSocialMediaPage() {
       </section>
     </>}
 
-    {tab === 'statistics' && <section className="social-card"><div className="social-section-title"><div><h2>Performa posting</h2><p>Data aktual dari Meta Insights dan TikTok Display API.</p></div><button className="social-button secondary" disabled={Boolean(busy) || !published.length} onClick={() => void run('metrics', async () => { let unavailable = 0; for (const post of published.slice(0, 20)) { const result = await syncSocialPost(post.id); if (!result.success || result.post.metrics_error) unavailable++; } await load(); setNotice({ error: unavailable > 0, text: unavailable ? `${unavailable} posting belum dapat diperbarui. Lihat keterangan masing-masing posting.` : `Statistik ${Math.min(published.length, 20)} posting terbaru diperbarui.` }); })}><RefreshCw size={16} className={busy === 'metrics' ? 'animate-spin' : ''} />Perbarui 20 terbaru</button></div>
+    {tab === 'statistics' && <section className="social-card"><div className="social-section-title"><div><h2>Performa posting</h2><p>Data dari Buffer, atau langsung dari platform jika token statistik diisi.</p></div><button className="social-button secondary" disabled={Boolean(busy) || !posts.some(post => post.buffer_post_id)} onClick={() => void refreshRecent('metrics')}><RefreshCw size={16} className={busy === 'metrics' ? 'animate-spin' : ''} />Perbarui 20 terbaru</button></div>
       <label className="social-metrics-filter">Platform statistik<InlineSelect aria-label="Platform statistik" minWidth="0" height="42px" value={filter} onChange={value => setFilter(value as typeof filter)} options={[{ value: 'all', label: 'Semua platform' }, ...PLATFORMS.map(platform => ({ value: platform, label: PLATFORM_LABELS[platform] }))]} /></label>
-      <p className="social-input-note social-metrics-note">Jangkauan adalah akumulasi per posting, bukan jumlah orang unik lintas posting. Untuk Facebook digunakan pemirsa media unik. TikTok tidak menyediakan jangkauan unik pada API ini. Tanda — berarti data belum tersedia, bukan nol.</p>
-      {!published.length ? <div className="social-empty"><BarChart3 size={30} /><h3>Statistik muncul setelah posting terbit</h3><p>Lengkapi token statistik setiap akun di Pengaturan.</p></div> : <div className="social-table-scroll"><table className="social-table"><thead><tr><th>Posting</th><th>Tayangan</th><th>Jangkauan / unik</th><th>Interaksi</th><th>Diperbarui</th></tr></thead><tbody>{published.map(post => <tr key={post.id}><td><span className="social-table-platform"><PlatformIcon platform={post.platform} size={15} />{PLATFORM_LABELS[post.platform]}</span><p>{post.caption || 'Posting media'}</p>{post.metrics_error && <small className="social-inline-error">{post.metrics_error}</small>}</td><td>{formatNumber(post.metrics.views)}</td><td>{formatNumber(post.metrics.reach)}</td><td>{formatNumber(post.metrics.interactions)}</td><td><small>{formatTime(post.metrics_at)}</small></td></tr>)}</tbody></table></div>}
+      <p className="social-input-note social-metrics-note">Statistik Buffer dapat membutuhkan hingga 24 jam setelah publikasi. Tayangan memakai views atau impressions yang tersedia; keduanya tidak dijumlahkan. Jangkauan adalah akumulasi per posting, bukan orang unik lintas posting. TikTok tidak menyediakan jangkauan unik pada integrasi ini. Tanda — berarti data belum tersedia, bukan nol.</p>
+      {!published.length ? <div className="social-empty"><BarChart3 size={30} /><h3>{posts.some(post => post.buffer_post_id) ? 'Status publikasi sedang diperiksa' : 'Statistik muncul setelah posting terbit'}</h3><p>Gunakan Perbarui 20 terbaru untuk memeriksa status dan statistik di Buffer.</p></div> : <div className="social-table-scroll"><table className="social-table"><thead><tr><th>Posting</th><th>Tayangan</th><th>Jangkauan / unik</th><th>Interaksi</th><th>Diperbarui</th></tr></thead><tbody>{published.map(post => <tr key={post.id}><td><span className="social-table-platform"><PlatformIcon platform={post.platform} size={15} />{PLATFORM_LABELS[post.platform]}</span><p>{post.caption || 'Posting media'}</p>{post.metrics_error ? <small className="social-inline-error">{post.metrics_error}</small> : !post.metrics_at && <small>Posting sudah terbit. Menunggu statistik dari platform atau Buffer.</small>}</td><td>{formatNumber(post.metrics.views)}</td><td>{formatNumber(post.metrics.reach)}</td><td>{formatNumber(post.metrics.interactions)}</td><td><small>{formatTime(post.metrics_at)}{post.metrics.source && <><br />{post.metrics.source === 'buffer' ? 'Buffer' : PLATFORM_LABELS[post.platform]}</>}</small></td></tr>)}</tbody></table></div>}
     </section>}
 
     {tab === 'settings' && <div className="social-settings-grid">
@@ -250,7 +299,7 @@ export default function AdminSocialMediaPage() {
         </fieldset></form>
         {data.settings.bufferKeySet && <button className="social-text-button danger social-remove" disabled={Boolean(busy)} onClick={() => void run('remove-key', async () => { if (!await deleteConfirmDialog('Hapus API key Buffer?', 'Publikasi dari Unelma dinonaktifkan sampai API key diisi kembali. Riwayat posting tetap tersimpan.')) return; const result = await saveSocialSettings({ clearBufferKey: true }); if (!result.success) setNotice({ error: true, text: result.error }); else { setBufferKey(''); setNotice({ error: false, text: 'API key Buffer dihapus.' }); await load(); } })}>Hapus API key tersimpan</button>}
       </section>
-      <section className="social-card"><div className="social-section-title"><div><h2>Statistik akun</h2><p>Token dari platform asli digunakan khusus untuk membaca performa posting.</p></div><BarChart3 size={20} /></div>
+      <section className="social-card"><div className="social-section-title"><div><h2>Statistik akun</h2><p>Opsional: isi token platform untuk membaca statistik langsung. Tanpa token ini, aplikasi mencoba statistik melalui API key Buffer.</p></div><BarChart3 size={20} /></div>
         <form onSubmit={event => void saveToken(event)}><fieldset className="social-fieldset" disabled={Boolean(busy)}>
           <label>Akun statistik<InlineSelect aria-label="Akun statistik" minWidth="0" height="42px" value={selectedChannel} onChange={selectChannel} options={[{ value: '', label: 'Pilih akun yang sudah disinkronkan' }, ...data.channels.map(channel => ({ value: channel.id, label: `${PLATFORM_LABELS[channel.platform]} · ${channel.name}` }))]} /></label>
           {account && !channelInfo && <p className="social-input-note">Memuat pengaturan akun…</p>}
@@ -277,5 +326,5 @@ export default function AdminSocialMediaPage() {
 }
 
 function ChannelCard({ channel }: { channel: SocialChannel }) {
-  return <div className="social-account"><span className={`social-platform-badge ${channel.platform}`}><PlatformIcon platform={channel.platform} /></span><div><strong>{channel.name}</strong><small>{PLATFORM_LABELS[channel.platform]} · {channel.connected ? 'Publikasi terhubung' : 'Perlu sinkronisasi / hubungkan ulang'} · {channel.tokenSet ? 'Token statistik tersimpan' : 'Token statistik belum diisi'}</small></div></div>;
+  return <div className="social-account"><span className={`social-platform-badge ${channel.platform}`}><PlatformIcon platform={channel.platform} /></span><div><strong>{channel.name}</strong><small>{PLATFORM_LABELS[channel.platform]} · {channel.connected ? 'Publikasi terhubung' : 'Perlu sinkronisasi / hubungkan ulang'} · {channel.tokenSet ? 'Token statistik platform tersimpan' : 'Statistik melalui Buffer'}</small></div></div>;
 }
