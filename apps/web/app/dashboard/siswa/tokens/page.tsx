@@ -59,12 +59,10 @@ export default function SiswaTokensPage() {
         : undefined;
     const toppedUp = transactions.filter(t => t.amount > 0).reduce((sum, t) => sum + t.amount, 0);
     const used = transactions.filter(t => t.amount < 0).reduce((sum, t) => sum - t.amount, 0);
-    /** Bonus token ditulis admin di deskripsi, misalnya "(Bonus 2 token)". */
-    const bonusOf = (pkg: TokenPackage) => Number(/bonus\s+(\d+)/i.exec(pkg.description || '')?.[1]) || 0;
     const rupiah = (value: number) => `Rp${Math.round(value).toLocaleString('id-ID')}`;
 
     return (
-        <div className="w-full space-y-8 pb-16">
+        <div className="w-full space-y-6 pb-16">
             <CustomPaymentModal
                 isOpen={!!selectedPackage}
                 onClose={() => setSelectedPackage(null)}
@@ -79,25 +77,22 @@ export default function SiswaTokensPage() {
             />
 
             {/* ── Saldo ── */}
-            <section className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#030C4D] via-[#102B77] to-[#174EA6] p-6 text-white shadow-lg shadow-blue-950/10 sm:p-9">
-                <div aria-hidden="true" className="absolute -right-20 -top-28 h-72 w-72 rounded-full border-[44px] border-white/5" />
-                <div aria-hidden="true" className="absolute -bottom-28 right-1/4 h-52 w-52 rounded-full bg-[#F8A01B]/10 blur-2xl" />
-                <div className="relative flex flex-col gap-8 lg:flex-row lg:items-center lg:justify-between">
+            <section aria-label="Ringkasan token" className="rounded-2xl bg-[#030C4D] p-4 text-white sm:px-6 sm:py-5">
+                <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
                     <div>
-                        <p className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 py-1.5 text-xs font-semibold tracking-wide text-blue-50">
-                            <Coins size={16} className="text-[#FFB640]" /> Saldo tersedia
+                        <p className="flex items-center gap-2 text-xs font-medium text-blue-100">
+                            <Coins size={15} className="text-[#FFB640]" /> Saldo tersedia
                         </p>
-                        <p className="mt-4 flex items-baseline gap-3">
-                            <span className="text-6xl font-bold tracking-tight tabular-nums text-[#FFB640] sm:text-7xl">{loading ? '…' : balance.toLocaleString('id-ID')}</span>
-                            <span className="text-lg text-blue-100">token</span>
+                        <p className="mt-2 flex items-baseline gap-2">
+                            <span className="text-4xl font-semibold leading-none tracking-tight tabular-nums text-[#FFB640]">{loading ? '…' : balance.toLocaleString('id-ID')}</span>
+                            <span className="text-sm text-blue-100">token</span>
                         </p>
-                        <p className="mt-3 max-w-xl text-sm leading-relaxed text-blue-100">Gunakan token untuk membuka tryout premium dan materi eksklusif. Saldo tidak hangus.</p>
                     </div>
-                    <div className="flex flex-wrap items-center gap-3 lg:justify-end">
-                        <div className="rounded-2xl border border-white/15 bg-white/10 px-5 py-3 backdrop-blur-sm"><p className="text-xs text-blue-100">Ditambahkan</p><p className="mt-1 text-xl font-bold tabular-nums">{toppedUp.toLocaleString('id-ID')}</p></div>
-                        <div className="rounded-2xl border border-white/15 bg-white/10 px-5 py-3 backdrop-blur-sm"><p className="text-xs text-blue-100">Terpakai</p><p className="mt-1 text-xl font-bold tabular-nums">{used.toLocaleString('id-ID')}</p></div>
-                        <a href="#paket-token" className="inline-flex min-h-14 items-center justify-center gap-2 rounded-2xl bg-[#F8A01B] px-6 text-sm font-bold text-[#030C4D] shadow-md transition hover:bg-[#FFB640] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white">
-                            Top up <ArrowRight size={17} />
+                    <div className="grid grid-cols-3 gap-2 lg:w-[360px] lg:shrink-0 sm:gap-3">
+                        <div className="flex h-16 min-w-0 flex-col justify-center rounded-xl border border-white/15 bg-white/5 px-2.5 sm:px-3"><p className="text-[11px] text-blue-100">Ditambahkan</p><p className="mt-1 text-lg font-semibold tabular-nums">{toppedUp.toLocaleString('id-ID')}</p></div>
+                        <div className="flex h-16 min-w-0 flex-col justify-center rounded-xl border border-white/15 bg-white/5 px-2.5 sm:px-3"><p className="text-[11px] text-blue-100">Terpakai</p><p className="mt-1 text-lg font-semibold tabular-nums">{used.toLocaleString('id-ID')}</p></div>
+                        <a href="#paket-token" className="inline-flex h-16 min-w-0 items-center justify-center gap-2 rounded-xl border border-transparent bg-[#F8A01B] px-2.5 text-xs font-semibold text-[#030C4D] transition hover:bg-[#FFB640] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white">
+                            Top up <ArrowRight size={15} />
                         </a>
                     </div>
                 </div>
@@ -112,13 +107,12 @@ export default function SiswaTokensPage() {
 
             {/* ── Paket ── */}
             <section id="paket-token" className="scroll-mt-24">
-                <h2 className="text-xl font-bold tracking-tight text-[#030C4D] dark:text-white">Pilih paket</h2>
-                <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Bayar sekali, saldo langsung bertambah.</p>
+                <h2 className="text-lg font-semibold tracking-tight text-[#030C4D] dark:text-white">Pilih paket</h2>
 
                 {loading ? (
-                    <div className="mt-5 grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
                         {[1, 2, 3].map((i) => (
-                            <div key={i} className="bg-white rounded-2xl p-6 border border-slate-200 animate-pulse space-y-4 dark:border-slate-800 dark:bg-slate-900">
+                            <div key={i} className="bg-white rounded-xl p-4 border border-slate-200 animate-pulse space-y-3 dark:border-slate-800 dark:bg-slate-900">
                                 <div className="h-4 bg-slate-100 rounded w-1/3 dark:bg-slate-800"></div>
                                 <div className="h-9 bg-slate-100 rounded w-1/2 dark:bg-slate-800"></div>
                                 <div className="h-10 bg-slate-100 rounded-xl w-full dark:bg-slate-800"></div>
@@ -130,36 +124,28 @@ export default function SiswaTokensPage() {
                         Belum ada paket token yang aktif saat ini. Silakan hubungi admin.
                     </div>
                 ) : (
-                    <div className="mt-5 grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-3">
+                    <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
                         {packages.map((pkg) => {
                             const best = pkg.id === bestValueId;
-                            const bonus = bonusOf(pkg);
                             return (
                                 <article key={pkg.id}
-                                    className={`relative flex min-h-72 flex-col overflow-hidden rounded-3xl bg-white p-6 shadow-sm transition-all hover:-translate-y-1 hover:shadow-lg dark:bg-slate-900 ${best
-                                        ? 'border-2 border-[#F8A01B] dark:border-[#F8A01B]'
-                                        : 'border border-blue-100 dark:border-slate-800'}`}>
-                                    <div aria-hidden="true" className={`absolute inset-x-0 top-0 h-1.5 ${best ? 'bg-[#F8A01B]' : 'bg-gradient-to-r from-[#030C4D] to-blue-500'}`} />
-                                    <div className="flex items-center justify-between gap-2">
-                                        <p className="text-sm font-bold text-[#030C4D] dark:text-blue-200">{pkg.name}</p>
-                                        {best && <span className="rounded-full bg-orange-100 px-3 py-1 text-[11px] font-bold text-orange-800 dark:bg-orange-500/20 dark:text-orange-200">Paling hemat</span>}
+                                    className={`flex min-w-0 flex-col rounded-xl border bg-white p-4 transition-colors dark:bg-slate-900 ${best
+                                        ? 'border-[#F8A01B]'
+                                        : 'border-slate-200 hover:border-slate-300 dark:border-slate-800 dark:hover:border-slate-700'}`}>
+                                    <div className="flex flex-wrap items-center justify-between gap-2">
+                                        <p className="text-sm font-semibold text-[#030C4D] dark:text-blue-200">{pkg.name}</p>
+                                        {best && <span className="rounded-full bg-orange-50 px-2 py-0.5 text-[10px] font-medium text-orange-800 dark:bg-orange-500/15 dark:text-orange-200">Paling hemat</span>}
                                     </div>
-                                    <p className="mt-4 flex items-baseline gap-1.5">
-                                        <span className="text-5xl font-bold tracking-tight tabular-nums text-[#030C4D] dark:text-white">{pkg.token_amount}</span>
-                                        <span className="text-sm text-slate-500">token</span>
+                                    <p className="mt-3 flex items-baseline gap-1.5">
+                                        <span className="text-3xl font-semibold tracking-tight tabular-nums text-[#030C4D] dark:text-white">{pkg.token_amount}</span>
+                                        <span className="text-xs text-slate-500 dark:text-slate-400">token</span>
                                     </p>
-                                    <p className="mt-1 min-h-5 text-sm font-medium text-orange-700 dark:text-orange-300">{bonus > 0 ? `Termasuk ${bonus} token bonus` : 'Untuk belajar lebih leluasa'}</p>
-                                    <div className="mt-auto flex items-end justify-between gap-3 pt-8">
-                                        <div>
-                                            <p className="text-2xl font-bold tabular-nums text-[#030C4D] dark:text-white">{rupiah(Number(pkg.price_idr))}</p>
-                                            <p className="text-xs text-slate-500 dark:text-slate-400">{rupiah(Number(pkg.price_idr) / Math.max(1, pkg.token_amount))} / token</p>
-                                        </div>
-                                    </div>
+                                    <p className="mt-2 text-lg font-semibold tabular-nums text-slate-900 dark:text-white">{rupiah(Number(pkg.price_idr))}</p>
                                     <button type="button" onClick={() => handleBuyPackage(pkg)}
-                                        className={`mt-5 inline-flex w-full items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-bold transition-colors ${best
+                                        className={`mt-4 inline-flex w-full items-center justify-center gap-2 rounded-lg px-3 py-2.5 text-xs font-semibold transition-colors ${best
                                             ? 'bg-[#F8A01B] text-[#030C4D] hover:bg-[#FFB640]'
                                             : 'bg-[#030C4D] text-white hover:bg-[#102B77] dark:bg-blue-600 dark:hover:bg-blue-500'}`}>
-                                        Pilih paket <ArrowRight size={16} />
+                                        Pilih paket <ArrowRight size={14} />
                                     </button>
                                 </article>
                             );

@@ -34,7 +34,10 @@ export default function AdminInformationPage() {
     } else setMessage({ error: true, text: result.error });
     setLoading(false);
   }, []);
-  useEffect(() => { void load(); }, [load]);
+  useEffect(() => {
+    const timer = window.setTimeout(() => { void load(); }, 0);
+    return () => window.clearTimeout(timer);
+  }, [load]);
 
   async function run(action: Promise<{ success: boolean; error?: string }>, successText: string) {
     setBusy(true); setMessage(null);
@@ -112,7 +115,10 @@ export default function AdminInformationPage() {
         <section className="rounded-2xl border border-slate-200 bg-white p-5">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <h2 className="font-bold">Unggah PDF {selected ? `ke ${selected.name}` : ''}</h2>
-            <Link href="/informasi" target="_blank" className="inline-flex items-center gap-2 text-sm font-semibold text-[#030C4D] hover:underline">Lihat halaman publik <ExternalLink size={15} /></Link>
+            <Link href="/informasi" target="_blank" rel="noopener noreferrer" aria-label="Lihat halaman publik" aria-describedby="public-information-tooltip" className="btn-icon-soft group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500">
+              <ExternalLink size={15} aria-hidden="true" />
+              <span id="public-information-tooltip" role="tooltip" className="pointer-events-none absolute right-full top-1/2 mr-2 -translate-y-1/2 whitespace-nowrap rounded-md bg-slate-800 px-2.5 py-1 text-[11px] font-medium text-white opacity-0 transition-opacity group-hover:opacity-100 group-focus:opacity-100">Lihat halaman publik</span>
+            </Link>
           </div>
           <p className="mt-1 text-xs text-slate-500">Pilih folder lebih dulu. PDF yang berhasil diunggah langsung tampil di halaman publik. Maksimum 25 MB.</p>
           <form onSubmit={upload} className="mt-4 grid gap-3 sm:grid-cols-2">
