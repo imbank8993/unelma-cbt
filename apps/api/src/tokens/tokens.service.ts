@@ -9,6 +9,22 @@ import * as crypto from 'crypto';
 import { CreatePaymentDto, CreateTokenPackageDto, SaveMidtransConfigDto, UnlockItemDto, UpdateTokenPackageDto } from './tokens.dto';
 import { PAYMENT_METHOD_IDS, SNAP_PAYMENT_CODES, allowedPaymentMethods, normalizePaymentMethods } from './payment-methods';
 
+/**
+ * Pesan Midtrans (bahasa Inggris, teknis) diterjemahkan untuk siswa. Detail
+ * aslinya tetap tercatat di log server.
+ */
+export function midtransChargeErrorMessage(chargeJson: any): string {
+  const code = String(chargeJson?.status_code || '');
+  const message = String(chargeJson?.status_message || '').toLowerCase();
+  if (code === '402' || /not activated|not enabled|channel/.test(message)) {
+    return 'Metode pembayaran ini sedang tidak tersedia. Silakan pilih metode pembayaran lain.';
+  }
+  if (code === '503' || code === '504' || code === '505' || /unavailable|timeout|try again/.test(message)) {
+    return 'Layanan pembayaran sedang sibuk. Silakan coba beberapa saat lagi atau pilih metode lain.';
+  }
+  return 'Gagal memproses pembayaran. Silakan pilih metode lain atau coba beberapa saat lagi.';
+}
+
 export interface MidtransConfig {
   is_production: boolean;
   sandbox_client_key?: string;
@@ -276,8 +292,12 @@ export class TokensService {
       };
 
       if (paymentMethod === 'qris') {
-        chargePayload.payment_type = 'qris';
-        chargePayload.qris = { acquirer: 'gopay' };
+        // Channel aktif di akun Midtrans adalah "GoPay Dynamic QRIS": charge
+        // `gopay` menghasilkan QR berstandar QRIS yang bisa dipindai semua
+        // e-wallet & m-banking. `payment_type: 'qris'` butuh channel QRIS
+        // terpisah dan ditolak ("Payment channel is not activated").
+        chargePayload.payment_type = 'gopay';
+        chargePayload.gopay = { enable_callback: false };
       } else if (['bca_va', 'bni_va', 'bri_va', 'cimb_va'].includes(paymentMethod)) {
         const bank = paymentMethod.replace('_va', '');
         chargePayload.payment_type = 'bank_transfer';
@@ -313,13 +333,15 @@ export class TokensService {
       }
 
       if (!chargeJson || (chargeJson.status_code !== '201' && chargeJson.status_code !== '200')) {
-        this.logger.warn(`Midtrans Core API error: ${JSON.stringify(chargeJson)}`);
-        throw new BadRequestException(chargeJson?.status_message || 'Gagal memproses pembayaran. Periksa konfigurasi metode pembayaran.');
+        this.logger.warn(`Midtrans Core API error (${paymentMethod}): ${JSON.stringify(chargeJson)}`);
+        throw new BadRequestException(midtransChargeErrorMessage(chargeJson));
       }
 
-      const qrAction = Array.isArray(chargeJson.actions)
-        ? chargeJson.actions.find((a: any) => a.name === 'generate-qr-code')
-        : null;
+      // `generate-qr-code-v2` = QR berstandar QRIS (bila tersedia); fallback ke QR lama.
+      const actions: any[] = Array.isArray(chargeJson.actions) ? chargeJson.actions : [];
+      const qrAction = actions.find((a: any) => a.name === 'generate-qr-code-v2')
+        || actions.find((a: any) => a.name === 'generate-qr-code')
+        || null;
       const qrUrl = qrAction?.url || null;
       const qrString = chargeJson.qr_string || null;
       const vaNumber = chargeJson.va_numbers?.[0]?.va_number || chargeJson.permata_va_number || null;

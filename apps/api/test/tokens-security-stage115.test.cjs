@@ -4,7 +4,7 @@ const crypto = require('node:crypto');
 const fs = require('node:fs');
 const path = require('node:path');
 require('ts-node').register({ project: path.resolve(__dirname, '../tsconfig.json'), transpileOnly: true });
-const { TokensService } = require('../src/tokens/tokens.service.ts');
+const { TokensService, midtransChargeErrorMessage } = require('../src/tokens/tokens.service.ts');
 const { SettingsService } = require('../src/settings/settings.service.ts');
 
 const SERVER_KEY = 'SB-Mid-server-secret-1234';
@@ -300,6 +300,60 @@ test('metode pembayaran dibatasi sesuai pilihan admin pada paket', async () => {
     await new TokensService(prisma, config).updatePackage('p-1', { payment_methods: ['bri_va', 'qris', 'bri_va'] });
     const update = prisma.calls.find((c) => /UPDATE public.token_packages/.test(c.sql));
     assert.deepEqual(update.args[5], ['qris', 'bri_va']);
+});
+
+test('error Midtrans ditampilkan ke siswa dalam bahasa Indonesia', async () => {
+    const notActive = { status_code: '402', status_message: 'Payment channel is not activated.' };
+    assert.match(midtransChargeErrorMessage(notActive), /tidak tersedia\. Silakan pilih metode pembayaran lain/);
+    assert.match(midtransChargeErrorMessage({ status_code: '505', status_message: 'Unable to create va_number' }), /sedang sibuk/);
+    assert.match(midtransChargeErrorMessage(null), /Gagal memproses pembayaran/);
+
+    const user = { id: 'user-1', email: 'siswa@sekolah.id', roles: [] };
+    const pkg = [/FROM public.token_packages WHERE id/, () => [{ id: 'p-1', name: 'Paket', token_amount: 10, price_idr: '25000', payment_methods: ['qris'] }]];
+    const svc = new TokensService(fakePrisma([pkg, midtransRow({ is_production: true, production_server_key: 'Mid-server-x', production_client_key: 'Mid-client-x' })]), config);
+    const originalFetch = global.fetch;
+    global.fetch = async () => ({ json: async () => notActive });
+    try {
+        await assert.rejects(svc.createPayment(user, { package_id: 'p-1', payment_method: 'qris' }), (err) => {
+            assert.doesNotMatch(err.message, /Payment channel/);
+            assert.match(err.message, /pilih metode pembayaran lain/);
+            return true;
+        });
+    } finally {
+        global.fetch = originalFetch;
+    }
+});
+
+test('QRIS memakai channel GoPay Dynamic QRIS dan menampilkan QR berstandar QRIS', async () => {
+    const user = { id: 'user-1', email: 'siswa@sekolah.id', roles: [] };
+    const pkg = [/FROM public.token_packages WHERE id/, () => [{ id: 'p-1', name: 'Paket', token_amount: 10, price_idr: '25000', payment_methods: ['qris'] }]];
+    let saved = null;
+    const insert = [/INSERT INTO public.payment_transactions/, (args) => { saved = JSON.parse(args[11]); return [{ id: 'tx-1' }]; }];
+    const svc = new TokensService(fakePrisma([pkg, insert, midtransRow({ is_production: true, production_server_key: 'Mid-server-x', production_client_key: 'Mid-client-x' })]), config);
+    const originalFetch = global.fetch;
+    let sent = null;
+    global.fetch = async (url, init) => {
+        sent = { url, body: JSON.parse(init.body) };
+        return { json: async () => ({
+            status_code: '201', payment_type: 'gopay', expiry_time: '2026-11-18 10:15:00',
+            actions: [
+                { name: 'generate-qr-code', url: 'https://api.midtrans.com/v2/gopay/x/qr-code' },
+                { name: 'generate-qr-code-v2', url: 'https://api.midtrans.com/v2/qris/x/qr-code' },
+                { name: 'deeplink-redirect', url: 'https://gojek.link/x' },
+            ],
+        }) };
+    };
+    try {
+        const res = await svc.createPayment(user, { package_id: 'p-1', payment_method: 'qris' });
+        assert.equal(sent.url, 'https://api.midtrans.com/v2/charge');
+        assert.equal(sent.body.payment_type, 'gopay');
+        assert.equal(sent.body.qris, undefined);
+        assert.equal(res.payment_details.payment_method, 'qris');
+        assert.equal(res.payment_details.qr_url, 'https://api.midtrans.com/v2/qris/x/qr-code');
+        assert.equal(saved.qr_url, 'https://api.midtrans.com/v2/qris/x/qr-code');
+    } finally {
+        global.fetch = originalFetch;
+    }
 });
 
 test('midtrans_config & commission_config tidak bocor lewat /settings', () => {
