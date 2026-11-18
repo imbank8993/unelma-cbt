@@ -68,7 +68,7 @@ test('pembelian memakai identitas akun login, bukan email/nama dari request', as
     const original = global.fetch;
     global.fetch = async (_url, init) => {
         snapPayload = JSON.parse(init.body);
-        return { status: 201, json: async () => ({ token: 'snap-token', redirect_url: 'https://pay' }) };
+        return { ok: true, status: 201, json: async () => ({ token: 'snap-token', redirect_url: 'https://app.sandbox.midtrans.com/snap/v2/vtweb/fixture' }) };
     };
     try {
         const prisma = recordingPrisma([

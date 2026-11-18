@@ -3,16 +3,16 @@
 import React, { useState, useEffect, useRef } from 'react';
 import {
   X, Check, Copy, ArrowLeft, RefreshCw, Clock, ShieldCheck,
-  QrCode, CreditCard, AlertCircle, Sparkles, ChevronDown, ChevronUp
+  QrCode, CreditCard, AlertCircle, Sparkles, ExternalLink
 } from 'lucide-react';
 import {
   createPayment,
   checkPaymentStatus,
   packagePaymentMethods,
   type TokenPackage,
-  type CorePaymentDetails,
   type PaymentCreateResult
 } from '@/lib/api/tokens';
+import { midtransCheckoutUrl } from '@/lib/payment-checkout';
 
 export interface CustomPaymentModalProps {
   isOpen: boolean;
@@ -98,13 +98,13 @@ const PAYMENT_METHODS: MethodOption[] = [
   },
 ];
 
-export default function CustomPaymentModal({
-  isOpen,
-  onClose,
-  pkg,
-  onSuccess,
-}: CustomPaymentModalProps) {
-  const [selectedMethod, setSelectedMethod] = useState<MethodType>('qris');
+export default function CustomPaymentModal(props: CustomPaymentModalProps) {
+  if (!props.isOpen || !props.pkg) return null;
+  return <PaymentCheckout key={props.pkg.id} pkg={props.pkg} onClose={props.onClose} onSuccess={props.onSuccess} />;
+}
+
+function PaymentCheckout({ onClose, pkg, onSuccess }: Omit<CustomPaymentModalProps, 'isOpen' | 'pkg'> & { pkg: TokenPackage }) {
+  const [selectedMethod, setSelectedMethod] = useState<MethodType>(() => packagePaymentMethods(pkg)[0] || 'qris');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [activePayment, setActivePayment] = useState<PaymentCreateResult | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -116,31 +116,16 @@ export default function CustomPaymentModal({
   const [guideTab, setGuideTab] = useState<'mbanking' | 'atm'>('mbanking');
 
   const pollingRef = useRef<NodeJS.Timeout | null>(null);
+  const submittingRef = useRef(false);
+  const isSnapPayment = activePayment?.checkout_flow === 'snap' || Boolean(activePayment?.snap_token);
 
   // Hanya metode yang diizinkan admin untuk paket ini.
   const allowedIds = packagePaymentMethods(pkg);
   const availableMethods = PAYMENT_METHODS.filter((m) => allowedIds.includes(m.id));
-  const firstMethod = availableMethods[0]?.id ?? 'qris';
-
-  // Reset state saat modal dibuka
-  useEffect(() => {
-    if (isOpen) {
-      setActivePayment(null);
-      setErrorMessage(null);
-      setIsSuccess(false);
-      setSelectedMethod(firstMethod);
-      setTimeLeft(15 * 60);
-    } else {
-      if (pollingRef.current) clearInterval(pollingRef.current);
-    }
-    return () => {
-      if (pollingRef.current) clearInterval(pollingRef.current);
-    };
-  }, [isOpen, pkg?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Hitung mundur waktu kadaluarsa pembayaran
   useEffect(() => {
-    if (!activePayment || isSuccess) return;
+    if (!activePayment || isSuccess || isSnapPayment) return;
 
     const timer = setInterval(() => {
       setTimeLeft((prev) => {
@@ -153,7 +138,7 @@ export default function CustomPaymentModal({
     }, 1000);
 
     return () => clearInterval(timer);
-  }, [activePayment, isSuccess]);
+  }, [activePayment, isSuccess, isSnapPayment]);
 
   // Polling status otomatis setiap 3.5 detik saat layar pembayaran aktif
   useEffect(() => {
@@ -186,8 +171,6 @@ export default function CustomPaymentModal({
     };
   }, [activePayment, isSuccess, pkg, onSuccess]);
 
-  if (!isOpen || !pkg) return null;
-
   const handleCopy = (text: string, key: string) => {
     if (!text) return;
     navigator.clipboard.writeText(text);
@@ -196,6 +179,8 @@ export default function CustomPaymentModal({
   };
 
   const handleStartPayment = async () => {
+    if (submittingRef.current) return;
+    submittingRef.current = true;
     setIsSubmitting(true);
     setErrorMessage(null);
 
@@ -220,9 +205,10 @@ export default function CustomPaymentModal({
         const diff = Math.max(0, Math.floor((expiry - Date.now()) / 1000));
         if (diff > 0) setTimeLeft(diff);
       }
-    } catch (err: any) {
-      setErrorMessage(err.message || 'Terjadi kesalahan sistem saat membuat tagihan.');
+    } catch (err: unknown) {
+      setErrorMessage(err instanceof Error ? err.message : 'Terjadi kesalahan sistem saat membuat tagihan.');
     } finally {
+      submittingRef.current = false;
       setIsSubmitting(false);
     }
   };
@@ -244,8 +230,8 @@ export default function CustomPaymentModal({
       } else {
         setErrorMessage('Pembayaran belum terdeteksi. Silakan selesaikan pembayaran terlebih dahulu.');
       }
-    } catch (err: any) {
-      setErrorMessage(err.message || 'Gagal memeriksa status pembayaran.');
+    } catch (err: unknown) {
+      setErrorMessage(err instanceof Error ? err.message : 'Gagal memeriksa status pembayaran.');
     } finally {
       setIsChecking(false);
     }
@@ -258,6 +244,7 @@ export default function CustomPaymentModal({
   };
 
   const details = activePayment?.payment_details;
+  const checkoutUrl = activePayment ? midtransCheckoutUrl(activePayment) : null;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-200">
@@ -379,7 +366,7 @@ export default function CustomPaymentModal({
                   Pilih Metode Pembayaran
                 </label>
                 <p className="text-[11px] text-slate-500">
-                  Semua transaksi diproses langsung di website ini secara aman.
+                  Pembayaran diproses secara aman melalui Midtrans.
                 </p>
               </div>
 
@@ -472,18 +459,28 @@ export default function CustomPaymentModal({
                   <span className="w-2.5 h-2.5 rounded-full bg-amber-500 animate-pulse" />
                   <span className="font-bold text-slate-700">Menunggu Pembayaran</span>
                 </div>
-                <div className="flex items-center gap-1.5 text-slate-500 font-semibold font-mono text-xs">
+                {!isSnapPayment && <div className="flex items-center gap-1.5 text-slate-500 font-semibold font-mono text-xs">
                   <Clock size={14} className="text-amber-600" />
                   <span>Sisa waktu: {formatCountdown(timeLeft)}</span>
-                </div>
+                </div>}
               </div>
 
               {/* TAMPILAN QRIS */}
-              {details?.payment_method === 'qris' ? (
+              {isSnapPayment ? (
+                <div className="rounded-2xl border border-slate-200 bg-white p-5 text-center space-y-4">
+                  <ShieldCheck size={32} className="text-emerald-600 mx-auto" />
+                  <div className="space-y-2"><h4 className="text-sm font-bold text-slate-900">Lanjutkan pembayaran di Midtrans</h4>
+                    <p className="text-xs text-slate-500 leading-relaxed">Buka halaman resmi Midtrans untuk menyelesaikan pembayaran. Setelah selesai, kembali ke halaman ini. Status dan saldo token diperbarui otomatis.</p></div>
+                  {checkoutUrl ? <a href={checkoutUrl} target="_blank" rel="noopener noreferrer" className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[#030C4D] px-4 py-3 text-xs font-bold text-white">
+                    Buka pembayaran Midtrans <ExternalLink size={14} />
+                  </a> : <p role="alert" className="text-xs text-rose-700">Tautan pembayaran tidak valid. Hubungi Administrator dengan nomor order di atas.</p>}
+                  <p className="text-[11px] text-slate-500">Gunakan kembali tombol ini untuk melanjutkan tagihan yang sama.</p>
+                </div>
+              ) : details?.payment_method === 'qris' ? (
                 <div className="text-center space-y-4">
                   <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs inline-block mx-auto">
                     {details.qr_url ? (
-                      /* Menggunakan img standar untuk QR Code Midtrans agar bebas CORS */
+                      /* eslint-disable-next-line @next/next/no-img-element -- Payment QR codes use provider URLs without the image optimization cache. */
                       <img
                         src={details.qr_url}
                         alt="QRIS Unelma CBT"

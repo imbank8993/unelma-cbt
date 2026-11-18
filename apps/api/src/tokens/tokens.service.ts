@@ -9,6 +9,13 @@ import * as crypto from 'crypto';
 import { CreatePaymentDto, CreateTokenPackageDto, SaveMidtransConfigDto, UnlockItemDto, UpdateTokenPackageDto } from './tokens.dto';
 import { PAYMENT_METHOD_IDS, SNAP_PAYMENT_CODES, allowedPaymentMethods, normalizePaymentMethods } from './payment-methods';
 
+/** Only explicit activation/access rejection is safe to retry through Snap. */
+export function midtransCoreAccessDenied(response: any): boolean {
+  if (String(response?.status_code || '') !== '402' || response?.transaction_id || response?.transaction_status) return false;
+  const message = String(response?.status_message || '').toLowerCase();
+  return /payment channel (?:is )?not activat(?:ed|e)|merchant doesn['’]?t have access (?:for|to) this payment type|core api (?:is )?not (?:activated|enabled)/.test(message);
+}
+
 /**
  * Pesan Midtrans (bahasa Inggris, teknis) diterjemahkan untuk siswa. Detail
  * aslinya tetap tercatat di log server.
@@ -16,7 +23,8 @@ import { PAYMENT_METHOD_IDS, SNAP_PAYMENT_CODES, allowedPaymentMethods, normaliz
 export function midtransChargeErrorMessage(chargeJson: any): string {
   const code = String(chargeJson?.status_code || '');
   const message = String(chargeJson?.status_message || '').toLowerCase();
-  if (code === '402' || /not activated|not enabled|channel/.test(message)) {
+  if (code === '401') return 'Konfigurasi akses pembayaran belum sesuai. Silakan hubungi Administrator.';
+  if (code === '402' || /not activated|not enabled/.test(message)) {
     return 'Metode pembayaran ini sedang tidak tersedia. Silakan pilih metode pembayaran lain.';
   }
   if (code === '503' || code === '504' || code === '505' || /unavailable|timeout|try again/.test(message)) {
@@ -284,6 +292,76 @@ export class TokensService {
       },
     ];
 
+    const createSnapCheckout = async () => {
+      const payload = {
+        transaction_details: transactionDetails,
+        customer_details: customerDetails,
+        item_details: itemDetails,
+        // Snap hanya menampilkan metode yang diizinkan admin untuk paket ini.
+        enabled_payments: (paymentMethod ? [paymentMethod as (typeof PAYMENT_METHOD_IDS)[number]] : allowedMethods).map(id => SNAP_PAYMENT_CODES[id]),
+      };
+
+      let snapToken = '';
+      let redirectUrl = '';
+      let snapFailure: any = null;
+      try {
+        const snapRes = await fetch(snapEndpoint, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Accept: 'application/json',
+            Authorization: basicAuth(serverKey),
+          },
+          body: JSON.stringify(payload),
+        });
+        const snapJson = await snapRes.json();
+        const expectedHost = cfg.is_production ? 'app.midtrans.com' : 'app.sandbox.midtrans.com';
+        let validRedirect = false;
+        try {
+          const url = new URL(snapJson?.redirect_url);
+          validRedirect = url.protocol === 'https:' && url.hostname === expectedHost && !url.username && !url.password && !url.port && url.pathname.startsWith('/snap/');
+        } catch { /* Invalid checkout links must never be returned to the browser. */ }
+        if (snapRes.ok && typeof snapJson?.token === 'string' && snapJson.token && validRedirect) {
+          snapToken = snapJson.token;
+          redirectUrl = snapJson.redirect_url;
+        } else {
+          snapFailure = snapJson;
+          this.logger.warn(`Midtrans Snap rejected checkout (${cfg.is_production ? 'production' : 'sandbox'}, ${paymentMethod || 'all'}): status ${snapJson?.status_code || snapRes.status}`);
+        }
+      } catch (err) {
+        this.logger.error(`Gagal memanggil Midtrans Snap: ${(err as Error).message}`);
+      }
+      if (!snapToken) {
+        if (['401', '402'].includes(String(snapFailure?.status_code))) throw new BadRequestException(midtransChargeErrorMessage(snapFailure));
+        throw new ServiceUnavailableException('Gagal membuat transaksi di Midtrans. Silakan coba lagi.');
+      }
+
+      const rows = await this.prisma.$queryRawUnsafe<any[]>(`
+        INSERT INTO public.payment_transactions (
+          order_id, user_id, email, customer_name, package_id, package_name,
+          token_amount, amount, status, snap_token, snap_redirect_url, payment_type, payment_details
+        ) VALUES (
+          $1, $2::uuid, $3, $4, $5::uuid, $6, $7, $8, 'pending', $9, $10, 'snap', $11::jsonb
+        )
+        RETURNING id, order_id, package_name, token_amount, amount, status, created_at
+      `, orderId, user.id, customerEmail, customerName, pkg.id, pkg.name, pkg.token_amount, amount, snapToken, redirectUrl, JSON.stringify({ payment_method: paymentMethod || null, checkout_flow: 'snap' }));
+
+      return {
+        success: true,
+        order_id: orderId,
+        checkout_flow: 'snap' as const,
+        payment_method: paymentMethod || undefined,
+        amount,
+        token_amount: pkg.token_amount,
+        package_name: pkg.name,
+        snap_token: snapToken,
+        redirect_url: redirectUrl,
+        client_key: clientKey,
+        is_production: cfg.is_production,
+        transaction: rows[0],
+      };
+    };
+
     if (isCoreApi) {
       let chargePayload: any = {
         transaction_details: transactionDetails,
@@ -292,10 +370,8 @@ export class TokensService {
       };
 
       if (paymentMethod === 'qris') {
-        // Channel aktif di akun Midtrans adalah "GoPay Dynamic QRIS": charge
-        // `gopay` menghasilkan QR berstandar QRIS yang bisa dipindai semua
-        // e-wallet & m-banking. `payment_type: 'qris'` butuh channel QRIS
-        // terpisah dan ditolak ("Payment channel is not activated").
+        // GoPay Dynamic QRIS. Activation depends on the merchant and product;
+        // a clear Core access rejection may continue through Snap below.
         chargePayload.payment_type = 'gopay';
         chargePayload.gopay = { enable_callback: false };
       } else if (['bca_va', 'bni_va', 'bri_va', 'cimb_va'].includes(paymentMethod)) {
@@ -333,7 +409,8 @@ export class TokensService {
       }
 
       if (!chargeJson || (chargeJson.status_code !== '201' && chargeJson.status_code !== '200')) {
-        this.logger.warn(`Midtrans Core API error (${paymentMethod}): ${JSON.stringify(chargeJson)}`);
+        this.logger.warn(`Midtrans Core API rejected checkout (${cfg.is_production ? 'production' : 'sandbox'}, ${paymentMethod}): status ${chargeJson?.status_code || 'unknown'}`);
+        if (midtransCoreAccessDenied(chargeJson)) return createSnapCheckout();
         throw new BadRequestException(midtransChargeErrorMessage(chargeJson));
       }
 
@@ -375,6 +452,7 @@ export class TokensService {
       return {
         success: true,
         order_id: orderId,
+        checkout_flow: 'core' as const,
         payment_method: paymentMethod,
         payment_type: chargeJson.payment_type || paymentMethod,
         amount,
@@ -386,59 +464,7 @@ export class TokensService {
       };
     }
 
-    const payload = {
-      transaction_details: transactionDetails,
-      customer_details: customerDetails,
-      item_details: itemDetails,
-      // Snap hanya menampilkan metode yang diizinkan admin untuk paket ini.
-      enabled_payments: allowedMethods.map((id) => SNAP_PAYMENT_CODES[id]),
-    };
-
-    let snapToken = '';
-    let redirectUrl = '';
-    try {
-      const snapRes = await fetch(snapEndpoint, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Accept: 'application/json',
-          Authorization: basicAuth(serverKey),
-        },
-        body: JSON.stringify(payload),
-      });
-      const snapJson = await snapRes.json();
-      if (snapJson?.token) {
-        snapToken = snapJson.token;
-        redirectUrl = snapJson.redirect_url;
-      } else {
-        this.logger.warn(`Midtrans Snap error: ${JSON.stringify(snapJson)}`);
-      }
-    } catch (err) {
-      this.logger.error(`Gagal memanggil Midtrans Snap: ${(err as Error).message}`);
-    }
-    if (!snapToken) {
-      throw new ServiceUnavailableException('Gagal membuat transaksi di Midtrans. Silakan coba lagi.');
-    }
-
-    const rows = await this.prisma.$queryRawUnsafe<any[]>(`
-      INSERT INTO public.payment_transactions (
-        order_id, user_id, email, customer_name, package_id, package_name,
-        token_amount, amount, status, snap_token, snap_redirect_url, payment_type, payment_details
-      ) VALUES (
-        $1, $2::uuid, $3, $4, $5::uuid, $6, $7, $8, 'pending', $9, $10, 'snap', '{}'::jsonb
-      )
-      RETURNING id, order_id, package_name, token_amount, amount, status, created_at
-    `, orderId, user.id, customerEmail, customerName, pkg.id, pkg.name, pkg.token_amount, amount, snapToken, redirectUrl);
-
-    return {
-      success: true,
-      order_id: orderId,
-      snap_token: snapToken,
-      redirect_url: redirectUrl,
-      client_key: clientKey,
-      is_production: cfg.is_production,
-      transaction: rows[0],
-    };
+    return createSnapCheckout();
   }
 
   /**

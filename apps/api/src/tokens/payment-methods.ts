@@ -14,7 +14,7 @@ export const PAYMENT_METHOD_IDS = [
 
 export type PaymentMethodId = (typeof PAYMENT_METHOD_IDS)[number];
 
-/** Kode `enabled_payments` Snap untuk tiap metode (dipakai bila checkout jatuh ke Snap). */
+/** Kode `enabled_payments` Snap; fallback tetap dibatasi ke metode pilihan pengguna. */
 export const SNAP_PAYMENT_CODES: Record<PaymentMethodId, string> = {
   qris: 'gopay', // GoPay Dynamic QRIS
   bca_va: 'bca_va',

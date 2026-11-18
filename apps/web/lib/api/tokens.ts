@@ -144,6 +144,7 @@ export interface CorePaymentDetails {
 }
 
 export interface PaymentCreateResult {
+  checkout_flow?: 'core' | 'snap';
   order_id: string;
   snap_token?: string;
   redirect_url?: string;
