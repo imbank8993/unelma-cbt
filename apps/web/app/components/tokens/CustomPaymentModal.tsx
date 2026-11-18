@@ -1,9 +1,9 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   X, Check, Copy, ArrowLeft, RefreshCw, Clock, ShieldCheck,
-  QrCode, CreditCard, AlertCircle, Sparkles, ExternalLink
+  QrCode, CreditCard, AlertCircle, Sparkles
 } from 'lucide-react';
 import {
   createPayment,
@@ -12,7 +12,7 @@ import {
   type TokenPackage,
   type PaymentCreateResult
 } from '@/lib/api/tokens';
-import { midtransCheckoutUrl } from '@/lib/payment-checkout';
+import { loadMidtransSnap, type MidtransSnap } from '@/lib/midtrans-snap';
 
 export interface CustomPaymentModalProps {
   isOpen: boolean;
@@ -114,10 +114,88 @@ function PaymentCheckout({ onClose, pkg, onSuccess }: Omit<CustomPaymentModalPro
   const [creditedAmount, setCreditedAmount] = useState(0);
   const [timeLeft, setTimeLeft] = useState<number>(15 * 60); // 15 menit bawaan
   const [guideTab, setGuideTab] = useState<'mbanking' | 'atm'>('mbanking');
+  const [snapLoading, setSnapLoading] = useState(false);
+  const [snapOpen, setSnapOpen] = useState(false);
 
   const pollingRef = useRef<NodeJS.Timeout | null>(null);
   const submittingRef = useRef(false);
+  const mountedRef = useRef(true);
+  const activeOrderRef = useRef<string | null>(null);
+  const creditedOrderRef = useRef<string | null>(null);
+  const snapRef = useRef<MidtransSnap | null>(null);
+  const snapRequestRef = useRef(0);
   const isSnapPayment = activePayment?.checkout_flow === 'snap' || Boolean(activePayment?.snap_token);
+
+  const hideSnap = useCallback(() => {
+    snapRequestRef.current++;
+    snapRef.current?.hide();
+    snapRef.current = null;
+  }, []);
+
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+      hideSnap();
+    };
+  }, [hideSnap]);
+
+  const confirmPayment = useCallback((orderId: string, amount: number) => {
+    if (!mountedRef.current || activeOrderRef.current !== orderId || creditedOrderRef.current === orderId) return;
+    creditedOrderRef.current = orderId;
+    hideSnap();
+    setSnapOpen(false); setSnapLoading(false);
+    setIsSuccess(true); setErrorMessage(null); setCreditedAmount(amount);
+    onSuccess(amount);
+  }, [onSuccess, hideSnap]);
+
+  const verifyPayment = useCallback(async (orderId: string, showPending = false) => {
+    try {
+      const result = await checkPaymentStatus(orderId);
+      if (!mountedRef.current || activeOrderRef.current !== orderId) return;
+      if (result.success && result.status === 'success') confirmPayment(orderId, result.token_amount ?? pkg.token_amount);
+      else if (result.success && result.status === 'failed') {
+        if (pollingRef.current) clearInterval(pollingRef.current);
+        setErrorMessage('Transaksi telah dibatalkan atau kedaluwarsa.');
+      } else if (showPending) setErrorMessage(result.success ? 'Pembayaran belum terkonfirmasi. Status akan diperbarui setelah Midtrans memverifikasinya.' : result.error);
+    } catch {
+      if (showPending && mountedRef.current && activeOrderRef.current === orderId) setErrorMessage('Status pembayaran belum dapat diperiksa. Silakan coba lagi.');
+    }
+  }, [confirmPayment, pkg.token_amount]);
+
+  async function openSnap(payment: PaymentCreateResult) {
+    if (snapLoading || snapOpen) return;
+    if (!payment.snap_token) { setErrorMessage('Token pembayaran belum tersedia. Hubungi Administrator dengan nomor order di atas.'); return; }
+    const requestId = ++snapRequestRef.current;
+    const current = () => mountedRef.current && snapRequestRef.current === requestId && activeOrderRef.current === payment.order_id;
+    setSnapLoading(true); setErrorMessage(null);
+    try {
+      const snap = await loadMidtransSnap(payment);
+      if (!current()) return;
+      snapRef.current = snap;
+      setSnapOpen(true);
+      let finished = false;
+      const finish = (event: 'success' | 'pending' | 'error' | 'close') => {
+        if (!current() || finished) return;
+        finished = true;
+        snap.hide();
+        setSnapOpen(false);
+        if (event === 'error') setErrorMessage('Pembayaran belum berhasil. Anda dapat menampilkan kembali tagihan yang sama.');
+        // Snap callbacks never credit a balance; only the authenticated server can confirm payment.
+        void verifyPayment(payment.order_id, event === 'success');
+      };
+      snap.pay(payment.snap_token, { language: 'id', uiMode: payment.payment_method === 'qris' ? 'qr' : 'auto',
+        onSuccess: () => finish('success'), onPending: () => finish('pending'), onError: () => finish('error'), onClose: () => finish('close') });
+    } catch (error) {
+      if (current()) { snapRef.current?.hide(); setSnapOpen(false); setErrorMessage(error instanceof Error ? error.message : 'Popup pembayaran belum dapat dibuka.'); }
+    } finally { if (current()) setSnapLoading(false); }
+  }
+
+  function resetPayment() {
+    activeOrderRef.current = null;
+    hideSnap();
+    setSnapLoading(false); setSnapOpen(false); setActivePayment(null); setErrorMessage(null);
+  }
 
   // Hanya metode yang diizinkan admin untuk paket ini.
   const allowedIds = packagePaymentMethods(pkg);
@@ -148,28 +226,12 @@ function PaymentCheckout({ onClose, pkg, onSuccess }: Omit<CustomPaymentModalPro
     }
 
     const orderId = activePayment.order_id;
-    pollingRef.current = setInterval(async () => {
-      try {
-        const res = await checkPaymentStatus(orderId);
-        if (res.success && res.status === 'success') {
-          if (pollingRef.current) clearInterval(pollingRef.current);
-          setIsSuccess(true);
-          const credited = res.token_amount || pkg?.token_amount || 0;
-          setCreditedAmount(credited);
-          onSuccess(credited);
-        } else if (res.success && res.status === 'failed') {
-          if (pollingRef.current) clearInterval(pollingRef.current);
-          setErrorMessage('Transaksi telah dibatalkan atau kedaluwarsa.');
-        }
-      } catch {
-        // Polling silent retry
-      }
-    }, 3500);
+    pollingRef.current = setInterval(() => { void verifyPayment(orderId); }, 3500);
 
     return () => {
       if (pollingRef.current) clearInterval(pollingRef.current);
     };
-  }, [activePayment, isSuccess, pkg, onSuccess]);
+  }, [activePayment, isSuccess, verifyPayment]);
 
   const handleCopy = (text: string, key: string) => {
     if (!text) return;
@@ -198,7 +260,10 @@ function PaymentCheckout({ onClose, pkg, onSuccess }: Omit<CustomPaymentModalPro
         throw new Error(res.error || 'Gagal membuat tagihan pembayaran.');
       }
 
+      if (!mountedRef.current) return;
+      activeOrderRef.current = res.order_id;
       setActivePayment(res);
+      if (res.checkout_flow === 'snap' || res.snap_token) void openSnap(res);
       // Set perkiraan expiry jika ada di response
       if (res.payment_details?.expiry_time) {
         const expiry = new Date(res.payment_details.expiry_time).getTime();
@@ -219,19 +284,7 @@ function PaymentCheckout({ onClose, pkg, onSuccess }: Omit<CustomPaymentModalPro
     setErrorMessage(null);
 
     try {
-      const res = await checkPaymentStatus(activePayment.order_id);
-      if (res.success && res.status === 'success') {
-        setIsSuccess(true);
-        const credited = res.token_amount || pkg.token_amount || 0;
-        setCreditedAmount(credited);
-        onSuccess(credited);
-      } else if (res.success && res.status === 'failed') {
-        setErrorMessage('Transaksi ini telah dibatalkan atau kedaluwarsa di sistem pembayaran.');
-      } else {
-        setErrorMessage('Pembayaran belum terdeteksi. Silakan selesaikan pembayaran terlebih dahulu.');
-      }
-    } catch (err: unknown) {
-      setErrorMessage(err instanceof Error ? err.message : 'Gagal memeriksa status pembayaran.');
+      await verifyPayment(activePayment.order_id, true);
     } finally {
       setIsChecking(false);
     }
@@ -244,10 +297,9 @@ function PaymentCheckout({ onClose, pkg, onSuccess }: Omit<CustomPaymentModalPro
   };
 
   const details = activePayment?.payment_details;
-  const checkoutUrl = activePayment ? midtransCheckoutUrl(activePayment) : null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-200">
+    <div aria-hidden={snapOpen || undefined} className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-200">
       <div
         className="bg-white rounded-2xl sm:rounded-3xl border border-slate-200 shadow-2xl w-full max-w-lg max-h-[92vh] flex flex-col overflow-hidden relative"
         role="dialog"
@@ -259,10 +311,7 @@ function PaymentCheckout({ onClose, pkg, onSuccess }: Omit<CustomPaymentModalPro
             {activePayment && !isSuccess ? (
               <button
                 type="button"
-                onClick={() => {
-                  setActivePayment(null);
-                  setErrorMessage(null);
-                }}
+                onClick={resetPayment}
                 className="p-1.5 -ml-1.5 rounded-lg text-slate-500 hover:text-slate-900 hover:bg-slate-200/60 transition-colors"
                 title="Ganti Metode"
               >
@@ -469,12 +518,12 @@ function PaymentCheckout({ onClose, pkg, onSuccess }: Omit<CustomPaymentModalPro
               {isSnapPayment ? (
                 <div className="rounded-2xl border border-slate-200 bg-white p-5 text-center space-y-4">
                   <ShieldCheck size={32} className="text-emerald-600 mx-auto" />
-                  <div className="space-y-2"><h4 className="text-sm font-bold text-slate-900">Lanjutkan pembayaran di Midtrans</h4>
-                    <p className="text-xs text-slate-500 leading-relaxed">Buka halaman resmi Midtrans untuk menyelesaikan pembayaran. Setelah selesai, kembali ke halaman ini. Status dan saldo token diperbarui otomatis.</p></div>
-                  {checkoutUrl ? <a href={checkoutUrl} target="_blank" rel="noopener noreferrer" className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[#030C4D] px-4 py-3 text-xs font-bold text-white">
-                    Buka pembayaran Midtrans <ExternalLink size={14} />
-                  </a> : <p role="alert" className="text-xs text-rose-700">Tautan pembayaran tidak valid. Hubungi Administrator dengan nomor order di atas.</p>}
-                  <p className="text-[11px] text-slate-500">Gunakan kembali tombol ini untuk melanjutkan tagihan yang sama.</p>
+                  <div className="space-y-2"><h4 className="text-sm font-bold text-slate-900">Pembayaran di Unelma</h4>
+                    <p className="text-xs text-slate-500 leading-relaxed">Selesaikan pembayaran melalui popup Midtrans di halaman ini. Status dan saldo token diperbarui otomatis setelah pembayaran terverifikasi.</p></div>
+                  <button type="button" disabled={snapLoading || snapOpen} onClick={() => void openSnap(activePayment)} className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[#030C4D] px-4 py-3 text-xs font-bold text-white disabled:opacity-60">
+                    {snapLoading ? <><RefreshCw size={14} className="animate-spin" />Memuat pembayaran…</> : 'Tampilkan pembayaran'}
+                  </button>
+                  <p className="text-[11px] text-slate-500">Popup tertutup? Tampilkan kembali untuk melanjutkan tagihan yang sama.</p>
                 </div>
               ) : details?.payment_method === 'qris' ? (
                 <div className="text-center space-y-4">
@@ -647,10 +696,7 @@ function PaymentCheckout({ onClose, pkg, onSuccess }: Omit<CustomPaymentModalPro
 
                 <button
                   type="button"
-                  onClick={() => {
-                    setActivePayment(null);
-                    setErrorMessage(null);
-                  }}
+                  onClick={resetPayment}
                   className="w-full py-2 text-slate-500 hover:text-slate-800 text-xs font-semibold transition-colors cursor-pointer text-center block"
                 >
                   Ganti Metode Pembayaran
