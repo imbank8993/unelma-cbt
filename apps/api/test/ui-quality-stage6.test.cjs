@@ -56,7 +56,7 @@ test('UX-11: ekspor dapat mewakili pilihan kompleks dan jawaban terstruktur', ()
     assert.deepEqual(formatAnswerKey(labelled), ['Satu → TRUE', 'Dua → FALSE']);
 });
 
-test('BUG-14/UX-10: hooks remain before early returns and removed notification pages have no navigation links', () => {
+test('BUG-14/UX-10: hooks remain before early returns and notification UI avoids removed pages', () => {
     const viewer = fs.readFileSync(
         path.resolve(__dirname, '../../web/app/components/questions/ExamViewer.tsx'), 'utf8',
     );
@@ -67,9 +67,11 @@ test('BUG-14/UX-10: hooks remain before early returns and removed notification p
 
     assert.equal(fs.existsSync(path.resolve(__dirname, '../../web/app/dashboard/notifications/page.tsx')), false);
     assert.equal(fs.existsSync(path.resolve(__dirname, '../../web/app/dashboard/notifications/settings/page.tsx')), false);
-    for (const file of ['Header.tsx', 'Sidebar.tsx', 'MobileNav.tsx']) {
+    // The header bell was restored for new-exam notifications. Its dropdown uses
+    // the notifications API; the removed standalone pages must remain unlinked.
+    for (const file of ['Header.tsx', 'Sidebar.tsx', 'MobileNav.tsx', 'NotificationBell.tsx']) {
         const source = fs.readFileSync(path.resolve(__dirname, '../../web/app/components', file), 'utf8');
-        assert.doesNotMatch(source, /NotificationBell|\/dashboard\/notifications/);
+        assert.doesNotMatch(source, /\/dashboard\/notifications/);
     }
     const notificationController = fs.readFileSync(
         path.resolve(__dirname, '../src/notifications/notifications.controller.ts'), 'utf8',
