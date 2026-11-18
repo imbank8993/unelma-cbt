@@ -1,6 +1,7 @@
 'use client';
 
 import DashboardPageTitle from '@/app/components/DashboardPageTitle';
+import { StudentDashboardOverview } from '@/app/components/student/StudentDashboardOverview';
 import Link from 'next/link';
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 import { ArrowRight, BookOpen, Briefcase, CheckCircle2, ChevronDown, Code2, GraduationCap, Landmark, Languages, LayoutGrid, Pencil, Plus, School, Search, ShieldCheck, Sparkles, Target, Trash2, type LucideIcon } from 'lucide-react';
@@ -151,15 +152,11 @@ function LearningLibraryContent({ manage, setManage }: { manage: boolean; setMan
         : `${programChapters.length} BAB · ${completed} dari ${scopedItems.length} subbab selesai`;
 
     return <main className="learning learn-library">
-        <header className={`lc-header${manage ? '' : ' lc-hero'}`}>
+        {manage ? <header className="lc-header">
             <div className="lc-hero-main">
-                {!manage && <span className="lc-hero-icon" aria-hidden="true"><BookOpen size={22} strokeWidth={1.75} /></span>}
                 <div>
-                    {!manage && <span className="lc-hero-eyebrow">{summary}</span>}
                     <h1><DashboardPageTitle /></h1>
-                    {manage ? <p>Kelola materi · {summary}</p> : <p className="lc-hero-lead">{program === 'untukmu' && goalPrograms.length
-                        ? `Materi sesuai tujuan belajarmu: ${goalPrograms.map(programLabel).join(', ')}.`
-                        : 'Materi sekolah, UTBK, CPNS, PPPK, kedinasan, hingga bahasa dalam satu tempat.'}</p>}
+                    <p>Kelola materi · {summary}</p>
                 </div>
             </div>
             {canManage && <div className="lc-header-actions">
@@ -169,7 +166,27 @@ function LearningLibraryContent({ manage, setManage }: { manage: boolean; setMan
                 </div>
                 {manage && canCreateMaterial && <button type="button" className="learn-primary lc-add" onClick={() => setCreating({})}><Plus size={16} />Tambah subbab</button>}
             </div>}
-        </header>
+        </header> : <div className="lc-overview">
+            <StudentDashboardOverview
+                icon={BookOpen}
+                headingAs="h1"
+                ariaLabel="Ringkasan ruang belajar"
+                eyebrow={loading ? 'Memuat materi…' : 'Belajar sesuai tujuanmu'}
+                title={<DashboardPageTitle />}
+                description={program === 'untukmu' && goalPrograms.length
+                    ? `Materi sesuai tujuan belajarmu: ${goalPrograms.map(programLabel).join(', ')}.`
+                    : 'Materi sekolah, UTBK, CPNS, PPPK, kedinasan, hingga bahasa dalam satu tempat.'}
+                actions={canManage && <div className="lc-segmented" role="group" aria-label="Tampilan bahan ajar">
+                    <button type="button" aria-pressed={!manage} onClick={() => setManage(false)}>Ruang belajar</button>
+                    <button type="button" aria-pressed={manage} onClick={() => setManage(true)}>Kelola materi</button>
+                </div>}
+                stats={[
+                    { label: 'BAB tersedia', value: loading ? '…' : error ? '—' : programChapters.length, icon: BookOpen, gradient: 'from-emerald-700 to-teal-700' },
+                    { label: 'Total subbab', value: loading ? '…' : error ? '—' : scopedItems.length, icon: LayoutGrid, gradient: 'from-blue-600 to-indigo-600' },
+                    { label: 'Subbab selesai', value: loading ? '…' : error ? '—' : completed, icon: CheckCircle2, gradient: 'from-violet-600 to-fuchsia-700' },
+                ]}
+            />
+        </div>}
 
         {!loading && resume && resumeMark && <section className="lc-continue" aria-label="Lanjutkan belajar">
             <span className="lc-mark" style={resumeMark.style} aria-hidden="true">{resumeMark.abbr}</span>

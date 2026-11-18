@@ -16,6 +16,7 @@ const { chromium } = require('playwright');
     ]) modules[name] = fs.readFileSync(path.join(path.dirname(require.resolve(pkg)), 'cjs', file), 'utf8');
     for (const [name, file] of Object.entries({
         Library: 'apps/web/app/dashboard/learning/page.tsx',
+        '@/app/components/student/StudentDashboardOverview': 'apps/web/app/components/student/StudentDashboardOverview.tsx',
         Editor: 'apps/web/app/dashboard/learning/[id]/edit/page.tsx',
         '@/lib/learning-catalog': 'apps/web/lib/learning-catalog.ts',
         '@/app/components/learning/CreateSubchapterModal': 'apps/web/app/components/learning/CreateSubchapterModal.tsx',
@@ -41,12 +42,10 @@ const { chromium } = require('playwright');
         await page.setContent('<html><head></head><body><div id="root"></div></body></html>');
         // A secure local origin is unnecessary for a mocked API; provide stable fixture IDs.
         await page.evaluate(() => { if (!crypto.randomUUID) Object.defineProperty(crypto, 'randomUUID', { value: () => '00000000-0000-4000-8000-000000000123' }); });
-        const built = path.join('apps/web/.next/static/chunks');
-        const cssFiles = fs.existsSync(built) ? fs.readdirSync(built).filter(file => file.endsWith('.css')).map(file => path.join(built, file)) : [];
-        const utilities = cssFiles.sort((a, b) => fs.statSync(b).size - fs.statSync(a).size)[0];
-        if (utilities) await page.addStyleTag({ path: utilities });
-        await page.addStyleTag({ content: fs.readFileSync('apps/web/app/globals.css', 'utf8').replace(/^@import.*$/gm, '').replace(/^@custom-variant.*$/gm, '') });
-        for (const file of ['apps/web/app/components/ui/modal.css', 'apps/web/app/components/ui/button.css', 'apps/web/app/components/learning/learning.css']) await page.addStyleTag({ path: file });
+        const css = await require('postcss')([require('@tailwindcss/postcss')({ base: path.resolve('apps/web') })])
+            .process(fs.readFileSync('apps/web/app/globals.css', 'utf8'), { from: path.resolve('apps/web/app/globals.css') });
+        await page.addStyleTag({ content: css.css });
+        for (const file of ['apps/web/app/components/ui/modal.css', 'apps/web/app/components/ui/button.css', 'apps/web/app/components/ui/inline-select.css', 'apps/web/app/components/learning/learning.css']) await page.addStyleTag({ path: file });
         await page.addStyleTag({ content: ':root{--font-sans:Arial,sans-serif;--font-open-sans:Arial,sans-serif;--font-poppins:Arial,sans-serif}body{padding:32px;font-family:Arial,sans-serif} @media(max-width:760px){body{padding:16px}}' });
         await page.evaluate(modules => {
             const cache = {};
@@ -73,7 +72,10 @@ const { chromium } = require('playwright');
                 '@/lib/learning-api': { learningRequest: api, deleteMaterial: async () => ({ success: true }), saveMaterial: async material => { state.saved = material; return { material }; } },
                 '@/lib/api/proctor': { listSubjects: async () => [{ id: 'math', name: 'Matematika' }, { id: 'literacy', name: 'Literasi' }] },
                 '@/lib/confirm-dialog': { confirmDialog: async () => true, deleteConfirmDialog: async () => true },
-                '@/lib/session': { fetchSessionUser: async () => ({ id: 'teacher' }) },
+                '@/lib/session': { fetchSessionUser: async () => ({ id: 'teacher' }), getSessionUser: async () => ({ id: 'teacher', roles: ['GURU'] }) },
+                '@/app/components/DashboardPageTitle': { __esModule: true, default: () => 'Ruang Belajar' },
+                '@/lib/learning-goal': { loadLearningGoal: async () => null, programLabel: value => value },
+                '@/lib/useCreationLimits': { useCreationLimits: () => ({ limits: null }), freeQuotaExhausted: () => false },
                 '@/lib/learning-converter': { convertLearningFile: async () => ({ format: 'html', html: '<h1>Daerah asal</h1>', notes: [] }) },
                 '@/lib/learning-templates': { downloadLearningTemplate: async () => {} },
                 '@/lib/learning-preview': { learningPreviewDocument: html => html, openLearningHtmlInNewTab: () => {} },
@@ -108,6 +110,7 @@ const { chromium } = require('playwright');
         }, modules);
         await page.getByRole('heading', { name: 'Fungsi', exact: true }).first().waitFor();
         assert.equal(await page.locator('.lc-card').count(), 3);
+        assert.deepEqual(await page.locator('.student-overview dd').allTextContents(), ['3', '4', '1']);
         await page.getByRole('button', { name: /^Kelas X\s/ }).click();
         assert.equal(await page.locator('.lc-card').count(), 1);
         await page.getByRole('button', { name: 'Daftar subbab', exact: true }).click();
@@ -127,6 +130,8 @@ const { chromium } = require('playwright');
         await page.setViewportSize({ width: 390, height: 844 });
         assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true);
         await page.screenshot({ path: path.join(output, 'learning-chapters-mobile.png'), fullPage: true });
+        await page.setViewportSize({ width: 320, height: 844 });
+        assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true);
         await page.setViewportSize({ width: 1280, height: 1000 });
         await page.getByRole('button', { name: 'Kelola materi' }).click();
         await page.getByRole('button', { name: 'Tambah subbab', exact: true }).waitFor();

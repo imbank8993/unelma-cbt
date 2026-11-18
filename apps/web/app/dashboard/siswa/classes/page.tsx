@@ -24,7 +24,8 @@ import {
     X,
 } from 'lucide-react';
 import Link from 'next/link';
-import { BANNER_BUTTON, StudentBanner } from '@/app/components/student/StudentBanner';
+import { EXAM_ACTION_BUTTON } from '@/app/components/student/StudentBanner';
+import { StudentDashboardOverview } from '@/app/components/student/StudentDashboardOverview';
 import React, { useCallback, useEffect, useState, type CSSProperties } from 'react';
 
 const CLASS_HUES = [222, 160, 262, 24, 330, 190, 45, 290];
@@ -122,15 +123,20 @@ export default function SiswaClassesPage() {
     return (
         <div className="max-w-7xl mx-auto pb-24 space-y-6 px-1 sm:px-2">
 
-            {/* ── Banner ── */}
-            <StudentBanner
+            <StudentDashboardOverview
+                ariaLabel="Ringkasan kelas"
                 icon={Users}
                 eyebrow={isLoading ? 'Memuat kelas…' : classes.length ? `${classes.length} kelas aktif` : 'Belum bergabung di kelas'}
                 title={<DashboardPageTitle />}
                 description={isLoading ? 'Memuat kelas Anda…' : classes.length
                     ? `Kamu tergabung di ${classes.length} kelas. Ujian dan materi dari guru otomatis muncul di Jadwal dan Ruang Belajar.`
                     : 'Gabung ke kelas gurumu dengan kode akses agar ujian dan materi kelas muncul otomatis.'}
-                actions={<button type="button" onClick={() => setIsJoinModalOpen(true)} className={BANNER_BUTTON}><Plus size={16} />Gabung Kelas</button>}
+                actions={<button type="button" onClick={() => setIsJoinModalOpen(true)} className={EXAM_ACTION_BUTTON}><Plus size={16} />Gabung Kelas</button>}
+                stats={[
+                    { label: 'Total kelas', value: isLoading ? '…' : classes.length, icon: Users, gradient: 'from-emerald-700 to-teal-700' },
+                    { label: 'Kelas sekolah', value: isLoading ? '…' : classes.filter(cls => cls.type === 'reguler').length, icon: School, gradient: 'from-blue-600 to-indigo-600' },
+                    { label: 'Kelas tambahan', value: isLoading ? '…' : classes.filter(cls => cls.type !== 'reguler').length, icon: GraduationCap, gradient: 'from-violet-600 to-fuchsia-700' },
+                ]}
             />
 
             {isLoading ? (
@@ -214,9 +220,9 @@ export default function SiswaClassesPage() {
                             >
                                 {/* Banner kelas */}
                                 <div className="relative h-24 px-5 pt-4 text-white" style={mark.style}>
-                                    <div className="pointer-events-none absolute -right-6 -top-10 h-28 w-28 rounded-full bg-white/15" />
+                                    <div aria-hidden="true" className="pointer-events-none absolute -right-6 -top-10 h-28 w-28 rounded-full bg-[rgba(255,255,255,0.15)]" />
                                     <div className="relative flex items-start justify-between gap-2">
-                                        <span className="rounded-full bg-white/20 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider backdrop-blur-sm">
+                                        <span className="rounded-full bg-[rgba(255,255,255,0.2)] px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider backdrop-blur-sm">
                                             {isReguler ? 'Kelas sekolah' : 'Kelas tambahan'}
                                         </span>
                                         {!isReguler ? (
@@ -225,12 +231,12 @@ export default function SiswaClassesPage() {
                                                 onClick={() => setClassToLeave({ id: cls.id, name: cls.name })}
                                                 title="Keluar dari kelas ini"
                                                 aria-label={`Keluar dari kelas ${cls.name}`}
-                                                className="flex h-7 w-7 items-center justify-center rounded-lg bg-white/15 text-white transition-colors hover:bg-rose-500 active:scale-90"
+                                                className="flex h-7 w-7 items-center justify-center rounded-lg bg-[rgba(255,255,255,0.15)] text-white transition-colors hover:bg-rose-500 active:scale-90"
                                             >
                                                 <LogOut size={13} />
                                             </button>
                                         ) : (
-                                            <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-white/15"><School size={14} /></span>
+                                            <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-[rgba(255,255,255,0.15)]"><School size={14} /></span>
                                         )}
                                     </div>
                                 </div>

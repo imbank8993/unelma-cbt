@@ -17,7 +17,8 @@ import { daysUntil, loadLearningGoal, programLabel, saveLearningGoal, type Learn
 import { useToast } from '@/app/components/ui/Toast';
 import { LearningGoalModal } from '@/app/components/student/LearningGoalModal';
 import { PROGRAM_VISUALS } from '@/app/components/student/programVisuals';
-import { BANNER_BUTTON, BannerStats, EXAM_ACTION_BUTTON, StudentBanner } from '@/app/components/student/StudentBanner';
+import { BANNER_BUTTON, EXAM_ACTION_BUTTON } from '@/app/components/student/StudentBanner';
+import { StudentDashboardOverview } from '@/app/components/student/StudentDashboardOverview';
 import Link from 'next/link';
 import { getSessionUser } from '@/lib/session';
 import { dashboardExams, recoveryActive, recoveryLabel, scheduleState } from '@/lib/student-schedule';
@@ -27,6 +28,7 @@ import { linkifyText } from '@/lib/text-format';
 import { REFRESH_INTERVAL,useAutoRefresh } from '@/lib/useAutoRefresh';
 import {
 AlertCircle,
+Award,
 ArrowRight,
 BookOpen,
 CalendarDays,
@@ -35,7 +37,6 @@ Clock,
 Coins,
 FileText,
 Pencil,
-Sparkles,
 Rocket,
 Target,
 Timer,
@@ -331,43 +332,38 @@ export default function SiswaDashboard() {
             )}
 
             {/* ── Banner: sapaan, tujuan belajar, dan ringkasan ── */}
-            <StudentBanner
-                icon={Sparkles}
+            <StudentDashboardOverview
                 eyebrow={`${greeting}, ${firstName || 'Pejuang ilmu'}`}
                 title={<DashboardPageTitle />}
                 description={goal ? (
                     <div className="flex flex-wrap items-center gap-x-2 gap-y-1.5">
-                        <span className="inline-flex items-center gap-1.5 text-slate-500 dark:text-slate-400"><Target size={14} className="text-[#F8A01B]" />Tujuan</span>
+                        <span className="inline-flex items-center gap-1.5 text-blue-100"><Target size={14} className="text-amber-300" />Tujuan</span>
                         {goal.programs.map((program, index) => (
                             <span key={program} className="inline-flex items-center gap-2">
-                                {index > 0 && <span className="text-slate-300 dark:text-slate-600">·</span>}
-                                <Link href={learnHref(program)} className="rounded-md bg-slate-100 px-2 py-0.5 text-xs font-semibold text-[#030C4D] transition-colors hover:bg-slate-200 dark:bg-slate-800 dark:text-blue-200 dark:hover:bg-slate-700">{programLabel(program)}</Link>
+                                {index > 0 && <span className="text-blue-200/50">·</span>}
+                                <Link href={learnHref(program)} className="rounded-md border border-white/15 bg-[rgba(255,255,255,0.1)] px-2 py-0.5 text-xs font-medium text-white transition-colors hover:bg-[rgba(255,255,255,0.2)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white">{programLabel(program)}</Link>
                             </span>
                         ))}
-                        {daysLeft !== null && <span className="rounded-md bg-amber-50 px-2 py-0.5 text-xs font-semibold text-amber-700 dark:bg-amber-500/10 dark:text-amber-300">{daysLeft === 0 ? 'Hari ini' : `${daysLeft} hari lagi`}</span>}
+                        {daysLeft !== null && <span className="rounded-md bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-900">{daysLeft === 0 ? 'Hari ini' : `${daysLeft} hari lagi`}</span>}
                         <button type="button" onClick={() => setGoalOpen(true)} aria-label="Ubah tujuan belajar"
-                            className="inline-flex items-center gap-1 text-xs font-medium text-slate-500 hover:text-[#030C4D] dark:text-slate-400 dark:hover:text-white">
+                            className="inline-flex items-center gap-1 rounded-md text-xs font-medium text-blue-100 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white">
                             <Pencil size={12} /> Ubah
                         </button>
-                        {goal.target && <p className="w-full text-slate-500 dark:text-slate-400">{goal.target}</p>}
+                        {goal.target && <p className="w-full text-blue-100">{goal.target}</p>}
                     </div>
                 ) : (
                     <p>
                         Pilih tujuan belajarmu agar beranda dan materi menyesuaikan.{' '}
-                        <button type="button" onClick={() => setGoalOpen(true)} className="inline-flex items-center gap-1 font-semibold text-[#2563EB] hover:underline dark:text-blue-300">
+                        <button type="button" onClick={() => setGoalOpen(true)} className="inline-flex items-center gap-1 rounded-md font-semibold text-white underline underline-offset-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white">
                             Tentukan tujuan <ArrowRight size={14} />
                         </button>
                     </p>
                 )}
-                aside={<BannerStats items={[
-                    { label: 'Ujian selesai', value: completedExamsCount },
-                    { label: 'Subbab dipelajari', value: <>{completedMaterials}<span className="text-sm font-normal text-slate-400">/{materials.length}</span></> },
-                    {
-                        label: 'Token',
-                        value: tokenBalance,
-                        action: <button type="button" onClick={() => router.push('/dashboard/siswa/tokens')} className="block font-semibold text-[#2563EB] hover:underline sm:ml-1.5 sm:inline dark:text-blue-300">Top up</button>,
-                    },
-                ]} />}
+                stats={[
+                    { label: 'Ujian selesai', value: completedExamsCount, icon: Award, href: '/dashboard/siswa/results', action: 'Hasil', gradient: 'from-emerald-700 to-teal-700' },
+                    { label: 'Subbab dipelajari', value: <>{completedMaterials}<span className="text-sm font-normal text-white/75">/{materials.length}</span></>, icon: BookOpen, href: '/dashboard/learning', action: 'Belajar', gradient: 'from-blue-600 to-indigo-600' },
+                    { label: 'Token', value: tokenBalance, icon: Coins, href: '/dashboard/siswa/tokens', action: 'Top up', gradient: 'from-violet-600 to-fuchsia-700' },
+                ]}
             >
                 {/* Langkah berikutnya: satu aksi paling penting saat ini */}
                 {loading ? (
@@ -385,12 +381,12 @@ export default function SiswaDashboard() {
                             : <Link href={nextStep.href} className={`${BANNER_BUTTON} w-full sm:w-auto`}>{nextStep.action} <ArrowRight size={15} /></Link>}
                     </div>
                 )}
-            </StudentBanner>
+            </StudentDashboardOverview>
 
             {/* ── Ujian & nilai ── */}
             <div className="grid grid-cols-1 gap-6 lg:grid-cols-5">
                 <div className="lg:col-span-3 overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-xs dark:border-slate-800 dark:bg-slate-900">
-                    <div className="flex items-center justify-between gap-4 border-b border-slate-100 px-5 py-4 dark:border-slate-800">
+                    <div className="flex items-center justify-between gap-4 border-b border-blue-100/70 bg-gradient-to-r from-blue-50/80 to-white px-5 py-4 dark:border-slate-800 dark:from-blue-950/30 dark:to-slate-900">
                         <div className="text-left">
                             <h2 className="flex items-center gap-2 text-base font-semibold text-slate-900 dark:text-slate-100">
                                 <CalendarDays size={16} className="text-[#2563EB]" />
@@ -438,7 +434,7 @@ export default function SiswaDashboard() {
                 </div>
 
                 <div className="lg:col-span-2 flex flex-col overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-xs dark:border-slate-800 dark:bg-slate-900">
-                    <div className="border-b border-slate-100 px-5 py-4 text-left dark:border-slate-800">
+                    <div className="border-b border-emerald-100/70 bg-gradient-to-r from-emerald-50/70 to-white px-5 py-4 text-left dark:border-slate-800 dark:from-emerald-950/20 dark:to-slate-900">
                         <h2 className="flex items-center gap-2 text-base font-semibold text-slate-900 dark:text-slate-100">
                             <TrendingUp size={16} className="text-emerald-500" />
                             Progres Nilai

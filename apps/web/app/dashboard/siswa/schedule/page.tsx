@@ -27,7 +27,8 @@ Lock,RefreshCw,
     type LucideIcon,
 } from 'lucide-react';
 import Link from 'next/link';
-import { EXAM_ACTION_BUTTON, StudentBanner } from '@/app/components/student/StudentBanner';
+import { EXAM_ACTION_BUTTON } from '@/app/components/student/StudentBanner';
+import { StudentDashboardOverview } from '@/app/components/student/StudentDashboardOverview';
 import { learningPrograms, type LearningProgram } from '@/lib/learning-catalog';
 import { loadLearningGoal, programLabel } from '@/lib/learning-goal';
 import { useRouter } from 'next/navigation';
@@ -372,13 +373,20 @@ const SchedulePage = () => {
         <div className="max-w-7xl mx-auto pb-24 space-y-6">
             {timeZoneError && <div role="alert" className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{timeZoneError}</div>}
 
-            {/* Banner agenda: ujian terdekat, hitung mundur, dan strip 7 hari */}
-            <StudentBanner
+            <StudentDashboardOverview
+                ariaLabel="Ringkasan jadwal"
                 icon={CalendarClock}
                 eyebrow={nextOpen ? 'Sedang berlangsung' : nextExam ? 'Ujian terdekat' : 'Agenda ujian'}
                 title={<DashboardPageTitle />}
-                summary={loading ? 'Memuat agenda…' : nextExam ? nextExam.title : 'Belum ada ujian terjadwal'}
-                description={nextExam ? `${formatDay(nextExam.start_time)} · ${formatTimeRange(nextExam.start_time, nextExam.end_time)}` : 'Ujian dari sekolah, kelas, dan tryout akan muncul di sini.'}
+                description={<>
+                    <span className="block font-semibold text-white">{loading ? 'Memuat agenda…' : loadError ? 'Agenda belum dapat dimuat' : nextExam ? nextExam.title : 'Belum ada ujian terjadwal'}</span>
+                    <span className="mt-1 block">{nextExam ? `${formatDay(nextExam.start_time)} · ${formatTimeRange(nextExam.start_time, nextExam.end_time)}` : 'Ujian dari sekolah, kelas, dan tryout akan muncul di sini.'}</span>
+                </>}
+                stats={[
+                    { label: 'Tersedia', value: loading ? '…' : loadError ? '—' : openExams.length, icon: Clock, gradient: 'from-emerald-700 to-teal-700' },
+                    { label: 'Akan datang', value: loading ? '…' : loadError ? '—' : upcomingExams.length, icon: CalendarDays, gradient: 'from-blue-600 to-indigo-600' },
+                    { label: 'Selesai', value: loading ? '…' : loadError ? '—' : closedExams.length, icon: CheckCircle2, gradient: 'from-violet-600 to-fuchsia-700' },
+                ]}
                 actions={nextExam && (nextOpen ? (
                     <button type="button" onClick={() => { void openExam(nextExam); }} className={EXAM_ACTION_BUTTON}>
                         Kerjakan sekarang <ArrowRight size={16} />
@@ -412,9 +420,9 @@ const SchedulePage = () => {
                         );
                     })}
                 </div>
-            </StudentBanner>
+            </StudentDashboardOverview>
 
-            {/* Filter status: menggantikan empat kartu angka. */}
+            {/* Filter status daftar ujian. */}
             <div role="group" aria-label="Filter jadwal" className="flex gap-2 overflow-x-auto pb-1">
                 {([
                     { value: 'all', label: 'Total Jadwal', count: sortedExams.length },
@@ -427,7 +435,7 @@ const SchedulePage = () => {
                             ? 'border-[#030C4D] bg-[#030C4D] text-white shadow-md shadow-[#030C4D]/15'
                             : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300'}`}>
                         {item.label}
-                        <span className={`rounded-full px-1.5 py-0.5 text-[10px] tabular-nums ${filter === item.value ? 'bg-white/20' : 'bg-slate-100 dark:bg-slate-800'}`}>{loadError ? '—' : item.count}</span>
+                        <span className={`rounded-full px-1.5 py-0.5 text-[10px] tabular-nums ${filter === item.value ? 'bg-[rgba(255,255,255,0.2)]' : 'bg-slate-100 dark:bg-slate-800'}`}>{loadError ? '—' : item.count}</span>
                     </button>
                 ))}
             </div>

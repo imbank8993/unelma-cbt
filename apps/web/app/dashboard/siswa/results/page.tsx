@@ -8,8 +8,8 @@ import { formatSchoolDateTime } from '@/lib/school-time';
 import { useSchoolTimeZone } from '@/lib/useSchoolTimeZone';
 import { getSessionUser } from '@/lib/session';
 import { useMemoryState } from '@/lib/useMemoryState';
-import { Award,ChevronRight,Clock,History,Loader2,TrendingUp } from 'lucide-react';
-import { BannerStats, StudentBanner } from '@/app/components/student/StudentBanner';
+import { Award,CheckCircle2,ChevronRight,Clock,History,Loader2,TrendingUp } from 'lucide-react';
+import { StudentDashboardOverview } from '@/app/components/student/StudentDashboardOverview';
 import StudentAnalyticsPanel from '@/app/components/student/StudentAnalyticsPanel';
 import { useRouter } from 'next/navigation';
 import { useCallback,useEffect,useState } from 'react';
@@ -75,16 +75,17 @@ export default function StudentResultsPage() {
         <div className="w-full space-y-6 pb-24">
             {timeZoneError && <div role="alert" className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{timeZoneError}</div>}
 
-            <StudentBanner
+            <StudentDashboardOverview
+                ariaLabel="Ringkasan hasil dan analisis"
                 icon={Award}
                 eyebrow={isLoading ? 'Memuat hasil…' : results.length ? `${results.length} ujian selesai` : 'Belum ada hasil ujian'}
                 title={<DashboardPageTitle />}
                 description="Lihat nilai setiap ujian dan perkembangan kemampuanmu dari waktu ke waktu."
-                aside={<BannerStats items={[
-                    { label: 'Ujian selesai', value: results.length },
-                    { label: 'Nilai dibuka', value: opened },
-                    { label: 'Menunggu penilaian', value: pending },
-                ]} />}
+                stats={[
+                    { label: 'Ujian selesai', value: isLoading ? '…' : loadError ? '—' : results.length, icon: Award, gradient: 'from-emerald-700 to-teal-700' },
+                    { label: 'Nilai dibuka', value: isLoading ? '…' : loadError ? '—' : opened, icon: CheckCircle2, gradient: 'from-blue-600 to-indigo-600' },
+                    { label: 'Menunggu penilaian', value: isLoading ? '…' : loadError ? '—' : pending, icon: Clock, gradient: 'from-violet-600 to-fuchsia-700' },
+                ]}
             />
 
             <div role="tablist" aria-label="Hasil dan analisis" className="inline-flex rounded-xl border border-slate-200 bg-white p-1 shadow-xs dark:border-slate-800 dark:bg-slate-900">
@@ -95,7 +96,7 @@ export default function StudentResultsPage() {
                             : 'text-slate-600 hover:text-[#030C4D] dark:text-slate-300 dark:hover:text-white'}`}>
                         <item.icon size={15} />
                         {item.label}
-                        {item.count !== undefined && <span className={`rounded-md px-1.5 text-xs tabular-nums ${tab === item.value ? 'bg-white/20' : 'bg-slate-100 dark:bg-slate-800'}`}>{item.count}</span>}
+                        {item.count !== undefined && <span className={`rounded-md px-1.5 text-xs tabular-nums ${tab === item.value ? 'bg-[rgba(255,255,255,0.2)]' : 'bg-slate-100 dark:bg-slate-800'}`}>{item.count}</span>}
                     </button>
                 ))}
             </div>
