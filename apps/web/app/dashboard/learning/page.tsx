@@ -4,9 +4,10 @@ import DashboardPageTitle from '@/app/components/DashboardPageTitle';
 import { StudentDashboardOverview } from '@/app/components/student/StudentDashboardOverview';
 import Link from 'next/link';
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
-import { ArrowRight, BookOpen, Briefcase, CheckCircle2, ChevronDown, Code2, GraduationCap, Landmark, Languages, LayoutGrid, Pencil, Plus, School, Search, ShieldCheck, Sparkles, Target, Trash2, type LucideIcon } from 'lucide-react';
+import { ArrowRight, BookOpen, CheckCircle2, ChevronDown, Code2, LayoutGrid, Pencil, Plus, Search, Target, Trash2, type LucideIcon } from 'lucide-react';
 import { deleteMaterial, learningRequest, type LearningMaterial } from '@/lib/learning-api';
-import { groupLearningChapters, learningGradeLabel, learningGrades, learningKey, learningProgramOf, learningPrograms, type LearningChapter, type LearningProgram } from '@/lib/learning-catalog';
+import { groupLearningChapters, learningGradeLabel, learningGrades, learningKey, learningProgramOf, learningPrograms, useLearningPrograms, type LearningChapter, type LearningProgram } from '@/lib/learning-catalog';
+import { programVisual } from '@/app/components/student/programVisuals';
 import { loadLearningGoal, programLabel } from '@/lib/learning-goal';
 import { getSessionUser } from '@/lib/session';
 import { deleteConfirmDialog } from '@/lib/confirm-dialog';
@@ -34,18 +35,18 @@ function subjectMark(subject: string): { abbr: string; style: CSSProperties } {
     return { abbr, style: { '--mark-hue': SUBJECT_HUES[hash % SUBJECT_HUES.length] } as CSSProperties };
 }
 
-/** Ikon dan rona tiap program belajar. */
-const PROGRAM_STYLE: Record<LearningProgram | 'all' | 'untukmu', { icon: LucideIcon; hue: number }> = {
-    all: { icon: LayoutGrid, hue: 222 }, untukmu: { icon: Target, hue: 262 }, sekolah: { icon: GraduationCap, hue: 217 }, snpdb: { icon: School, hue: 175 }, utbk: { icon: Target, hue: 262 },
-    cpns: { icon: Landmark, hue: 160 }, pppk: { icon: Briefcase, hue: 24 }, kedinasan: { icon: ShieldCheck, hue: 200 },
-    bahasa: { icon: Languages, hue: 330 }, umum: { icon: Sparkles, hue: 45 },
-};
+/** Ikon dan rona tiap pilihan program; program dari Pengaturan Daftar memakai ikon/warnanya sendiri. */
+function programStyle(value: string): { icon: LucideIcon; hue: number } {
+    if (value === 'all') return { icon: LayoutGrid, hue: 222 };
+    if (value === 'untukmu') return { icon: Target, hue: 262 };
+    return programVisual(value);
+}
 type ProgramFilter = LearningProgram | 'all' | 'untukmu';
-/** Program awal dari tautan, misalnya `/dashboard/learning?program=cpns` dari beranda. */
+/** Program dari tautan, misalnya `/dashboard/learning?program=cpns` dari beranda. */
+const programFromUrl = () => typeof window === 'undefined' ? null : new URLSearchParams(window.location.search).get('program');
 function initialProgram(): ProgramFilter {
-    if (typeof window === 'undefined') return 'all';
-    const value = new URLSearchParams(window.location.search).get('program');
-    return learningPrograms.some(item => item.value === value) ? value as LearningProgram : 'all';
+    const value = programFromUrl();
+    return value && learningPrograms.some(item => item.value === value) ? value : 'all';
 }
 
 function chapterStatus(chapter: LearningChapter, manage: boolean): { label: string; tone: 'idle' | 'progress' | 'done' | 'draft' } {
@@ -71,8 +72,16 @@ function LearningLibraryContent({ manage, setManage }: { manage: boolean; setMan
     const [materials, setMaterials] = useState<LearningMaterial[]>([]);
     const [canManage, setCanManage] = useState(false);
     const [query, setQuery] = useState('');
-    const [program, setProgram] = useState<ProgramFilter>(initialProgram);
-    const [goalPrograms, setGoalPrograms] = useState<LearningProgram[]>([]);
+    const [selectedProgram, setProgram] = useState<ProgramFilter>(initialProgram);
+    const activePrograms = useLearningPrograms();
+    const [savedGoals, setGoalPrograms] = useState<LearningProgram[]>([]);
+    // Program yang disembunyikan Admin tidak lagi dihitung sebagai tujuan.
+    const goalPrograms = savedGoals.filter(value => activePrograms.some(item => item.value === value));
+    // Siswa yang sudah memilih tujuan hanya melihat program tujuannya (plus "Umum" untuk semua siswa).
+    const goalOnly = !manage && goalPrograms.length > 0;
+    const program: ProgramFilter = goalOnly
+        ? goalPrograms.includes(selectedProgram) ? selectedProgram : 'untukmu'
+        : selectedProgram === 'all' || activePrograms.some(item => item.value === selectedProgram) ? selectedProgram : 'all';
     const programTouched = useRef(false);
     const [grade, setGrade] = useState('all');
     const [subject, setSubject] = useState('');
@@ -102,7 +111,8 @@ function LearningLibraryContent({ manage, setManage }: { manage: boolean; setMan
             if (!active) return;
             const selected = goal?.programs ?? [];
             setGoalPrograms(selected);
-            if (selected.length && !programTouched.current && !new URLSearchParams(window.location.search).has('program')) {
+            const linked = programFromUrl();
+            if (selected.length && !programTouched.current && !(linked && selected.includes(linked))) {
                 setProgram('untukmu');
             }
         }).catch(() => { /* Katalog tetap dapat dijelajahi bila tujuan belum tersedia. */ });
@@ -115,37 +125,46 @@ function LearningLibraryContent({ manage, setManage }: { manage: boolean; setMan
         catch (err) { setError((err as Error).message); }
         finally { setDeletingId(null); }
     };
-    const chapters = useMemo(() => groupLearningChapters(materials), [materials]);
-    const matchesProgram = useCallback((value: string) => program === 'all' || (program === 'untukmu'
-        ? goalPrograms.includes(learningProgramOf(value))
-        : learningProgramOf(value) === program), [program, goalPrograms]);
-    const programChapters = useMemo(() => chapters.filter(chapter => matchesProgram(chapter.grade)), [chapters, matchesProgram]);
+    const goalKey = goalPrograms.join(',');
+    // Ruang belajar hanya memuat materi berlabel program yang ditampilkan; materi
+    // siswa bertujuan disaring ke program tujuannya. Kelola materi memuat semuanya.
+    const allChapters = useMemo(() => groupLearningChapters(materials), [materials]);
+    const chapters = allChapters.filter(chapter => {
+        if (manage) return true;
+        const value = learningProgramOf(chapter.grade);
+        if (!activePrograms.some(item => item.value === value)) return false;
+        return !goalKey || value === 'umum' || goalKey.split(',').includes(value);
+    });
+    const matchesProgram = useCallback((value: string) => program === 'all' || program === 'untukmu' || learningProgramOf(value) === program, [program]);
+    const programChapters = chapters.filter(chapter => matchesProgram(chapter.grade));
     const inScope = (value: string) => matchesProgram(value) && (grade === 'all' || value === grade);
     const subjects = [...new Set(materials.filter(item => inScope(item.grade_level || '')).map(item => item.subject).filter(Boolean))].sort();
     const visible = chapters.filter(chapter => inScope(chapter.grade) && (!subject || learningKey(chapter.subject) === learningKey(subject)) &&
         learningKey([chapter.title, chapter.subject, ...chapter.items.map(item => `${item.title} ${item.subtopic} ${item.description}`)].join(' ')).includes(learningKey(query)));
     const gradeGroups = [...new Set(visible.map(chapter => chapter.grade))];
-    const programChoices = [
-        ...(goalPrograms.length && !manage ? [{ value: 'untukmu' as const, label: 'Untukmu', hint: 'Sesuai tujuan belajar di dashboard' }] : []),
-        { value: 'all' as const, label: 'Semua', hint: 'Seluruh program' },
-        ...learningPrograms,
+    const programChoices: { value: ProgramFilter; label: string; hint: string }[] = goalOnly ? [
+        { value: 'untukmu', label: 'Untukmu', hint: 'Sesuai tujuan belajar di dashboard' },
+        ...activePrograms.filter(item => goalPrograms.includes(item.value)),
+    ] : [
+        { value: 'all', label: 'Semua', hint: 'Seluruh program' },
+        ...activePrograms,
     ];
     // Tingkatan hanya ditampilkan bila ada lebih dari satu tingkatan berisi (mis. Kelas X dan XI).
     const levelChoices = [...learningGrades,
         ...[...new Set(materials.map(item => item.grade_level).filter(value => value && !learningGrades.some(item => item.value === value)))].map(value => ({ value, label: learningGradeLabel(value) }))]
         .filter(item => matchesProgram(item.value) && chapters.some(chapter => chapter.grade === item.value));
-    const activeProgram = learningPrograms.find(item => item.value === program);
+    const activeProgram = activePrograms.find(item => item.value === program);
     const scopedItems = programChapters.flatMap(chapter => chapter.items);
     const completed = scopedItems.filter(item => item.completed).length;
     const drafts = materials.filter(item => item.status === 'draft').length;
     // Kartu "Lanjutkan": BAB yang sedang dipelajari, atau BAB pertama yang belum selesai.
-    const resume = useMemo(() => {
+    const resume = (() => {
         if (manage) return null;
         const inProgress = programChapters.find(chapter => chapter.completed > 0 && chapter.completed < chapter.items.length);
         const chapter = inProgress || programChapters.find(chapter => chapter.completed < chapter.items.length);
         if (!chapter) return null;
         return { chapter, item: chapter.items.find(item => !item.completed) || chapter.items[0], started: Boolean(inProgress) };
-    }, [programChapters, manage]);
+    })();
     const resumeMark = resume ? subjectMark(resume.chapter.subject) : null;
     const summary = loading ? 'Memuat…' : manage
         ? `${chapters.length} BAB · ${materials.length} subbab${drafts ? ` · ${drafts} draf` : ''}`
@@ -175,7 +194,7 @@ function LearningLibraryContent({ manage, setManage }: { manage: boolean; setMan
                 title={<DashboardPageTitle />}
                 description={program === 'untukmu' && goalPrograms.length
                     ? `Materi sesuai tujuan belajarmu: ${goalPrograms.map(programLabel).join(', ')}.`
-                    : 'Materi sekolah, UTBK, CPNS, PPPK, kedinasan, hingga bahasa dalam satu tempat.'}
+                    : `Materi ${activePrograms.slice(0, 5).map(item => item.label).join(', ')}${activePrograms.length > 5 ? ', dan lainnya' : ''} dalam satu tempat.`}
                 actions={canManage && <div className="lc-segmented" role="group" aria-label="Tampilan bahan ajar">
                     <button type="button" aria-pressed={!manage} onClick={() => setManage(false)}>Ruang belajar</button>
                     <button type="button" aria-pressed={manage} onClick={() => setManage(true)}>Kelola materi</button>
@@ -200,9 +219,8 @@ function LearningLibraryContent({ manage, setManage }: { manage: boolean; setMan
 
         <div className="lc-controls">
             <nav className="lc-programs" aria-label="Program belajar">{programChoices.map(item => {
-                const count = item.value === 'untukmu' ? chapters.filter(chapter => goalPrograms.includes(learningProgramOf(chapter.grade))).length
-                    : chapters.filter(chapter => item.value === 'all' || learningProgramOf(chapter.grade) === item.value).length;
-                const style = PROGRAM_STYLE[item.value];
+                const count = chapters.filter(chapter => item.value === 'all' || item.value === 'untukmu' || learningProgramOf(chapter.grade) === item.value).length;
+                const style = programStyle(item.value);
                 const Icon = style.icon;
                 return <button type="button" key={item.value} aria-pressed={program === item.value} className={`lc-program${count ? '' : ' is-empty'}`}
                     style={{ '--mark-hue': style.hue } as CSSProperties} title={item.hint}
@@ -273,7 +291,7 @@ function LearningLibraryContent({ manage, setManage }: { manage: boolean; setMan
                     </li>)}</ol>}
                 </article>;
             })}</div>
-        </section>) : !error && <div className="learn-empty"><BookOpen size={36} /><h2>{query || subject ? 'BAB tidak ditemukan' : program === 'untukmu' ? 'Materi untuk tujuanmu sedang disiapkan' : activeProgram ? `Materi ${activeProgram.label} sedang disiapkan` : 'Belum ada materi'}</h2><p>{manage ? 'Tambahkan subbab pertama, lalu pilih tingkatan dan nama BAB-nya.' : program === 'untukmu' ? 'Belum ada BAB untuk tujuan belajarmu. Sambil menunggu, jelajahi program lain.' : activeProgram ? `Cakupan: ${activeProgram.hint}. Sambil menunggu, jelajahi program lain.` : 'BAB dan subbab yang diterbitkan akan muncul di sini.'}</p>{query || subject ? <button type="button" onClick={() => { setQuery(''); setSubject(''); }}>Hapus pencarian</button> : program !== 'all' ? <button type="button" onClick={() => { programTouched.current = true; setProgram('all'); setGrade('all'); }}>Lihat semua program</button> : null}</div>}
+        </section>) : !error && <div className="learn-empty"><BookOpen size={36} /><h2>{query || subject ? 'BAB tidak ditemukan' : program === 'untukmu' ? 'Materi untuk tujuanmu sedang disiapkan' : activeProgram ? `Materi ${activeProgram.label} sedang disiapkan` : 'Belum ada materi'}</h2><p>{manage ? 'Tambahkan subbab pertama, lalu pilih tingkatan dan nama BAB-nya.' : goalOnly ? 'Belum ada BAB untuk tujuan belajarmu. Ubah tujuan belajar di Beranda untuk melihat program lain.' : activeProgram ? `Cakupan: ${activeProgram.hint}. Sambil menunggu, jelajahi program lain.` : 'BAB dan subbab yang diterbitkan akan muncul di sini.'}</p>{query || subject ? <button type="button" onClick={() => { setQuery(''); setSubject(''); }}>Hapus pencarian</button> : goalOnly ? <Link href="/dashboard/siswa">Ubah tujuan belajar</Link> : program !== 'all' ? <button type="button" onClick={() => { programTouched.current = true; setProgram('all'); setGrade('all'); }}>Lihat semua program</button> : null}</div>}
         {htmlEditing && <HtmlSourceEditorModal materialId={htmlEditing.id} title={htmlEditing.title} onClose={() => setHtmlEditing(null)}
             onSaved={saved => setMaterials(previous => previous.map(row => row.id === saved.id ? { ...row, ...saved, canEdit: row.canEdit, completed: row.completed } : row))} />}
         {creating && <CreateSubchapterModal materials={materials} chapter={creating.chapter} initialGrade={grade !== 'all' ? grade : program !== 'all' && program !== 'sekolah' ? learningGrades.find(item => item.program === program)?.value ?? '10' : '10'} onClose={() => setCreating(null)} onUploaded={() => void load()} />}

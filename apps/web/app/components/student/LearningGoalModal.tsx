@@ -3,9 +3,9 @@
 import { AnimatePresence, motion } from 'framer-motion';
 import { Check, Target, X } from 'lucide-react';
 import { useState } from 'react';
-import { learningPrograms, type LearningProgram } from '@/lib/learning-catalog';
+import { useLearningPrograms, type LearningProgram } from '@/lib/learning-catalog';
 import type { LearningGoal } from '@/lib/learning-goal';
-import { PROGRAM_VISUALS } from './programVisuals';
+import { programVisual } from './programVisuals';
 
 /** Pilih satu atau beberapa tujuan belajar, target, dan tanggal seleksi. */
 export function LearningGoalModal({ open, initial, onClose, onSave }: {
@@ -18,7 +18,10 @@ export function LearningGoalModal({ open, initial, onClose, onSave }: {
 }
 
 function GoalForm({ initial, onClose, onSave }: { initial: LearningGoal | null; onClose: () => void; onSave: (goal: LearningGoal) => void }) {
-    const [programs, setPrograms] = useState<LearningProgram[]>(initial?.programs || []);
+    // Hanya program yang ditampilkan Admin (Pengaturan → Pengaturan Daftar) yang bisa dipilih.
+    const programChoices = useLearningPrograms();
+    const [selected, setPrograms] = useState<LearningProgram[]>(initial?.programs || []);
+    const programs = selected.filter(value => programChoices.some(item => item.value === value));
     const [target, setTarget] = useState(initial?.target || '');
     const [targetDate, setTargetDate] = useState(initial?.targetDate || '');
     const toggle = (value: LearningProgram) =>
@@ -50,8 +53,8 @@ function GoalForm({ initial, onClose, onSave }: { initial: LearningGoal | null; 
                 </div>
 
                 <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
-                    {learningPrograms.map(item => {
-                        const visual = PROGRAM_VISUALS[item.value];
+                    {programChoices.map(item => {
+                        const visual = programVisual(item.value);
                         const Icon = visual.icon;
                         const selected = programs.includes(item.value);
                         return (
@@ -59,7 +62,7 @@ function GoalForm({ initial, onClose, onSave }: { initial: LearningGoal | null; 
                                 className={`relative flex items-center gap-3 rounded-2xl border-2 p-3 text-left transition-all ${selected
                                     ? 'border-[#030C4D] bg-blue-50/60 dark:border-blue-400 dark:bg-blue-950/30'
                                     : 'border-slate-200 hover:border-slate-300 dark:border-slate-700 dark:hover:border-slate-600'}`}>
-                                <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${visual.tile}`}><Icon size={19} /></span>
+                                <span className="program-tile flex h-10 w-10 shrink-0 items-center justify-center rounded-xl" style={visual.style}><Icon size={19} /></span>
                                 <span className="min-w-0">
                                     <span className="block text-sm font-bold text-slate-800 dark:text-slate-100">{item.label}</span>
                                     <span className="block truncate text-[11px] text-slate-500 dark:text-slate-400">{item.hint}</span>

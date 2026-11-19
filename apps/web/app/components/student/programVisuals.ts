@@ -1,14 +1,33 @@
-import { Briefcase, GraduationCap, Landmark, Languages, School, ShieldCheck, Sparkles, Target, type LucideIcon } from 'lucide-react';
-import type { LearningProgram } from '@/lib/learning-catalog';
+import type { CSSProperties } from 'react';
+import { Award, BookOpen, Briefcase, Calculator, FlaskConical, Globe, GraduationCap, Heart, Landmark, Languages, Laptop, Music, School, ShieldCheck, Sparkles, Target, type LucideIcon } from 'lucide-react';
+import { learningProgramInfo, type LearningProgramIcon } from '@/lib/learning-catalog';
 
-/** Ikon dan warna kartu tiap program belajar di beranda siswa. */
-export const PROGRAM_VISUALS: Record<LearningProgram, { icon: LucideIcon; tile: string }> = {
-    sekolah: { icon: GraduationCap, tile: 'bg-blue-50 text-blue-700 dark:bg-blue-950/50 dark:text-blue-300' },
-    snpdb: { icon: School, tile: 'bg-teal-50 text-teal-700 dark:bg-teal-950/50 dark:text-teal-300' },
-    utbk: { icon: Target, tile: 'bg-violet-50 text-violet-700 dark:bg-violet-950/50 dark:text-violet-300' },
-    cpns: { icon: Landmark, tile: 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300' },
-    pppk: { icon: Briefcase, tile: 'bg-orange-50 text-orange-700 dark:bg-orange-950/50 dark:text-orange-300' },
-    kedinasan: { icon: ShieldCheck, tile: 'bg-sky-50 text-sky-700 dark:bg-sky-950/50 dark:text-sky-300' },
-    bahasa: { icon: Languages, tile: 'bg-pink-50 text-pink-700 dark:bg-pink-950/50 dark:text-pink-300' },
-    umum: { icon: Sparkles, tile: 'bg-amber-50 text-amber-700 dark:bg-amber-950/50 dark:text-amber-300' },
+/** Ikon yang bisa dipilih Admin untuk program di Pengaturan Daftar. */
+export const PROGRAM_ICONS: Record<LearningProgramIcon, { icon: LucideIcon; label: string }> = {
+    graduation: { icon: GraduationCap, label: 'Toga' },
+    school: { icon: School, label: 'Sekolah' },
+    target: { icon: Target, label: 'Target' },
+    landmark: { icon: Landmark, label: 'Instansi' },
+    briefcase: { icon: Briefcase, label: 'Kerja' },
+    shield: { icon: ShieldCheck, label: 'Perisai' },
+    languages: { icon: Languages, label: 'Bahasa' },
+    sparkles: { icon: Sparkles, label: 'Bintang' },
+    book: { icon: BookOpen, label: 'Buku' },
+    globe: { icon: Globe, label: 'Dunia' },
+    award: { icon: Award, label: 'Penghargaan' },
+    calculator: { icon: Calculator, label: 'Hitung' },
+    flask: { icon: FlaskConical, label: 'Sains' },
+    heart: { icon: Heart, label: 'Kesehatan' },
+    laptop: { icon: Laptop, label: 'Teknologi' },
+    music: { icon: Music, label: 'Seni' },
 };
+
+/**
+ * Ikon dan warna sebuah program. Pakai `style` bersama kelas `program-tile`
+ * (globals.css) untuk kotak ikon berwarna yang juga menyesuaikan mode gelap.
+ */
+export function programVisual(program: string): { icon: LucideIcon; hue: number; style: CSSProperties } {
+    const info = learningProgramInfo(program);
+    const hue = info?.hue ?? 220;
+    return { icon: PROGRAM_ICONS[info?.icon ?? 'sparkles'].icon, hue, style: { '--mark-hue': hue } as CSSProperties };
+}

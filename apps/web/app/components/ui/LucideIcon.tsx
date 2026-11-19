@@ -195,6 +195,7 @@ const ICON_MAP: Record<string, string> = {
     'ui-radios-grid': 'LayoutGrid',
     'card-checklist': 'ListChecks',
     'list-check': 'ListChecks',
+    'tags': 'Tags',
     'clipboard-data-fill': 'ClipboardList',
     'clipboard2-pulse-fill': 'Activity',
 

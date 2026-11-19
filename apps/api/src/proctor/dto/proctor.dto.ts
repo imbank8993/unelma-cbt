@@ -19,7 +19,7 @@ import {
     ValidateIf,
     ValidateNested,
 } from 'class-validator';
-import { LEARNING_PROGRAMS } from '../../common/learning-programs';
+import { LEARNING_PROGRAM_CODE_PATTERN } from '../../common/learning-programs';
 import { EXAM_TYPE_CODE_PATTERN } from '../../common/exam-type-catalog';
 
 export const EXAM_TYPES = ['daily', 'pas', 'pat', 'am', 'tryout', 'lainnya', 'assignment'] as const;
@@ -144,9 +144,9 @@ class ExamFieldsDto {
     @IsBoolean()
     isPublic?: boolean;
 
-    @ApiPropertyOptional({ enum: LEARNING_PROGRAMS, description: 'Program sasaran ujian (SNPDB, UTBK, CPNS, ...); dipakai siswa untuk menyaring ujian.' })
+    @ApiPropertyOptional({ example: 'utbk', description: 'Label program ujian dari Pengaturan → Pengaturan Daftar (SNPDB, UTBK, CPNS, ...); dipakai siswa untuk menyaring ujian.' })
     @IsOptional()
-    @IsIn(LEARNING_PROGRAMS)
+    @Matches(LEARNING_PROGRAM_CODE_PATTERN, { message: 'Program ujian tidak valid.' })
     program?: string;
 
     @ApiPropertyOptional()

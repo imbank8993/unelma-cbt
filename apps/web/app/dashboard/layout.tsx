@@ -8,6 +8,7 @@ import ProfileCompletionModal from '@/app/components/ProfileCompletionModal';
 import { getAccountProfile } from '@/lib/api/account';
 import { getExamTypeCatalog, getSetting, type AppConfig } from '@/lib/api/settings';
 import { applyExamTypeLabels } from '@/lib/exam-types';
+import { loadLearningProgramCatalog } from '@/lib/learning-catalog';
 import { getDashboardPageTitle } from '@/lib/dashboard-navigation';
 import {
     getActiveRoleFromStorage,
@@ -59,6 +60,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     // Nama jenis ujian bawaan yang diubah Admin (Pengaturan → Jenis Ujian) dipakai di seluruh dasbor.
     useEffect(() => {
         void getExamTypeCatalog().then(result => { if (result.success) applyExamTypeLabels(result.catalog.types); });
+        // Daftar program (Pengaturan → Pengaturan Daftar): filter, label bahan ajar/ujian, dan tujuan siswa.
+        void loadLearningProgramCatalog();
     }, []);
     useEffect(() => {
         const mobile = window.matchMedia('(max-width: 1023.98px)');

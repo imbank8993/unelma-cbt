@@ -1,5 +1,5 @@
 import { apiGet, apiSend } from './api/client';
-import { learningPrograms, type LearningProgram } from './learning-catalog';
+import { LEARNING_PROGRAM_CODE_PATTERN, learningProgramLabel, type LearningProgram } from './learning-catalog';
 
 /**
  * Tujuan belajar siswa (Sekolah, UTBK, CPNS, PPPK, ...). Sumber utamanya server
@@ -16,14 +16,13 @@ export interface LearningGoal {
 }
 
 const storageKey = (userId: string) => `unelma:learning-goal:${userId}`;
-const PROGRAM_VALUES = new Set(learningPrograms.map(item => item.value));
 
 /** Rapikan data dari server/penyimpanan lokal; null bila tidak valid. */
 export function normalizeLearningGoal(raw: unknown): LearningGoal | null {
     if (!raw || typeof raw !== 'object') return null;
     const value = raw as { programs?: unknown; target?: unknown; targetDate?: unknown };
     if (!Array.isArray(value.programs)) return null;
-    const programs = [...new Set(value.programs.filter((item): item is LearningProgram => PROGRAM_VALUES.has(item as LearningProgram)))];
+    const programs = [...new Set(value.programs.filter((item): item is LearningProgram => typeof item === 'string' && LEARNING_PROGRAM_CODE_PATTERN.test(item)))];
     if (!programs.length) return null;
     return {
         programs,
@@ -69,4 +68,4 @@ export function daysUntil(date: string | undefined, now: number): number | null 
     return Number.isFinite(days) && days >= 0 ? days : null;
 }
 
-export const programLabel = (program: LearningProgram) => learningPrograms.find(item => item.value === program)?.label || program;
+export const programLabel = (program: LearningProgram) => learningProgramLabel(program);

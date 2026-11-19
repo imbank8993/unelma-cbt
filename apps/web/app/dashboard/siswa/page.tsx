@@ -12,11 +12,11 @@ import {
     type StudentScheduledExam,
 } from '@/lib/api/students';
 import { learningRequest, type LearningMaterial } from '@/lib/learning-api';
-import { groupLearningChapters, learningProgramOf, learningPrograms, type LearningProgram } from '@/lib/learning-catalog';
+import { examProgramOf, groupLearningChapters, learningProgramOf, useLearningPrograms, type LearningProgram } from '@/lib/learning-catalog';
 import { daysUntil, loadLearningGoal, programLabel, saveLearningGoal, type LearningGoal } from '@/lib/learning-goal';
 import { useToast } from '@/app/components/ui/Toast';
 import { LearningGoalModal } from '@/app/components/student/LearningGoalModal';
-import { PROGRAM_VISUALS } from '@/app/components/student/programVisuals';
+import { programVisual } from '@/app/components/student/programVisuals';
 import { BANNER_BUTTON, EXAM_ACTION_BUTTON } from '@/app/components/student/StudentBanner';
 import { StudentDashboardOverview } from '@/app/components/student/StudentDashboardOverview';
 import Link from 'next/link';
@@ -70,6 +70,7 @@ export default function SiswaDashboard() {
     const [classCount, setClassCount] = useState<number | null>(null);
     const [goal, setGoal] = useState<LearningGoal | null>(null);
     const [goalOpen, setGoalOpen] = useState(false);
+    const activePrograms = useLearningPrograms();
     const router = useRouter();
     const inFlight = useRef(false);
     const clock = useRef<{ time: number; tick: number } | null>(null);
@@ -188,24 +189,27 @@ export default function SiswaDashboard() {
 
     const completedExamsCount = officialResults(results).filter(r => r.status === 'submitted' || r.status === 'auto_submitted').length;
     // Ujian wajib (dari kelas) selalu tampil; tryout pilihan hanya yang sesuai tujuan belajar.
-    const examGoals = goal?.programs ?? [];
+    // Program yang disembunyikan Admin (Pengaturan Daftar) tidak lagi dihitung sebagai tujuan.
+    const examGoals = (goal?.programs ?? []).filter(value => activePrograms.some(item => item.value === value));
     const visibleExams = dashboardExams(exams, now).filter(exam => {
         if (exam.metadata?.is_public !== true || !examGoals.length) return true;
-        const program = learningPrograms.some(item => item.value === exam.metadata?.program) ? exam.metadata?.program as LearningProgram : 'umum';
+        const program: LearningProgram = examProgramOf(exam.metadata?.program);
         return program === 'umum' || examGoals.includes(program);
     });
     const activeExam = visibleExams.find(exam => scheduleState(exam, now) === 'open');
 
     // Ruang belajar: progres dan subbab berikutnya, diutamakan dari program tujuan siswa.
-    const goalPrograms = goal?.programs ?? [];
-    const inGoal = (grade: string) => !goalPrograms.length || goalPrograms.includes(learningProgramOf(grade));
-    const chapters = groupLearningChapters(materials);
+    const goalPrograms = examGoals;
+    const inGoal = (grade: string) => !goalPrograms.length || learningProgramOf(grade) === 'umum' || goalPrograms.includes(learningProgramOf(grade));
+    // Hanya materi berlabel program yang ditampilkan; siswa bertujuan hanya melihat program tujuannya.
+    const chapters = groupLearningChapters(materials).filter(chapter =>
+        activePrograms.some(item => item.value === learningProgramOf(chapter.grade)) && inGoal(chapter.grade));
     const completedMaterials = materials.filter(item => item.completed).length;
     const continueChapters = [
         ...chapters.filter(chapter => chapter.completed > 0 && chapter.completed < chapter.items.length),
         ...chapters.filter(chapter => chapter.completed === 0 && inGoal(chapter.grade)),
     ].slice(0, 3);
-    const programCards = (goalPrograms.length ? learningPrograms.filter(item => goalPrograms.includes(item.value)) : learningPrograms.slice(0, 4))
+    const programCards = (goalPrograms.length ? activePrograms.filter(item => goalPrograms.includes(item.value)) : activePrograms.slice(0, 4))
         .map(item => ({ ...item, chapters: chapters.filter(chapter => learningProgramOf(chapter.grade) === item.value).length }));
     const daysLeft = daysUntil(goal?.targetDate, now);
     const hour = Number.isFinite(now) ? new Date(now).getHours() : 8;
@@ -502,12 +506,12 @@ export default function SiswaDashboard() {
                 </div>
                 <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
                     {programCards.map(item => {
-                        const visual = PROGRAM_VISUALS[item.value];
+                        const visual = programVisual(item.value);
                         const Icon = visual.icon;
                         return (
                             <Link key={item.value} href={learnHref(item.value)}
                                 className="group flex flex-col gap-3 rounded-2xl border border-slate-100 bg-white p-4 text-left shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md dark:border-slate-800 dark:bg-slate-900">
-                                <span className={`flex h-11 w-11 items-center justify-center rounded-2xl ${visual.tile}`}><Icon size={20} /></span>
+                                <span className="program-tile flex h-11 w-11 items-center justify-center rounded-2xl" style={visual.style}><Icon size={20} /></span>
                                 <span>
                                     <span className="block text-sm font-bold text-slate-800 dark:text-slate-100">{item.label}</span>
                                     <span className="mt-0.5 block text-[11px] leading-snug text-slate-500 line-clamp-2 dark:text-slate-400">{item.hint}</span>

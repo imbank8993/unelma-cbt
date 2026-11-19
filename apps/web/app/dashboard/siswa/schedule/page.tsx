@@ -29,7 +29,7 @@ Lock,RefreshCw,
 import Link from 'next/link';
 import { EXAM_ACTION_BUTTON } from '@/app/components/student/StudentBanner';
 import { StudentDashboardOverview } from '@/app/components/student/StudentDashboardOverview';
-import { learningPrograms, type LearningProgram } from '@/lib/learning-catalog';
+import { examProgramOf, useLearningPrograms, type LearningProgram } from '@/lib/learning-catalog';
 import { loadLearningGoal, programLabel } from '@/lib/learning-goal';
 import { useRouter } from 'next/navigation';
 import { useCallback,useEffect,useRef,useState } from 'react';
@@ -67,8 +67,16 @@ const SchedulePage = () => {
     const opening = useRef(false);
     const [historyLimit, setHistoryLimit] = useState(10);
     const [filter, setFilter] = useState<'all' | 'open' | 'upcoming' | 'closed'>('all');
-    const [goalPrograms, setGoalPrograms] = useState<LearningProgram[]>([]);
-    const [programFilter, setProgramFilter] = useState<'untukmu' | 'all' | LearningProgram>('untukmu');
+    const activePrograms = useLearningPrograms();
+    const [savedGoals, setGoalPrograms] = useState<LearningProgram[]>([]);
+    // Program yang disembunyikan Admin (Pengaturan Daftar) tidak lagi dihitung sebagai tujuan.
+    const goalPrograms = savedGoals.filter(value => activePrograms.some(item => item.value === value));
+    /** Siswa bertujuan hanya melihat tryout berlabel tujuannya (plus "Umum"). */
+    const goalOnly = goalPrograms.length > 0;
+    const [selectedFocus, setProgramFilter] = useState<'untukmu' | 'all' | LearningProgram>('untukmu');
+    const programFilter = goalOnly
+        ? selectedFocus === 'untukmu' || goalPrograms.includes(selectedFocus) ? selectedFocus : 'untukmu'
+        : selectedFocus === 'untukmu' ? 'all' : selectedFocus;
     const [query, setQuery] = useState('');
     const goalUser = useRef<string | null>(null);
 
@@ -182,20 +190,21 @@ const SchedulePage = () => {
 
     // Ujian dari kelas/siswa = wajib (selalu tampil); ujian umum = pilihan (disaring per program).
     const isRequired = (exam: StudentScheduledExam) => exam.metadata?.is_public !== true;
-    const programOf = (exam: StudentScheduledExam): LearningProgram =>
-        learningPrograms.some(item => item.value === exam.metadata?.program) ? exam.metadata?.program as LearningProgram : 'umum';
+    const programOf = (exam: StudentScheduledExam): LearningProgram => examProgramOf(exam.metadata?.program);
     const keyword = query.trim().toLocaleLowerCase('id-ID');
     const matchesQuery = (exam: StudentScheduledExam) => !keyword || exam.title.toLocaleLowerCase('id-ID').includes(keyword);
     const matchesFocus = (exam: StudentScheduledExam) => {
         const program = programOf(exam);
         if (programFilter === 'all') return true;
-        if (programFilter === 'untukmu') return !goalPrograms.length || program === 'umum' || goalPrograms.includes(program);
+        if (programFilter === 'untukmu') return program === 'umum' || goalPrograms.includes(program);
         return program === programFilter;
     };
     const optionalAll = allSortedExams.filter(exam => !isRequired(exam));
     const requiredShown = allSortedExams.filter(exam => isRequired(exam) && matchesQuery(exam));
     const optionalShown = optionalAll.filter(exam => matchesQuery(exam) && matchesFocus(exam));
-    const hiddenOptional = optionalAll.filter(matchesQuery).length - optionalShown.length;
+    const hiddenOptional = goalOnly
+        ? optionalAll.filter(exam => matchesQuery(exam) && programOf(exam) !== 'umum' && !goalPrograms.includes(programOf(exam))).length
+        : optionalAll.filter(matchesQuery).length - optionalShown.length;
     const sortedExams = allSortedExams.filter(exam => requiredShown.includes(exam) || optionalShown.includes(exam));
     const openExams = sortedExams.filter(isOpenNow);
     const upcomingExams = sortedExams.filter(e => scheduleState(e, now.getTime()) === 'upcoming');
@@ -445,9 +454,8 @@ const SchedulePage = () => {
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                     <div role="group" aria-label="Fokus program" className="flex gap-2 overflow-x-auto pb-1">
                         {[
-                            ...(goalPrograms.length ? [{ value: 'untukmu', label: 'Untukmu' }] : []),
-                            { value: 'all', label: 'Semua program' },
-                            ...learningPrograms.filter((item) => optionalAll.some((exam) => programOf(exam) === item.value)),
+                            ...(goalOnly ? [{ value: 'untukmu', label: 'Untukmu' }] : [{ value: 'all', label: 'Semua program' }]),
+                            ...activePrograms.filter((item) => (!goalOnly || goalPrograms.includes(item.value)) && optionalAll.some((exam) => programOf(exam) === item.value)),
                         ].map((item) => (
                             <button key={item.value} type="button" aria-pressed={programFilter === item.value} onClick={() => setProgramFilter(item.value as 'untukmu' | 'all' | LearningProgram)}
                                 className={`inline-flex shrink-0 items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-semibold transition-colors ${programFilter === item.value
@@ -486,8 +494,10 @@ const SchedulePage = () => {
                     {renderSections(...splitByState(optionalShown))}
                     {hiddenOptional > 0 && (
                         <div className="flex flex-col gap-2 rounded-xl border border-dashed border-slate-300 px-4 py-3 text-sm text-slate-600 sm:flex-row sm:items-center sm:justify-between dark:border-slate-700 dark:text-slate-400">
-                            <span>{hiddenOptional} tryout dari program lain disembunyikan.</span>
-                            <button type="button" onClick={() => setProgramFilter('all')} className="font-semibold text-[#2563EB] hover:underline dark:text-blue-300">Tampilkan semua</button>
+                            <span>{hiddenOptional} tryout dari program lain {goalOnly ? 'tidak ditampilkan karena di luar tujuan belajarmu' : 'disembunyikan'}.</span>
+                            {goalOnly
+                                ? <Link href="/dashboard/siswa" className="font-semibold text-[#2563EB] hover:underline dark:text-blue-300">Ubah tujuan belajar</Link>
+                                : <button type="button" onClick={() => setProgramFilter('all')} className="font-semibold text-[#2563EB] hover:underline dark:text-blue-300">Tampilkan semua</button>}
                         </div>
                     )}
                 </section>

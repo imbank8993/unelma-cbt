@@ -23,6 +23,7 @@ const menuConfig: Record<string, DashboardMenuItem[]> = {
             children: [
                 { icon: 'fa-coins', label: 'Paket Token', href: '/dashboard/admin/tokens' },
                 { icon: 'fa-list-check', label: 'Jenis Ujian', href: '/dashboard/admin/exam-types' },
+                { icon: 'fa-tags', label: 'Pengaturan Daftar', href: '/dashboard/admin/program-list' },
                 { icon: 'fa-receipt', label: 'Tracker Transaksi', href: '/dashboard/admin/transactions' },
                 { icon: 'fa-hand-holding-dollar', label: 'Komisi & Pencairan', href: '/dashboard/admin/commissions' },
                 { icon: 'fa-user-check', label: 'Permintaan Proktor', href: '/dashboard/admin/proctor-requests' },
@@ -47,6 +48,7 @@ const menuConfig: Record<string, DashboardMenuItem[]> = {
             children: [
                 { icon: 'fa-coins', label: 'Paket Token', href: '/dashboard/admin/tokens' },
                 { icon: 'fa-list-check', label: 'Jenis Ujian', href: '/dashboard/admin/exam-types' },
+                { icon: 'fa-tags', label: 'Pengaturan Daftar', href: '/dashboard/admin/program-list' },
                 { icon: 'fa-receipt', label: 'Tracker Transaksi', href: '/dashboard/admin/transactions' },
                 { icon: 'fa-hand-holding-dollar', label: 'Komisi & Pencairan', href: '/dashboard/admin/commissions' },
                 { icon: 'fa-user-check', label: 'Permintaan Proktor', href: '/dashboard/admin/proctor-requests' },

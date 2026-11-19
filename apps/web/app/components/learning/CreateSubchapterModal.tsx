@@ -8,7 +8,7 @@ import { InlineSelect } from '@/app/components/ui/inlineselect';
 import { listSubjects } from '@/lib/api/proctor';
 import { learningRequest, type LearningMaterial } from '@/lib/learning-api';
 import { createSubchapterFromFile, planBulkDrafts, type BulkDraft } from '@/lib/learning-bulk';
-import { chapterKey, learningGradeOptions, learningGrades, learningKey, type LearningChapter } from '@/lib/learning-catalog';
+import { chapterKey, learningGradeLabel, learningGradeOptions, learningGrades, learningKey, useLearningPrograms, type LearningChapter } from '@/lib/learning-catalog';
 
 const MANUAL = '__manual__';
 const NEW_CHAPTER = '__new__';
@@ -28,6 +28,7 @@ export function CreateSubchapterModal({ materials, chapter, initialGrade = '10',
     const requestId = useRef('');
     const subjectInput = useRef<HTMLInputElement>(null);
     const topicInput = useRef<HTMLInputElement>(null);
+    useLearningPrograms(); // pilihan label ikut Pengaturan Daftar
     const [mode, setMode] = useState<'single' | 'bulk'>('single');
     const [grade, setGrade] = useState(chapter ? chapter.grade : initialGrade);
     const [subject, setSubject] = useState(chapter?.subject || '');
@@ -153,9 +154,9 @@ export function CreateSubchapterModal({ materials, chapter, initialGrade = '10',
                     <button type="button" aria-pressed={mode === 'bulk'} disabled={busy} onClick={() => { setMode('bulk'); setError(''); }}>Banyak sekaligus</button>
                 </div>
                 <div className="lc-create-grid">
-                    <ModalField label="Tingkatan kelas" required>
-                        <InlineSelect aria-label="Tingkatan kelas" value={grade} disabled={busy} minWidth="100%" onChange={value => { setGrade(value); setTopic(''); setTopicManual(false); resetChapterDependents(); }}
-                            options={[...learningGradeOptions, ...(grade && !learningGrades.some(item => item.value === grade) ? [{ value: grade, label: `Kelas ${grade}` }] : [])]} />
+                    <ModalField label="Label program / kelas" required hint="Siswa hanya melihat materi berlabel sesuai tujuan belajarnya. Daftar diatur di Pengaturan → Pengaturan Daftar.">
+                        <InlineSelect aria-label="Label program / kelas" value={grade} disabled={busy} minWidth="100%" onChange={value => { setGrade(value); setTopic(''); setTopicManual(false); resetChapterDependents(); }}
+                            options={[...learningGradeOptions, ...(!learningGrades.some(item => item.value === grade) ? [{ value: grade, label: `${learningGradeLabel(grade)} (disembunyikan)` }] : [])]} />
                     </ModalField>
                     <ModalField label="Mata pelajaran" required hint={showSubjectInput ? 'Ketik nama mapel bila tidak ada di master mapel.' : undefined}>
                         <InlineSelect aria-label="Mata pelajaran" value={showSubjectInput ? MANUAL : subject} disabled={busy} minWidth="100%" onChange={chooseSubject}

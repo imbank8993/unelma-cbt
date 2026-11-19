@@ -29,10 +29,11 @@ function fakeDb({ row = null, error = null, upsertError = null } = {}) {
     return { calls, from: chain };
 }
 
-test('DTO tujuan belajar hanya menerima program yang dikenal, target pendek, dan tanggal YYYY-MM-DD', async () => {
+test('DTO tujuan belajar hanya menerima kode program yang valid, target pendek, dan tanggal YYYY-MM-DD', async () => {
     const ok = plainToInstance(LearningGoalDto, { programs: ['cpns', 'pppk'], target: 'Lolos SKD', targetDate: '2027-10-01' });
     assert.deepEqual(await validate(ok), []);
-    const bad = plainToInstance(LearningGoalDto, { programs: ['hacker'], target: 'x'.repeat(121), targetDate: '01-10-2027' });
+    assert.deepEqual(await validate(plainToInstance(LearningGoalDto, { programs: ['olimpiade_sains'] })), [], 'program tambahan dari Pengaturan Daftar');
+    const bad = plainToInstance(LearningGoalDto, { programs: ['Bukan Kode!'], target: 'x'.repeat(121), targetDate: '01-10-2027' });
     assert.deepEqual((await validate(bad)).map(e => e.property).sort(), ['programs', 'target', 'targetDate']);
     assert.ok((await validate(plainToInstance(LearningGoalDto, { programs: [] }))).length > 0, 'minimal satu program');
 });
@@ -80,23 +81,43 @@ test('program ujian: DTO menerima program yang dikenal (termasuk SNPDB) dan sisw
     const errorsFor = async (program) => (await validate(plainToInstance(CreateExamDto, { ...base, program }))).map(e => e.property);
     assert.ok(!(await errorsFor('snpdb')).includes('program'));
     assert.ok(!(await errorsFor('utbk')).includes('program'));
+    assert.ok(!(await errorsFor('olimpiade_sains')).includes('program'), 'program tambahan dari Pengaturan Daftar');
     assert.ok((await errorsFor('ujian-bebas')).includes('program'));
+    assert.ok((await errorsFor('10')).includes('program'));
     assert.deepEqual(studentExamMetadata({ is_public: true, program: 'snpdb', answer_keys: 'rahasia' }), { is_public: true, program: 'snpdb' });
 
     const ok = plainToInstance(LearningGoalDto, { programs: ['snpdb', 'utbk'] });
     assert.deepEqual(await validate(ok), []);
-    const migration = read('../../../database/migrations/20261113_01_learning_goals_snpdb.sql');
-    assert.match(migration, /'snpdb'/);
-    assert.match(migration, /cardinality\(programs\) BETWEEN 1 AND 8/);
+    const migration = read('../../../database/migrations/20261119_01_learning_program_catalog.sql');
+    assert.match(migration, /cardinality\(programs\) BETWEEN 1 AND 40/);
+    assert.match(migration, /\[a-z\]\[a-z0-9_\]\{1,31\}/);
 });
 
 test('jadwal siswa: ujian wajib selalu tampil, tryout pilihan disaring sesuai tujuan belajar', () => {
     const schedule = read('../../web/app/dashboard/siswa/schedule/page.tsx');
     assert.match(schedule, /const isRequired = \(exam: StudentScheduledExam\) => exam\.metadata\?\.is_public !== true;/);
-    assert.match(schedule, /if \(programFilter === 'untukmu'\) return !goalPrograms\.length \|\| program === 'umum' \|\| goalPrograms\.includes\(program\);/);
+    assert.match(schedule, /if \(programFilter === 'untukmu'\) return program === 'umum' \|\| goalPrograms\.includes\(program\);/);
     assert.match(schedule, /Wajib dari sekolah \/ kelas/);
     const dashboard = read('../../web/app/dashboard/siswa/page.tsx');
     assert.match(dashboard, /if \(exam\.metadata\?\.is_public !== true \|\| !examGoals\.length\) return true;/);
     const modal = read('../../web/components/exams/CreateExamModal.tsx');
     assert.match(modal, /program: formData\.program,/);
+});
+
+test('Pengaturan Daftar: katalog program divalidasi, program struktural selalu ada, label bahan ajar menerima kode baru', async () => {
+    const { normalizeLearningProgramCatalog, parseLearningProgramCatalog, DEFAULT_LEARNING_PROGRAM_CATALOG, LEARNING_GRADE_LEVEL_PATTERN } = require('../src/common/learning-programs.ts');
+    const catalog = normalizeLearningProgramCatalog({ programs: [{ code: 'utbk', label: '  UTBK  SNBT ', hint: 'TPS', icon: 'target', hue: 999 }, { code: 'olimpiade', label: 'Olimpiade', icon: 'bom', active: false }] });
+    assert.deepEqual(catalog.programs.map(p => p.code), ['utbk', 'olimpiade', 'sekolah', 'umum']);
+    assert.equal(catalog.programs[0].label, 'UTBK SNBT');
+    assert.equal(catalog.programs[0].hue, 359);
+    assert.equal(catalog.programs[1].icon, 'sparkles');
+    assert.equal(catalog.programs[1].active, false);
+    assert.throws(() => normalizeLearningProgramCatalog({ programs: [{ code: '10', label: 'X' }] }), /tidak valid/);
+    assert.throws(() => normalizeLearningProgramCatalog({ programs: [{ code: 'cpns', label: 'A' }, { code: 'cpns', label: 'B' }] }), /lebih dari sekali/);
+    assert.throws(() => normalizeLearningProgramCatalog({ programs: [{ code: 'cpns', label: ' ' }] }), /wajib diisi/);
+    assert.equal(parseLearningProgramCatalog(null), DEFAULT_LEARNING_PROGRAM_CATALOG);
+    for (const level of ['', '1', '12', 'utbk', 'olimpiade_sains']) assert.match(level, LEARNING_GRADE_LEVEL_PATTERN, level);
+    for (const level of ['0', '13', 'UTBK', 'a']) assert.doesNotMatch(level, LEARNING_GRADE_LEVEL_PATTERN, level);
+    const settings = read('../src/settings/settings.service.ts');
+    assert.match(settings, /LEARNING_PROGRAM_CATALOG_SETTING_KEY\) value = normalizeLearningProgramCatalog\(value\)/);
 });

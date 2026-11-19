@@ -2805,3 +2805,13 @@ html.dark,
 .dark .latex-renderer :where(.katex, .mathjax-inline, .mathjax-display) {
   color: inherit;
 }
+
+/* Kotak ikon program belajar (Pengaturan → Pengaturan Daftar); warna dari --mark-hue. */
+.program-tile {
+  color: hsl(var(--mark-hue, 220) 60% 36%);
+  background: hsl(var(--mark-hue, 220) 80% 95%);
+}
+.dark .program-tile {
+  color: hsl(var(--mark-hue, 220) 80% 78%);
+  background: hsl(var(--mark-hue, 220) 40% 18%);
+}

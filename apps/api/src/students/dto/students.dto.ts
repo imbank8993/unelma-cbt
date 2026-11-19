@@ -21,15 +21,15 @@ import {
     Matches,
 } from 'class-validator';
 import { STUDENT_SECURITY_EVENTS, SUBMISSION_SECURITY_EVENT_LIMIT } from '../../common/student-security-events';
-import { LEARNING_PROGRAMS } from '../../common/learning-programs';
+import { LEARNING_PROGRAMS, LEARNING_PROGRAM_CODE_PATTERN, MAX_LEARNING_PROGRAMS } from '../../common/learning-programs';
 
 export const LEARNING_GOAL_PROGRAMS: string[] = [...LEARNING_PROGRAMS];
 
 export class LearningGoalDto {
-    @ApiProperty({ example: ['cpns'], enum: LEARNING_GOAL_PROGRAMS, isArray: true })
+    @ApiProperty({ example: ['cpns'], isArray: true, description: 'Kode program dari Pengaturan → Pengaturan Daftar.' })
     @IsArray()
-    @ArrayMaxSize(LEARNING_PROGRAMS.length)
-    @IsIn(LEARNING_GOAL_PROGRAMS, { each: true })
+    @ArrayMaxSize(MAX_LEARNING_PROGRAMS)
+    @Matches(LEARNING_PROGRAM_CODE_PATTERN, { each: true, message: 'Program tujuan belajar tidak valid.' })
     @ArrayMinSize(1, { message: 'Pilih minimal satu tujuan belajar.' })
     programs!: string[];
 

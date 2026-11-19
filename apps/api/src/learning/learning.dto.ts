@@ -1,13 +1,16 @@
 import { IsBoolean, IsByteLength, IsIn, IsInt, IsObject, IsOptional, IsString, IsUUID, Max, MaxLength, Min, MinLength, Matches } from 'class-validator';
 import { Type } from 'class-transformer';
 
-/** Kelas 1–12, program persiapan (SNPDB, UTBK, CPNS, PPPK, kedinasan, bahasa), atau '' untuk umum. */
+import { LEARNING_GRADE_LEVEL_PATTERN } from '../common/learning-programs';
+
+/** Contoh tingkatan bawaan. Yang diterima: '' (umum), kelas 1–12, atau kode program dari Pengaturan Daftar. */
 export const LEARNING_GRADE_LEVELS = ['', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', 'snpdb', 'utbk', 'cpns', 'pppk', 'kedinasan', 'bahasa'];
+const GRADE_MESSAGE = { message: 'Label/tingkatan bahan ajar tidak valid.' };
 
 export class CreateMaterialDto {
     @IsUUID() id!: string;
     @IsString() @MinLength(1) @MaxLength(200) title!: string;
-    @IsOptional() @IsIn(LEARNING_GRADE_LEVELS) gradeLevel?: string;
+    @IsOptional() @IsString() @Matches(LEARNING_GRADE_LEVEL_PATTERN, GRADE_MESSAGE) gradeLevel?: string;
     @IsOptional() @IsString() @MaxLength(100) subject?: string;
     @IsOptional() @IsString() @MaxLength(200) topic?: string;
     @IsOptional() @IsString() @MaxLength(200) subtopic?: string;
@@ -17,7 +20,7 @@ export class UpdateMaterialDto {
     @IsOptional() @Type(() => Number) @IsInt() @Min(0) @Max(9999) subtopicOrder?: number;
     @IsOptional() @IsString() @MaxLength(160000) @Matches(/^(?:|data:image\/jpeg;base64,\/9j\/[A-Za-z0-9+/]*={0,2})$/)
     coverData?: string;
-    @IsOptional() @IsIn(LEARNING_GRADE_LEVELS) gradeLevel?: string;
+    @IsOptional() @IsString() @Matches(LEARNING_GRADE_LEVEL_PATTERN, GRADE_MESSAGE) gradeLevel?: string;
     @IsOptional() @IsString() @MaxLength(200) topic?: string;
     @IsOptional() @IsString() @MaxLength(200) subtopic?: string;
     @Type(() => Number) @IsInt() @Min(1) revision!: number;

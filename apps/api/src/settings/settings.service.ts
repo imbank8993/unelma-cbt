@@ -8,6 +8,7 @@ import {
     parseExamTypeCatalog,
     type ExamTypeCatalog,
 } from '../common/exam-type-catalog';
+import { LEARNING_PROGRAM_CATALOG_SETTING_KEY, normalizeLearningProgramCatalog } from '../common/learning-programs';
 
 export interface SettingRow {
     id: string;
@@ -201,6 +202,7 @@ export class SettingsService {
     async upsert(key: string, value: unknown): Promise<void> {
         if (key === EXAM_ADMINISTRATION_SETTING_KEY) value = normalizeExamAdministrationSettings(value);
         if (key === EXAM_TYPE_CATALOG_SETTING_KEY) value = normalizeExamTypeCatalog(value);
+        if (key === LEARNING_PROGRAM_CATALOG_SETTING_KEY) value = normalizeLearningProgramCatalog(value);
         const { error } = await this.db.from('acca_settings').upsert(
             { key, value, updated_at: new Date().toISOString() },
             { onConflict: 'key' },

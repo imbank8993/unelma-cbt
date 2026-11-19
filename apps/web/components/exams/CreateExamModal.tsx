@@ -45,7 +45,7 @@ import type {
 import type { QuestionBank } from '@/lib/api/questions';
 import { getSessionUser } from '@/lib/session';
 import { alertDialog } from '@/lib/confirm-dialog';
-import { learningPrograms, type LearningProgram } from '@/lib/learning-catalog';
+import { examProgramOf, learningProgramLabel, useLearningPrograms, type LearningProgram } from '@/lib/learning-catalog';
 import { DEFAULT_SCHOOL_TIME_ZONE, getSchoolTimeZone, getSchoolTimeZoneLabel, schoolTodayDate, utcToSchoolLocalDateTime, addMinutesToLocalDateTime } from '@/lib/school-time';
 import { freeQuotaExhausted, useCreationLimits } from '@/lib/useCreationLimits';
 
@@ -262,6 +262,7 @@ export const CreateExamModal: React.FC<CreateExamModalProps> = ({
     }, [publishedBanks, questionBanks]);
 
     const [formData, setFormData] = useState<ExamFormData>(DEFAULT_FORM_DATA);
+    const programOptions = useLearningPrograms();
     const [timeZone, setTimeZone] = useState(DEFAULT_SCHOOL_TIME_ZONE);
     const [localClassStudents, setLocalClassStudents] = useState<Record<string, ClassStudent[]>>(classStudents);
     const [isAssignPickerOpen, setIsAssignPickerOpen] = useState(false);
@@ -357,7 +358,7 @@ export const CreateExamModal: React.FC<CreateExamModalProps> = ({
                 pasEndDate: todayDate,
                 isPaid: Boolean((exam as { is_paid?: boolean } | null | undefined)?.is_paid),
                 tokenPrice: Number((exam as { token_price?: number } | null | undefined)?.token_price) || 1,
-                program: learningPrograms.some((item) => item.value === exam.metadata?.program) ? exam.metadata?.program as LearningProgram : 'umum',
+                program: examProgramOf(exam.metadata?.program),
             };
             titleEdited.current = true;
             setShowAdvanced(false);
@@ -1007,11 +1008,15 @@ export const CreateExamModal: React.FC<CreateExamModalProps> = ({
                                 onChange={(e) => { titleEdited.current = true; setFormData((prev) => ({ ...prev, title: e.target.value })); }}
                             />
                         </ModalField>
-                        <ModalField label="Program" hint="Siswa dengan tujuan belajar yang sama melihat ujian ini di filter Untukmu.">
+                        <ModalField label="Label Program" hint="Daftar diatur Admin di Pengaturan → Pengaturan Daftar. Tryout hanya tampil untuk siswa yang tujuan belajarnya sama; label Umum tampil untuk semua siswa.">
                             <InlineSelect
                                 value={formData.program}
                                 onChange={(value) => setFormData((prev) => ({ ...prev, program: value as LearningProgram }))}
-                                options={learningPrograms.map((item) => ({ value: item.value, label: item.value === 'umum' ? 'Umum (semua siswa)' : item.label }))}
+                                options={[
+                                    ...programOptions.map((item) => ({ value: item.value, label: item.value === 'umum' ? `${item.label} (semua siswa)` : item.label })),
+                                    // Label lama yang kini disembunyikan tetap terpilih sampai diganti.
+                                    ...(programOptions.some((item) => item.value === formData.program) ? [] : [{ value: formData.program, label: `${learningProgramLabel(formData.program)} (disembunyikan)` }]),
+                                ]}
                             />
                         </ModalField>
                         </div>
