@@ -55,6 +55,9 @@ jobs:
       - name: Compile Backend (NestJS)
         run: npm run build:backend
 
+      - name: Verify background worker entry point
+        run: test -f apps/api/dist/background-worker.js
+
       - name: Run Scoring Tests (FastAPI / Pytest)
         run: |
           pip install -r apps/scoring/requirements.txt pytest
@@ -231,6 +234,8 @@ jobs:
             # Hanya kontainer yang image-nya berubah yang dibuat ulang (beberapa detik),
             # tanpa mematikan semuanya lebih dulu.
             CBT_IMAGE_TAG=latest docker compose up -d --no-build --remove-orphans
+
+            sh tools/check-deployment-health.sh
 
             echo "🧹 Membersihkan image lama..."
             docker image prune -f

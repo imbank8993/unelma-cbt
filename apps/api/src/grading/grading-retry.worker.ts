@@ -13,6 +13,7 @@ export class GradingRetryWorker implements OnModuleInit, OnModuleDestroy {
     constructor(private readonly db: DbService, private readonly grading: GradingService) {}
 
     onModuleInit() {
+        if (process.env.CBT_BACKGROUND_JOBS === 'false') return;
         this.timer = setInterval(() => void this.run(), 30_000);
         this.timer.unref();
         void this.run();

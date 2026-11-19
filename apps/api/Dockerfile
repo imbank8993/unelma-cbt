@@ -50,7 +50,7 @@ USER nestjs
 EXPOSE 3009
 
 HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
-  CMD curl -f http://127.0.0.1:3009/api/health || exit 1
+  CMD node -e "fetch('http://127.0.0.1:3009/api/health').then(r=>r.json()).then(j=>process.exit(j.ok?0:1)).catch(()=>process.exit(1))"
 
 # Runner command tahan banting dengan fallback struktur kompilasi monorepo NestJS
 CMD ["sh", "-c", "node apps/api/dist/src/main.js 2>/dev/null || node apps/api/dist/main.js 2>/dev/null || node dist/src/main.js 2>/dev/null || node dist/main.js"]

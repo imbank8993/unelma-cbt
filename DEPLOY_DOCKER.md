@@ -126,6 +126,7 @@ Setiap kali Anda menjalankan `git push origin master` (atau `main`):
    - Login GHCR sementara dengan token job, `docker compose pull` image versi commit itu, lalu logout.
    - Menandai image itu sebagai `:latest` di VPS, lalu `docker compose up -d --no-build --remove-orphans`.
      Hanya kontainer yang berubah yang dibuat ulang (beberapa detik).
+   - Menunggu web, API, skoring, LaTeX, dan worker pemulihan nilai sehat sebelum menyatakan deploy berhasil.
    - Menyimpan 3 versi terakhir per layanan untuk rollback, sisanya dihapus.
 
 Dengan ini CPU VPS tidak lagi penuh 10–20 menit setiap push. Deploy masih membuat ulang kontainer
@@ -162,6 +163,7 @@ docker compose logs -f
 docker compose logs -f cbt-web
 docker compose logs -f cbt-api
 docker compose logs -f cbt-scoring
+docker compose logs -f cbt-background
 
 # Restart kontainer tertentu jika diperlukan
 docker compose restart cbt-web

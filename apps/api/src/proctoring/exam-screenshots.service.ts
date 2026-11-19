@@ -217,6 +217,7 @@ export class ExamScreenshotsService implements OnModuleInit, OnModuleDestroy {
         if (process.env.NODE_ENV === 'production' && !this.config.get<string>('SCREENSHOT_ENCRYPTION_KEY')) {
             this.logger.error('SCREENSHOT_ENCRYPTION_KEY kosong: screenshot ujian akan DITOLAK sampai kunci khusus dikonfigurasi.');
         }
+        if (process.env.CBT_BACKGROUND_JOBS === 'false') return;
         this.timer = setInterval(() => void this.cleanup(), 60 * 60 * 1000); this.timer.unref(); void this.cleanup();
     }
     onModuleDestroy() { if (this.timer) clearInterval(this.timer); }
