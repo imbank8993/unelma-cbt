@@ -49,15 +49,53 @@ export default function AdminSocialMediaPage() {
   const [clientSecret, setClientSecret] = useState('');
   const [referenceId, setReferenceId] = useState('');
   const [referenceValue, setReferenceValue] = useState('');
+  const workspaceRequest = useRef(0);
+  const accountSyncRequest = useRef<ReturnType<typeof syncSocialChannels> | null>(null);
+  const lastAccountSync = useRef(0);
 
   const load = useCallback(async (initialize = false) => {
+    const request = ++workspaceRequest.current;
     const result = await getSocialWorkspace();
+    if (request !== workspaceRequest.current) return;
     if (result.success) {
       setData(result);
       if (initialize) { setOrganizationId(result.settings.organizationId); setGraphVersion(result.settings.graphVersion); }
     } else setNotice({ error: true, text: result.error });
     setLoading(false);
   }, []);
+  const synchronizeAccounts = useCallback(async (initialize = false) => {
+    let request = accountSyncRequest.current;
+    if (!request) {
+      lastAccountSync.current = Date.now();
+      request = syncSocialChannels();
+      accountSyncRequest.current = request;
+    }
+    try {
+      const result = await request;
+      if (result.success) {
+        setOrganizations(result.organizations);
+        if (!result.needsOrganization) {
+          if (result.organizations.length === 1) setOrganizationId(current => current || result.organizations[0].id);
+          await load(initialize);
+        }
+      }
+      return result;
+    } finally { if (accountSyncRequest.current === request) accountSyncRequest.current = null; }
+  }, [load]);
+  useEffect(() => {
+    if (!data.settings.bufferKeySet) return;
+    const check = async () => {
+      if (document.hidden || busyRef.current || accountSyncRequest.current || Date.now() - lastAccountSync.current < 5000) return;
+      try { await synchronizeAccounts(); }
+      catch { /* Keep the stored accounts when Buffer is temporarily unavailable. */ }
+    };
+    const initial = window.setTimeout(() => void check(), 500);
+    const timer = window.setInterval(() => void check(), 300000);
+    const onVisible = () => { if (!document.hidden) void check(); };
+    window.addEventListener('focus', onVisible);
+    document.addEventListener('visibilitychange', onVisible);
+    return () => { window.clearTimeout(initial); window.clearInterval(timer); window.removeEventListener('focus', onVisible); document.removeEventListener('visibilitychange', onVisible); };
+  }, [data.settings.bufferKeySet, synchronizeAccounts]);
   const pollInFlight = useRef(false);
   const lastSync = useRef(new Map<string, number>());
   const watchedPosts = data.settings.bufferKeySet ? data.posts.filter(post => post.buffer_post_id &&
@@ -159,6 +197,12 @@ export default function AdminSocialMediaPage() {
   }
   async function refreshRecent(name: 'reload' | 'metrics') {
     await run(name, async () => {
+      let accountError = '';
+      if (name === 'reload' && data.settings.bufferKeySet) {
+        const result = await synchronizeAccounts();
+        if (!result.success) accountError = result.error;
+        else if (result.needsOrganization) accountError = 'Pilih organisasi Buffer di Pengaturan, lalu sinkronkan akun.';
+      }
       const latest = await getSocialWorkspace();
       if (!latest.success) { setNotice({ error: true, text: latest.error }); return; }
       const candidates = latest.posts.filter(post => post.buffer_post_id &&
@@ -173,17 +217,15 @@ export default function AdminSocialMediaPage() {
         }
       }
       await load();
-      setNotice({ error: unavailable > 0, text: unavailable ? `${unavailable} posting belum dapat diperbarui. Lihat keterangan masing-masing posting.` :
-        `${candidates.length} posting diperiksa.${processing ? ` ${processing} masih diproses Buffer.` : ''}${waiting ? ` ${waiting} sudah terbit dan menunggu statistik; data Buffer dapat membutuhkan hingga 24 jam.` : ''}` });
+      setNotice({ error: unavailable > 0 || Boolean(accountError), text: accountError || (unavailable ? `${unavailable} posting belum dapat diperbarui. Lihat keterangan masing-masing posting.` :
+        `${candidates.length} posting diperiksa.${processing ? ` ${processing} masih diproses Buffer.` : ''}${waiting ? ` ${waiting} sudah terbit dan menunggu statistik; data Buffer dapat membutuhkan hingga 24 jam.` : ''}`) });
     });
   }
   async function syncAccounts() {
     await run('channels', async () => {
-      const result = await syncSocialChannels();
+      const result = await synchronizeAccounts(true);
       if (!result.success) { setNotice({ error: true, text: result.error }); return; }
-      setOrganizations(result.organizations);
       setNotice({ error: result.needsOrganization, text: result.needsOrganization ? 'Pilih organisasi Buffer di bawah, simpan pengaturan, lalu sinkronkan kembali.' : `${result.count || 0} akun disinkronkan.` });
-      if (!result.needsOrganization) await load(true);
     });
   }
   async function saveSettings(event: FormEvent) {
@@ -234,7 +276,7 @@ export default function AdminSocialMediaPage() {
         { key: 'posting', label: 'Posting', icon: <PenLine size={16} /> }, { key: 'statistics', label: 'Statistik', icon: <BarChart3 size={16} /> },
         { key: 'settings', label: 'Pengaturan', icon: <Settings2 size={16} /> },
       ]} />
-      <button className="social-icon-button social-reload" title="Perbarui status dan statistik" aria-label="Perbarui halaman" disabled={Boolean(busy) || loading} onClick={() => void refreshRecent('reload')}><RefreshCw size={16} className={busy === 'reload' ? 'animate-spin' : ''} /></button>
+      <button className="social-icon-button social-reload" title="Perbarui akun, status, dan statistik" aria-label="Perbarui halaman" disabled={Boolean(busy) || loading} onClick={() => void refreshRecent('reload')}><RefreshCw size={16} className={busy === 'reload' ? 'animate-spin' : ''} /></button>
     </div>
     {tab === 'statistics' && <div className="social-summary">
       {[{ label: 'Posting terbit', value: data.totals.published, note: `${data.totals.drafts} draf tersimpan` },

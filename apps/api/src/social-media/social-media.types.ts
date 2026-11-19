@@ -20,4 +20,5 @@ export interface ChannelCredentials {
 export interface BufferPost {
   id: string; channelId: string; text: string; status: string; externalLink?: string | null;
   sentAt?: string | null; schedulingType?: string;
+  error?: { message?: string | null } | null;
 }

@@ -95,6 +95,11 @@ export class SocialMediaService {
       if (!chosen) return { organizations, needsOrganization: true };
       const channels = await this.provider.channels(config.key, chosen.id);
       await this.prisma.$transaction(async tx => {
+        const [current] = await tx.$queryRawUnsafe<SettingsRow[]>('SELECT credentials_cipher, organization_id FROM public.cbt_social_settings WHERE id = true FOR UPDATE');
+        if (!current || current.organization_id !== config.organizationId ||
+          openCredentials<{ bufferApiKey?: string }>(current.credentials_cipher, 'settings').bufferApiKey !== config.key) {
+          throw new ConflictException('Pengaturan Buffer berubah saat sinkronisasi. Perbarui halaman dan sinkronkan kembali.');
+        }
         await tx.$executeRawUnsafe('UPDATE public.cbt_social_settings SET organization_id = $1 WHERE id = true', chosen.id);
         await tx.$executeRawUnsafe('UPDATE public.cbt_social_channels SET connected = false');
         for (const channel of channels) await tx.$executeRawUnsafe(`INSERT INTO public.cbt_social_channels
@@ -186,7 +191,7 @@ export class SocialMediaService {
     const status = remote.schedulingType === 'notification' ? 'failed' : remote.status === 'sent' ? 'published' :
       remote.status === 'error' ? 'failed' : 'processing';
     const error = remote.schedulingType === 'notification' ? 'Akun ini memerlukan penyelesaian manual di Buffer. Aktifkan publikasi otomatis untuk posting berikutnya.' :
-      remote.status === 'error' ? 'Publikasi ditolak platform. Buka Buffer untuk melihat penyebab dan memperbaikinya.' :
+      remote.status === 'error' ? remote.error?.message ? `Publikasi ditolak platform: ${remote.error.message}` : 'Publikasi ditolak platform. Buka Buffer untuk melihat penyebab dan memperbaikinya.' :
       ['draft', 'needs_approval'].includes(remote.status) ? 'Posting tertahan di Buffer. Periksa persetujuan atau status draf di Buffer.' : null;
     const link = remote.externalLink && /^https:\/\/(?:[^/]+\.)?(?:instagram\.com|facebook\.com|tiktok\.com)\//i.test(remote.externalLink) ? remote.externalLink : null;
     await this.prisma.$executeRawUnsafe(`UPDATE public.cbt_social_posts SET buffer_post_id = $2, status = $3,

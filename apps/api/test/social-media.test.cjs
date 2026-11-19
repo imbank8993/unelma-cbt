@@ -122,6 +122,54 @@ function publishFixture(provider, credentials) {
   return { service: new SocialMediaService(prisma, provider), post };
 }
 
+test('channel synchronization discovers a connected TikTok account and preserves stored native credentials', async () => {
+  const row = { credentials_cipher: sealCredentials({ bufferApiKey: 'key' }, 'settings'), organization_id: 'org-1' };
+  const nativeCipher = sealCredentials({ accessToken: 'native-token' }, `channel:${CHANNEL.id}`);
+  const channels = new Map([[CHANNEL.id, { ...CHANNEL, credentials_cipher: nativeCipher }]]);
+  const tx = { $queryRawUnsafe: async () => [row], $executeRawUnsafe: async (sql, ...args) => {
+    if (sql.includes('SET connected = false')) channels.forEach(channel => { channel.connected = false; });
+    if (sql.includes('INSERT INTO public.cbt_social_channels')) {
+      channels.set(args[0], { ...channels.get(args[0]), id: args[0], platform: args[1], organization_id: args[2], name: args[3], external_account_id: args[4], connected: args[5] });
+    }
+    return 1;
+  } };
+  const provider = { organizations: async () => [{ id: 'org-1', name: 'Org' }], channels: async () => [CHANNEL,
+    { ...CHANNEL, id: 'tiktok-1', platform: 'tiktok', name: 'unelma.id' }] };
+  const service = new SocialMediaService({ ...tx, $transaction: async work => work(tx) }, provider);
+  const result = await service.syncChannels(ADMIN);
+  assert.equal(result.count, 2);
+  assert.equal(channels.get('tiktok-1').connected, true);
+  assert.equal(channels.get(CHANNEL.id).credentials_cipher, nativeCipher);
+});
+
+for (const change of ['key', 'organization']) test(`a stale channel sync cannot overwrite a changed ${change}`, async () => {
+  const row = { credentials_cipher: sealCredentials({ bufferApiKey: 'key' }, 'settings'), organization_id: 'org-1' };
+  const writes = [];
+  const tx = { $queryRawUnsafe: async () => [row], $executeRawUnsafe: async sql => { writes.push(sql); return 1; } };
+  const provider = { organizations: async () => [{ id: 'org-1', name: 'Org' }], channels: async () => {
+    if (change === 'key') row.credentials_cipher = sealCredentials({ bufferApiKey: 'replacement' }, 'settings');
+    else row.organization_id = 'other';
+    return [CHANNEL];
+  } };
+  const service = new SocialMediaService({ ...tx, $transaction: async work => work(tx) }, provider);
+  await assert.rejects(service.syncChannels(ADMIN), /Pengaturan Buffer berubah/);
+  assert.deepEqual(writes, []);
+});
+
+test('Buffer channels include active TikTok accounts while disconnected and locked accounts stay unavailable', async () => {
+  const original = global.fetch;
+  global.fetch = async () => new Response(JSON.stringify({ data: { channels: [
+    { id: 'tiktok', service: 'tiktok', serviceId: 'tt-1', name: 'Unelma', isDisconnected: false, isLocked: false },
+    { id: 'instagram', service: 'instagram', serviceId: 'ig-1', name: 'Unelma', isDisconnected: true, isLocked: false },
+    { id: 'facebook', service: 'facebook', serviceId: 'fb-1', name: 'Unelma', isDisconnected: false, isLocked: true },
+    { id: 'unsupported', service: 'youtube', serviceId: 'yt-1', name: 'Other', isDisconnected: false, isLocked: false },
+  ] } }));
+  try {
+    const channels = await new SocialMediaProvider().channels('key', 'org-1');
+    assert.deepEqual(channels.map(channel => [channel.platform, channel.connected]), [['tiktok', true], ['instagram', false], ['facebook', false]]);
+  } finally { global.fetch = original; }
+});
+
 test('concurrent publish and retries cause a single external publish', async () => {
   let calls = 0;
   const { service, post } = publishFixture({ createPost: async () => {
@@ -251,6 +299,56 @@ test('Buffer GraphQL mutation requests automatic publish and handles union failu
   };
   try { await assert.rejects(new SocialMediaProvider().createPost('do-not-leak-key', draft()), error => error.definitive && !error.message.includes('do-not-leak-key')); }
   finally { global.fetch = original; }
+});
+
+test('TikTok rejection details are preserved without leaking API keys or signed media parameters', async () => {
+  const original = global.fetch;
+  global.fetch = async (_url, options) => {
+    const request = JSON.parse(options.body);
+    assert.match(request.query, /on MutationError\s*\{\s*message/);
+    assert.equal(request.variables.input.schedulingType, 'automatic');
+    assert.equal(request.variables.input.saveToDraft, false);
+    assert.deepEqual(request.variables.input.assets, [{ video: { url: 'https://media.example.org/video.mp4' } }]);
+    return new Response(JSON.stringify({ data: { createPost: { __typename: 'InvalidInputError',
+      message: 'Video could not be downloaded. key=fixture-buffer-key\nhttps://media.example.org/video.mp4?signature=secret-signature&access_token=secret-access-token Bearer private-bearer' } } }));
+  };
+  try {
+    await assert.rejects(new SocialMediaProvider().createPost('fixture-buffer-key', { ...draft(), platform: 'tiktok', media_type: 'video', media_url: 'https://media.example.org/video.mp4' }), error => {
+      assert.equal(error.definitive, true);
+      assert.match(error.message, /Video could not be downloaded/);
+      for (const secret of ['fixture-buffer-key', 'secret-signature', 'secret-access-token', 'private-bearer']) assert.ok(!error.message.includes(secret));
+      assert.ok(error.message.length < 750);
+      return true;
+    });
+  } finally { global.fetch = original; }
+});
+
+test('ambiguous Buffer failures retain their explanation and remain locked against automatic retries', async () => {
+  const original = global.fetch;
+  global.fetch = async () => new Response(JSON.stringify({ data: { createPost: { __typename: 'UnexpectedError', message: 'The platform did not confirm the result.' } } }));
+  try {
+    const { service, post } = publishFixture(new SocialMediaProvider());
+    await service.publish(ADMIN, ID);
+    assert.equal(post.status, 'uncertain');
+    assert.match(post.error, /did not confirm/);
+  } finally { global.fetch = original; }
+});
+
+test('GraphQL rejection details are bounded, sanitized, and classified before retries', async () => {
+  const original = global.fetch;
+  global.fetch = async () => new Response(JSON.stringify({ errors: [{ message: 'The video metadata is invalid. fixture-key ' + 'x'.repeat(900), extensions: { code: 'GRAPHQL_VALIDATION_FAILED' } }] }));
+  try {
+    await assert.rejects(new SocialMediaProvider().createPost('fixture-key', draft()), error => error.definitive &&
+      error.message.includes('metadata is invalid') && !error.message.includes('fixture-key') && error.message.length < 750);
+  } finally { global.fetch = original; }
+});
+
+test('a late platform rejection exposes Buffer publishing details without changing published history', async () => {
+  const { service, post } = publishFixture({ post: async () => ({ id: 'buffer-1', channelId: CHANNEL.id, status: 'error', error: { message: 'TikTok rejected this video duration.' } }) });
+  Object.assign(post, { status: 'processing', buffer_post_id: 'buffer-1' });
+  const result = await service.syncPost(ADMIN, ID);
+  assert.equal(result.post.status, 'failed');
+  assert.match(result.post.error, /TikTok rejected this video duration/);
 });
 
 test('Instagram resolves its exact permalink and preserves zero and unavailable metrics independently', async () => {

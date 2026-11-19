@@ -33,6 +33,7 @@ const { chromium } = require('playwright');
     page.on('pageerror', error => errors.push(error.message));
     await page.route('http://localhost:3099/**', route => route.fulfill({ contentType: 'text/html', body: '<html><body><div id="root"></div></body></html>' }));
     await page.goto('http://localhost:3099');
+    await page.clock.install();
     await page.addStyleTag({ path: 'apps/web/app/dashboard/admin/social-media/social-media.css' });
     await page.addStyleTag({ path: 'apps/web/app/components/ui/tabs.css' });
     await page.addStyleTag({ path: 'apps/web/app/components/ui/inline-select.css' });
@@ -40,7 +41,8 @@ const { chromium } = require('playwright');
     await page.evaluate(modules => {
       const cache = {}; let React;
       const state = window.socialFixture = {
-        savedKey: '', savedToken: '', publishes: 0, syncs: 0, failMetrics: false, holdProcessing: false, waitMetrics: false,
+        savedKey: '', savedToken: '', publishes: 0, syncs: 0, channelSyncs: 0, failChannels: false,
+        bufferPlatforms: ['instagram', 'facebook'], failMetrics: false, holdProcessing: false, waitMetrics: false,
         data: { settings: { bufferKeySet: false, organizationId: '', graphVersion: 'v26.0', updatedAt: null }, channels: [], posts: [],
           totals: { published: 0, drafts: 0, measured: 0, views: null, reach: null, interactions: null } },
       };
@@ -56,8 +58,11 @@ const { chromium } = require('playwright');
         getSocialWorkspace: async () => { updateTotals(); return { success: true, ...structuredClone(state.data) }; },
         saveSocialSettings: async input => { state.savedKey = input.bufferApiKey || state.savedKey; Object.assign(state.data.settings, { bufferKeySet: !input.clearBufferKey, organizationId: input.organizationId || 'org1', graphVersion: input.graphVersion || 'v26.0' }); return { success: true, settings: state.data.settings }; },
         syncSocialChannels: async () => {
-          state.data.channels = ['instagram', 'facebook', 'tiktok'].map(platform => ({ id: platform, platform, organization_id: 'org1', name: `Unelma ${platform}`, external_account_id: '123', connected: true, tokenSet: false }));
-          return { success: true, organizations: [{ id: 'org1', name: 'Unelma' }], needsOrganization: false, count: 3 };
+          state.channelSyncs++;
+          if (state.failChannels) return { success: false, error: 'Buffer sementara tidak tersedia.' };
+          state.data.channels = state.bufferPlatforms.map(platform => ({ id: platform, platform, organization_id: 'org1', name: `Unelma ${platform}`, external_account_id: '123', connected: true,
+            tokenSet: state.data.channels.find(channel => channel.id === platform)?.tokenSet || false }));
+          return { success: true, organizations: [{ id: 'org1', name: 'Unelma' }], needsOrganization: false, count: state.data.channels.length };
         },
         getSocialChannelSettings: async id => ({ success: true, accountId: '123', tokenSet: Boolean(state.data.channels.find(channel => channel.id === id)?.tokenSet), refreshTokenSet: false, clientKeySet: false, clientSecretSet: false }),
         saveSocialChannelSettings: async (id, input) => { state.savedToken = input.accessToken || ''; state.data.channels.find(channel => channel.id === id).tokenSet = !input.clearCredentials; return { success: true, saved: true }; },
@@ -108,6 +113,14 @@ const { chromium } = require('playwright');
     await page.getByText(/Pengaturan disimpan/).waitFor();
     assert.equal(await page.getByLabel(/^API key Buffer/).inputValue(), '');
     assert.equal(await page.evaluate(() => window.socialFixture.savedKey), 'fixture-private-buffer-key');
+    await page.waitForFunction(() => window.socialFixture.channelSyncs > 0 && window.socialFixture.data.channels.length === 2);
+    assert.equal(await page.getByLabel('Akun statistik', { exact: true }).locator('option[value="tiktok"]').count(), 0);
+    // Connecting TikTok in Buffer is discovered on return without using the manual sync button.
+    await page.evaluate(() => { window.socialFixture.bufferPlatforms.push('tiktok'); });
+    await page.clock.fastForward(6000);
+    await page.evaluate(() => window.dispatchEvent(new Event('focus')));
+    await page.getByLabel('Akun statistik', { exact: true }).locator('option[value="tiktok"]').waitFor({ state: 'attached' });
+    assert.equal(await page.evaluate(() => window.socialFixture.publishes), 0);
     await page.getByRole('button', { name: 'Sinkronkan akun', exact: true }).click();
     await page.getByText('3 akun disinkronkan.', { exact: true }).waitFor();
     await page.getByLabel('Akun statistik', { exact: true }).selectOption('instagram');
@@ -184,8 +197,14 @@ const { chromium } = require('playwright');
     await page.getByRole('button', { name: 'Pengaturan', exact: true }).click();
     await page.screenshot({ path: path.join(output, 'social-settings-mobile-dark.png'), fullPage: true });
     assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true);
+    const beforeFailedSync = await page.evaluate(() => window.socialFixture.channelSyncs);
+    await page.evaluate(() => { window.socialFixture.failChannels = true; });
+    await page.clock.fastForward(6000);
+    await page.evaluate(() => window.dispatchEvent(new Event('focus')));
+    await page.waitForFunction(before => window.socialFixture.channelSyncs > before, beforeFailedSync);
+    assert.equal(await page.getByLabel('Akun statistik', { exact: true }).locator('option[value="tiktok"]').count(), 1);
     assert.deepEqual(errors, []);
-    console.log('PASS: upload/storage/credentials, automatic Buffer status sync without duplicate publish, batch refresh of processing posts, waiting metrics stay unavailable, preserved metrics after errors, responsive 320/360/390/768/1440 and dark mode.');
+    console.log('PASS: automatic account sync, TikTok discovered on focus without publishing, accounts preserved after Buffer failures, upload/storage/credentials, automatic post status, batch/metrics refresh, responsive 320/360/390/768/1440 and dark mode.');
     console.log('Previews: ' + output);
   } finally { await browser.close(); }
 })().catch(error => { console.error(error); process.exitCode = 1; });

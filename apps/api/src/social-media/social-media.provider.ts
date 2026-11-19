@@ -6,7 +6,14 @@ export class SocialProviderError extends Error {
   constructor(message: string, readonly definitive = true) { super(message); }
 }
 
-const POST_FIELDS = 'id channelId text status externalLink sentAt schedulingType';
+const POST_FIELDS = 'id channelId text status externalLink sentAt schedulingType error { message }';
+function bufferDetail(value: unknown, key: string): string {
+  if (typeof value !== 'string') return '';
+  return (key ? value.split(key).join('[API key disamarkan]') : value)
+    .replace(/\bBearer\s+[^\s,;"']+/gi, 'Bearer [disamarkan]')
+    .replace(/([?&](?:access_token|token|api_key|key|signature)=)[^\s&"'<>]+/gi, '$1[disamarkan]')
+    .replace(/[\u0000-\u001f\u007f]+/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 700);
+}
 type Insight = { name: string; values?: { value: unknown }[]; total_value?: { value: unknown } };
 const numeric = (value: unknown): number | null => typeof value === 'number' && Number.isFinite(value) && value >= 0 ? value : null;
 export function insightValue(data: Insight[], name: string): number | null {
@@ -37,11 +44,13 @@ export class SocialMediaProvider {
   }
 
   private async buffer<T>(key: string, query: string, variables: object = {}, mutation = false): Promise<T> {
-    const result = await this.json<{ data?: T; errors?: { extensions?: { code?: string } }[] }>('https://api.buffer.com', key,
+    const result = await this.json<{ data?: T; errors?: { message?: string; extensions?: { code?: string } }[] }>('https://api.buffer.com', key,
       { method: 'POST', body: JSON.stringify({ query, variables }) });
     if (result.errors?.length || !result.data) {
       const validation = result.errors?.every(error => ['GRAPHQL_VALIDATION_FAILED', 'GRAPHQL_PARSE_FAILED', 'UNAUTHENTICATED', 'FORBIDDEN'].includes(error.extensions?.code || ''));
-      throw new SocialProviderError('Buffer belum dapat memproses permintaan. Periksa API key, akses akun, dan kompatibilitas API.', !mutation || Boolean(validation));
+      const detail = bufferDetail(result.errors?.map(error => error.message || '').filter(Boolean).join('; '), key);
+      throw new SocialProviderError(detail ? `Buffer belum dapat memproses permintaan: ${detail}` :
+        'Buffer belum dapat memproses permintaan. Periksa API key, akses akun, dan kompatibilitas API.', !mutation || Boolean(validation));
     }
     return result.data;
   }
@@ -69,24 +78,30 @@ export class SocialMediaProvider {
     const metadata = post.platform === 'instagram' ? { instagram: {
       type: post.media_type === 'video' ? 'reel' : 'post', shouldShareToFeed: true, isAiGenerated: post.ai_generated,
     } } : post.platform === 'facebook' ? { facebook: { type: 'post' } } : { tiktok: { isAiGenerated: post.ai_generated } };
-    const result = await this.buffer<{ createPost: { __typename: string; post?: BufferPost } }>(key,
-      `mutation Publish($input: CreatePostInput!) { createPost(input: $input) { __typename ... on PostActionSuccess { post { ${POST_FIELDS} } } } }`,
+    const result = await this.buffer<{ createPost: { __typename: string; message?: string; post?: BufferPost } }>(key,
+      `mutation Publish($input: CreatePostInput!) { createPost(input: $input) { __typename ... on PostActionSuccess { post { ${POST_FIELDS} } } ... on MutationError { message } } }`,
       { input: { channelId: post.channel_id, text: post.caption, assets, metadata,
         mode: 'shareNow', schedulingType: 'automatic', saveToDraft: false, needsApproval: false, source: 'unelma-cbt' } }, true);
     if (result.createPost.__typename !== 'PostActionSuccess' || !result.createPost.post?.id) {
       // UnexpectedError/RestProxyError may happen after a downstream publish was accepted.
       const definitive = ['NotFoundError', 'UnauthorizedError', 'LimitReachedError', 'InvalidInputError'].includes(result.createPost.__typename);
+      const detail = bufferDetail(result.createPost.message, key);
+      if (detail) throw new SocialProviderError(`Buffer menolak posting: ${detail}`, definitive);
       throw new SocialProviderError(result.createPost.__typename === 'LimitReachedError'
         ? 'Batas posting Buffer tercapai. Periksa paket atau antrean akun di Buffer.'
         : 'Buffer belum menerima posting. Periksa akun, izin publikasi otomatis, dan format media di Buffer.', definitive);
     }
-    return result.createPost.post;
+    return this.cleanPost(result.createPost.post, key);
+  }
+
+  private cleanPost(post: BufferPost, key: string): BufferPost {
+    return { ...post, error: post.error ? { message: bufferDetail(post.error.message, key) } : null };
   }
 
   async post(key: string, id: string): Promise<BufferPost> {
     const result = await this.buffer<{ post: BufferPost }>(key,
       `query Post($input: PostInput!) { post(input: $input) { ${POST_FIELDS} } }`, { input: { id } });
-    return result.post;
+    return this.cleanPost(result.post, key);
   }
 
   async postMetrics(key: string, post: SocialPost): Promise<{ metrics: SocialMetrics; updatedAt: string | null } | null> {
