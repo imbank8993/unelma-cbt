@@ -57,6 +57,7 @@ import { ExamStartPreparation } from './ExamStartPreparation';
 import { useExamScreenshots } from '@/hooks/useExamScreenshots';
 import { SCREEN_SHARE_GRACE_MS,SCREEN_SHARE_LOST_EVENT,SCREEN_SHARE_RACE_MS,screenshotBase64 } from '@/lib/exam-screenshots';
 import { retryExamEvidence } from '@/lib/exam-evidence-outbox';
+import { QUESTION_CHECK_FALLBACK_MS,jitteredInterval } from '@/lib/exam-timers';
 
 function resolveMaxViolations(exam: StudentExam | null): number | null {
     if (exam?.metadata?.is_safe_mode === false) return null;
@@ -132,6 +133,10 @@ export default function ExamPage() {
     const answersRef = useRef<Record<string, string>>({});
     const doubtfulRef = useRef<Set<string>>(new Set());
     const questionsRef = useRef<StudentExamQuestion[]>([]);
+    /** Pemeriksaan pembaruan soal; dipicu heartbeat saat revisi soal ujian berubah. */
+    const requestQuestionCheckRef = useRef<(() => void) | null>(null);
+    /** Revisi soal langsung terakhir yang dilaporkan heartbeat (null = belum ada). */
+    const questionRevisionRef = useRef<number | null>(null);
     const attemptRef = useRef<StudentExamAttempt | null>(null);
     const ownsEditorLockRef = useRef(false);
     // Soal yang autosave-nya GAGAL terkirim, dan yang requestnya masih terbang.
@@ -296,11 +301,19 @@ export default function ExamPage() {
             }
         };
 
-        const timer = setInterval(checkUpdates, 15000);
+        // Heartbeat memicu pemeriksaan ini begitu revisi soal ujian berubah. Putaran berkala
+        // hanya cadangan (heartbeat gagal, ujian lama tanpa snapshot), jarang dan berjeda acak
+        // agar ratusan siswa tidak memanggilnya pada detik yang sama.
+        requestQuestionCheckRef.current = () => { void checkUpdates(); };
+        const stop = jitteredInterval(() => { void checkUpdates(); }, QUESTION_CHECK_FALLBACK_MS);
         const reconnect = () => { void checkUpdates(); };
         window.addEventListener('online', reconnect);
-        void checkUpdates();
-        return () => { disposed = true; clearInterval(timer); window.removeEventListener('online', reconnect); };
+        // Pemeriksaan awal (mis. melanjutkan dari salinan offline) ditunda acak, tidak serentak.
+        const initial = setTimeout(() => { void checkUpdates(); }, Math.round(Math.random() * 20_000));
+        return () => {
+            disposed = true; stop(); clearTimeout(initial); window.removeEventListener('online', reconnect);
+            requestQuestionCheckRef.current = null;
+        };
     }, [examId, isCompleted, accessDenied, loading]);
 
     // Ujian dibatalkan pengawas (server menjawab 410): pengerjaan ini sudah
@@ -1490,10 +1503,10 @@ export default function ExamPage() {
             await flushSecurityEvents();
         };
         void retry();
-        const interval = setInterval(() => { void retry(); }, 15_000);
+        const stop = jitteredInterval(() => { void retry(); }, 15_000);
         return () => {
             active = false;
-            clearInterval(interval);
+            stop();
         };
     }, [usingOfflineRecovery, attempt?.id, isCompleted, accessDenied, submissionOnly, revalidateOfflineSession, syncPendingAnswers, flushSecurityEvents]);
 
@@ -1517,8 +1530,8 @@ export default function ExamPage() {
             if (seenClosed) window.location.reload();
         };
         void check();
-        const interval = setInterval(() => { void check(); }, 15_000);
-        return () => { active = false; clearInterval(interval); };
+        const stop = jitteredInterval(() => { void check(); }, 15_000);
+        return () => { active = false; stop(); };
     }, [submissionIssue, attempt?.id, isCompleted]);
 
     // Event `online` tidak selalu muncul ketika Wi-Fi tetap tersambung tetapi
@@ -1535,10 +1548,10 @@ export default function ExamPage() {
             }
         };
         void retry();
-        const interval = setInterval(() => { void retry(); }, 15_000);
+        const stop = jitteredInterval(() => { void retry(); }, 15_000);
         return () => {
             active = false;
-            clearInterval(interval);
+            stop();
         };
     }, [waitingForSyncAndSubmit, attempt?.id, isCompleted, accessDenied, handleSubmitExam, revalidateOfflineSession]);
 
@@ -1768,11 +1781,10 @@ export default function ExamPage() {
     // sehingga jangan hanya mengandalkan event browser `online`.
     useEffect(() => {
         if (!attempt?.id || isCompleted || accessDenied || submissionOnly) return;
-        const iv = setInterval(() => {
+        return jitteredInterval(() => {
             retryFailedAnswers();
             void flushSecurityEvents().catch(() => null);
-        }, 15000);
-        return () => clearInterval(iv);
+        }, 15_000);
     }, [attempt?.id, isCompleted, accessDenied, submissionOnly, retryFailedAnswers, flushSecurityEvents]);
 
     // Tab ditutup / berpindah ke background: titipkan jawaban yang belum pasti
@@ -1843,6 +1855,13 @@ export default function ExamPage() {
                 }
                 // Sesi sudah berlaku lagi (mis. setelah login ulang di tab lain).
                 if (syncRejectionRef.current === SESSION_ENDED_MESSAGE) setSyncRejection(null);
+                // Guru memperbaiki soal saat ujian berjalan: ambil soal yang berubah sekarang.
+                const revision = heartbeat.questionRevision;
+                if (typeof revision === 'number') {
+                    const known = questionRevisionRef.current;
+                    questionRevisionRef.current = revision;
+                    if (known !== null && known !== revision) requestQuestionCheckRef.current?.();
+                }
             } else if (heartbeat && !heartbeat.success && heartbeat.retryable === false) {
                 // Server menjawab tetapi menolak: ini bukan gangguan jaringan.
                 noteSyncResult(heartbeat);
@@ -1861,8 +1880,8 @@ export default function ExamPage() {
             } finally { running = false; }
         };
         void pulse();
-        const iv = setInterval(() => { void pulse(); }, 15000);
-        return () => { cancelled = true; clearInterval(iv); };
+        const stop = jitteredInterval(() => { void pulse(); }, 15_000);
+        return () => { cancelled = true; stop(); };
     }, [attempt, isCompleted, accessDenied, submissionOnly, flushSecurityEvents, confirmPendingTermination, recordConnectionInterruption,
         noteSyncResult, exam?.metadata?.screenshot_enabled, screenSharingRef]);
 
@@ -2071,8 +2090,8 @@ export default function ExamPage() {
                 checking = false;
             }
         };
-        const timer = window.setInterval(() => void check(), 15_000);
-        return () => { disposed = true; window.clearInterval(timer); };
+        const stop = jitteredInterval(() => void check(), 15_000);
+        return () => { disposed = true; stop(); };
     }, [waitingForScreenShareException, examId]);
     const networkLabel = examNetworkLabel(isOffline, !!serverUnavailableAt, isNetworkWeak);
     const rejectedAnswerNumbers = Object.keys(rejectedAnswers)
