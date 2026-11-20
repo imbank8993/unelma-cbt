@@ -8,7 +8,6 @@ import { useRouter } from 'next/navigation';
 import { availableStudentScoreTypes, studentScoreType, STUDENT_SCORE_LABELS, type StudentScoreType } from '@acca-cbt/shared';
 import {
     AlertCircle,
-    Check,
     ChevronDown,
     FileText,
     FolderOpen,
@@ -47,7 +46,6 @@ import type { QuestionBank } from '@/lib/api/questions';
 import { getSessionUser } from '@/lib/session';
 import { alertDialog } from '@/lib/confirm-dialog';
 import { examProgramsOf, learningProgramLabel, useLearningPrograms, type LearningProgram } from '@/lib/learning-catalog';
-import { programVisual } from '@/app/components/student/programVisuals';
 import { DEFAULT_SCHOOL_TIME_ZONE, getSchoolTimeZone, getSchoolTimeZoneLabel, schoolTodayDate, utcToSchoolLocalDateTime, addMinutesToLocalDateTime } from '@/lib/school-time';
 import { freeQuotaExhausted, useCreationLimits } from '@/lib/useCreationLimits';
 
@@ -115,16 +113,15 @@ interface ExamFormData {
 }
 
 /**
- * Pilih/lepas satu label program. "Umum" berarti semua siswa, jadi tidak
- * digabung dengan label lain; melepas label terakhir kembali ke "Umum".
+ * Terapkan pilihan baru dari dropdown label program. "Umum" berarti semua siswa,
+ * jadi tidak digabung dengan label lain: memilih Umum melepas label lain, memilih
+ * label lain melepas Umum, dan mengosongkan pilihan kembali ke Umum.
  */
-function toggleExamProgram(current: LearningProgram[], value: LearningProgram): LearningProgram[] {
-    if (current.includes(value)) {
-        const next = current.filter((item) => item !== value);
-        return next.length ? next : ['umum'];
-    }
-    if (value === 'umum') return ['umum'];
-    return [...current.filter((item) => item !== 'umum'), value];
+function applyExamProgramSelection(current: LearningProgram[], next: LearningProgram[]): LearningProgram[] {
+    if (!next.length) return ['umum'];
+    const added = next.filter((item) => !current.includes(item));
+    if (added.includes('umum')) return ['umum'];
+    return next.length > 1 ? next.filter((item) => item !== 'umum') : next;
 }
 
 const DEFAULT_FORM_DATA: ExamFormData = {
@@ -1025,27 +1022,20 @@ export const CreateExamModal: React.FC<CreateExamModalProps> = ({
                             />
                         </ModalField>
                         <ModalField label="Label Program" hint="Boleh pilih lebih dari satu. Tryout tampil untuk siswa yang tujuan belajarnya cocok dengan salah satu label; Umum tampil untuk semua siswa. Daftar diatur di Pengaturan → Pengaturan Daftar.">
-                            <div role="group" aria-label="Label program" className="flex flex-wrap gap-1.5">
-                                {[
-                                    ...programOptions,
+                            <MultiSelect
+                                aria-label="Label program"
+                                placeholder="Pilih label program"
+                                showQuickActions={false}
+                                value={formData.programs}
+                                formatSummary={(selected) => selected.map((item) => item.label).join(', ')}
+                                onChange={(next) => setFormData((prev) => ({ ...prev, programs: applyExamProgramSelection(prev.programs, next) }))}
+                                options={[
+                                    ...programOptions.map((item) => ({ value: item.value, label: item.value === 'umum' ? `${item.label} (semua siswa)` : item.label })),
                                     // Label lama yang kini disembunyikan tetap terpilih sampai dilepas.
                                     ...formData.programs.filter((value) => !programOptions.some((item) => item.value === value))
                                         .map((value) => ({ value, label: `${learningProgramLabel(value)} (disembunyikan)` })),
-                                ].map((item) => {
-                                    const selected = formData.programs.includes(item.value);
-                                    const Icon = programVisual(item.value).icon;
-                                    return (
-                                        <button key={item.value} type="button" aria-pressed={selected}
-                                            onClick={() => setFormData((prev) => ({ ...prev, programs: toggleExamProgram(prev.programs, item.value) }))}
-                                            className={`inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-xs font-semibold transition-colors ${selected
-                                                ? 'border-[#030C4D] bg-[#030C4D] text-white dark:border-blue-400 dark:bg-blue-500'
-                                                : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300'}`}>
-                                            {selected ? <Check size={13} /> : <Icon size={13} />}
-                                            {item.value === 'umum' ? `${item.label} (semua siswa)` : item.label}
-                                        </button>
-                                    );
-                                })}
-                            </div>
+                                ]}
+                            />
                         </ModalField>
                         </div>
                         <ModalField label="Deskripsi">

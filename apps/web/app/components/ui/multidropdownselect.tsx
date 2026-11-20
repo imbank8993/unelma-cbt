@@ -25,6 +25,8 @@ export interface MultiSelectDropdownProps<T extends string | number = string> {
     height?: string;
     minWidth?: string;
     showQuickActions?: boolean;
+    /** Teks ringkasan sendiri, mis. nama pilihan dipisah koma (bawaan: "N Terpilih"). */
+    formatSummary?: (selected: MultiSelectOption<T>[]) => string;
 }
 
 function DropDownIcon({ size = 20, className = '' }: { size?: number; className?: string }) {
@@ -58,6 +60,7 @@ export function MultiSelectDropdown<T extends string | number = string>({
     height = '40px',
     minWidth = '100%',
     showQuickActions = true,
+    formatSummary,
 }: MultiSelectDropdownProps<T>) {
     const [isOpen, setIsOpen] = useState(false);
     const menuId = useId();
@@ -174,6 +177,8 @@ export function MultiSelectDropdown<T extends string | number = string>({
 
     const summaryText = isNoneSelected
         ? placeholder
+        : formatSummary
+        ? formatSummary(options.filter(o => value.includes(o.value)))
         : isAllSelected
         ? allSelectedText
         : `${value.length} Terpilih`;
