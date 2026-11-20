@@ -12,7 +12,7 @@ import {
     type StudentScheduledExam,
 } from '@/lib/api/students';
 import { learningRequest, type LearningMaterial } from '@/lib/learning-api';
-import { examProgramOf, groupLearningChapters, learningProgramOf, useLearningPrograms, type LearningProgram } from '@/lib/learning-catalog';
+import { examProgramsOf, groupLearningChapters, learningProgramOf, useLearningPrograms, type LearningProgram } from '@/lib/learning-catalog';
 import { daysUntil, loadLearningGoal, programLabel, saveLearningGoal, type LearningGoal } from '@/lib/learning-goal';
 import { useToast } from '@/app/components/ui/Toast';
 import { LearningGoalModal } from '@/app/components/student/LearningGoalModal';
@@ -193,8 +193,7 @@ export default function SiswaDashboard() {
     const examGoals = (goal?.programs ?? []).filter(value => activePrograms.some(item => item.value === value));
     const visibleExams = dashboardExams(exams, now).filter(exam => {
         if (exam.metadata?.is_public !== true || !examGoals.length) return true;
-        const program: LearningProgram = examProgramOf(exam.metadata?.program);
-        return program === 'umum' || examGoals.includes(program);
+        return examProgramsOf(exam.metadata).some(program => program === 'umum' || examGoals.includes(program));
     });
     const activeExam = visibleExams.find(exam => scheduleState(exam, now) === 'open');
 

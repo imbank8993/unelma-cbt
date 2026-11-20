@@ -71,7 +71,7 @@ export interface StudentScheduledExam {
     /** Ujian berbayar yang sudah selesai dan boleh dikerjakan ulang (tanpa bayar lagi). */
     canRetake?: boolean;
     /** Pengaturan ujian yang aman dibaca siswa; `is_public` = ujian pilihan, `program` = program sasaran. */
-    metadata?: { is_public?: boolean; program?: string } & Record<string, unknown>;
+    metadata?: { is_public?: boolean; program?: string; programs?: string[] } & Record<string, unknown>;
 }
 
 export async function listStudentClasses(): Promise<StudentClass[]> {

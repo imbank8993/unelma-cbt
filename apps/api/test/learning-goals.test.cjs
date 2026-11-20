@@ -96,12 +96,13 @@ test('program ujian: DTO menerima program yang dikenal (termasuk SNPDB) dan sisw
 test('jadwal siswa: ujian wajib selalu tampil, tryout pilihan disaring sesuai tujuan belajar', () => {
     const schedule = read('../../web/app/dashboard/siswa/schedule/page.tsx');
     assert.match(schedule, /const isRequired = \(exam: StudentScheduledExam\) => exam\.metadata\?\.is_public !== true;/);
-    assert.match(schedule, /if \(programFilter === 'untukmu'\) return program === 'umum' \|\| goalPrograms\.includes\(program\);/);
+    assert.match(schedule, /programsOf\(exam\)\.some\(program => program === 'umum' \|\| goalPrograms\.includes\(program\)\)/);
+    assert.match(schedule, /if \(programFilter === 'untukmu'\) return inGoals\(exam\);/);
     assert.match(schedule, /Wajib dari sekolah \/ kelas/);
     const dashboard = read('../../web/app/dashboard/siswa/page.tsx');
     assert.match(dashboard, /if \(exam\.metadata\?\.is_public !== true \|\| !examGoals\.length\) return true;/);
     const modal = read('../../web/components/exams/CreateExamModal.tsx');
-    assert.match(modal, /program: formData\.program,/);
+    assert.match(modal, /programs: formData\.programs\.length \? formData\.programs : \['umum'\],/);
 });
 
 test('Pengaturan Daftar: katalog program divalidasi, program struktural selalu ada, label bahan ajar menerima kode baru', async () => {
@@ -120,4 +121,25 @@ test('Pengaturan Daftar: katalog program divalidasi, program struktural selalu a
     for (const level of ['0', '13', 'UTBK', 'a']) assert.doesNotMatch(level, LEARNING_GRADE_LEVEL_PATTERN, level);
     const settings = read('../src/settings/settings.service.ts');
     assert.match(settings, /LEARNING_PROGRAM_CATALOG_SETTING_KEY\) value = normalizeLearningProgramCatalog\(value\)/);
+});
+
+test('label program ujian bisa lebih dari satu: DTO, metadata, dan cadangan ujian lama', async () => {
+    const { CreateExamDto } = require('../src/proctor/dto/proctor.dto.ts');
+    const { examProgramsFromDto, examProgramMetadata } = require('../src/common/learning-programs.ts');
+    const errorsFor = async (programs) => (await validate(plainToInstance(CreateExamDto, { title: 'Tryout', duration: 60, programs }))).map(e => e.property);
+    assert.ok(!(await errorsFor(['utbk', 'snpdb'])).includes('programs'));
+    assert.ok((await errorsFor(['utbk', 'Bukan Kode'])).includes('programs'));
+    assert.ok((await errorsFor(Array.from({ length: 11 }, (_, i) => `p${i}x`))).includes('programs'));
+
+    assert.deepEqual(examProgramMetadata(examProgramsFromDto({ programs: ['utbk', 'snpdb', 'utbk'] }, {})), { program: 'utbk', programs: ['utbk', 'snpdb'] });
+    assert.deepEqual(examProgramMetadata(examProgramsFromDto({ program: 'cpns' }, { programs: ['utbk'] })), { program: 'cpns', programs: ['cpns'] });
+    assert.deepEqual(examProgramMetadata(examProgramsFromDto({}, { program: 'utbk' })), { program: 'utbk', programs: ['utbk'] }, 'ujian lama dengan satu label');
+    assert.deepEqual(examProgramMetadata(examProgramsFromDto({}, { programs: ['utbk', 'cpns'] })), { program: 'utbk', programs: ['utbk', 'cpns'] });
+    assert.deepEqual(examProgramMetadata(examProgramsFromDto({ programs: [] }, {})), { program: 'umum', programs: ['umum'] });
+    assert.deepEqual(examProgramMetadata(examProgramsFromDto({}, {})), {}, 'ujian tanpa label tetap tanpa label');
+
+    const { studentExamMetadata } = require('../src/students/student-exam-metadata.ts');
+    assert.deepEqual(studentExamMetadata({ is_public: true, program: 'utbk', programs: ['utbk', 'snpdb'] }), { is_public: true, program: 'utbk', programs: ['utbk', 'snpdb'] });
+    const service = read('../src/proctor/exam-admin.service.ts');
+    assert.match(service, /examProgramMetadata\(examProgramsFromDto\(dto, existing\)\)/);
 });

@@ -19,7 +19,7 @@ import {
     ValidateIf,
     ValidateNested,
 } from 'class-validator';
-import { LEARNING_PROGRAM_CODE_PATTERN } from '../../common/learning-programs';
+import { LEARNING_PROGRAM_CODE_PATTERN, MAX_EXAM_PROGRAMS } from '../../common/learning-programs';
 import { EXAM_TYPE_CODE_PATTERN } from '../../common/exam-type-catalog';
 
 export const EXAM_TYPES = ['daily', 'pas', 'pat', 'am', 'tryout', 'lainnya', 'assignment'] as const;
@@ -148,6 +148,13 @@ class ExamFieldsDto {
     @IsOptional()
     @Matches(LEARNING_PROGRAM_CODE_PATTERN, { message: 'Program ujian tidak valid.' })
     program?: string;
+
+    @ApiPropertyOptional({ example: ['utbk', 'snpdb'], isArray: true, description: 'Beberapa label program sekaligus; menggantikan `program` bila dikirim.' })
+    @IsOptional()
+    @IsArray()
+    @ArrayMaxSize(MAX_EXAM_PROGRAMS)
+    @Matches(LEARNING_PROGRAM_CODE_PATTERN, { each: true, message: 'Program ujian tidak valid.' })
+    programs?: string[];
 
     @ApiPropertyOptional()
     @IsOptional()

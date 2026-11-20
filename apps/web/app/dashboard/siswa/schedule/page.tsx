@@ -29,7 +29,7 @@ Lock,RefreshCw,
 import Link from 'next/link';
 import { EXAM_ACTION_BUTTON } from '@/app/components/student/StudentBanner';
 import { StudentDashboardOverview } from '@/app/components/student/StudentDashboardOverview';
-import { examProgramOf, useLearningPrograms, type LearningProgram } from '@/lib/learning-catalog';
+import { examProgramsOf, useLearningPrograms, type LearningProgram } from '@/lib/learning-catalog';
 import { loadLearningGoal, programLabel } from '@/lib/learning-goal';
 import { useRouter } from 'next/navigation';
 import { useCallback,useEffect,useRef,useState } from 'react';
@@ -190,20 +190,21 @@ const SchedulePage = () => {
 
     // Ujian dari kelas/siswa = wajib (selalu tampil); ujian umum = pilihan (disaring per program).
     const isRequired = (exam: StudentScheduledExam) => exam.metadata?.is_public !== true;
-    const programOf = (exam: StudentScheduledExam): LearningProgram => examProgramOf(exam.metadata?.program);
+    /** Label program ujian; satu ujian bisa berlabel beberapa program. */
+    const programsOf = (exam: StudentScheduledExam): LearningProgram[] => examProgramsOf(exam.metadata);
+    const inGoals = (exam: StudentScheduledExam) => programsOf(exam).some(program => program === 'umum' || goalPrograms.includes(program));
     const keyword = query.trim().toLocaleLowerCase('id-ID');
     const matchesQuery = (exam: StudentScheduledExam) => !keyword || exam.title.toLocaleLowerCase('id-ID').includes(keyword);
     const matchesFocus = (exam: StudentScheduledExam) => {
-        const program = programOf(exam);
         if (programFilter === 'all') return true;
-        if (programFilter === 'untukmu') return program === 'umum' || goalPrograms.includes(program);
-        return program === programFilter;
+        if (programFilter === 'untukmu') return inGoals(exam);
+        return programsOf(exam).includes(programFilter);
     };
     const optionalAll = allSortedExams.filter(exam => !isRequired(exam));
     const requiredShown = allSortedExams.filter(exam => isRequired(exam) && matchesQuery(exam));
     const optionalShown = optionalAll.filter(exam => matchesQuery(exam) && matchesFocus(exam));
     const hiddenOptional = goalOnly
-        ? optionalAll.filter(exam => matchesQuery(exam) && programOf(exam) !== 'umum' && !goalPrograms.includes(programOf(exam))).length
+        ? optionalAll.filter(exam => matchesQuery(exam) && !inGoals(exam)).length
         : optionalAll.filter(matchesQuery).length - optionalShown.length;
     const sortedExams = allSortedExams.filter(exam => requiredShown.includes(exam) || optionalShown.includes(exam));
     const openExams = sortedExams.filter(isOpenNow);
@@ -455,7 +456,7 @@ const SchedulePage = () => {
                     <div role="group" aria-label="Fokus program" className="flex gap-2 overflow-x-auto pb-1">
                         {[
                             ...(goalOnly ? [{ value: 'untukmu', label: 'Untukmu' }] : [{ value: 'all', label: 'Semua program' }]),
-                            ...activePrograms.filter((item) => (!goalOnly || goalPrograms.includes(item.value)) && optionalAll.some((exam) => programOf(exam) === item.value)),
+                            ...activePrograms.filter((item) => (!goalOnly || goalPrograms.includes(item.value)) && optionalAll.some((exam) => programsOf(exam).includes(item.value))),
                         ].map((item) => (
                             <button key={item.value} type="button" aria-pressed={programFilter === item.value} onClick={() => setProgramFilter(item.value as 'untukmu' | 'all' | LearningProgram)}
                                 className={`inline-flex shrink-0 items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-semibold transition-colors ${programFilter === item.value

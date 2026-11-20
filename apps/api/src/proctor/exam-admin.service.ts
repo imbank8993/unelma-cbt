@@ -28,6 +28,7 @@ import {
 } from '../common/complex-scoring';
 import { ALLOWED_EXTENSIONS } from '../storage/storage.service';
 import { EXAM_TYPES, type CreateExamDto, type UpdateExamDto } from './dto/proctor.dto';
+import { examProgramMetadata, examProgramsFromDto } from '../common/learning-programs';
 import {
     DEFAULT_EXAM_TYPE_CATALOG,
     EXAM_TYPE_RULE_METADATA_KEY,
@@ -1189,8 +1190,8 @@ export class ExamAdminService {
             // Tidak dikirim = PERTAHANKAN. Sebelumnya `?? false` membuat setiap
             // penyuntingan tanpa bidang ini diam-diam menjadikan ujian umum privat.
             is_public: dto.isPublic ?? existing.is_public === true,
-            // Program sasaran; ujian lama tanpa program dianggap "umum" saat ditampilkan.
-            ...(dto.program ?? existing.program ? { program: dto.program ?? existing.program } : {}),
+            // Label program (bisa lebih dari satu); ujian lama tanpa program dianggap "umum" saat ditampilkan.
+            ...examProgramMetadata(examProgramsFromDto(dto, existing)),
             document_url: isAssignment
                 ? (dto.documentUrl ?? existing.document_url ?? '')
                 : existing.document_url,

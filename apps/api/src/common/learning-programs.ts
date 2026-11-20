@@ -27,6 +27,28 @@ export const LEARNING_GRADE_LEVEL_PATTERN = /^(?:|[1-9]|1[0-2]|[a-z][a-z0-9_]{1,
 /** Dua program struktural: "sekolah" memakai kelas 1–12, "umum" memakai tingkatan kosong. */
 export const STRUCTURAL_LEARNING_PROGRAMS = ['sekolah', 'umum'] as const;
 export const MAX_LEARNING_PROGRAMS = 40;
+/** Batas label program pada satu ujian (`metadata.programs`). */
+export const MAX_EXAM_PROGRAMS = 10;
+
+/**
+ * Label program ujian. Ujian baru menyimpan `metadata.programs` (bisa lebih dari
+ * satu) dan `metadata.program` = label pertama untuk pembaca lama. Kosong = "umum".
+ */
+export function examProgramsFromDto(dto: { program?: string; programs?: string[] }, existing: { program?: unknown; programs?: unknown }): string[] | null {
+    const valid = (list: unknown[]) => [...new Set(list.filter((item): item is string => typeof item === 'string' && LEARNING_PROGRAM_CODE_PATTERN.test(item)))].slice(0, MAX_EXAM_PROGRAMS);
+    if (dto.programs) return valid(dto.programs);
+    if (dto.program) return valid([dto.program]);
+    if (Array.isArray(existing.programs)) return valid(existing.programs);
+    if (typeof existing.program === 'string') return valid([existing.program]);
+    return null;
+}
+
+/** Bidang metadata dari daftar label: `{ program, programs }`, atau kosong bila belum pernah diberi label. */
+export function examProgramMetadata(programs: string[] | null): { program?: string; programs?: string[] } {
+    if (!programs) return {};
+    const list = programs.length ? programs : ['umum'];
+    return { program: list[0], programs: list };
+}
 
 export const LEARNING_PROGRAM_ICONS = [
     'graduation', 'school', 'target', 'landmark', 'briefcase', 'shield', 'languages', 'sparkles',

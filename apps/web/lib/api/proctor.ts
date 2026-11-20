@@ -155,6 +155,7 @@ export interface OrganizationExam {
         document_url?: string;
         is_public?: boolean;
         program?: string;
+        programs?: string[];
         is_safe_mode?: boolean;
         max_violations?: number | null;
         screenshot_enabled?: boolean;
@@ -591,6 +592,8 @@ export interface ExamInput {
     tokenPrice?: number;
     /** Program sasaran (snpdb, utbk, cpns, ...); siswa menyaring ujian pilihan dengan ini. */
     program?: string;
+    /** Beberapa label program sekaligus; menggantikan `program`. */
+    programs?: string[];
 }
 
 export function createExamAction(

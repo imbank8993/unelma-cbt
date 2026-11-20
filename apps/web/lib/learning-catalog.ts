@@ -165,6 +165,16 @@ export const learningProgramLabel = (program?: string | null) => learningProgram
 /** Label program ujian (`metadata.program`); kosong/tak dikenal = "umum". */
 export const examProgramOf = (program?: unknown): LearningProgram =>
     typeof program === 'string' && LEARNING_PROGRAM_CODE_PATTERN.test(program) ? program : 'umum';
+/**
+ * Semua label program sebuah ujian: `metadata.programs` (bisa lebih dari satu),
+ * atau `metadata.program` untuk ujian lama. Tanpa label = ['umum'].
+ */
+export function examProgramsOf(metadata?: { program?: unknown; programs?: unknown } | null): LearningProgram[] {
+    const list = Array.isArray(metadata?.programs)
+        ? [...new Set(metadata.programs.filter((item): item is string => typeof item === 'string' && LEARNING_PROGRAM_CODE_PATTERN.test(item)))]
+        : [];
+    return list.length ? list : [examProgramOf(metadata?.program)];
+}
 
 /** Program tempat sebuah tingkatan berada: kelas 1–12 = sekolah, '' = umum, selain itu kode program. */
 export const learningProgramOf = (grade?: string): LearningProgram => {
