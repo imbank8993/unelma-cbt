@@ -62,5 +62,9 @@ EXPOSE 3018
 HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
   CMD curl -f -L http://127.0.0.1:3018/ || exit 1
 
-CMD ["sh", "-c", "node apps/web/server.js 2>/dev/null || node server.js"]
+# Output standalone monorepo menaruh server di apps/web/server.js. CMD lama memakai
+# `2>/dev/null || ...`, sehingga galat Next.js hilang dari `docker compose logs`
+# dan `sh` menjadi PID 1 (SIGTERM saat deploy tidak sampai ke Node). Sekarang:
+# pilih berkas yang ada, lalu `exec` agar Node menjadi PID 1.
+CMD ["sh", "-c", "for f in apps/web/server.js server.js; do [ -f \"$f\" ] && exec node \"$f\"; done; echo 'server.js Next.js tidak ditemukan' >&2; exit 1"]
 
