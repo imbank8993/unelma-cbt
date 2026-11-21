@@ -60,13 +60,27 @@ export const allLearningPrograms: LearningProgramItem[] = [];
 export const learningPrograms: LearningProgramItem[] = [];
 
 const ROMAN = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X', 'XI', 'XII'];
-const stageOf = (grade: number) => grade <= 6 ? 'SD' : grade <= 9 ? 'SMP' : 'SMA/SMK';
-const SCHOOL_GRADES = [10, 11, 12, 7, 8, 9, 1, 2, 3, 4, 5, 6].map(grade => ({ value: String(grade), label: `Kelas ${ROMAN[grade - 1]}`, program: 'sekolah', stage: stageOf(grade) }));
+
+/**
+ * Jenjang sekolah. Program "sekolah" tidak ditampilkan sebagai satu kategori;
+ * materinya dikelompokkan per jenjang dari kelas yang tersimpan di `grade_level`
+ * (1–6 SD, 7–9 SMP, 10–12 SMA), jadi data lama tidak perlu dimigrasi.
+ * Kode memakai tanda hubung agar tidak bentrok dengan kode program dari Admin.
+ */
+export interface SchoolStage { value: string; label: string; hint: string; from: number; to: number }
+export const SCHOOL_STAGES: SchoolStage[] = [
+    { value: 'jenjang-sd', label: 'SD', hint: 'Kelas I–VI', from: 1, to: 6 },
+    { value: 'jenjang-smp', label: 'SMP', hint: 'Kelas VII–IX', from: 7, to: 9 },
+    { value: 'jenjang-sma', label: 'SMA', hint: 'Kelas X–XII · SMA/SMK/MA', from: 10, to: 12 },
+];
+const stageOfGrade = (grade: number) => SCHOOL_STAGES.find(stage => grade >= stage.from && grade <= stage.to);
+const SCHOOL_GRADES = Array.from({ length: 12 }, (_, index) => index + 1)
+    .map(grade => ({ value: String(grade), label: `Kelas ${ROMAN[grade - 1]}`, program: 'sekolah', stage: stageOfGrade(grade)!.label }));
 
 export interface LearningGrade { value: string; label: string; program: LearningProgram; stage?: string }
 /** Tingkatan yang tersimpan di `grade_level` untuk program yang ditampilkan. */
 export const learningGrades: LearningGrade[] = [];
-/** Pilihan label program/tingkatan di formulir bahan ajar, misalnya "Sekolah · Kelas X · SMA/SMK" atau "CPNS". */
+/** Pilihan label program/tingkatan di formulir bahan ajar, misalnya "SMA · Kelas X" atau "CPNS". */
 export const learningGradeOptions: { value: string; label: string }[] = [];
 let allGrades: LearningGrade[] = [];
 
@@ -118,8 +132,7 @@ export function applyLearningProgramCatalog(items: LearningProgramItem[], option
     replace(learningPrograms, items.filter(item => item.active));
     allGrades = gradesOf(items);
     replace(learningGrades, gradesOf(learningPrograms));
-    const school = items.find(item => item.value === 'sekolah')?.label || 'Sekolah';
-    replace(learningGradeOptions, learningGrades.map(item => ({ value: item.value, label: item.stage ? `${school} · ${item.label} · ${item.stage}` : item.label })));
+    replace(learningGradeOptions, learningGrades.map(item => ({ value: item.value, label: item.stage ? `${item.stage} · ${item.label}` : item.label })));
     if (options.persist !== false && typeof window !== 'undefined') {
         try { window.localStorage.setItem(STORAGE_KEY, JSON.stringify(toLearningProgramCatalog(items))); } catch { /* mode privat */ }
     }
@@ -183,6 +196,29 @@ export const learningProgramOf = (grade?: string): LearningProgram => {
     if (/^\d+$/.test(value)) return 'sekolah';
     return allGrades.find(item => item.value === value)?.program || value;
 };
+/** Jenjang sekolah sebuah tingkatan (kelas 1–12); undefined untuk program lain. */
+export const schoolStageOf = (grade?: string) => /^\d+$/.test(grade || '') ? stageOfGrade(Number(grade)) : undefined;
+
+/**
+ * Kategori tampilan Ruang Belajar: jenjang SD/SMP/SMA untuk kelas 1–12,
+ * selain itu kode program (mis. "utbk", "umum").
+ */
+export const learningCategoryOf = (grade?: string): string => schoolStageOf(grade)?.value || learningProgramOf(grade);
+
+export interface LearningCategory { value: string; label: string; hint: string; program: LearningProgram }
+/** Daftar kategori dari program: "sekolah" dipecah menjadi SD, SMP, SMA; program lain apa adanya. */
+export function learningCategoriesOf(programs: Pick<LearningProgramItem, 'value' | 'label' | 'hint'>[]): LearningCategory[] {
+    return programs.flatMap(item => item.value === 'sekolah'
+        ? SCHOOL_STAGES.map(stage => ({ value: stage.value, label: stage.label, hint: stage.hint, program: item.value }))
+        : [{ value: item.value, label: item.label, hint: item.hint, program: item.value }]);
+}
+
+/** Label kelompok tingkatan, mis. "SMA · Kelas X"; program lain memakai namanya. */
+export const learningGradeHeading = (grade?: string) => {
+    const stage = schoolStageOf(grade);
+    return stage ? `${stage.label} · ${learningGradeLabel(grade)}` : learningGradeLabel(grade);
+};
+
 export const learningKey = (value?: string) => (value || '').trim().replace(/\s+/g, ' ').toLocaleLowerCase('id-ID');
 export const learningGradeLabel = (grade?: string) => {
     const known = allGrades.find(item => item.value === (grade || ''));

@@ -326,19 +326,23 @@
 .learn-preview.is-restoring iframe{pointer-events:none}
 @media(prefers-reduced-motion:reduce){.learn-reader-surface{transition:none}.learn-reader-progress::before{animation-duration:2.5s}}
 
-/* Ruang belajar siswa: hero dan kartu program (Sekolah, UTBK, CPNS, PPPK, ...). */
-.lc-programs{display:flex;gap:10px;overflow-x:auto;padding:2px 2px 6px;scrollbar-width:thin;min-width:0}
-.learning .lc-program{flex:0 0 auto;justify-content:flex-start;gap:10px;min-width:150px;padding:10px 14px 10px 10px;border:1px solid var(--lc-line);border-radius:12px;background:var(--lc-surface);color:var(--lc-text);text-align:left;transition:border-color .15s,box-shadow .15s,transform .15s}
-.learning .lc-program:hover{border-color:hsl(var(--mark-hue) 60% 70%);transform:translateY(-1px)}
-.learning .lc-program[aria-pressed=true]{border-color:hsl(var(--mark-hue) 65% 50%);box-shadow:0 0 0 3px hsl(var(--mark-hue) 80% 50% / .12);background:hsl(var(--mark-hue) 80% 98%)}
-.learning .lc-program.is-empty:not([aria-pressed=true]){opacity:.7}
-.lc-program-icon{display:grid;place-items:center;width:34px;height:34px;border-radius:10px;flex-shrink:0;color:hsl(var(--mark-hue) 60% 38%);background:hsl(var(--mark-hue) 80% 95%)}
-.lc-program-text{display:flex;flex-direction:column;line-height:1.2}
-.lc-program-text strong{font-size:13px;font-weight:700;white-space:nowrap}
-.lc-program-text small{font-size:11px;color:var(--lc-muted);font-weight:500}
-.dark .learning .lc-program[aria-pressed=true]{background:hsl(var(--mark-hue) 40% 15%)}
-.dark .lc-program-icon{color:hsl(var(--mark-hue) 80% 78%);background:hsl(var(--mark-hue) 40% 18%)}
-@media(max-width:760px){.learning .lc-program{min-width:132px}}
+/* Ruang belajar: kategori jenjang (SD, SMP, SMA) dan program (UTBK, CPNS, ...) sebagai chip netral. */
+.lc-categories{display:flex;flex-direction:column;gap:10px;min-width:0}
+.lc-chip-group{display:flex;align-items:center;gap:12px;min-width:0}
+.lc-chip-caption{flex:0 0 72px;font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--lc-muted)}
+.lc-chip-row{display:flex;align-items:center;gap:6px;flex-wrap:wrap;min-width:0}
+.learning .lc-chip{flex:0 0 auto;gap:7px;height:34px;padding:0 13px;border:1px solid var(--lc-line);border-radius:999px;background:var(--lc-surface);color:var(--lc-text);font-size:13px;font-weight:550;white-space:nowrap;transition:border-color .15s,background .15s,color .15s}
+.learning .lc-chip:hover{border-color:var(--lc-line-strong);background:var(--lc-soft)}
+.learning .lc-chip[aria-pressed=true]{border-color:var(--lc-text);background:var(--lc-text);color:var(--lc-surface)}
+.learning .lc-chip.is-empty:not([aria-pressed=true]){color:var(--lc-muted)}
+.lc-chip-count{font-size:11.5px;font-weight:500;color:var(--lc-muted);font-variant-numeric:tabular-nums}
+.learning .lc-chip[aria-pressed=true] .lc-chip-count{color:inherit;opacity:.7}
+@media(max-width:760px){
+.lc-chip-group{flex-direction:column;align-items:stretch;gap:6px}
+.lc-chip-caption{flex:none}
+.lc-chip-row{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;margin:0 -16px;padding:0 16px}
+.lc-chip-row::-webkit-scrollbar{display:none}
+}
 
 /* Ringkasan siswa memakai komponen gradasi yang sama dengan dashboard. */
 .lc-overview{margin-bottom:24px}
