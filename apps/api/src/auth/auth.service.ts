@@ -1,12 +1,13 @@
 import { SignupDto } from './dto/login.dto';
-import { BadRequestException, ForbiddenException, Injectable, Logger, NotFoundException, UnauthorizedException } from '@nestjs/common';
+import { BadRequestException, ForbiddenException, Injectable, Logger, NotFoundException, Optional, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { jwtVerify } from 'jose';
 import { type AuthUser, type LoginResponse, isSuperadminEmail } from '@acca-cbt/shared';
 import { DbService } from '../prisma/prisma-db-adapter';
 import { PrismaService } from '../prisma/prisma.service';
-import { AuthUsersRepository } from './auth-users.repository';
+import { AuthContextCache } from './auth-context-cache';
+import { AuthUsersRepository, sessionVersionOf } from './auth-users.repository';
 import { LoginHistoryService } from './login-history.service';
 import { CbtRolesService } from './cbt-roles.service';
 import { SingleSchoolService } from './single-school.service';
@@ -28,6 +29,7 @@ export class AuthService {
     private readonly prisma: PrismaService,
     private readonly schoolScope: SingleSchoolService,
     private readonly loginHistory: LoginHistoryService,
+    @Optional() private readonly authContext?: AuthContextCache,
   ) {}
 
   async login(email: string, password: string, ipAddress?: string, userAgent?: string): Promise<LoginResponse> {
@@ -66,7 +68,8 @@ export class AuthService {
       userAgent,
       success: true,
     });
-    return this.issueSession(user.id, user.email || identifier, user.raw_user_meta_data);
+    return this.issueSession(user.id, user.email || identifier, user.raw_user_meta_data, undefined,
+      sessionVersionOf(user.raw_app_meta_data));
   }
 
   /**
@@ -142,6 +145,9 @@ export class AuthService {
       publicUsers[0]?.foto_profil,
       publicUsers[0]?.nip,
     );
+    // Peran baru saja disamakan dengan tiket: identitas tersimpan proses ini
+    // harus dibaca ulang, bukan menunggu TTL cache habis.
+    this.authContext?.invalidate(userId);
     await this.authUsers.touchLastSignIn(userId);
     void this.loginHistory.record({
       userId,
@@ -156,6 +162,7 @@ export class AuthService {
       user.email || String(payload.email || ''),
       user.raw_user_meta_data,
       verifiedName,
+      sessionVersionOf(user.raw_app_meta_data),
     );
   }
 
@@ -284,7 +291,8 @@ export class AuthService {
     if (active.length === 0) {
       throw new ForbiddenException('Sesi hanya diperpanjang selama ujian sedang dikerjakan.');
     }
-    return this.issueSession(current.id, user.email || current.email || '', user.raw_user_meta_data, current.fullName || undefined);
+    return this.issueSession(current.id, user.email || current.email || '', user.raw_user_meta_data, current.fullName || undefined,
+      sessionVersionOf(user.raw_app_meta_data));
   }
 
   private async issueSession(
@@ -292,7 +300,16 @@ export class AuthService {
     email: string,
     metadata: Record<string, unknown> | null,
     overrideFullName?: string,
+    sessionVersion?: string,
   ): Promise<LoginResponse> {
+    // Login Google/daftar mandiri (khusus unelma-cbt) tidak membawa baris akun
+    // lengkap; versi sesi dibaca di sini agar tokennya tidak langsung ditolak
+    // JwtStrategy ketika acca-new pernah mencabut sesi akun ini.
+    if (sessionVersion === undefined) {
+      sessionVersion = sessionVersionOf((await this.authUsers.findById(userId))?.raw_app_meta_data);
+    }
+    // Setiap login dapat menyinkronkan peran: identitas tersimpan dibaca ulang.
+    this.authContext?.invalidate(userId);
     const context = await this.roles.resolve(userId, email, metadata);
 
     const user: AuthUser = {
@@ -310,11 +327,14 @@ export class AuthService {
     // Klaim dibuat sebentuk dengan token acca-new agar satu token berlaku di
     // kedua aplikasi. Peran ikut disertakan HANYA sebagai petunjuk untuk
     // middleware; otorisasi tetap membaca ulang peran dari database.
+    // `sessionVersion` sama dengan klaim token acca-new: logout semua sesi atau
+    // ganti password (di aplikasi mana pun) membatalkan token ini juga.
     const accessToken = this.jwt.sign({
       sub: userId,
       authId: userId,
       email,
       role: context.roleNames.join(','),
+      sessionVersion,
     });
 
     return { access_token: accessToken, token_type: 'Bearer', user };
@@ -664,6 +684,7 @@ export class AuthService {
         );
       }
     });
+    this.authContext?.invalidate(targetUserId);
 
     return { success: true, message: `Peran ${targetUser.email || 'pengguna'} berhasil diubah menjadi ${matchedRole}.` };
   }
@@ -736,6 +757,7 @@ export class AuthService {
       `DELETE FROM auth.users WHERE id = $1::uuid`,
       targetUserId,
     );
+    this.authContext?.invalidate(targetUserId);
 
     return { success: true, message: `Pengguna ${targetUser.email} berhasil dihapus.` };
   }

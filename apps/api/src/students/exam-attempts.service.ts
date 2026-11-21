@@ -129,9 +129,12 @@ export function answerProblem(question: any, answer: AnswerInput): Omit<Rejected
 export class ExamAttemptsService {
     private readonly logger = new Logger(ExamAttemptsService.name);
     /**
-     * Soal beku per ujian untuk polling pembaruan. Ratusan siswa memanggil
-     * check-updates tiap 15 detik; tanpa cache setiap panggilan memuat ulang
-     * seluruh snapshot. Pemeriksaan akses tetap dijalankan per siswa.
+     * Soal beku per ujian, dipakai bersama semua siswa. Saat ujian dimulai
+     * ratusan siswa memuat soal yang sama hampir bersamaan, dan check-updates
+     * dipanggil setiap revisi berubah; tanpa cache setiap panggilan memuat ulang
+     * seluruh snapshot. Kuncinya memuat `live_question_revision`, sehingga
+     * perbaikan soal oleh guru langsung memakai entri baru, bukan menunggu TTL.
+     * Pemeriksaan akses dan pengacakan tetap dijalankan per siswa.
      */
     private readonly questionCache = new Map<string, { expiresAt: number; questions: Promise<Awaited<ReturnType<typeof loadFrozenExamQuestions>>> }>();
     private static readonly QUESTION_CACHE_MS = 10_000;
@@ -152,7 +155,7 @@ export class ExamAttemptsService {
      * sampai ke browser siswa, dan satu-satunya cara memastikannya adalah tidak
      * mengambilnya sama sekali dari basis data.
      */
-    async getQuestions(user: AuthUser, examId: string, deviceId?: string, options: { cached?: boolean } = {}) {
+    async getQuestions(user: AuthUser, examId: string, deviceId?: string) {
         const device = this.requireDeviceId(deviceId);
         const { data: exam } = await this.db
             .from('cbt_exams')
@@ -188,9 +191,8 @@ export class ExamAttemptsService {
         if (!row.is_published) {
             throw new ForbiddenException('Ujian belum dipublikasikan oleh proktor.');
         }
-        const questions = options.cached
-            ? await this.cachedFrozenQuestions(examId, row.question_bank_id)
-            : await loadFrozenExamQuestions(this.db, examId, row.question_bank_id);
+        const questions = await this.cachedFrozenQuestions(examId, row.question_bank_id,
+            (exam as { metadata?: { live_question_revision?: unknown } }).metadata?.live_question_revision);
 
         // Urutan soal diambil dari `common/question-order`, bukan disalin ulang:
         // layar review hasil memakai fungsi yang sama, dan begitu keduanya
@@ -221,7 +223,7 @@ export class ExamAttemptsService {
         knownRevisions: Record<string, number> = {},
         deviceId?: string,
     ) {
-        const full = await this.getQuestions(user, examId, deviceId, { cached: true });
+        const full = await this.getQuestions(user, examId, deviceId);
         const updatedQuestions = full.questions.filter((q) => {
             const clientRev = knownRevisions[q.id] ?? 1;
             const currentRev = (q as any).revision ?? 1;
@@ -1738,16 +1740,17 @@ export class ExamAttemptsService {
         return new Date();
     }
 
-    private cachedFrozenQuestions(examId: string, bankId: string | null) {
+    private cachedFrozenQuestions(examId: string, bankId: string | null, liveRevision?: unknown) {
         const now = Date.now();
-        const hit = this.questionCache.get(examId);
+        const key = `${examId}:${bankId || ''}:${Number(liveRevision) || 0}`;
+        const hit = this.questionCache.get(key);
         if (hit && hit.expiresAt > now) return hit.questions;
         if (this.questionCache.size > 500) {
             for (const [key, entry] of this.questionCache) if (entry.expiresAt <= now) this.questionCache.delete(key);
         }
         const questions = loadFrozenExamQuestions(this.db, examId, bankId);
-        this.questionCache.set(examId, { expiresAt: now + ExamAttemptsService.QUESTION_CACHE_MS, questions });
-        questions.catch(() => { if (this.questionCache.get(examId)?.questions === questions) this.questionCache.delete(examId); });
+        this.questionCache.set(key, { expiresAt: now + ExamAttemptsService.QUESTION_CACHE_MS, questions });
+        questions.catch(() => { if (this.questionCache.get(key)?.questions === questions) this.questionCache.delete(key); });
         return questions;
     }
 
