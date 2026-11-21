@@ -26,6 +26,13 @@ export const LEARNING_PROGRAM_CODE_PATTERN = /^[a-z][a-z0-9_]{1,31}$/;
 export const LEARNING_GRADE_LEVEL_PATTERN = /^(?:|[1-9]|1[0-2]|[a-z][a-z0-9_]{1,31})$/;
 /** Dua program struktural: "sekolah" memakai kelas 1–12, "umum" memakai tingkatan kosong. */
 export const STRUCTURAL_LEARNING_PROGRAMS = ['sekolah', 'umum'] as const;
+/**
+ * Jenjang program "sekolah". Aplikasi web menampilkan "sekolah" sebagai SD, SMP,
+ * SMA (kelas 1–6, 7–9, 10–12) dan menyimpan kode ini pada label ujian serta
+ * tujuan belajar; label lama "sekolah" dibaca sebagai ketiganya. Kode ini
+ * dicadangkan sehingga tidak bisa dipakai program buatan Admin.
+ */
+export const SCHOOL_STAGE_CODES = ['sd', 'smp', 'sma'] as const;
 export const MAX_LEARNING_PROGRAMS = 40;
 /** Batas label program pada satu ujian (`metadata.programs`). */
 export const MAX_EXAM_PROGRAMS = 10;
@@ -100,6 +107,7 @@ export function normalizeLearningProgramCatalog(value: unknown): LearningProgram
         const code = text(row.code, 32).toLowerCase();
         const label = text(row.label, 40);
         if (!LEARNING_PROGRAM_CODE_PATTERN.test(code)) fail(`Kode program "${code || '(kosong)'}" tidak valid. Gunakan huruf kecil, angka, atau garis bawah (2–32 karakter, diawali huruf).`);
+        if ((SCHOOL_STAGE_CODES as readonly string[]).includes(code)) fail(`Kode "${code}" dipakai untuk jenjang SD/SMP/SMA. Gunakan kode lain.`);
         if (seen.has(code)) fail(`Kode program "${code}" dipakai lebih dari sekali.`);
         if (!label) fail(`Nama program "${code}" wajib diisi.`);
         seen.add(code);

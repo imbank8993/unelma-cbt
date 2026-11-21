@@ -1,8 +1,8 @@
 import { apiGet, apiSend } from './api/client';
-import { LEARNING_PROGRAM_CODE_PATTERN, learningProgramLabel, type LearningProgram } from './learning-catalog';
+import { expandSchoolPrograms, LEARNING_PROGRAM_CODE_PATTERN, learningProgramLabel, type LearningProgram } from './learning-catalog';
 
 /**
- * Tujuan belajar siswa (Sekolah, UTBK, CPNS, PPPK, ...). Sumber utamanya server
+ * Tujuan belajar siswa (SD, SMP, SMA, UTBK, CPNS, PPPK, ...). Sumber utamanya server
  * (`/api/students/learning-goal`) agar ikut terbawa antar perangkat. Salinan di
  * perangkat dipakai sebagai cadangan bila server belum siap/terputus, dan
  * dipindahkan ke server sekali saat server masih kosong.
@@ -22,7 +22,8 @@ export function normalizeLearningGoal(raw: unknown): LearningGoal | null {
     if (!raw || typeof raw !== 'object') return null;
     const value = raw as { programs?: unknown; target?: unknown; targetDate?: unknown };
     if (!Array.isArray(value.programs)) return null;
-    const programs = [...new Set(value.programs.filter((item): item is LearningProgram => typeof item === 'string' && LEARNING_PROGRAM_CODE_PATTERN.test(item)))];
+    // Tujuan lama "sekolah" dibaca sebagai SD, SMP, SMA; tersimpan dengan kode baru saat siswa menyimpan lagi.
+    const programs = expandSchoolPrograms(value.programs.filter((item): item is LearningProgram => typeof item === 'string' && LEARNING_PROGRAM_CODE_PATTERN.test(item)));
     if (!programs.length) return null;
     return {
         programs,

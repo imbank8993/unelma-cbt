@@ -11,6 +11,7 @@ import {
     DEFAULT_LEARNING_PROGRAMS,
     LEARNING_PROGRAM_CATALOG_SETTING_KEY,
     LEARNING_PROGRAM_CODE_PATTERN,
+    SCHOOL_STAGE_CODES,
     LEARNING_PROGRAM_ICON_KEYS,
     normalizeLearningProgramCatalog,
     STRUCTURAL_LEARNING_PROGRAMS,
@@ -24,6 +25,7 @@ import { PROGRAM_ICONS } from '@/app/components/student/programVisuals';
  * Pengaturan → Pengaturan Daftar.
  *
  * Daftar program belajar (Sekolah, SNPDB, UTBK, CPNS, ...) yang dipakai sebagai:
+ * (program "Sekolah" tampil bagi guru dan siswa sebagai jenjang SD, SMP, SMA)
  *  - kategori/filter di Ruang Belajar dan Jadwal siswa,
  *  - label saat membuat bahan ajar dan ujian,
  *  - pilihan tujuan belajar siswa. Siswa yang sudah memilih tujuan hanya
@@ -81,7 +83,7 @@ export default function AdminProgramListPage() {
             if (i !== index) return item;
             const next = { ...item, ...fields };
             if (item.isNew && fields.label !== undefined) {
-                next.value = codeFromLabel(fields.label, new Set(list.filter((_, j) => j !== index).map(row => row.value)));
+                next.value = codeFromLabel(fields.label, new Set([...SCHOOL_STAGE_CODES, ...list.filter((_, j) => j !== index).map(row => row.value)]));
             }
             return next;
         }));
@@ -158,7 +160,7 @@ export default function AdminProgramListPage() {
                                         <label className={labelClass} htmlFor={`label-${item.uid}`}>Nama</label>
                                         <input id={`label-${item.uid}`} className={inputClass} value={item.label} maxLength={40} placeholder="Contoh: Olimpiade Sains"
                                             onChange={event => update(index, { label: event.target.value })} />
-                                        <span className="mt-1 block text-[11px] text-slate-400">Kode: {item.value || '-'}{item.isNew ? '' : ' (tetap)'}{item.value === 'sekolah' ? ' · memakai Kelas I–XII' : ''}</span>
+                                        <span className="mt-1 block text-[11px] text-slate-400">Kode: {item.value || '-'}{item.isNew ? '' : ' (tetap)'}{item.value === 'sekolah' ? ' · tampil sebagai SD, SMP, SMA (Kelas I–XII)' : ''}</span>
                                     </div>
                                     <div>
                                         <label className={labelClass} htmlFor={`hint-${item.uid}`}>Keterangan</label>

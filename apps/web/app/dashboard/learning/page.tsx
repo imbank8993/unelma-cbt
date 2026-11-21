@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 import { ArrowRight, BookOpen, CheckCircle2, ChevronDown, Code2, LayoutGrid, Pencil, Plus, Search, Trash2 } from 'lucide-react';
 import { deleteMaterial, learningRequest, type LearningMaterial } from '@/lib/learning-api';
-import { groupLearningChapters, learningCategoriesOf, learningCategoryOf, learningGradeHeading, learningGradeLabel, learningGrades, learningKey, learningProgramOf, SCHOOL_STAGES, useLearningPrograms, type LearningCategory, type LearningChapter, type LearningProgram } from '@/lib/learning-catalog';
+import { groupLearningChapters, learningGradeHeading, learningGradeLabel, learningGrades, learningKey, learningProgramOf, SCHOOL_STAGES, useLearningPrograms, type LearningChapter, type LearningProgram } from '@/lib/learning-catalog';
 import { loadLearningGoal, programLabel } from '@/lib/learning-goal';
 import { getSessionUser } from '@/lib/session';
 import { deleteConfirmDialog } from '@/lib/confirm-dialog';
@@ -38,8 +38,6 @@ function subjectMark(subject: string): { abbr: string; style: CSSProperties } {
 type ProgramFilter = string;
 /** Program dari tautan, misalnya `/dashboard/learning?program=cpns` dari beranda. */
 const programFromUrl = () => typeof window === 'undefined' ? null : new URLSearchParams(window.location.search).get('program');
-/** Nilai yang tidak tersedia sebagai kategori dikembalikan ke "Semua"/"Untukmu" saat render. */
-const initialProgram = (): ProgramFilter => programFromUrl() || 'all';
 const SCHOOL_STAGE_VALUES = new Set(SCHOOL_STAGES.map(stage => stage.value));
 
 /** Tingkatan awal formulir subbab: tingkatan terpilih, kelas pertama jenjang, atau tingkatan program terpilih. */
@@ -73,15 +71,23 @@ function LearningLibraryContent({ manage, setManage }: { manage: boolean; setMan
     const [materials, setMaterials] = useState<LearningMaterial[]>([]);
     const [canManage, setCanManage] = useState(false);
     const [query, setQuery] = useState('');
-    const [selectedProgram, setProgram] = useState<ProgramFilter>(initialProgram);
+    // Mulai dari "Semua" agar sama dengan render server; program dari tautan diterapkan
+    // setelah hidrasi (nilai yang bukan kategori jatuh ke "Semua"/"Untukmu" saat render).
+    const [selectedProgram, setProgram] = useState<ProgramFilter>('all');
+    useEffect(() => {
+        const linked = programFromUrl();
+        if (!linked) return;
+        const timer = window.setTimeout(() => setProgram(linked), 0);
+        return () => window.clearTimeout(timer);
+    }, []);
     const activePrograms = useLearningPrograms();
     const [savedGoals, setGoalPrograms] = useState<LearningProgram[]>([]);
     // Program yang disembunyikan Admin tidak lagi dihitung sebagai tujuan.
     const goalPrograms = savedGoals.filter(value => activePrograms.some(item => item.value === value));
     // Siswa yang sudah memilih tujuan hanya melihat program tujuannya (plus "Umum" untuk semua siswa).
     const goalOnly = !manage && goalPrograms.length > 0;
-    // Pilihan kategori: "Sekolah" tampil sebagai SD, SMP, SMA; program lain apa adanya.
-    const categories = learningCategoriesOf(goalOnly ? activePrograms.filter(item => goalPrograms.includes(item.value)) : activePrograms);
+    // Pilihan kategori: jenjang SD/SMP/SMA dan program lain dari Pengaturan Daftar.
+    const categories = goalOnly ? activePrograms.filter(item => goalPrograms.includes(item.value)) : activePrograms;
     const program: ProgramFilter = categories.some(item => item.value === selectedProgram) ? selectedProgram : goalOnly ? 'untukmu' : 'all';
     const programTouched = useRef(false);
     const [grade, setGrade] = useState('all');
@@ -136,17 +142,17 @@ function LearningLibraryContent({ manage, setManage }: { manage: boolean; setMan
         if (!activePrograms.some(item => item.value === value)) return false;
         return !goalKey || value === 'umum' || goalKey.split(',').includes(value);
     });
-    const matchesProgram = useCallback((value: string) => program === 'all' || program === 'untukmu' || learningCategoryOf(value) === program, [program]);
+    const matchesProgram = useCallback((value: string) => program === 'all' || program === 'untukmu' || learningProgramOf(value) === program, [program]);
     const programChapters = chapters.filter(chapter => matchesProgram(chapter.grade));
     const inScope = (value: string) => matchesProgram(value) && (grade === 'all' || value === grade);
     const subjects = [...new Set(materials.filter(item => inScope(item.grade_level || '')).map(item => item.subject).filter(Boolean))].sort();
     const visible = chapters.filter(chapter => inScope(chapter.grade) && (!subject || learningKey(chapter.subject) === learningKey(subject)) &&
         learningKey([chapter.title, chapter.subject, ...chapter.items.map(item => `${item.title} ${item.subtopic} ${item.description}`)].join(' ')).includes(learningKey(query)));
     const gradeGroups = [...new Set(visible.map(chapter => chapter.grade))];
-    const countOf = (value: ProgramFilter) => value === 'all' || value === 'untukmu' ? chapters.length : chapters.filter(chapter => learningCategoryOf(chapter.grade) === value).length;
-    const overall: LearningCategory = goalOnly
-        ? { value: 'untukmu', label: 'Untukmu', hint: 'Sesuai tujuan belajar di dashboard', program: 'umum' }
-        : { value: 'all', label: 'Semua', hint: 'Seluruh jenjang dan program', program: 'umum' };
+    const countOf = (value: ProgramFilter) => value === 'all' || value === 'untukmu' ? chapters.length : chapters.filter(chapter => learningProgramOf(chapter.grade) === value).length;
+    const overall = goalOnly
+        ? { value: 'untukmu', label: 'Untukmu', hint: 'Sesuai tujuan belajar di dashboard' }
+        : { value: 'all', label: 'Semua', hint: 'Seluruh jenjang dan program' };
     // Dua baris: Jenjang (SD/SMP/SMA) dan Program; chip "Semua"/"Untukmu" membuka baris pertama.
     const categoryGroups = [
         { key: 'jenjang', label: 'Jenjang', items: categories.filter(item => SCHOOL_STAGE_VALUES.has(item.value)) },
